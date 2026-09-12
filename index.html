@@ -109,7 +109,7 @@
 
         <!-- Sudoku Oyun Modalı -->
         <div id="sudoku-modal" class="absolute inset-0 bg-slate-900/60 hidden flex-col items-center justify-center z-40 p-4 backdrop-blur-sm sm:rounded-[2rem]">
-            <!-- Modal İçeriği (Genişletildi ve Düzenlendi) -->
+            <!-- Modal İçeriği -->
             <div class="bg-slate-50 rounded-3xl shadow-2xl p-4 sm:p-6 w-full max-w-[420px] flex flex-col items-center relative overflow-hidden transform transition-all border border-slate-200">
                 
                 <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 bg-white shadow-sm rounded-full p-2 transition-colors z-20">
@@ -126,7 +126,7 @@
                 <!-- Tahta -->
                 <div id="sudoku-board" class="sudoku-grid mb-5 w-full shrink-0"></div>
                 
-                <!-- YENİ: Modern Tuş Takımı (Numpad) -->
+                <!-- Numpad -->
                 <div id="numpad-container" class="w-full grid grid-cols-5 gap-2 mb-4 opacity-50 pointer-events-none transition-opacity duration-300">
                     <button onclick="handleInput(1)" class="tap-effect h-12 bg-white rounded-xl font-black text-xl text-slate-700 shadow-[0_2px_0_rgba(203,213,225,1)] border border-slate-200 flex items-center justify-center">1</button>
                     <button onclick="handleInput(2)" class="tap-effect h-12 bg-white rounded-xl font-black text-xl text-slate-700 shadow-[0_2px_0_rgba(203,213,225,1)] border border-slate-200 flex items-center justify-center">2</button>
@@ -489,7 +489,6 @@
                     let isFixed = initialBoard[r][c] !== 0;
                     let isSelected = selectedCell && selectedCell.r === r && selectedCell.c === c;
                     
-                    // DÜZELTME: Sadece kullanıcının girdiği yanlış sayılar kırmızı olur, sabit sayılar asla kırmızı olmaz!
                     let isError = conflicts.has(`${r}-${c}`) && !isFixed;
                     
                     let div = document.createElement('div');
@@ -505,7 +504,6 @@
                         div.classList.add('text-indigo-600');
                     }
                     
-                    // Hata ve Seçim Durumları
                     if (isError) {
                         div.classList.add('bg-red-100', 'text-red-700');
                         div.classList.remove('text-indigo-600');
@@ -523,7 +521,6 @@
                 }
             }
 
-            // Numpad Etkileşimi (Seçili Kutu Yoksa Numpad Soluk Görünür)
             const numpad = document.getElementById('numpad-container');
             if(numpad) {
                 if(selectedCell) {
@@ -534,7 +531,6 @@
             }
         }
 
-        // Tıklanan tuşu seçili kutuya yazar
         function handleInput(num) {
             if(!selectedCell || initialBoard[selectedCell.r][selectedCell.c] !== 0) return; 
             
@@ -559,7 +555,10 @@
             let config = getLevelConfig(playingLevelId);
             let reward = config.diff === 'basit' ? 20 : (config.diff === 'orta' ? 10 : 5);
             
-            if (playingLevelId === currentLevel && currentLevel <= TOTAL_LEVELS) {
+            // HATA BURADAYDI, playingLevelId'yi kaydetmemiz gerekiyor
+            let passedLevel = playingLevelId;
+
+            if (passedLevel === currentLevel && currentLevel <= TOTAL_LEVELS) {
                 userGold += reward;
                 localStorage.setItem('sudoku_gold', userGold);
             } else {
@@ -571,7 +570,7 @@
                 <div class="win-message flex flex-col items-center justify-center h-full w-full bg-emerald-50 rounded z-10 absolute inset-0">
                     <div class="text-6xl mb-3 drop-shadow-md">🎉</div>
                     <h3 class="text-3xl font-black mb-1 text-emerald-800">Harika!</h3>
-                    <p class="font-semibold text-emerald-600 text-center px-4 mb-4">Seviye ${playingLevelId} başarıyla tamamlandı.</p>
+                    <p class="font-semibold text-emerald-600 text-center px-4 mb-4">Seviye ${passedLevel} başarıyla tamamlandı.</p>
                     
                     ${reward > 0 ? `
                         <div class="bg-amber-100 text-amber-700 px-5 py-2.5 rounded-full font-black text-lg flex items-center gap-2 drop-shadow-sm animate-bounce">
@@ -582,8 +581,8 @@
             `;
             
             setTimeout(() => {
-                closeModal();
-                if(playingLevelId === currentLevel && currentLevel < TOTAL_LEVELS) {
+                closeModal(); // Bu artık seviyeyi geçmeni engellemeyecek çünkü passedLevel'i tuttuk
+                if(passedLevel === currentLevel && currentLevel < TOTAL_LEVELS) {
                     currentLevel++;
                     localStorage.setItem('sudoku_level', currentLevel);
                 }
@@ -592,7 +591,6 @@
             }, 3000); 
         }
 
-        // Klavye desteği (PC'den test edenler için)
         document.addEventListener('keydown', (e) => {
             const modal = document.getElementById('sudoku-modal');
             if(modal.classList.contains('hidden') || !selectedCell) return;
