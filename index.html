@@ -761,6 +761,22 @@
             buildNumpad(); renderMap(); navigate('menu'); 
         });
     </script>
-    <script> if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(()=>{}); }); } </script>
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').then(reg => {
+                reg.onupdatefound = () => {
+                    const installingWorker = reg.installing;
+                    installingWorker.onstatechange = () => {
+                        if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            // Vercel'e yeni kod attığında kullanıcının ekranı otomatik yenilenir
+                            window.location.reload(true);
+                        }
+                    };
+                };
+            }).catch(err => console.error('SW hatası:', err));
+        });
+    }
+ </script>
 </body>
 </html>

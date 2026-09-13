@@ -1,22 +1,29 @@
-const CACHE_NAME = 'sudoku-cache-v1';
-const urlsToCache = [
-  './',
-  './index.html',
-  './manifest.json',
-  'https://cdn.tailwindcss.com',
-  'https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js'
-];
+const CACHE_NAME = 'sudokumap-v2';
 
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
-  );
+// Yeni güncellemeyi bekletmeden anında kurar
+self.addEventListener('install', (event) => {
+    self.skipWaiting(); 
 });
 
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => response || fetch(event.request))
-  );
+// Eski önbelleği anında temizler
+self.addEventListener('activate', (event) => {
+    event.waitUntil(
+        caches.keys().then((cacheNames) => {
+            return Promise.all(
+                cacheNames.map((cacheName) => {
+                    if (cacheName !== CACHE_NAME) {
+                        return caches.delete(cacheName); 
+                    }
+                })
+            );
+        })
+    );
+    self.clients.claim();
+});
+
+// İnternet varsa her zaman en yeni kodu çeker, yoksa önbellekten oynatır
+self.addEventListener('fetch', (event) => {
+    event.respondWith(
+        fetch(event.request).catch(() => caches.match(event.request))
+    );
 });
