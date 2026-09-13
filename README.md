@@ -1,6 +1,4 @@
-Here is a professional and comprehensive English `README.md` file tailored exactly for all the features we have built into the project. You can copy this directly and save it as `README.md` in your GitHub repository.
 
-```markdown
 # SudokuMap 🧩
 
 A modern, mobile-first Sudoku Web Application (PWA) built with Vanilla JavaScript and Tailwind CSS. SudokuMap offers a 1000-level progressive journey, custom difficulty modes, time-attack challenges, and a real-time global leaderboard powered by Firebase.
