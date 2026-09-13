@@ -48,7 +48,7 @@
             font-size: clamp(1.2rem, 6vw, 1.75rem);
             cursor: pointer;
             user-select: none;
-            transition: all 0.1s ease;
+            transition: background-color 0.15s, box-shadow 0.15s;
             font-weight: 700;
         }
 
@@ -63,6 +63,23 @@
             z-index: 10;
         }
 
+        /* YANLIŞ SAYI İÇİN TİTREME (SHAKE) JENERİĞİ */
+        @keyframes error-shake {
+            0% { transform: translateX(0); }
+            20% { transform: translateX(-4px) scale(1.05); }
+            40% { transform: translateX(4px) scale(1.05); }
+            60% { transform: translateX(-4px) scale(1.05); }
+            80% { transform: translateX(4px) scale(1.05); }
+            100% { transform: translateX(0); }
+        }
+
+        .animate-error {
+            animation: error-shake 0.4s ease-in-out;
+            background-color: #fee2e2 !important; /* Tailwind red-100 */
+            color: #dc2626 !important; /* Tailwind red-600 */
+            z-index: 20;
+        }
+
         .tap-effect:active { transform: scale(0.92); }
     </style>
 </head>
@@ -74,7 +91,6 @@
         <!-- Dinamik Üst Bilgi (Header) -->
         <header class="bg-white/90 backdrop-blur-md px-5 py-4 flex justify-between items-center shadow-sm z-20 shrink-0 border-b border-slate-200">
             <div class="flex items-center gap-3">
-                <!-- Geri Butonu (Sadece menü harici sayfalarda görünür) -->
                 <button id="btn-back" onclick="navigate('menu')" class="hidden text-slate-400 hover:text-slate-800 transition-colors p-1">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
                 </button>
@@ -82,12 +98,10 @@
             </div>
             
             <div class="flex items-center gap-2">
-                <!-- Altın Göstergesi -->
                 <div class="bg-amber-100 text-amber-700 px-3 py-1.5 rounded-full text-sm font-bold shadow-inner flex items-center gap-1.5">
                     <span class="text-lg leading-none">🪙</span>
                     <span id="header-gold">100</span>
                 </div>
-                <!-- Seviye Göstergesi (Sadece haritada görünür) -->
                 <div id="header-level-badge" class="hidden bg-indigo-100 text-indigo-800 px-3 py-1.5 rounded-full text-sm font-bold shadow-inner flex gap-1">
                     Sv <span id="header-level">1</span><span class="text-indigo-400">/1000</span>
                 </div>
@@ -148,7 +162,7 @@
             </button>
         </div>
 
-        <!-- SUDOKU OYUN MODALI (Ortak Kullanım) -->
+        <!-- SUDOKU OYUN MODALI -->
         <div id="sudoku-modal" class="absolute inset-0 bg-slate-900/60 hidden flex-col items-center justify-center z-40 p-4 backdrop-blur-sm sm:rounded-[2rem]">
             <div class="bg-slate-50 rounded-3xl shadow-2xl p-4 sm:p-6 w-full max-w-[420px] flex flex-col items-center relative overflow-hidden transform transition-all border border-slate-200">
                 
@@ -199,23 +213,25 @@
     <script>
         const TOTAL_LEVELS = 1000;
         
-        // --- VERİ VE DURUM YÖNETİMİ ---
         let currentLevel = parseInt(localStorage.getItem('sudoku_level')) || 1;
         let storedGold = localStorage.getItem('sudoku_gold');
         let userGold = storedGold !== null ? parseInt(storedGold) : 100;
         let storedHints = localStorage.getItem('sudoku_free_hints');
         let freeHints = storedHints !== null ? parseInt(storedHints) : 5;
 
-        let gameMode = null; // 'journey' veya 'custom'
-        let playingLevelId = null; // Journey için sayı, Custom için zorluk stringi
-        let currentDifficultyStr = null; // 'basit', 'orta', 'zor'
+        let gameMode = null; 
+        let playingLevelId = null; 
+        let currentDifficultyStr = null; 
 
         let currentSolution = []; 
         let initialBoard = [];
         let userBoard = [];
         let selectedCell = null;
+        
+        // HATA SİSTEMİ İÇİN YENİ DEĞİŞKENLER
+        let temporaryError = null; 
+        let errorTimeout = null;
 
-        // --- EKRAN YÖNETİMİ (ROUTER) ---
         function navigate(viewId) {
             document.getElementById('view-menu').classList.add('hidden');
             document.getElementById('view-map').classList.add('hidden');
@@ -262,16 +278,13 @@
             return diff;
         }
 
-        // --- SUDOKU MOTORU (GERÇEK MANTIK) ---
         const SudokuGen = {
             generate: function(difficulty) {
                 let board = Array(9).fill().map(() => Array(9).fill(0));
                 this.fillDiagonal(board);
                 this.solve(board);
-                
                 let puzzle = board.map(row => [...row]);
                 let targetRemoves = difficulty === 'basit' ? 35 : difficulty === 'orta' ? 45 : 55;
-                
                 let positions = [];
                 for(let r=0; r<9; r++) for(let c=0; c<9; c++) positions.push({r, c});
                 positions.sort(() => Math.random() - 0.5);
@@ -281,9 +294,7 @@
                     let {r, c} = positions[i];
                     let backup = puzzle[r][c];
                     puzzle[r][c] = 0;
-                    
-                    let solutions = this.countSolutions(puzzle.map(row => [...row]));
-                    if (solutions === 1) removes++;
+                    if (this.countSolutions(puzzle.map(row => [...row])) === 1) removes++;
                     else puzzle[r][c] = backup; 
                 }
                 return { solution: board, puzzle };
@@ -311,9 +322,7 @@
                 solveHelper(board);
                 return count;
             },
-            fillDiagonal: function(board) {
-                for (let i = 0; i < 9; i += 3) this.fillBox(board, i, i);
-            },
+            fillDiagonal: function(board) { for (let i = 0; i < 9; i += 3) this.fillBox(board, i, i); },
             fillBox: function(board, rowStart, colStart) {
                 let num;
                 for (let i = 0; i < 3; i++) {
@@ -325,11 +334,7 @@
                 }
             },
             isSafeInBox: function(board, rowStart, colStart, num) {
-                for (let i = 0; i < 3; i++) {
-                    for (let j = 0; j < 3; j++) {
-                        if (board[rowStart + i][colStart + j] === num) return false;
-                    }
-                }
+                for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) if (board[rowStart + i][colStart + j] === num) return false;
                 return true;
             },
             solve: function(board) {
@@ -350,21 +355,13 @@
                 return true;
             },
             isSafe: function(board, r, c, num) {
-                for (let i = 0; i < 9; i++) {
-                    if (board[r][i] === num || board[i][c] === num) return false;
-                }
-                let br = r - (r % 3);
-                let bc = c - (c % 3);
-                for (let i = 0; i < 3; i++) {
-                    for (let j = 0; j < 3; j++) {
-                        if (board[br + i][bc + j] === num) return false;
-                    }
-                }
+                for (let i = 0; i < 9; i++) if (board[r][i] === num || board[i][c] === num) return false;
+                let br = r - (r % 3); let bc = c - (c % 3);
+                for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) if (board[br + i][bc + j] === num) return false;
                 return true;
             }
         };
 
-        // --- HARİTA YÖNETİMİ ---
         function renderMap() {
             const container = document.getElementById('map-nodes');
             let htmlStr = '';
@@ -400,7 +397,6 @@
             container.innerHTML = htmlStr;
         }
 
-        // --- KAYIT SİSTEMİ (Journey ve Custom Ayrı) ---
         function saveGameState() {
             if (!playingLevelId) return;
             const gameState = {
@@ -411,11 +407,8 @@
                 currentSolution: currentSolution
             };
             
-            if(gameMode === 'journey') {
-                localStorage.setItem('sudoku_saved_game', JSON.stringify(gameState));
-            } else {
-                localStorage.setItem('sudoku_custom_game', JSON.stringify(gameState));
-            }
+            if(gameMode === 'journey') localStorage.setItem('sudoku_saved_game', JSON.stringify(gameState));
+            else localStorage.setItem('sudoku_custom_game', JSON.stringify(gameState));
         }
 
         function clearGameState() {
@@ -440,7 +433,6 @@
             }
         }
 
-        // --- OYUN BAŞLATMA MANTIKLARI ---
         function openJourneyLevel(id) {
             gameMode = 'journey';
             playingLevelId = id;
@@ -470,7 +462,6 @@
                 userBoard = data.puzzle.map(r => [...r]);
                 saveGameState(); 
             }
-
             launchModal();
         }
 
@@ -507,12 +498,12 @@
                 userBoard = data.puzzle.map(r => [...r]);
                 saveGameState(); 
             }
-
             launchModal();
         }
 
         function launchModal() {
             selectedCell = null;
+            temporaryError = null;
             updateUI();
             renderBoard();
             document.getElementById('sudoku-modal').classList.remove('hidden');
@@ -524,9 +515,10 @@
             document.getElementById('sudoku-modal').classList.remove('flex');
             playingLevelId = null;
             selectedCell = null;
+            if(errorTimeout) clearTimeout(errorTimeout);
+            temporaryError = null;
         }
 
-        // --- İPUCU VE OYUN İÇİ ETKİLEŞİMLER ---
         function useHint() {
             let availableCells = [];
             for (let r = 0; r < 9; r++) {
@@ -553,45 +545,23 @@
             initialBoard[randomCell.r][randomCell.c] = correctNum;
             userBoard[randomCell.r][randomCell.c] = correctNum;
 
+            if (temporaryError && temporaryError.r === randomCell.r && temporaryError.c === randomCell.c) {
+                temporaryError = null;
+            }
+
             saveGameState(); 
             updateUI();
             renderBoard();
 
             setTimeout(() => {
-                let conflicts = calculateConflicts();
                 let isFull = userBoard.every(row => row.every(val => val !== 0));
-                if(isFull && conflicts.size === 0) handleWin();
+                if(isFull) handleWin();
             }, 300);
-        }
-
-        function calculateConflicts() {
-            let conf = new Set();
-            for(let r=0; r<9; r++) {
-                for(let c=0; c<9; c++) {
-                    let val = userBoard[r][c];
-                    if(val === 0) continue;
-                    
-                    for(let i=0; i<9; i++) { if(i !== c && userBoard[r][i] === val) conf.add(`${r}-${c}`); }
-                    for(let i=0; i<9; i++) { if(i !== r && userBoard[i][c] === val) conf.add(`${r}-${c}`); }
-                    
-                    let br = Math.floor(r/3)*3;
-                    let bc = Math.floor(c/3)*3;
-                    for(let i=0; i<3; i++) {
-                        for(let j=0; j<3; j++) {
-                            let nr = br+i; let nc = bc+j;
-                            if((nr !== r || nc !== c) && userBoard[nr][nc] === val) conf.add(`${r}-${c}`);
-                        }
-                    }
-                }
-            }
-            return conf;
         }
 
         function renderBoard() {
             const boardEl = document.getElementById('sudoku-board');
             boardEl.innerHTML = '';
-            
-            let conflicts = calculateConflicts();
             
             for(let r=0; r<9; r++) {
                 for(let c=0; c<9; c++) {
@@ -599,7 +569,8 @@
                     let isFixed = initialBoard[r][c] !== 0;
                     let isSelected = selectedCell && selectedCell.r === r && selectedCell.c === c;
                     
-                    let isError = conflicts.has(`${r}-${c}`) && !isFixed;
+                    // Geçici Hata Kontrolü (1 saniyelik jenerik için)
+                    let isTempError = temporaryError && temporaryError.r === r && temporaryError.c === c;
                     
                     let div = document.createElement('div');
                     div.className = 'sudoku-cell';
@@ -614,8 +585,8 @@
                         div.classList.add('text-indigo-600');
                     }
                     
-                    if (isError) {
-                        div.classList.add('bg-red-100', 'text-red-700');
+                    if (isTempError) {
+                        div.classList.add('animate-error');
                         div.classList.remove('text-indigo-600');
                     } else if (isSelected) {
                         div.classList.add('cell-selected');
@@ -632,26 +603,60 @@
 
             const numpad = document.getElementById('numpad-container');
             if(numpad) {
-                if(selectedCell) {
-                    numpad.classList.remove('opacity-50', 'pointer-events-none');
-                } else {
-                    numpad.classList.add('opacity-50', 'pointer-events-none');
-                }
+                if(selectedCell) numpad.classList.remove('opacity-50', 'pointer-events-none');
+                else numpad.classList.add('opacity-50', 'pointer-events-none');
             }
         }
 
         function handleInput(num) {
             if(!selectedCell || initialBoard[selectedCell.r][selectedCell.c] !== 0) return; 
             
-            userBoard[selectedCell.r][selectedCell.c] = num;
-            saveGameState(); 
-            renderBoard();
+            let r = selectedCell.r;
+            let c = selectedCell.c;
+
+            // Silme işlemi
+            if (num === 0) {
+                userBoard[r][c] = 0;
+                if(temporaryError && temporaryError.r === r && temporaryError.c === c) temporaryError = null;
+                saveGameState(); 
+                renderBoard();
+                return;
+            }
+
+            // GİRİLEN SAYI YANLIŞ İSE
+            if (num !== currentSolution[r][c]) {
+                userBoard[r][c] = num;
+                temporaryError = {r, c, num};
+                
+                // Telefon Titretme (Haptic Feedback - Sadece destekleyen mobil cihazlarda)
+                if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+
+                if(errorTimeout) clearTimeout(errorTimeout);
+                renderBoard();
+
+                errorTimeout = setTimeout(() => {
+                    // Kullanıcı araya girip başka sayı yazmadıysa sil
+                    if (userBoard[r][c] === num) {
+                        userBoard[r][c] = 0;
+                    }
+                    if (temporaryError && temporaryError.r === r && temporaryError.c === c) {
+                        temporaryError = null;
+                    }
+                    saveGameState();
+                    renderBoard();
+                }, 1000);
             
-            if(num !== 0) {
+            } else {
+                // GİRİLEN SAYI DOĞRU İSE
+                userBoard[r][c] = num;
+                if (temporaryError && temporaryError.r === r && temporaryError.c === c) temporaryError = null;
+                
+                saveGameState(); 
+                renderBoard();
+                
                 setTimeout(() => {
-                    let conflicts = calculateConflicts();
                     let isFull = userBoard.every(row => row.every(val => val !== 0));
-                    if(isFull && conflicts.size === 0) handleWin();
+                    if(isFull) handleWin(); // Yanlış sayılar zaten barınamadığı için tahta doluysa kesin kazanılmıştır.
                 }, 200);
             }
         }
@@ -669,7 +674,7 @@
                 
                 if (passedLevel === currentLevel && currentLevel <= TOTAL_LEVELS) {
                     userGold += reward;
-                    currentLevel++; // Seviye atlatma işlemi BURADA güvenle yapıldı
+                    currentLevel++; 
                     localStorage.setItem('sudoku_level', currentLevel);
                     localStorage.setItem('sudoku_gold', userGold);
                 } else {
@@ -677,7 +682,7 @@
                 }
             } else {
                 winMessage = `Özel Oyun (${currentDifficultyStr}) tamamlandı.`;
-                userGold += reward; // Özel oyunda her bitirişte altın verilir
+                userGold += reward; 
                 localStorage.setItem('sudoku_gold', userGold);
             }
             
@@ -723,7 +728,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             renderMap();
-            navigate('menu'); // Başlangıçta ana menüyü aç
+            navigate('menu'); 
         });
     </script>
     <script>
