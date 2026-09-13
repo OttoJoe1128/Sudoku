@@ -116,7 +116,7 @@
         window.dbGetLeaderboard = async function() {
             try {
                 // Önce seviyeye, sonra altına göre sırala. İlk 50'yi getir.
-                const q = query(collection(db, "leaderboard"), orderBy("level", "desc"), orderBy("gold", "desc"), limit(50));
+                const q = query(collection(db, "leaderboard"), orderBy("level", "desc"), limit(50));
                 const querySnapshot = await getDocs(q);
                 let list = [];
                 querySnapshot.forEach((doc) => {
