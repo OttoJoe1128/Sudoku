@@ -1,3 +1,5 @@
+
+```markdown
 # SudokuMap 🧩
 
 A highly competitive, mobile-first Sudoku Progressive Web Application (PWA) built with Vanilla JavaScript and Tailwind CSS. SudokuMap goes beyond a classic puzzle game by offering a robust in-game economy, time-attack modes, algorithmic puzzle generation, and a highly secure real-time global leaderboard powered by Firebase.
@@ -32,3 +34,49 @@ No heavy build tools required! To run this project locally:
 ```bash
 git clone [https://github.com/OttoJoe1128/Sudoku.git](https://github.com/OttoJoe1128/Sudoku.git)
 cd Sudoku
+
+```
+
+### 2. Run Locally
+
+Serve the `index.html` file using a local web server (e.g., VS Code Live Server, or Python):
+
+```bash
+python -m http.server 8000
+
+```
+
+Then navigate to `http://localhost:8000`.
+
+### 3. Firebase Setup (If forking)
+
+If you wish to host your own leaderboard:
+
+1. Create a project on [Firebase Console](https://console.firebase.google.com/).
+2. Enable **Firestore Database** and **Authentication** (Enable the *Anonymous* provider).
+3. Apply the following Firestore Security Rule to prevent unauthorized manipulation:
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /leaderboard/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+
+```
+
+4. Replace the `firebaseConfig` object inside `index.html` with your own project credentials.
+
+## 📜 License
+
+This project is open-source and available under the [MIT License](https://www.google.com/search?q=LICENSE).
+
+---
+
+*Developed with ❤️ by [Osman Can*](https://www.google.com/search?q=https://github.com/OttoJoe1128)
+
+```
