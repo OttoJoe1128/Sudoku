@@ -77,7 +77,6 @@
 
         window.dbGetLeaderboard = async function() {
             try {
-                // ARTIK SEVİYEYE DEĞİL, ALTINA (GOLD) GÖRE SIRALANIYOR
                 const q = query(collection(db, "leaderboard"), orderBy("gold", "desc"), limit(50));
                 const querySnapshot = await getDocs(q);
                 let list = [];
@@ -91,7 +90,7 @@
             const lvl = parseInt(localStorage.getItem('sudoku_level')) || 1;
             let gld = parseInt(localStorage.getItem('sudoku_gold'));
             gld = isNaN(gld) ? 100 : gld;
-            if(savedUsername) window.dbSaveProgress(savedUsername, lvl, gld);
+            if(savedUsername && window.dbSaveProgress) window.dbSaveProgress(savedUsername, lvl, gld);
         }, 2000);
     </script>
 </head>
@@ -191,7 +190,7 @@
                         <h2 class="text-2xl font-black text-slate-800 mb-1 mt-1" id="modal-title">Seviye 1</h2>
                         <div class="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-[10px] font-bold uppercase tracking-widest" id="modal-difficulty">Basit</div>
                     </div>
-                    <!-- YENİ: KRONOMETRE -->
+                    <!-- KRONOMETRE -->
                     <div id="game-timer" class="text-2xl font-mono font-black text-slate-700 bg-slate-200 px-3 py-1 rounded-lg">00:00</div>
                 </div>
                 
@@ -222,7 +221,7 @@
             </div>
         </div>
         
-        <!-- YENİ: ZAMANA KARŞI VEYA NORMAL SEÇİM MODALI -->
+        <!-- ZAMANA KARŞI VEYA NORMAL SEÇİM MODALI -->
         <div id="custom-mode-modal" class="absolute inset-0 bg-slate-900/60 hidden flex-col items-center justify-center z-[50] p-4 backdrop-blur-sm sm:rounded-[2.5rem]">
             <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl relative">
                 <button onclick="closeCustomModePrompt()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 bg-slate-100 rounded-full p-2 transition-colors">
@@ -251,7 +250,7 @@
                 <h3 class="text-2xl font-black text-slate-800 mb-2">Aramıza Hoş Geldin!</h3>
                 <p class="text-sm text-slate-500 mb-6 font-medium">Sıralamada görünmek için bir oyuncu adı belirle.</p>
                 <input type="text" id="username-input" class="w-full bg-slate-100 border-2 border-slate-200 rounded-xl px-4 py-4 font-bold text-slate-700 focus:outline-none focus:border-indigo-500 mb-4 text-center text-lg" placeholder="Adın (Örn: HızlıÇözen)" maxlength="15">
-                <button onclick="saveUsername()" class="tap-effect w-full bg-indigo-600 text-white font-black py-4 rounded-xl shadow-[0_6px_0_#4338ca] active:translate-y-1.5 active:shadow-none transition-all text-lg">Maceraya Başla!</button>
+                <button onclick="saveUsername()" class="tap-effect w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-xl shadow-[0_6px_0_#4338ca] active:translate-y-1.5 active:shadow-none transition-all text-lg">Maceraya Başla!</button>
             </div>
         </div>
 
@@ -259,7 +258,7 @@
             <div class="bg-white rounded-3xl p-5 w-full max-w-sm flex flex-col h-[75vh] shadow-2xl relative overflow-hidden">
                 <div class="flex justify-between items-center mb-4 shrink-0">
                     <h3 class="text-2xl font-black text-slate-800">🏆 Sıralama</h3>
-                    <button onclick="closeLeaderboard()" class="text-slate-400 bg-slate-100 rounded-full p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                    <button onclick="closeLeaderboard()" class="text-slate-400 hover:text-slate-700 bg-slate-100 rounded-full p-2 transition-colors"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                 </div>
                 <div class="flex justify-between px-2 pb-2 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest shrink-0">
                     <span>Oyuncu</span>
@@ -294,10 +293,10 @@
         let temporaryError = null; 
         let errorTimeout = null;
 
-        // YENİ: KRONOMETRE DEĞİŞKENLERİ
+        // KRONOMETRE DEĞİŞKENLERİ
         let timerInterval = null;
-        let timeValue = 0; // Geçen saniye veya kalan saniye
-        let isCountdown = false; // Normal oyun mu geriye sayım mı?
+        let timeValue = 0; 
+        let isCountdown = false; 
 
         function navigate(viewId) {
             document.getElementById('view-menu').classList.add('hidden');
@@ -339,7 +338,6 @@
             }
         }
 
-        // HATA CEZASI BİLDİRİMİ İÇİN ANİMASYON
         function flashGoldPenalty() {
             const badge = document.getElementById('gold-badge');
             badge.classList.remove('bg-amber-100', 'text-amber-700');
@@ -403,7 +401,90 @@
             return 'zor';
         }
 
-        // --- ZAMANLAYICI FONKSİYONLARI ---
+        const SudokuGen = {
+            generate: function(difficulty) {
+                let board = Array(9).fill().map(() => Array(9).fill(0));
+                this.fillDiagonal(board);
+                this.solve(board);
+                let puzzle = board.map(row => [...row]);
+                let targetRemoves = difficulty === 'basit' ? 35 : (difficulty === 'orta' ? 45 : 55);
+                let positions = [];
+                for(let r=0; r<9; r++) for(let c=0; c<9; c++) positions.push({r, c});
+                positions.sort(() => Math.random() - 0.5);
+
+                let removes = 0;
+                for (let i = 0; i < positions.length && removes < targetRemoves; i++) {
+                    let {r, c} = positions[i];
+                    let backup = puzzle[r][c];
+                    puzzle[r][c] = 0;
+                    if (this.countSolutions(puzzle.map(row => [...row])) === 1) removes++;
+                    else puzzle[r][c] = backup; 
+                }
+                return { solution: board, puzzle };
+            },
+            countSolutions: function(board) {
+                let count = 0;
+                function solveHelper(b) {
+                    for(let r=0; r<9; r++) {
+                        for(let c=0; c<9; c++) {
+                            if(b[r][c] === 0) {
+                                for(let num=1; num<=9; num++) {
+                                    if(SudokuGen.isSafe(b, r, c, num)) {
+                                        b[r][c] = num;
+                                        solveHelper(b);
+                                        if(count > 1) { b[r][c] = 0; return; }
+                                        b[r][c] = 0;
+                                    }
+                                }
+                                return;
+                            }
+                        }
+                    }
+                    count++;
+                }
+                solveHelper(board);
+                return count;
+            },
+            fillDiagonal: function(board) { for (let i = 0; i < 9; i += 3) this.fillBox(board, i, i); },
+            fillBox: function(board, rowStart, colStart) {
+                let num;
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 3; j++) {
+                        do { num = Math.floor(Math.random() * 9) + 1; } 
+                        while (!this.isSafeInBox(board, rowStart, colStart, num));
+                        board[rowStart + i][colStart + j] = num;
+                    }
+                }
+            },
+            isSafeInBox: function(board, rowStart, colStart, num) {
+                for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) if (board[rowStart + i][colStart + j] === num) return false;
+                return true;
+            },
+            solve: function(board) {
+                for (let r = 0; r < 9; r++) {
+                    for (let c = 0; c < 9; c++) {
+                        if (board[r][c] === 0) {
+                            for (let num = 1; num <= 9; num++) {
+                                if (this.isSafe(board, r, c, num)) {
+                                    board[r][c] = num;
+                                    if (this.solve(board)) return true;
+                                    board[r][c] = 0;
+                                }
+                            }
+                            return false; 
+                        }
+                    }
+                }
+                return true;
+            },
+            isSafe: function(board, r, c, num) {
+                for (let i = 0; i < 9; i++) if (board[r][i] === num || board[i][c] === num) return false;
+                let br = r - (r % 3); let bc = c - (c % 3);
+                for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) if (board[br + i][bc + j] === num) return false;
+                return true;
+            }
+        };
+
         function formatTime(sec) {
             let m = Math.floor(sec / 60).toString().padStart(2, '0');
             let s = (sec % 60).toString().padStart(2, '0');
@@ -429,7 +510,6 @@
                     timeValue++;
                 }
                 timerEl.innerText = formatTime(timeValue);
-                // Zamanı localStorage'a kaydedelim
                 saveGameState();
             }, 1000);
         }
@@ -458,7 +538,7 @@
         }
 
         function resetJourney() {
-            if(confirm("Tüm harita ilerlemeni sıfırlamak istediğine emin misin? (Altınların da sıfırlanacak)")) {
+            if(confirm("Tüm harita ilerlemeni sıfırlamak istediğine emin misin? (Altınların da sıfırlanacak ama oyuncu adın kalacak)")) {
                 localStorage.removeItem('sudoku_level'); localStorage.removeItem('sudoku_gold');
                 localStorage.removeItem('sudoku_free_hints'); localStorage.removeItem('sudoku_saved_game');
                 currentLevel = 1; userGold = 100; freeHints = 5;
@@ -468,6 +548,7 @@
             }
         }
 
+        // HATA GÜVENLİK KALKANI EKLENDİ
         function openJourneyLevel(id) {
             gameMode = 'journey'; playingLevelId = id; currentDifficultyStr = getJourneyLevelConfig(id);
             document.getElementById('modal-title').innerText = `Seviye ${id}`;
@@ -478,28 +559,30 @@
             if (savedStr) {
                 try {
                     const saved = JSON.parse(savedStr);
-                    if (saved && saved.levelId === id) {
+                    // DİKKAT: KAYITLI DOSYA BOZUK MU DİYE KONTROL EDİYORUZ! (Failsafe)
+                    if (saved && saved.levelId === id && saved.userBoard && saved.userBoard.length === 9) {
                         currentSolution = saved.currentSolution; initialBoard = saved.initialBoard;
                         userBoard = saved.userBoard; 
                         timeValue = saved.timeValue || 0; isCountdown = saved.isCountdown || false;
                         isLoaded = true;
+                    } else {
+                        // Dosya bozuksa sil!
+                        localStorage.removeItem('sudoku_saved_game');
                     }
-                } catch (e) {}
+                } catch (e) { localStorage.removeItem('sudoku_saved_game'); }
             }
+            
             if (!isLoaded) {
                 let data = SudokuGen.generate(currentDifficultyStr);
                 currentSolution = data.solution.map(r => [...r]);
                 initialBoard = data.puzzle.map(r => [...r]); userBoard = data.puzzle.map(r => [...r]);
-                timeValue = 0; isCountdown = false; // İlerlemeli oyunda süre artar
+                timeValue = 0; isCountdown = false; 
                 saveGameState(); 
             }
             launchModal();
         }
 
-        // ÖZEL OYUN MODU SEÇİMİ
-        let tempCustomDiff = null;
         function promptCustomMode(diff) {
-            tempCustomDiff = diff;
             let mins = diff === 'basit' ? 10 : (diff === 'orta' ? 15 : 25);
             document.getElementById('timed-desc').innerText = `${mins} Dakika Süren Var`;
             
@@ -515,6 +598,7 @@
             document.getElementById('custom-mode-modal').classList.remove('flex');
         }
 
+        // HATA GÜVENLİK KALKANI EKLENDİ
         function startCustomGame(diff, timed, seconds) {
             closeCustomModePrompt();
             gameMode = 'custom'; playingLevelId = 'custom'; currentDifficultyStr = diff;
@@ -526,14 +610,18 @@
             if (savedStr) {
                 try {
                     const saved = JSON.parse(savedStr);
-                    if (saved && saved.difficulty === diff) {
+                    // DİKKAT: KAYITLI DOSYA BOZUK MU DİYE KONTROL EDİYORUZ! (Failsafe)
+                    if (saved && saved.difficulty === diff && saved.userBoard && saved.userBoard.length === 9) {
                         if(confirm(`Yarım kalan bir "${diff}" oyununuz var. Devam etmek ister misiniz?`)) {
                             currentSolution = saved.currentSolution; initialBoard = saved.initialBoard;
-                            userBoard = saved.userBoard; timeValue = saved.timeValue; isCountdown = saved.isCountdown;
+                            userBoard = saved.userBoard; timeValue = saved.timeValue || 0; isCountdown = saved.isCountdown || false;
                             isLoaded = true;
                         } else { localStorage.removeItem('sudoku_custom_game'); }
+                    } else {
+                        // Dosya bozuksa sil!
+                        localStorage.removeItem('sudoku_custom_game');
                     }
-                } catch (e) {}
+                } catch (e) { localStorage.removeItem('sudoku_custom_game'); }
             }
 
             if (!isLoaded) {
@@ -594,6 +682,8 @@
 
         function renderBoard() {
             const boardEl = document.getElementById('sudoku-board');
+            if(!userBoard || userBoard.length !== 9) return; // Güvenlik Kalkanı 2
+            
             boardEl.innerHTML = '';
             for(let r=0; r<9; r++) {
                 for(let c=0; c<9; c++) {
@@ -635,12 +725,10 @@
             if (num !== currentSolution[r][c]) {
                 userBoard[r][c] = num; temporaryError = {r, c, num};
                 
-                // HATA CEZASI: -5 ALTIN
                 if (userGold > 0) {
                     userGold = Math.max(0, userGold - 5);
                     localStorage.setItem('sudoku_gold', userGold);
-                    updateUI();
-                    flashGoldPenalty();
+                    updateUI(); flashGoldPenalty();
                 }
 
                 if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
@@ -669,7 +757,6 @@
             confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#4f46e5', '#10b981', '#f59e0b'] });
             clearGameState(); 
 
-            // YENİ ÖDÜL SİSTEMİ (Basit:5, Orta:10, Zor:20)
             let reward = currentDifficultyStr === 'basit' ? 5 : (currentDifficultyStr === 'orta' ? 10 : 20);
             let winMessage = "";
 
@@ -752,7 +839,7 @@
     </script>
     <script>
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); });
+            window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(()=>{}); });
         }
     </script>
 </body>
