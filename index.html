@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <!-- PWA Meta Etiketleri -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f172a">
     <link rel="apple-touch-icon" href="icon-192.png">  
@@ -47,7 +46,6 @@
         .tap-effect:active { transform: scale(0.92); }
     </style>
 
-    <!-- FİREBASE BAĞLANTISI -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
         import { getFirestore, doc, setDoc, getDocs, collection, query, limit } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
@@ -97,7 +95,8 @@
                 window.allLeaderboardData = list;
                 window.filterLeaderboard(); 
             } catch(e) { 
-                document.getElementById('leaderboard-list').innerHTML = '<div class="text-center text-red-400 py-10 font-bold">Sunucuya bağlanılamadı.</div>';
+                const lbList = document.getElementById('leaderboard-list');
+                if(lbList) lbList.innerHTML = '<div class="text-center text-red-400 py-10 font-bold">Sunucuya bağlanılamadı.</div>';
             }
         };
 
@@ -132,6 +131,10 @@
                 <div class="bg-amber-100 text-amber-700 px-3 py-1.5 rounded-full text-sm font-bold shadow-inner flex items-center gap-1.5 transition-transform" id="gold-badge">
                     <span class="text-lg leading-none">🪙</span><span id="header-gold">100</span>
                 </div>
+                <!-- SİLİNEN ROZET GERİ EKLENDİ (Hatayı Kökten Çözen Kod) -->
+                <div id="header-level-badge" class="hidden bg-indigo-100 text-indigo-800 px-3 py-1.5 rounded-full text-sm font-bold shadow-inner flex items-center gap-1">
+                    Sv <span id="header-level">1</span>
+                </div>
             </div>
         </header>
 
@@ -156,7 +159,6 @@
                 <span class="text-lg font-black flex items-center gap-2">🏆 Sıralama</span>
                 <span class="text-amber-600 text-xs font-bold bg-amber-200 px-2 py-1 rounded-md">Filtreli</span>
             </button>
-            
             <button onclick="watchAdForGold()" class="tap-effect z-10 w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl p-4 shadow-[0_6px_0_#047857] active:translate-y-1.5 transition-all flex justify-between items-center">
                 <span class="text-lg font-black flex items-center gap-2">📺 Reklam İzle</span>
                 <span class="text-emerald-900 text-xs font-black bg-emerald-300 px-2 py-1 rounded-md">+50 ALTIN</span>
@@ -327,12 +329,20 @@
         }
 
         function updateSettings() {
-            localStorage.setItem('sudoku_sound', document.getElementById('toggle-sound').checked);
-            localStorage.setItem('sudoku_vibrate', document.getElementById('toggle-vibrate').checked);
+            const soundEl = document.getElementById('toggle-sound');
+            const vibrateEl = document.getElementById('toggle-vibrate');
+            if(soundEl) localStorage.setItem('sudoku_sound', soundEl.checked);
+            if(vibrateEl) localStorage.setItem('sudoku_vibrate', vibrateEl.checked);
         }
 
-        function openSettings() { document.getElementById('settings-modal').classList.remove('hidden'); document.getElementById('settings-modal').classList.add('flex'); }
-        function closeSettings() { document.getElementById('settings-modal').classList.add('hidden'); document.getElementById('settings-modal').classList.remove('flex'); }
+        function openSettings() { 
+            const sm = document.getElementById('settings-modal'); 
+            if(sm) { sm.classList.remove('hidden'); sm.classList.add('flex'); } 
+        }
+        function closeSettings() { 
+            const sm = document.getElementById('settings-modal'); 
+            if(sm) { sm.classList.add('hidden'); sm.classList.remove('flex'); } 
+        }
 
         function playSound(type) {
             if(localStorage.getItem('sudoku_sound') === 'false') return;
@@ -379,13 +389,19 @@
         }
 
         function watchAdForGold() {
-            document.getElementById('ad-modal').classList.remove('hidden'); document.getElementById('ad-modal').classList.add('flex');
-            let timeLeft = 5; document.getElementById('ad-timer').innerText = timeLeft;
+            const adModal = document.getElementById('ad-modal');
+            const adTimer = document.getElementById('ad-timer');
+            if(adModal) { adModal.classList.remove('hidden'); adModal.classList.add('flex'); }
+            
+            let timeLeft = 5; 
+            if(adTimer) adTimer.innerText = timeLeft;
+            
             let adInt = setInterval(() => {
-                timeLeft--; document.getElementById('ad-timer').innerText = timeLeft;
+                timeLeft--; 
+                if(adTimer) adTimer.innerText = timeLeft;
                 if(timeLeft <= 0) {
                     clearInterval(adInt);
-                    document.getElementById('ad-modal').classList.add('hidden'); document.getElementById('ad-modal').classList.remove('flex');
+                    if(adModal) { adModal.classList.add('hidden'); adModal.classList.remove('flex'); }
                     userGold += 50; localStorage.setItem('sudoku_gold', userGold); updateUI();
                     playSound('win');
                     alert("Teşekkürler! 50 Altın kazandınız.");
@@ -413,66 +429,85 @@
                 if(el) { el.classList.add('hidden'); el.classList.remove('flex'); }
             });
             
-            document.getElementById('btn-back').classList.remove('hidden'); 
-            document.getElementById('header-level-badge').classList.add('hidden');
-            document.getElementById('btn-settings').classList.add('hidden');
+            const btnBack = document.getElementById('btn-back'); if(btnBack) btnBack.classList.remove('hidden');
+            const hLvlBadge = document.getElementById('header-level-badge'); if(hLvlBadge) hLvlBadge.classList.add('hidden');
+            const btnSettings = document.getElementById('btn-settings'); if(btnSettings) btnSettings.classList.add('hidden');
 
             if(viewId === 'menu') {
-                document.getElementById('view-menu').classList.remove('hidden'); 
-                document.getElementById('view-menu').classList.add('flex'); 
-                document.getElementById('btn-back').classList.add('hidden');
-                document.getElementById('btn-settings').classList.remove('hidden');
-                document.getElementById('header-title').innerHTML = `Sudoku<span class="text-indigo-600">Map</span>`;
+                const vMenu = document.getElementById('view-menu'); if(vMenu) { vMenu.classList.remove('hidden'); vMenu.classList.add('flex'); }
+                if(btnBack) btnBack.classList.add('hidden');
+                if(btnSettings) btnSettings.classList.remove('hidden');
+                const hTitle = document.getElementById('header-title'); if(hTitle) hTitle.innerHTML = `Sudoku<span class="text-indigo-600">Map</span>`;
             } else if (viewId === 'map') {
-                document.getElementById('view-map').classList.remove('hidden'); 
-                document.getElementById('header-title').innerText = "Yolculuk";
-                document.getElementById('header-level-badge').classList.remove('hidden'); 
+                const vMap = document.getElementById('view-map'); if(vMap) vMap.classList.remove('hidden');
+                const hTitle = document.getElementById('header-title'); if(hTitle) hTitle.innerText = "Yolculuk";
+                if(hLvlBadge) hLvlBadge.classList.remove('hidden'); 
                 setTimeout(scrollToActiveNode, 100);
             } else if (viewId === 'custom') {
-                document.getElementById('view-custom').classList.remove('hidden'); 
-                document.getElementById('view-custom').classList.add('flex'); 
-                document.getElementById('header-title').innerText = "Özel Oyun";
+                const vCustom = document.getElementById('view-custom'); if(vCustom) { vCustom.classList.remove('hidden'); vCustom.classList.add('flex'); }
+                const hTitle = document.getElementById('header-title'); if(hTitle) hTitle.innerText = "Özel Oyun";
             }
             updateUI();
         }
 
         function updateUI() {
-            document.getElementById('menu-level-text').innerText = currentLevel > TOTAL_LEVELS ? TOTAL_LEVELS : currentLevel;
-            document.getElementById('header-level').innerText = currentLevel > TOTAL_LEVELS ? TOTAL_LEVELS : currentLevel;
-            document.getElementById('header-gold').innerText = userGold;
-            const uname = localStorage.getItem('sudoku_username'); if(uname) document.getElementById('menu-player-name').innerText = uname;
+            const mlText = document.getElementById('menu-level-text'); if(mlText) mlText.innerText = currentLevel > TOTAL_LEVELS ? TOTAL_LEVELS : currentLevel;
+            const hLevel = document.getElementById('header-level'); if(hLevel) hLevel.innerText = currentLevel > TOTAL_LEVELS ? TOTAL_LEVELS : currentLevel;
+            const hGold = document.getElementById('header-gold'); if(hGold) hGold.innerText = userGold;
+            
+            const uname = localStorage.getItem('sudoku_username'); 
+            const mpName = document.getElementById('menu-player-name'); 
+            if(uname && mpName) mpName.innerText = uname;
 
             const hintStatus = document.getElementById('hint-status');
-            if(freeHints > 0) { hintStatus.innerText = `${freeHints} Ücretsiz`; hintStatus.className = "bg-amber-700/40 px-2 py-1 rounded-lg text-xs font-bold tracking-wide text-white"; } 
-            else { hintStatus.innerHTML = `🪙 20 Altın`; hintStatus.className = "bg-white text-amber-600 px-2 py-1 rounded-lg text-xs font-bold tracking-wide shadow-sm"; }
-            document.getElementById('game-error-count').innerText = `${currentSessionErrors} Hata`;
+            if(hintStatus) {
+                if(freeHints > 0) { hintStatus.innerText = `${freeHints} Ücretsiz`; hintStatus.className = "bg-amber-700/40 px-2 py-1 rounded-lg text-xs font-bold tracking-wide text-white"; } 
+                else { hintStatus.innerHTML = `🪙 20 Altın`; hintStatus.className = "bg-white text-amber-600 px-2 py-1 rounded-lg text-xs font-bold tracking-wide shadow-sm"; }
+            }
+            
+            const errCount = document.getElementById('game-error-count');
+            if(errCount) errCount.innerText = `${currentSessionErrors} Hata`;
         }
 
         function flashGoldPenalty() {
-            const badge = document.getElementById('gold-badge'); badge.classList.remove('bg-amber-100', 'text-amber-700'); badge.classList.add('bg-red-500', 'text-white', 'scale-110');
+            const badge = document.getElementById('gold-badge'); 
+            if(!badge) return;
+            badge.classList.remove('bg-amber-100', 'text-amber-700'); badge.classList.add('bg-red-500', 'text-white', 'scale-110');
             setTimeout(() => { badge.classList.add('bg-amber-100', 'text-amber-700'); badge.classList.remove('bg-red-500', 'text-white', 'scale-110'); }, 300);
         }
 
         function saveUsername() {
-            const input = document.getElementById('username-input').value.trim();
+            const inputEl = document.getElementById('username-input');
+            if(!inputEl) return;
+            const input = inputEl.value.trim();
             if(input.length < 3) { alert("En az 3 harfli bir ad girin!"); return; }
             localStorage.setItem('sudoku_username', input);
-            document.getElementById('username-modal').classList.add('hidden'); document.getElementById('username-modal').classList.remove('flex');
+            
+            const unModal = document.getElementById('username-modal');
+            if(unModal) { unModal.classList.add('hidden'); unModal.classList.remove('flex'); }
+            
             updateUI();
             if(window.dbSaveProgress) window.dbSaveProgress(input, currentLevel, userGold, {best_basit: bestBasit, best_orta: bestOrta, best_zor: bestZor, total_errors: totalErrors});
         }
 
         window.filterLeaderboard = function() {
-            const mainFilter = document.getElementById('lb-sort-main').value; const subFilter = document.getElementById('lb-sort-sub');
-            const listEl = document.getElementById('leaderboard-list'); const headersEl = document.getElementById('lb-headers');
+            const mainFilterEl = document.getElementById('lb-sort-main');
+            const subFilterEl = document.getElementById('lb-sort-sub');
+            const listEl = document.getElementById('leaderboard-list'); 
+            const headersEl = document.getElementById('lb-headers');
             
-            if(mainFilter === 'time') subFilter.classList.remove('hidden'); else subFilter.classList.add('hidden');
+            if(!mainFilterEl || !subFilterEl || !listEl || !headersEl) return;
+            
+            const mainFilter = mainFilterEl.value;
+            const subFilter = subFilterEl.value;
+            
+            if(mainFilter === 'time') subFilterEl.classList.remove('hidden'); else subFilterEl.classList.add('hidden');
             let data = [...(window.allLeaderboardData || [])];
 
             if (mainFilter === 'gold') { data.sort((a, b) => (b.gold || 0) - (a.gold || 0)); headersEl.innerHTML = `<span>Oyuncu</span><div class="flex gap-4"><span>Sv</span><span>Altın</span></div>`; } 
             else if (mainFilter === 'level') { data.sort((a, b) => (b.level || 0) - (a.level || 0)); headersEl.innerHTML = `<span>Oyuncu</span><div class="flex gap-4"><span>Altın</span><span>Sv</span></div>`; } 
             else if (mainFilter === 'time') {
-                const timeKey = 'best_' + subFilter.value; data = data.filter(u => u[timeKey] && u[timeKey] > 0); data.sort((a, b) => a[timeKey] - b[timeKey]);
+                const timeKey = 'best_' + subFilter; data = data.filter(u => u[timeKey] && u[timeKey] > 0); data.sort((a, b) => a[timeKey] - b[timeKey]);
                 headersEl.innerHTML = `<span>Oyuncu</span><span>En İyi Süre</span>`;
             }
 
@@ -487,14 +522,23 @@
                 let rightSide = '';
                 if(mainFilter === 'gold') rightSide = `<span class="text-xs font-black text-indigo-400 w-6">Sv ${user.level}</span><span class="text-sm font-black text-amber-600 w-10">${user.gold}</span>`;
                 else if(mainFilter === 'level') rightSide = `<span class="text-xs font-bold text-amber-600 w-10">${user.gold}</span><span class="text-sm font-black text-indigo-600 w-6">Sv ${user.level}</span>`;
-                else if(mainFilter === 'time') rightSide = `<span class="text-sm font-mono font-black text-slate-700">${formatTime(user['best_' + subFilter.value])}</span>`;
+                else if(mainFilter === 'time') rightSide = `<span class="text-sm font-mono font-black text-slate-700">${formatTime(user['best_' + subFilter])}</span>`;
 
                 listEl.innerHTML += `<div class="flex items-center justify-between p-3 rounded-xl border ${bgClass} shadow-sm"><div class="flex items-center gap-3">${rankStr}<span class="font-bold text-sm ${nameColor}">${user.username}</span></div><div class="flex items-center gap-5 text-right">${rightSide}</div></div>`;
             });
         };
 
-        function openLeaderboard() { document.getElementById('leaderboard-modal').classList.remove('hidden'); document.getElementById('leaderboard-modal').classList.add('flex'); document.getElementById('leaderboard-list').innerHTML = '<div class="text-center text-slate-400 py-10 font-bold animate-pulse">Liderler Yükleniyor...</div>'; if(window.dbFetchLeaderboard) window.dbFetchLeaderboard(); }
-        function closeLeaderboard() { document.getElementById('leaderboard-modal').classList.add('hidden'); document.getElementById('leaderboard-modal').classList.remove('flex'); }
+        function openLeaderboard() { 
+            const lbModal = document.getElementById('leaderboard-modal');
+            const lbList = document.getElementById('leaderboard-list');
+            if(lbModal) { lbModal.classList.remove('hidden'); lbModal.classList.add('flex'); }
+            if(lbList) lbList.innerHTML = '<div class="text-center text-slate-400 py-10 font-bold animate-pulse">Liderler Yükleniyor...</div>'; 
+            if(window.dbFetchLeaderboard) window.dbFetchLeaderboard(); 
+        }
+        function closeLeaderboard() { 
+            const lbModal = document.getElementById('leaderboard-modal');
+            if(lbModal) { lbModal.classList.add('hidden'); lbModal.classList.remove('flex'); }
+        }
 
         const SudokuGen = {
             generate: function(diff) {
@@ -531,15 +575,23 @@
 
         function startTimer() {
             if(timerInterval) clearInterval(timerInterval);
-            const timerEl = document.getElementById('game-timer'); timerEl.classList.remove('text-red-600', 'animate-pulse');
+            const timerEl = document.getElementById('game-timer'); 
+            if(timerEl) timerEl.classList.remove('text-red-600', 'animate-pulse');
+            
             timerInterval = setInterval(() => {
                 timeElapsed++; 
                 if(isCountdown) {
                     timeValue--;
-                    if(timeValue <= 0) { clearInterval(timerInterval); timerEl.innerText = "00:00"; handleTimeOver(); return; }
-                    if(timeValue <= 60) timerEl.classList.add('text-red-600', 'animate-pulse');
-                    timerEl.innerText = formatTime(timeValue);
-                } else { timerEl.innerText = formatTime(timeElapsed); }
+                    if(timeValue <= 0) { 
+                        clearInterval(timerInterval); 
+                        if(timerEl) timerEl.innerText = "00:00"; 
+                        handleTimeOver(); return; 
+                    }
+                    if(timeValue <= 60 && timerEl) timerEl.classList.add('text-red-600', 'animate-pulse');
+                    if(timerEl) timerEl.innerText = formatTime(timeValue);
+                } else { 
+                    if(timerEl) timerEl.innerText = formatTime(timeElapsed); 
+                }
                 saveGameState();
             }, 1000);
         }
@@ -566,7 +618,9 @@
 
         function openJourneyLevel(id) {
             gameMode = 'journey'; playingLevelId = id; currentDifficultyStr = getJourneyLevelConfig(id);
-            document.getElementById('modal-title').innerText = `Seviye ${id}`; document.getElementById('modal-difficulty').innerText = currentDifficultyStr;
+            const mTitle = document.getElementById('modal-title'); if(mTitle) mTitle.innerText = `Seviye ${id}`; 
+            const mDiff = document.getElementById('modal-difficulty'); if(mDiff) mDiff.innerText = currentDifficultyStr;
+            
             let isLoaded = false; const savedStr = localStorage.getItem('sudoku_saved_game');
             if (savedStr) {
                 try {
@@ -586,15 +640,25 @@
         }
 
         function promptCustomMode(diff) {
-            let mins = diff === 'basit' ? 10 : (diff === 'orta' ? 15 : 25); document.getElementById('timed-desc').innerText = `${mins} Dakika Süren Var`;
-            document.getElementById('btn-mode-timed').onclick = () => startCustomGame(diff, true, mins * 60); document.getElementById('btn-mode-normal').onclick = () => startCustomGame(diff, false, 0);
-            document.getElementById('custom-mode-modal').classList.remove('hidden'); document.getElementById('custom-mode-modal').classList.add('flex');
+            let mins = diff === 'basit' ? 10 : (diff === 'orta' ? 15 : 25); 
+            const td = document.getElementById('timed-desc'); if(td) td.innerText = `${mins} Dakika Süren Var`;
+            
+            const btnTimed = document.getElementById('btn-mode-timed'); if(btnTimed) btnTimed.onclick = () => startCustomGame(diff, true, mins * 60); 
+            const btnNorm = document.getElementById('btn-mode-normal'); if(btnNorm) btnNorm.onclick = () => startCustomGame(diff, false, 0);
+            
+            const cmModal = document.getElementById('custom-mode-modal');
+            if(cmModal) { cmModal.classList.remove('hidden'); cmModal.classList.add('flex'); }
         }
-        function closeCustomModePrompt() { document.getElementById('custom-mode-modal').classList.add('hidden'); document.getElementById('custom-mode-modal').classList.remove('flex'); }
+        function closeCustomModePrompt() { 
+            const cmModal = document.getElementById('custom-mode-modal');
+            if(cmModal) { cmModal.classList.add('hidden'); cmModal.classList.remove('flex'); }
+        }
 
         function startCustomGame(diff, timed, seconds) {
             closeCustomModePrompt(); gameMode = 'custom'; playingLevelId = 'custom'; currentDifficultyStr = diff;
-            document.getElementById('modal-title').innerText = `Özel Oyun`; document.getElementById('modal-difficulty').innerText = diff;
+            const mTitle = document.getElementById('modal-title'); if(mTitle) mTitle.innerText = `Özel Oyun`; 
+            const mDiff = document.getElementById('modal-difficulty'); if(mDiff) mDiff.innerText = diff;
+            
             let isLoaded = false; const savedStr = localStorage.getItem('sudoku_custom_game');
             if (savedStr) {
                 try {
@@ -617,12 +681,13 @@
 
         function launchModal() {
             selectedCell = null; temporaryError = null; updateUI(); renderBoard();
-            document.getElementById('game-timer').innerText = formatTime(isCountdown ? timeValue : timeElapsed); startTimer();
-            document.getElementById('sudoku-modal').classList.remove('hidden'); document.getElementById('sudoku-modal').classList.add('flex');
+            const gt = document.getElementById('game-timer'); if(gt) gt.innerText = formatTime(isCountdown ? timeValue : timeElapsed); 
+            startTimer();
+            const sm = document.getElementById('sudoku-modal'); if(sm) { sm.classList.remove('hidden'); sm.classList.add('flex'); }
         }
 
         function closeModal() {
-            document.getElementById('sudoku-modal').classList.add('hidden'); document.getElementById('sudoku-modal').classList.remove('flex');
+            const sm = document.getElementById('sudoku-modal'); if(sm) { sm.classList.add('hidden'); sm.classList.remove('flex'); }
             playingLevelId = null; selectedCell = null; if(errorTimeout) clearTimeout(errorTimeout); if(timerInterval) clearInterval(timerInterval); temporaryError = null;
         }
 
@@ -644,7 +709,7 @@
         }
 
         function renderBoard() {
-            const boardEl = document.getElementById('sudoku-board'); if(!userBoard || userBoard.length !== 9) return; 
+            const boardEl = document.getElementById('sudoku-board'); if(!boardEl || !userBoard || userBoard.length !== 9) return; 
             boardEl.innerHTML = '';
             for(let r=0; r<9; r++) {
                 for(let c=0; c<9; c++) {
@@ -711,37 +776,41 @@
             if(uname && window.dbSaveProgress) window.dbSaveProgress(uname, currentLevel, userGold, {best_basit: bestBasit, best_orta: bestOrta, best_zor: bestZor, total_errors: totalErrors});
 
             const boardEl = document.getElementById('sudoku-board');
-            boardEl.innerHTML = `
-                <div class="win-message flex flex-col items-center justify-center h-full w-full bg-emerald-50 rounded z-10 absolute inset-0 text-center px-4">
-                    <div class="text-6xl mb-2 drop-shadow-md">🎉</div>
-                    <h3 class="text-2xl font-black mb-1 text-emerald-800">Harika!</h3>
-                    <p class="font-bold text-emerald-600 mb-3 text-sm">${winMessage}</p>
-                    
-                    <div class="bg-white w-full rounded-xl p-3 shadow-sm mb-3 border border-emerald-100">
-                        <div class="flex justify-between items-center border-b border-emerald-50 pb-2 mb-2"><span class="text-xs font-bold text-slate-400 uppercase">Süre</span><span class="font-mono font-black text-slate-700">${formatTime(timeElapsed)}</span></div>
-                        <div class="flex justify-between items-center"><span class="text-xs font-bold text-slate-400 uppercase">Hata Sayısı</span><span class="font-black ${currentSessionErrors > 0 ? 'text-red-500' : 'text-emerald-500'}">${currentSessionErrors}</span></div>
-                        ${isNewRecord ? `<div class="text-[10px] font-black text-amber-500 uppercase tracking-widest animate-pulse mt-2">🔥 YENİ REKOR!</div>` : ''}
-                    </div>
+            if(boardEl) {
+                boardEl.innerHTML = `
+                    <div class="win-message flex flex-col items-center justify-center h-full w-full bg-emerald-50 rounded z-10 absolute inset-0 text-center px-4">
+                        <div class="text-6xl mb-2 drop-shadow-md">🎉</div>
+                        <h3 class="text-2xl font-black mb-1 text-emerald-800">Harika!</h3>
+                        <p class="font-bold text-emerald-600 mb-3 text-sm">${winMessage}</p>
+                        
+                        <div class="bg-white w-full rounded-xl p-3 shadow-sm mb-3 border border-emerald-100">
+                            <div class="flex justify-between items-center border-b border-emerald-50 pb-2 mb-2"><span class="text-xs font-bold text-slate-400 uppercase">Süre</span><span class="font-mono font-black text-slate-700">${formatTime(timeElapsed)}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-xs font-bold text-slate-400 uppercase">Hata Sayısı</span><span class="font-black ${currentSessionErrors > 0 ? 'text-red-500' : 'text-emerald-500'}">${currentSessionErrors}</span></div>
+                            ${isNewRecord ? `<div class="text-[10px] font-black text-amber-500 uppercase tracking-widest animate-pulse mt-2">🔥 YENİ REKOR!</div>` : ''}
+                        </div>
 
-                    ${reward > 0 ? `<div class="bg-amber-100 text-amber-700 px-5 py-2.5 rounded-full font-black text-lg flex items-center gap-2 drop-shadow-sm mb-3">🪙 +${reward} Altın</div>` : ''}
-                    
-                    <button onclick="shareWin('${shareMessage}', '${formatTime(timeElapsed)}')" class="tap-effect w-full bg-indigo-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-sm">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
-                        Sonucu Paylaş
-                    </button>
-                </div>
-            `;
+                        ${reward > 0 ? `<div class="bg-amber-100 text-amber-700 px-5 py-2.5 rounded-full font-black text-lg flex items-center gap-2 drop-shadow-sm mb-3">🪙 +${reward} Altın</div>` : ''}
+                        
+                        <button onclick="shareWin('${shareMessage}', '${formatTime(timeElapsed)}')" class="tap-effect w-full bg-indigo-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-sm">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                            Sonucu Paylaş
+                        </button>
+                    </div>
+                `;
+            }
             setTimeout(() => { closeModal(); if(gameMode === 'journey') { renderMap(); setTimeout(scrollToActiveNode, 300); } updateUI(); }, 6000); 
         }
 
         document.addEventListener('keydown', (e) => {
-            const modal = document.getElementById('sudoku-modal'); if(modal.classList.contains('hidden') || !selectedCell) return;
+            const modal = document.getElementById('sudoku-modal'); if(!modal || modal.classList.contains('hidden') || !selectedCell) return;
             if(e.key >= '1' && e.key <= '9') { handleInput(parseInt(e.key)); playSound('tap'); }
             else if(e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') { handleInput(0); playSound('tap'); }
         });
 
         function renderMap() {
-            const container = document.getElementById('map-nodes'); let htmlStr = '';
+            const container = document.getElementById('map-nodes'); 
+            if(!container) return;
+            let htmlStr = '';
             for (let id = 1; id <= TOTAL_LEVELS; id++) {
                 let diff = getJourneyLevelConfig(id); let isUnlocked = id <= currentLevel; let isCompleted = id < currentLevel; let isCurrent = id === currentLevel;
                 let xOffset = id % 2 === 0 ? 'translate-x-[50px]' : '-translate-x-[50px]';
@@ -757,26 +826,13 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             initSettings();
-            if(!localStorage.getItem('sudoku_username')) { document.getElementById('username-modal').classList.remove('hidden'); document.getElementById('username-modal').classList.add('flex'); }
+            if(!localStorage.getItem('sudoku_username')) { 
+                const unModal = document.getElementById('username-modal');
+                if(unModal) { unModal.classList.remove('hidden'); unModal.classList.add('flex'); }
+            }
             buildNumpad(); renderMap(); navigate('menu'); 
         });
     </script>
-    <script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js').then(reg => {
-                reg.onupdatefound = () => {
-                    const installingWorker = reg.installing;
-                    installingWorker.onstatechange = () => {
-                        if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            // Vercel'e yeni kod attığında kullanıcının ekranı otomatik yenilenir
-                            window.location.reload(true);
-                        }
-                    };
-                };
-            }).catch(err => console.error('SW hatası:', err));
-        });
-    }
- </script>
+    <script> if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(()=>{}); }); } </script>
 </body>
 </html>
