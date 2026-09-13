@@ -1,79 +1,34 @@
-
 # SudokuMap 🧩
 
-A modern, mobile-first Sudoku Web Application (PWA) built with Vanilla JavaScript and Tailwind CSS. SudokuMap offers a 1000-level progressive journey, custom difficulty modes, time-attack challenges, and a real-time global leaderboard powered by Firebase.
+A highly competitive, mobile-first Sudoku Progressive Web Application (PWA) built with Vanilla JavaScript and Tailwind CSS. SudokuMap goes beyond a classic puzzle game by offering a robust in-game economy, time-attack modes, algorithmic puzzle generation, and a highly secure real-time global leaderboard powered by Firebase.
 
 [![Play Live](https://img.shields.io/badge/Play-Live_On_Vercel-blue?style=for-the-badge&logo=vercel)](https://sudoku-three-topaz.vercel.app/)
 
-## ✨ Key Features
+## ✨ Key Features & Gameplay
 
-*   🗺️ **1000-Level Campaign:** A progressive journey map from Level 1 up to Level 1000 with increasing difficulties.
-*   🎯 **Custom Game Modes:** Generate unique 'Easy', 'Medium', or 'Hard' puzzles on the fly.
-*   ⏱️ **Time Attack & Normal Modes:** Play casually without a timer, or race against the clock (10, 15, or 25-minute limits).
-*   🏆 **Real-Time Global Leaderboard:** Firebase Firestore integration allows players to compete globally. Filter rankings by Total Gold, Max Level, or Personal Best Times.
-*   💰 **In-Game Economy:** Earn gold by solving puzzles. Spend gold to use hints. Be careful: entering wrong numbers deducts 5 gold!
-*   📊 **Detailed Statistics:** End-game report cards showing elapsed time, error counts, and "New Record" alerts for personal bests.
-*   📱 **PWA Ready & Native Feel:** Installable on Android and iOS. Features a custom Numpad, CSS shake animations for errors, and haptic feedback (vibration) for a true native app experience.
-*   💾 **Smart Auto-Save:** Safely close the app anytime. Your exact board state, timer, and errors are saved offline and will resume flawlessly.
-*   🧠 **Algorithmic Puzzle Generation:** Puzzles are not pre-baked. The app uses a backtracking algorithm to generate logically solvable Sudokus with a unique solution every time.
+*   🗺️ **1000-Level Campaign:** A massive progressive journey map starting from Level 1 up to Level 1000, seamlessly scaling in difficulty.
+*   ⏱️ **Dynamic Game Modes:** Play custom generated boards in 'Normal Mode' or challenge yourself in 'Time Attack Mode' with strict countdown timers (10, 15, or 25 minutes).
+*   💰 **In-Game Economy & Penalties:** Earn Gold by conquering levels. Spend Gold to use hints. Beware: entering an incorrect number deducts 5 Gold and triggers a screen shake!
+*   📊 **End-Game Report Cards & PB:** Detailed post-game statistics showing total time elapsed, total errors made, and "New Personal Best" alerts.
+*   🏆 **Secure Global Leaderboard:** Powered by Firebase Anonymous Auth and Firestore. Fully cheat-proof (users can only write to their own UID document). Players can filter the global ranks by **Total Gold**, **Max Level**, or **Best Clear Times** per difficulty.
+*   🔊 **Native-like Haptics & 8-Bit Audio Engine:** Utilizes the Web Audio API to synthesize lightweight 8-bit sound effects (taps, errors, win chimes) dynamically without external `.mp3` files. Includes vibration feedback (toggleable via Settings).
+*   🚀 **Smart Auto-Save & PWA Auto-Update:** Close the app anytime; your exact board state, timer, and errors are saved offline. Uses an advanced `Service Worker` strategy to silently push new updates to clients, combined with a "Failsafe" mechanism that wipes corrupted local states to prevent white-screens.
+*   🤝 **Social Web Share:** Native sharing integration allows players to boast about their Personal Bests directly to WhatsApp, X, or Instagram.
+*   📺 **Ad Monetization Ready:** Includes a simulated "Watch Ad for Gold" loop, structurally ready for Google AdMob integration.
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack & Architecture
 
 *   **Frontend:** HTML5, CSS3, Vanilla JavaScript (ES6+)
 *   **Styling:** [Tailwind CSS](https://tailwindcss.com/) (via CDN)
-*   **Database / Backend:** [Firebase Firestore](https://firebase.google.com/docs/firestore) (Web SDK v10)
-*   **Effects:** [Canvas Confetti](https://www.npmjs.com/package/canvas-confetti)
-*   **Deployment:** [Vercel](https://vercel.com/)
-*   **Packaging:** PWA to APK/AAB via [PWABuilder](https://www.pwabuilder.com/)
+*   **Database & Auth:** [Firebase SDK v10](https://firebase.google.com/docs/web/setup) (Firestore + Anonymous Authentication)
+*   **Audio/Visual Effects:** Web Audio API, [Canvas Confetti](https://www.npmjs.com/package/canvas-confetti)
+*   **Deployment & CI/CD:** [Vercel](https://vercel.com/) 
 
 ## 🚀 Getting Started
 
-Since this is a client-side vanilla web application, no build tools (like Webpack or Vite) are strictly required.
+No heavy build tools required! To run this project locally:
 
 ### 1. Clone the Repository
 ```bash
 git clone [https://github.com/OttoJoe1128/Sudoku.git](https://github.com/OttoJoe1128/Sudoku.git)
 cd Sudoku
-
-```
-
-### 2. Run Locally
-
-You can simply open `index.html` in your browser, or use an extension like **Live Server** in VS Code for hot-reloading:
-
-```bash
-# If you have python installed, you can also run a quick server:
-python -m http.server 8000
-
-```
-
-Then navigate to `http://localhost:8000`.
-
-### 3. Firebase Configuration (Optional for Forks)
-
-If you fork this project and want to use your own database:
-
-1. Create a project on [Firebase Console](https://console.firebase.google.com/).
-2. Enable **Firestore Database** in "Test Mode".
-3. Get your Web App Firebase config.
-4. Replace the `firebaseConfig` object inside `index.html` with your own keys.
-
-## 🕹️ How to Play
-
-1. **Enter a Username:** Upon first launch, pick a username to join the leaderboard.
-2. **Pick a Mode:** Choose the 1000-Level Journey or a Custom Game.
-3. **Fill the Board:** Select an empty cell and use the bottom Numpad to enter a number (1-9).
-4. **Use Hints:** Stuck? Use the "💡 Hint" button (costs 20 Gold).
-5. **Win & Climb:** Complete the board with 0 errors to earn Gold and climb the global ranks!
-
-## 📜 License
-
-This project is open-source and available under the [MIT License](https://www.google.com/search?q=LICENSE).
-
----
-
-*Developed by [Osman Can](https://www.google.com/search?q=https://github.com/OttoJoe1128).*
-
-```
-
-```
