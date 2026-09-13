@@ -47,10 +47,11 @@
         .tap-effect:active { transform: scale(0.92); }
     </style>
 
-    <!-- FİREBASE BAĞLANTISI VE GELİŞMİŞ İSTATİSTİK SİSTEMİ -->
+    <!-- FİREBASE BAĞLANTISI (AUTH + GÜVENLİK ENTEGRELİ) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
         import { getFirestore, doc, setDoc, getDocs, collection, query, limit } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAujJkjhPlSUPkBUbZ-XTMw6fKmCUFhLuQ",
@@ -63,23 +64,31 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
 
-        // İstatistikleri Firebase'e Merge (Birleştirme) mantığıyla yollar, eski rekorları silmez
+        window.currentUserUid = null;
+
+        // Anonim Giriş (Güvenlik Kalkanı)
+        signInAnonymously(auth).then((userCred) => {
+            window.currentUserUid = userCred.user.uid;
+            syncData(); // Bağlanınca arka planda verileri fırlat
+        }).catch(err => console.error("Bağlantı Hatası", err));
+
         window.dbSaveProgress = async function(username, level, gold, statsObj) {
-            if(!username) return;
+            if(!username || !window.currentUserUid) return;
             try {
-                let data = { username: username, level: level, gold: gold, updatedAt: new Date() };
+                let data = { username: username, level: level, gold: gold, uid: window.currentUserUid, updatedAt: new Date() };
                 if(statsObj) {
                     if(statsObj.best_basit > 0) data.best_basit = statsObj.best_basit;
                     if(statsObj.best_orta > 0) data.best_orta = statsObj.best_orta;
                     if(statsObj.best_zor > 0) data.best_zor = statsObj.best_zor;
                     data.total_errors = statsObj.total_errors;
                 }
-                await setDoc(doc(db, "leaderboard", username), data, { merge: true });
+                // DOKÜMAN ID ARTIK OYUNCU ID'Sİ (Güvenli Sistem)
+                await setDoc(doc(db, "leaderboard", window.currentUserUid), data, { merge: true });
             } catch(e) { console.error(e); }
         };
 
-        // Filtreleme yapabilmek için tüm oyuncuları çekeriz (Limit 200, performansı yormaz)
         window.allLeaderboardData = [];
         window.dbFetchLeaderboard = async function() {
             try {
@@ -88,13 +97,13 @@
                 let list = [];
                 querySnapshot.forEach((doc) => { list.push(doc.data()); });
                 window.allLeaderboardData = list;
-                window.filterLeaderboard(); // Çektikten sonra hemen filtrele
+                window.filterLeaderboard(); 
             } catch(e) { 
                 document.getElementById('leaderboard-list').innerHTML = '<div class="text-center text-red-400 py-10 font-bold">Sunucuya bağlanılamadı.</div>';
             }
         };
 
-        setTimeout(() => {
+        function syncData() {
             const savedUsername = localStorage.getItem('sudoku_username');
             const lvl = parseInt(localStorage.getItem('sudoku_level')) || 1;
             const gld = parseInt(localStorage.getItem('sudoku_gold')) || 100;
@@ -102,18 +111,12 @@
             const bOrta = parseInt(localStorage.getItem('sudoku_best_orta')) || 0;
             const bZor = parseInt(localStorage.getItem('sudoku_best_zor')) || 0;
             const tErr = parseInt(localStorage.getItem('sudoku_total_errors')) || 0;
-            
-            if(savedUsername && window.dbSaveProgress) {
-                window.dbSaveProgress(savedUsername, lvl, gld, {
-                    best_basit: bBasit, best_orta: bOrta, best_zor: bZor, total_errors: tErr
-                });
-            }
-        }, 2000);
+            if(savedUsername) window.dbSaveProgress(savedUsername, lvl, gld, {best_basit: bBasit, best_orta: bOrta, best_zor: bZor, total_errors: tErr});
+        }
     </script>
 </head>
 <body class="flex justify-center items-center min-h-screen sm:p-6 relative">
 
-    <!-- ANA KONTEYNER -->
     <div class="w-full max-w-[480px] h-[100dvh] sm:h-[850px] bg-slate-50 relative overflow-hidden sm:rounded-[2.5rem] sm:shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col sm:border-[10px] sm:border-slate-800">
         
         <header class="bg-white/90 backdrop-blur-md px-5 py-4 flex justify-between items-center shadow-sm z-20 shrink-0 border-b border-slate-200">
@@ -124,23 +127,25 @@
                 <h1 id="header-title" class="text-xl font-extrabold text-slate-800 tracking-tight">Sudoku<span class="text-indigo-600">Map</span></h1>
             </div>
             <div class="flex items-center gap-2">
+                <!-- YENİ: AYARLAR BUTONU -->
+                <button onclick="openSettings()" id="btn-settings" class="text-slate-400 hover:text-slate-700 bg-slate-100 rounded-full p-1.5 transition-colors mr-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </button>
                 <div class="bg-amber-100 text-amber-700 px-3 py-1.5 rounded-full text-sm font-bold shadow-inner flex items-center gap-1.5 transition-transform" id="gold-badge">
                     <span class="text-lg leading-none">🪙</span><span id="header-gold">100</span>
-                </div>
-                <div id="header-level-badge" class="hidden bg-indigo-100 text-indigo-800 px-3 py-1.5 rounded-full text-sm font-bold shadow-inner flex gap-1">
-                    Sv <span id="header-level">1</span><span class="text-indigo-400">/1000</span>
                 </div>
             </div>
         </header>
 
         <!-- MENÜ -->
-        <div id="view-menu" class="flex-1 flex flex-col items-center justify-center p-6 gap-5 relative">
+        <div id="view-menu" class="flex-1 overflow-y-auto hidden-scrollbar flex flex-col items-center p-6 gap-4 relative pb-10">
             <div class="absolute inset-0 opacity-[0.05] bg-[radial-gradient(circle_at_center,_#334155_2px,_transparent_2px)] bg-[size:24px_24px] pointer-events-none"></div>
-            <div class="text-center z-10 mb-2">
+            <div class="text-center z-10 mb-2 mt-4">
                 <div class="text-7xl mb-4">🧩</div>
                 <h2 class="text-3xl font-black text-slate-800">Hoş Geldin!</h2>
                 <p id="menu-player-name" class="text-indigo-600 font-bold mt-1 uppercase tracking-widest text-xs"></p>
             </div>
+            
             <button onclick="navigate('map')" class="tap-effect z-10 w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl p-4 shadow-[0_6px_0_#4338ca] active:translate-y-1.5 transition-all flex flex-col items-center gap-1">
                 <span class="text-xl font-black">🗺️ Sudoku Yolculuğu</span>
                 <span class="text-indigo-200 text-sm font-semibold">Seviye <span id="menu-level-text">1</span>'den Devam Et</span>
@@ -149,9 +154,15 @@
                 <span class="text-lg font-black">🎯 Özel Oyun</span>
                 <span class="text-slate-400 text-xs font-semibold">Serbest Zorluk Seçimi</span>
             </button>
-            <button onclick="openLeaderboard()" class="tap-effect z-10 w-full bg-amber-50 border-2 border-amber-200 text-amber-700 rounded-2xl p-4 shadow-[0_6px_0_#fde68a] active:translate-y-1.5 transition-all flex justify-between items-center hover:border-amber-300 mt-2">
+            <button onclick="openLeaderboard()" class="tap-effect z-10 w-full bg-amber-50 border-2 border-amber-200 text-amber-700 rounded-2xl p-4 shadow-[0_6px_0_#fde68a] active:translate-y-1.5 transition-all flex justify-between items-center hover:border-amber-300">
                 <span class="text-lg font-black flex items-center gap-2">🏆 Liderlik Tablosu</span>
                 <span class="text-amber-600 text-xs font-bold bg-amber-200 px-2 py-1 rounded-md">Filtreli</span>
+            </button>
+            
+            <!-- YENİ: REKLAM İZLE BUTONU (GELİR MODELİ) -->
+            <button onclick="watchAdForGold()" class="tap-effect z-10 w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl p-4 shadow-[0_6px_0_#047857] active:translate-y-1.5 transition-all flex justify-between items-center">
+                <span class="text-lg font-black flex items-center gap-2">📺 Reklam İzle</span>
+                <span class="text-emerald-900 text-xs font-black bg-emerald-300 px-2 py-1 rounded-md">+50 ALTIN</span>
             </button>
         </div>
 
@@ -189,7 +200,6 @@
                         <h2 class="text-2xl font-black text-slate-800 mb-1 mt-1" id="modal-title">Seviye 1</h2>
                         <div class="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-[10px] font-bold uppercase tracking-widest" id="modal-difficulty">Basit</div>
                     </div>
-                    <!-- KRONOMETRE VE HATA SAYAÇLARI -->
                     <div class="flex flex-col items-end gap-1">
                         <div id="game-timer" class="text-2xl font-mono font-black text-slate-700 bg-slate-200 px-3 py-1 rounded-lg">00:00</div>
                         <div class="text-[10px] font-bold text-red-500 bg-red-100 px-2 py-0.5 rounded-full" id="game-error-count">0 Hata</div>
@@ -197,10 +207,7 @@
                 </div>
                 
                 <div id="sudoku-board" class="sudoku-grid mb-5 w-full shrink-0"></div>
-                
-                <div id="numpad-container" class="w-full grid grid-cols-5 gap-2 mb-4 opacity-50 pointer-events-none transition-opacity duration-300">
-                    <!-- Rakamlar JS ile buraya basılır (Kod kalabalığı azaltıldı) -->
-                </div>
+                <div id="numpad-container" class="w-full grid grid-cols-5 gap-2 mb-4 opacity-50 pointer-events-none transition-opacity duration-300"></div>
 
                 <div class="w-full">
                     <button onclick="useHint()" id="hint-btn" class="tap-effect w-full flex justify-between items-center px-4 py-3 bg-amber-500 text-white rounded-xl font-bold shadow-[0_4px_0_#d97706] active:translate-y-1 transition-all">
@@ -210,48 +217,73 @@
                 </div>
             </div>
         </div>
+
+        <!-- REKLAM İZLEME SİMÜLASYONU MODALI -->
+        <div id="ad-modal" class="absolute inset-0 bg-slate-900/90 hidden flex-col items-center justify-center z-[70] p-4 backdrop-blur-md sm:rounded-[2.5rem]">
+            <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl">
+                <div class="text-5xl mb-4 animate-spin">⏳</div>
+                <h3 class="text-xl font-black text-slate-800 mb-2">Sponsorlu Mesaj Yükleniyor...</h3>
+                <p class="text-sm text-slate-500 font-medium mb-4">Lütfen bekleyin, altınlarınız hesabınıza eklenecek.</p>
+                <div class="text-3xl font-black text-emerald-600 mb-2" id="ad-timer">5</div>
+            </div>
+        </div>
+
+        <!-- YENİ: AYARLAR MODALI -->
+        <div id="settings-modal" class="absolute inset-0 bg-slate-900/60 hidden flex-col items-center justify-center z-[80] p-4 backdrop-blur-sm sm:rounded-[2.5rem]">
+            <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl relative">
+                <button onclick="closeSettings()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 bg-slate-100 rounded-full p-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                <h3 class="text-2xl font-black text-slate-800 mb-6">⚙️ Ayarlar</h3>
+                
+                <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl mb-3 border border-slate-100">
+                    <span class="font-bold text-slate-700">🎵 Ses Efektleri</span>
+                    <input type="checkbox" id="toggle-sound" onchange="updateSettings()" class="w-6 h-6 rounded text-indigo-600 focus:ring-indigo-500 outline-none">
+                </div>
+                <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl mb-6 border border-slate-100">
+                    <span class="font-bold text-slate-700">📳 Titreşim (Haptic)</span>
+                    <input type="checkbox" id="toggle-vibrate" onchange="updateSettings()" class="w-6 h-6 rounded text-indigo-600 focus:ring-indigo-500 outline-none">
+                </div>
+
+                <button onclick="document.getElementById('settings-modal').classList.add('hidden'); document.getElementById('username-modal').classList.remove('hidden'); document.getElementById('username-modal').classList.add('flex');" class="tap-effect w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 rounded-xl mb-3 border border-slate-200 transition-colors">Oyuncu Adımı Değiştir</button>
+                <button onclick="alert('Nasıl Oynanır:\n\n1’den 9’a kadar olan rakamları her satırda, her sütunda ve her 3x3 kutuda yalnızca bir kez yer alacak şekilde diz. Yanlış rakam girmek sana -5 Altına mal olur. Kolay gelsin!')" class="tap-effect w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-3 rounded-xl border border-indigo-200 transition-colors">Nasıl Oynanır?</button>
+            </div>
+        </div>
         
-        <!-- OYUN MODU SEÇİMİ -->
+        <!-- DİĞER MODALLAR (Oyun Modu, Username, Liderlik) -->
         <div id="custom-mode-modal" class="absolute inset-0 bg-slate-900/60 hidden flex-col items-center justify-center z-[50] p-4 backdrop-blur-sm sm:rounded-[2.5rem]">
             <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl relative">
                 <button onclick="closeCustomModePrompt()" class="absolute top-4 right-4 text-slate-400 bg-slate-100 rounded-full p-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                 <div class="text-5xl mb-2">⏱️</div>
                 <h3 class="text-xl font-black text-slate-800 mb-1">Oyun Modu</h3>
                 <p class="text-sm text-slate-500 mb-5 font-medium">Bu zorluk için nasıl oynamak istersin?</p>
-                <button id="btn-mode-timed" class="tap-effect w-full bg-rose-500 text-white font-black py-4 rounded-xl shadow-[0_4px_0_#be123c] active:translate-y-1 active:shadow-none mb-3 flex flex-col items-center">
+                <button id="btn-mode-timed" class="tap-effect w-full bg-rose-500 hover:bg-rose-600 text-white font-black py-4 rounded-xl shadow-[0_4px_0_#be123c] active:translate-y-1 active:shadow-none mb-3 flex flex-col items-center">
                     <span>Zamana Karşı</span><span class="text-xs font-semibold text-rose-200" id="timed-desc">10 Dakika Süren Var</span>
                 </button>
-                <button id="btn-mode-normal" class="tap-effect w-full bg-indigo-100 text-indigo-800 font-black py-4 rounded-xl shadow-[0_4px_0_#c7d2fe] active:translate-y-1 active:shadow-none flex flex-col items-center">
+                <button id="btn-mode-normal" class="tap-effect w-full bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-black py-4 rounded-xl shadow-[0_4px_0_#c7d2fe] active:translate-y-1 active:shadow-none flex flex-col items-center">
                     <span>Normal Oyun</span><span class="text-xs font-semibold text-indigo-500">Süre Sınırı Yok</span>
                 </button>
             </div>
         </div>
 
-        <!-- YENİ GÜÇLENDİRİLMİŞ LİDERLİK TABLOSU MODALI -->
         <div id="leaderboard-modal" class="absolute inset-0 bg-slate-900/60 hidden flex-col items-center justify-center z-[60] p-4 backdrop-blur-sm sm:rounded-[2.5rem]">
             <div class="bg-white rounded-3xl p-5 w-full max-w-sm flex flex-col h-[80vh] shadow-2xl relative overflow-hidden">
                 <div class="flex justify-between items-center shrink-0">
                     <h3 class="text-2xl font-black text-slate-800">🏆 Sıralama</h3>
                     <button onclick="closeLeaderboard()" class="text-slate-400 bg-slate-100 rounded-full p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                 </div>
-                
-                <!-- FİLTRELEME ALANI -->
                 <div class="flex gap-2 my-4 shrink-0">
-                    <select id="lb-sort-main" onchange="window.filterLeaderboard()" class="bg-slate-100 text-slate-700 text-xs font-bold py-2 px-3 rounded-lg w-full outline-none focus:ring-2 focus:ring-indigo-300">
+                    <select id="lb-sort-main" onchange="window.filterLeaderboard()" class="bg-slate-100 text-slate-700 text-xs font-bold py-2 px-3 rounded-lg w-full outline-none border border-slate-200">
                         <option value="gold">Altına Göre</option>
                         <option value="level">Seviyeye Göre</option>
                         <option value="time">En İyi Zamana Göre</option>
                     </select>
-                    <select id="lb-sort-sub" onchange="window.filterLeaderboard()" class="hidden bg-slate-100 text-slate-700 text-xs font-bold py-2 px-3 rounded-lg w-full outline-none focus:ring-2 focus:ring-indigo-300">
+                    <select id="lb-sort-sub" onchange="window.filterLeaderboard()" class="hidden bg-slate-100 text-slate-700 text-xs font-bold py-2 px-3 rounded-lg w-full outline-none border border-slate-200">
                         <option value="basit">Basit Zorluk</option>
                         <option value="orta">Orta Zorluk</option>
                         <option value="zor">Zor Zorluk</option>
                     </select>
                 </div>
-
                 <div class="flex justify-between px-2 pb-2 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest shrink-0" id="lb-headers">
-                    <span>Oyuncu</span>
-                    <div class="flex gap-4"><span>Sv</span><span>Altın</span></div>
+                    <span>Oyuncu</span><div class="flex gap-4"><span>Sv</span><span>Altın</span></div>
                 </div>
                 <div id="leaderboard-list" class="flex-1 overflow-y-auto hidden-scrollbar space-y-2 mt-2 pt-1 pb-4">
                     <div class="text-center text-slate-400 py-10 font-bold animate-pulse">Liderler Yükleniyor...</div>
@@ -259,13 +291,13 @@
             </div>
         </div>
 
-        <div id="username-modal" class="absolute inset-0 bg-slate-900/90 hidden flex-col items-center justify-center z-[70] p-4 backdrop-blur-md sm:rounded-[2.5rem]">
+        <div id="username-modal" class="absolute inset-0 bg-slate-900/90 hidden flex-col items-center justify-center z-[90] p-4 backdrop-blur-md sm:rounded-[2.5rem]">
             <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl">
                 <div class="text-6xl mb-4">👋</div>
                 <h3 class="text-2xl font-black text-slate-800 mb-2">Aramıza Hoş Geldin!</h3>
                 <p class="text-sm text-slate-500 mb-6 font-medium">Sıralamada görünmek için bir oyuncu adı belirle.</p>
                 <input type="text" id="username-input" class="w-full bg-slate-100 border-2 border-slate-200 rounded-xl px-4 py-4 font-bold text-slate-700 focus:outline-none focus:border-indigo-500 mb-4 text-center text-lg" placeholder="Adın (Örn: HızlıÇözen)" maxlength="15">
-                <button onclick="saveUsername()" class="tap-effect w-full bg-indigo-600 text-white font-black py-4 rounded-xl shadow-[0_6px_0_#4338ca] active:translate-y-1.5 transition-all text-lg">Maceraya Başla!</button>
+                <button onclick="saveUsername()" class="tap-effect w-full bg-indigo-600 text-white font-black py-4 rounded-xl shadow-[0_6px_0_#4338ca] active:translate-y-1.5 transition-all text-lg">Kaydet ve Başla!</button>
             </div>
         </div>
 
@@ -273,14 +305,9 @@
 
     <script>
         const TOTAL_LEVELS = 1000;
-        
         let currentLevel = parseInt(localStorage.getItem('sudoku_level')) || 1;
-        let storedGold = localStorage.getItem('sudoku_gold');
-        let userGold = storedGold !== null ? parseInt(storedGold) : 100;
-        let storedHints = localStorage.getItem('sudoku_free_hints');
-        let freeHints = storedHints !== null ? parseInt(storedHints) : 5;
-
-        // GLOBAL İSTATİSTİKLER
+        let storedGold = localStorage.getItem('sudoku_gold'); let userGold = storedGold !== null ? parseInt(storedGold) : 100;
+        let storedHints = localStorage.getItem('sudoku_free_hints'); let freeHints = storedHints !== null ? parseInt(storedHints) : 5;
         let bestBasit = parseInt(localStorage.getItem('sudoku_best_basit')) || 0;
         let bestOrta = parseInt(localStorage.getItem('sudoku_best_orta')) || 0;
         let bestZor = parseInt(localStorage.getItem('sudoku_best_zor')) || 0;
@@ -289,45 +316,117 @@
         let gameMode = null; let playingLevelId = null; let currentDifficultyStr = null; 
         let currentSolution = []; let initialBoard = []; let userBoard = []; let selectedCell = null;
         let temporaryError = null; let errorTimeout = null;
+        let timerInterval = null; let timeValue = 0; let timeElapsed = 0; let isCountdown = false; let currentSessionErrors = 0; 
 
-        let timerInterval = null;
-        let timeValue = 0; // Kalan Saniye (Eğer zamana karşıysa)
-        let timeElapsed = 0; // Geçen Saniye (İstatistikler ve TimeOver hesabı için)
-        let isCountdown = false; 
-        let currentSessionErrors = 0; // Sadece bu oyundaki hatalar
+        // YENİ: SENTEZLENMİŞ SES MOTORU (Dışarıdan mp3 yüklemez, tarayıcıda üretir, çok hızlıdır)
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+        
+        function initSettings() {
+            if(localStorage.getItem('sudoku_sound') === null) localStorage.setItem('sudoku_sound', 'true');
+            if(localStorage.getItem('sudoku_vibrate') === null) localStorage.setItem('sudoku_vibrate', 'true');
+            document.getElementById('toggle-sound').checked = localStorage.getItem('sudoku_sound') === 'true';
+            document.getElementById('toggle-vibrate').checked = localStorage.getItem('sudoku_vibrate') === 'true';
+        }
+
+        function updateSettings() {
+            localStorage.setItem('sudoku_sound', document.getElementById('toggle-sound').checked);
+            localStorage.setItem('sudoku_vibrate', document.getElementById('toggle-vibrate').checked);
+        }
+
+        function openSettings() { document.getElementById('settings-modal').classList.remove('hidden'); document.getElementById('settings-modal').classList.add('flex'); }
+        function closeSettings() { document.getElementById('settings-modal').classList.add('hidden'); document.getElementById('settings-modal').classList.remove('flex'); }
+
+        function playSound(type) {
+            if(localStorage.getItem('sudoku_sound') === 'false') return;
+            if(!audioCtx) audioCtx = new AudioContext();
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            
+            if(type === 'tap') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            } else if(type === 'error') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if(type === 'win') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(800, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            }
+        }
+
+        function doVibrate() {
+            if(localStorage.getItem('sudoku_vibrate') === 'false') return;
+            if(navigator.vibrate) navigator.vibrate([50, 50, 50]);
+        }
 
         function buildNumpad() {
             const c = document.getElementById('numpad-container');
             c.innerHTML = '';
             for(let i=1; i<=9; i++) {
-                c.innerHTML += `<button onclick="handleInput(${i})" class="tap-effect h-12 bg-white rounded-xl font-black text-xl text-slate-700 shadow-[0_2px_0_rgba(203,213,225,1)] border border-slate-200">${i}</button>`;
+                c.innerHTML += `<button onclick="handleInput(${i}); playSound('tap');" class="tap-effect h-12 bg-white rounded-xl font-black text-xl text-slate-700 shadow-[0_2px_0_rgba(203,213,225,1)] border border-slate-200">${i}</button>`;
             }
-            c.innerHTML += `<button onclick="handleInput(0)" class="tap-effect h-12 bg-red-50 rounded-xl font-bold text-sm text-red-600 shadow-[0_2px_0_rgba(254,202,202,1)] border border-red-200">Sil</button>`;
+            c.innerHTML += `<button onclick="handleInput(0); playSound('tap');" class="tap-effect h-12 bg-red-50 rounded-xl font-bold text-sm text-red-600 shadow-[0_2px_0_rgba(254,202,202,1)] border border-red-200">Sil</button>`;
         }
 
-        function formatTime(sec) {
-            let m = Math.floor(sec / 60).toString().padStart(2, '0');
-            let s = (sec % 60).toString().padStart(2, '0');
-            return `${m}:${s}`;
+        // YENİ: REKLAM İZLEME SİMÜLASYONU
+        function watchAdForGold() {
+            document.getElementById('ad-modal').classList.remove('hidden'); document.getElementById('ad-modal').classList.add('flex');
+            let timeLeft = 5; document.getElementById('ad-timer').innerText = timeLeft;
+            let adInt = setInterval(() => {
+                timeLeft--; document.getElementById('ad-timer').innerText = timeLeft;
+                if(timeLeft <= 0) {
+                    clearInterval(adInt);
+                    document.getElementById('ad-modal').classList.add('hidden'); document.getElementById('ad-modal').classList.remove('flex');
+                    userGold += 50; localStorage.setItem('sudoku_gold', userGold); updateUI();
+                    playSound('win');
+                    alert("Teşekkürler! 50 Altın kazandınız.");
+                    let uname = localStorage.getItem('sudoku_username');
+                    if(uname && window.dbSaveProgress) window.dbSaveProgress(uname, currentLevel, userGold, null);
+                }
+            }, 1000);
         }
+
+        // YENİ: SOSYAL MEDYA PAYLAŞIM BUTONU MANTIĞI
+        window.shareWin = function(message, timeStr) {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'SudokuMap Rekoru!',
+                    text: `SudokuMap'te ${message} Sürem: ${timeStr} ⏱️ Beni geçebilir misin?`,
+                    url: 'https://sudoku-three-topaz.vercel.app' // Veya kendi domainin
+                }).catch(console.error);
+            } else {
+                alert("Cihazınız doğrudan paylaşımı desteklemiyor.");
+            }
+        };
+
+        function formatTime(sec) { let m = Math.floor(sec / 60).toString().padStart(2, '0'); let s = (sec % 60).toString().padStart(2, '0'); return `${m}:${s}`; }
 
         function navigate(viewId) {
             ['view-menu', 'view-map', 'view-custom'].forEach(id => document.getElementById(id).classList.add('hidden'));
-            document.getElementById('btn-back').classList.remove('hidden');
-            document.getElementById('header-level-badge').classList.add('hidden');
-            
+            document.getElementById('btn-back').classList.remove('hidden'); document.getElementById('header-level-badge').classList.add('hidden');
+            document.getElementById('btn-settings').classList.add('hidden');
+
             if(viewId === 'menu') {
-                document.getElementById('view-menu').classList.remove('hidden');
-                document.getElementById('btn-back').classList.add('hidden');
+                document.getElementById('view-menu').classList.remove('hidden'); document.getElementById('btn-back').classList.add('hidden');
+                document.getElementById('btn-settings').classList.remove('hidden');
                 document.getElementById('header-title').innerHTML = `Sudoku<span class="text-indigo-600">Map</span>`;
             } else if (viewId === 'map') {
-                document.getElementById('view-map').classList.remove('hidden');
-                document.getElementById('header-title').innerText = "Yolculuk";
-                document.getElementById('header-level-badge').classList.remove('hidden');
-                setTimeout(scrollToActiveNode, 100);
+                document.getElementById('view-map').classList.remove('hidden'); document.getElementById('header-title').innerText = "Yolculuk";
+                document.getElementById('header-level-badge').classList.remove('hidden'); setTimeout(scrollToActiveNode, 100);
             } else if (viewId === 'custom') {
-                document.getElementById('view-custom').classList.remove('hidden');
-                document.getElementById('header-title').innerText = "Özel Oyun";
+                document.getElementById('view-custom').classList.remove('hidden'); document.getElementById('header-title').innerText = "Özel Oyun";
             }
             updateUI();
         }
@@ -336,23 +435,16 @@
             document.getElementById('menu-level-text').innerText = currentLevel > TOTAL_LEVELS ? TOTAL_LEVELS : currentLevel;
             document.getElementById('header-level').innerText = currentLevel > TOTAL_LEVELS ? TOTAL_LEVELS : currentLevel;
             document.getElementById('header-gold').innerText = userGold;
-            const uname = localStorage.getItem('sudoku_username');
-            if(uname) document.getElementById('menu-player-name').innerText = uname;
+            const uname = localStorage.getItem('sudoku_username'); if(uname) document.getElementById('menu-player-name').innerText = uname;
 
             const hintStatus = document.getElementById('hint-status');
-            if(freeHints > 0) {
-                hintStatus.innerText = `${freeHints} Ücretsiz`;
-                hintStatus.className = "bg-amber-700/40 px-2 py-1 rounded-lg text-xs font-bold tracking-wide text-white";
-            } else {
-                hintStatus.innerHTML = `🪙 20 Altın`;
-                hintStatus.className = "bg-white text-amber-600 px-2 py-1 rounded-lg text-xs font-bold tracking-wide shadow-sm";
-            }
+            if(freeHints > 0) { hintStatus.innerText = `${freeHints} Ücretsiz`; hintStatus.className = "bg-amber-700/40 px-2 py-1 rounded-lg text-xs font-bold tracking-wide text-white"; } 
+            else { hintStatus.innerHTML = `🪙 20 Altın`; hintStatus.className = "bg-white text-amber-600 px-2 py-1 rounded-lg text-xs font-bold tracking-wide shadow-sm"; }
             document.getElementById('game-error-count').innerText = `${currentSessionErrors} Hata`;
         }
 
         function flashGoldPenalty() {
-            const badge = document.getElementById('gold-badge');
-            badge.classList.remove('bg-amber-100', 'text-amber-700'); badge.classList.add('bg-red-500', 'text-white', 'scale-110');
+            const badge = document.getElementById('gold-badge'); badge.classList.remove('bg-amber-100', 'text-amber-700'); badge.classList.add('bg-red-500', 'text-white', 'scale-110');
             setTimeout(() => { badge.classList.add('bg-amber-100', 'text-amber-700'); badge.classList.remove('bg-red-500', 'text-white', 'scale-110'); }, 300);
         }
 
@@ -365,195 +457,102 @@
             if(window.dbSaveProgress) window.dbSaveProgress(input, currentLevel, userGold, {best_basit: bestBasit, best_orta: bestOrta, best_zor: bestZor, total_errors: totalErrors});
         }
 
-        // FİLTRELEMELİ LİDERLİK TABLOSU
         window.filterLeaderboard = function() {
-            const mainFilter = document.getElementById('lb-sort-main').value;
-            const subFilter = document.getElementById('lb-sort-sub');
-            const listEl = document.getElementById('leaderboard-list');
-            const headersEl = document.getElementById('lb-headers');
+            const mainFilter = document.getElementById('lb-sort-main').value; const subFilter = document.getElementById('lb-sort-sub');
+            const listEl = document.getElementById('leaderboard-list'); const headersEl = document.getElementById('lb-headers');
             
-            if(mainFilter === 'time') subFilter.classList.remove('hidden');
-            else subFilter.classList.add('hidden');
-
+            if(mainFilter === 'time') subFilter.classList.remove('hidden'); else subFilter.classList.add('hidden');
             let data = [...(window.allLeaderboardData || [])];
 
-            if (mainFilter === 'gold') {
-                data.sort((a, b) => (b.gold || 0) - (a.gold || 0));
-                headersEl.innerHTML = `<span>Oyuncu</span><div class="flex gap-4"><span>Sv</span><span>Altın</span></div>`;
-            } else if (mainFilter === 'level') {
-                data.sort((a, b) => (b.level || 0) - (a.level || 0));
-                headersEl.innerHTML = `<span>Oyuncu</span><div class="flex gap-4"><span>Altın</span><span>Sv</span></div>`;
-            } else if (mainFilter === 'time') {
-                const diff = subFilter.value;
-                const timeKey = 'best_' + diff;
-                data = data.filter(u => u[timeKey] && u[timeKey] > 0);
-                data.sort((a, b) => a[timeKey] - b[timeKey]);
+            if (mainFilter === 'gold') { data.sort((a, b) => (b.gold || 0) - (a.gold || 0)); headersEl.innerHTML = `<span>Oyuncu</span><div class="flex gap-4"><span>Sv</span><span>Altın</span></div>`; } 
+            else if (mainFilter === 'level') { data.sort((a, b) => (b.level || 0) - (a.level || 0)); headersEl.innerHTML = `<span>Oyuncu</span><div class="flex gap-4"><span>Altın</span><span>Sv</span></div>`; } 
+            else if (mainFilter === 'time') {
+                const timeKey = 'best_' + subFilter.value; data = data.filter(u => u[timeKey] && u[timeKey] > 0); data.sort((a, b) => a[timeKey] - b[timeKey]);
                 headersEl.innerHTML = `<span>Oyuncu</span><span>En İyi Süre</span>`;
             }
 
             if(data.length === 0) { listEl.innerHTML = '<div class="text-center text-slate-400 py-10 font-bold">Bu kategoride henüz rekor yok!</div>'; return; }
             
-            listEl.innerHTML = '';
-            const myName = localStorage.getItem('sudoku_username');
-            
+            listEl.innerHTML = ''; const myName = localStorage.getItem('sudoku_username');
             data.forEach((user, index) => {
                 let rankStr = `<span class="text-sm font-black text-slate-400 w-6 text-center">${index + 1}.</span>`;
-                if(index === 0) rankStr = '<span class="text-xl w-6 text-center drop-shadow-md">🥇</span>';
-                if(index === 1) rankStr = '<span class="text-xl w-6 text-center drop-shadow-md">🥈</span>';
-                if(index === 2) rankStr = '<span class="text-xl w-6 text-center drop-shadow-md">🥉</span>';
-
-                let isMe = user.username === myName;
-                let bgClass = isMe ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-100';
-                let nameColor = isMe ? 'text-indigo-700' : 'text-slate-700';
+                if(index === 0) rankStr = '<span class="text-xl w-6 text-center drop-shadow-md">🥇</span>'; else if(index === 1) rankStr = '<span class="text-xl w-6 text-center drop-shadow-md">🥈</span>'; else if(index === 2) rankStr = '<span class="text-xl w-6 text-center drop-shadow-md">🥉</span>';
+                let isMe = user.username === myName; let bgClass = isMe ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-100'; let nameColor = isMe ? 'text-indigo-700' : 'text-slate-700';
 
                 let rightSide = '';
-                if(mainFilter === 'gold') {
-                    rightSide = `<span class="text-xs font-black text-indigo-400 w-6">Sv ${user.level}</span><span class="text-sm font-black text-amber-600 w-10">${user.gold}</span>`;
-                } else if(mainFilter === 'level') {
-                    rightSide = `<span class="text-xs font-bold text-amber-600 w-10">${user.gold}</span><span class="text-sm font-black text-indigo-600 w-6">Sv ${user.level}</span>`;
-                } else if(mainFilter === 'time') {
-                    const timeKey = 'best_' + subFilter.value;
-                    rightSide = `<span class="text-sm font-mono font-black text-slate-700">${formatTime(user[timeKey])}</span>`;
-                }
+                if(mainFilter === 'gold') rightSide = `<span class="text-xs font-black text-indigo-400 w-6">Sv ${user.level}</span><span class="text-sm font-black text-amber-600 w-10">${user.gold}</span>`;
+                else if(mainFilter === 'level') rightSide = `<span class="text-xs font-bold text-amber-600 w-10">${user.gold}</span><span class="text-sm font-black text-indigo-600 w-6">Sv ${user.level}</span>`;
+                else if(mainFilter === 'time') rightSide = `<span class="text-sm font-mono font-black text-slate-700">${formatTime(user['best_' + subFilter.value])}</span>`;
 
-                listEl.innerHTML += `
-                    <div class="flex items-center justify-between p-3 rounded-xl border ${bgClass} shadow-sm">
-                        <div class="flex items-center gap-3">${rankStr}<span class="font-bold text-sm ${nameColor}">${user.username}</span></div>
-                        <div class="flex items-center gap-5 text-right">${rightSide}</div>
-                    </div>
-                `;
+                listEl.innerHTML += `<div class="flex items-center justify-between p-3 rounded-xl border ${bgClass} shadow-sm"><div class="flex items-center gap-3">${rankStr}<span class="font-bold text-sm ${nameColor}">${user.username}</span></div><div class="flex items-center gap-5 text-right">${rightSide}</div></div>`;
             });
         };
 
-        function openLeaderboard() {
-            document.getElementById('leaderboard-modal').classList.remove('hidden'); 
-            document.getElementById('leaderboard-modal').classList.add('flex');
-            document.getElementById('leaderboard-list').innerHTML = '<div class="text-center text-slate-400 py-10 font-bold animate-pulse">Liderler Yükleniyor...</div>';
-            if(window.dbFetchLeaderboard) window.dbFetchLeaderboard();
-        }
+        function openLeaderboard() { document.getElementById('leaderboard-modal').classList.remove('hidden'); document.getElementById('leaderboard-modal').classList.add('flex'); document.getElementById('leaderboard-list').innerHTML = '<div class="text-center text-slate-400 py-10 font-bold animate-pulse">Liderler Yükleniyor...</div>'; if(window.dbFetchLeaderboard) window.dbFetchLeaderboard(); }
         function closeLeaderboard() { document.getElementById('leaderboard-modal').classList.add('hidden'); document.getElementById('leaderboard-modal').classList.remove('flex'); }
 
         const SudokuGen = {
-            generate: function(difficulty) {
-                let board = Array(9).fill().map(() => Array(9).fill(0));
-                this.fillDiagonal(board); this.solve(board);
-                let puzzle = board.map(row => [...row]);
-                let targetRemoves = difficulty === 'basit' ? 35 : (difficulty === 'orta' ? 45 : 55);
-                let positions = [];
-                for(let r=0; r<9; r++) for(let c=0; c<9; c++) positions.push({r, c});
-                positions.sort(() => Math.random() - 0.5);
-
-                let removes = 0;
+            generate: function(diff) {
+                let board = Array(9).fill().map(() => Array(9).fill(0)); this.fillDiagonal(board); this.solve(board);
+                let puzzle = board.map(row => [...row]); let targetRemoves = diff === 'basit' ? 35 : (diff === 'orta' ? 45 : 55);
+                let positions = []; for(let r=0; r<9; r++) for(let c=0; c<9; c++) positions.push({r, c});
+                positions.sort(() => Math.random() - 0.5); let removes = 0;
                 for (let i = 0; i < positions.length && removes < targetRemoves; i++) {
                     let {r, c} = positions[i]; let backup = puzzle[r][c]; puzzle[r][c] = 0;
-                    if (this.countSolutions(puzzle.map(row => [...row])) === 1) removes++;
-                    else puzzle[r][c] = backup; 
+                    if (this.countSolutions(puzzle.map(row => [...row])) === 1) removes++; else puzzle[r][c] = backup; 
                 }
                 return { solution: board, puzzle };
             },
             countSolutions: function(board) {
-                let count = 0;
-                function solveHelper(b) {
-                    for(let r=0; r<9; r++) {
-                        for(let c=0; c<9; c++) {
-                            if(b[r][c] === 0) {
-                                for(let num=1; num<=9; num++) {
-                                    if(SudokuGen.isSafe(b, r, c, num)) {
-                                        b[r][c] = num; solveHelper(b);
-                                        if(count > 1) { b[r][c] = 0; return; }
-                                        b[r][c] = 0;
-                                    }
-                                }
-                                return;
-                            }
-                        }
-                    }
-                    count++;
-                }
-                solveHelper(board); return count;
+                let count = 0; function solveHelper(b) {
+                    for(let r=0; r<9; r++) for(let c=0; c<9; c++) if(b[r][c] === 0) {
+                        for(let num=1; num<=9; num++) if(SudokuGen.isSafe(b, r, c, num)) { b[r][c] = num; solveHelper(b); if(count > 1) { b[r][c] = 0; return; } b[r][c] = 0; } return;
+                    } count++;
+                } solveHelper(board); return count;
             },
             fillDiagonal: function(board) { for (let i = 0; i < 9; i += 3) this.fillBox(board, i, i); },
-            fillBox: function(board, rowStart, colStart) {
-                let num;
-                for (let i = 0; i < 3; i++) { for (let j = 0; j < 3; j++) {
-                    do { num = Math.floor(Math.random() * 9) + 1; } while (!this.isSafeInBox(board, rowStart, colStart, num));
-                    board[rowStart + i][colStart + j] = num;
-                }}
-            },
-            isSafeInBox: function(board, rowStart, colStart, num) {
-                for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) if (board[rowStart + i][colStart + j] === num) return false;
-                return true;
-            },
+            fillBox: function(board, rS, cS) { let num; for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) { do { num = Math.floor(Math.random() * 9) + 1; } while (!this.isSafeInBox(board, rS, cS, num)); board[rS + i][cS + j] = num; } },
+            isSafeInBox: function(board, rS, cS, num) { for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) if (board[rS + i][cS + j] === num) return false; return true; },
             solve: function(board) {
-                for (let r = 0; r < 9; r++) {
-                    for (let c = 0; c < 9; c++) {
-                        if (board[r][c] === 0) {
-                            for (let num = 1; num <= 9; num++) {
-                                if (this.isSafe(board, r, c, num)) {
-                                    board[r][c] = num; if (this.solve(board)) return true; board[r][c] = 0;
-                                }
-                            }
-                            return false; 
-                        }
-                    }
-                }
-                return true;
+                for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) if (board[r][c] === 0) {
+                    for (let num = 1; num <= 9; num++) if (this.isSafe(board, r, c, num)) { board[r][c] = num; if (this.solve(board)) return true; board[r][c] = 0; } return false; 
+                } return true;
             },
             isSafe: function(board, r, c, num) {
                 for (let i = 0; i < 9; i++) if (board[r][i] === num || board[i][c] === num) return false;
-                let br = r - (r % 3); let bc = c - (c % 3);
-                for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) if (board[br + i][bc + j] === num) return false;
-                return true;
+                let br = r - (r % 3); let bc = c - (c % 3); for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) if (board[br + i][bc + j] === num) return false; return true;
             }
         };
 
         function startTimer() {
             if(timerInterval) clearInterval(timerInterval);
-            const timerEl = document.getElementById('game-timer');
-            timerEl.classList.remove('text-red-600', 'animate-pulse');
-            
+            const timerEl = document.getElementById('game-timer'); timerEl.classList.remove('text-red-600', 'animate-pulse');
             timerInterval = setInterval(() => {
-                timeElapsed++; // Gerçek geçen süreyi hesapla
+                timeElapsed++; 
                 if(isCountdown) {
                     timeValue--;
                     if(timeValue <= 0) { clearInterval(timerInterval); timerEl.innerText = "00:00"; handleTimeOver(); return; }
                     if(timeValue <= 60) timerEl.classList.add('text-red-600', 'animate-pulse');
                     timerEl.innerText = formatTime(timeValue);
-                } else {
-                    timerEl.innerText = formatTime(timeElapsed);
-                }
+                } else { timerEl.innerText = formatTime(timeElapsed); }
                 saveGameState();
             }, 1000);
         }
 
-        function handleTimeOver() {
-            alert("⏳ Süre Doldu! Maalesef oyunu kaybettin.");
-            clearGameState(); closeModal(); navigate('custom');
-        }
+        function handleTimeOver() { alert("⏳ Süre Doldu! Maalesef oyunu kaybettin."); clearGameState(); closeModal(); navigate('custom'); }
 
         function saveGameState() {
             if (!playingLevelId) return;
-            const gameState = {
-                levelId: playingLevelId, difficulty: currentDifficultyStr,
-                initialBoard: initialBoard, userBoard: userBoard, currentSolution: currentSolution,
-                timeValue: timeValue, timeElapsed: timeElapsed, isCountdown: isCountdown, currentSessionErrors: currentSessionErrors
-            };
-            if(gameMode === 'journey') localStorage.setItem('sudoku_saved_game', JSON.stringify(gameState));
-            else localStorage.setItem('sudoku_custom_game', JSON.stringify(gameState));
+            const gameState = { levelId: playingLevelId, difficulty: currentDifficultyStr, initialBoard: initialBoard, userBoard: userBoard, currentSolution: currentSolution, timeValue: timeValue, timeElapsed: timeElapsed, isCountdown: isCountdown, currentSessionErrors: currentSessionErrors };
+            if(gameMode === 'journey') localStorage.setItem('sudoku_saved_game', JSON.stringify(gameState)); else localStorage.setItem('sudoku_custom_game', JSON.stringify(gameState));
         }
-
-        function clearGameState() {
-            if(gameMode === 'journey') localStorage.removeItem('sudoku_saved_game');
-            else localStorage.removeItem('sudoku_custom_game');
-        }
+        function clearGameState() { if(gameMode === 'journey') localStorage.removeItem('sudoku_saved_game'); else localStorage.removeItem('sudoku_custom_game'); }
 
         function resetJourney() {
             if(confirm("Harita sıfırlansın mı? (Altınlar da sıfırlanır, rekorlar kalır)")) {
-                localStorage.removeItem('sudoku_level'); localStorage.removeItem('sudoku_gold');
-                localStorage.removeItem('sudoku_free_hints'); localStorage.removeItem('sudoku_saved_game');
+                localStorage.removeItem('sudoku_level'); localStorage.removeItem('sudoku_gold'); localStorage.removeItem('sudoku_free_hints'); localStorage.removeItem('sudoku_saved_game');
                 currentLevel = 1; userGold = 100; freeHints = 5;
-                let uname = localStorage.getItem('sudoku_username');
-                if(uname && window.dbSaveProgress) window.dbSaveProgress(uname, currentLevel, userGold);
+                let uname = localStorage.getItem('sudoku_username'); if(uname && window.dbSaveProgress) window.dbSaveProgress(uname, currentLevel, userGold, null);
                 updateUI(); renderMap(); setTimeout(scrollToActiveNode, 100);
             }
         }
@@ -562,24 +561,19 @@
 
         function openJourneyLevel(id) {
             gameMode = 'journey'; playingLevelId = id; currentDifficultyStr = getJourneyLevelConfig(id);
-            document.getElementById('modal-title').innerText = `Seviye ${id}`;
-            document.getElementById('modal-difficulty').innerText = currentDifficultyStr;
-            
-            let isLoaded = false;
-            const savedStr = localStorage.getItem('sudoku_saved_game');
+            document.getElementById('modal-title').innerText = `Seviye ${id}`; document.getElementById('modal-difficulty').innerText = currentDifficultyStr;
+            let isLoaded = false; const savedStr = localStorage.getItem('sudoku_saved_game');
             if (savedStr) {
                 try {
                     const saved = JSON.parse(savedStr);
                     if (saved && saved.levelId === id && saved.userBoard && saved.userBoard.length === 9) {
                         currentSolution = saved.currentSolution; initialBoard = saved.initialBoard; userBoard = saved.userBoard; 
-                        timeValue = saved.timeValue || 0; timeElapsed = saved.timeElapsed || 0; isCountdown = saved.isCountdown || false;
-                        currentSessionErrors = saved.currentSessionErrors || 0; isLoaded = true;
+                        timeValue = saved.timeValue || 0; timeElapsed = saved.timeElapsed || 0; isCountdown = saved.isCountdown || false; currentSessionErrors = saved.currentSessionErrors || 0; isLoaded = true;
                     } else localStorage.removeItem('sudoku_saved_game');
                 } catch (e) { localStorage.removeItem('sudoku_saved_game'); }
             }
             if (!isLoaded) {
-                let data = SudokuGen.generate(currentDifficultyStr);
-                currentSolution = data.solution.map(r => [...r]);
+                let data = SudokuGen.generate(currentDifficultyStr); currentSolution = data.solution.map(r => [...r]);
                 initialBoard = data.puzzle.map(r => [...r]); userBoard = data.puzzle.map(r => [...r]);
                 timeValue = 0; timeElapsed = 0; isCountdown = false; currentSessionErrors = 0; saveGameState(); 
             }
@@ -587,37 +581,29 @@
         }
 
         function promptCustomMode(diff) {
-            let mins = diff === 'basit' ? 10 : (diff === 'orta' ? 15 : 25);
-            document.getElementById('timed-desc').innerText = `${mins} Dakika Süren Var`;
-            document.getElementById('btn-mode-timed').onclick = () => startCustomGame(diff, true, mins * 60);
-            document.getElementById('btn-mode-normal').onclick = () => startCustomGame(diff, false, 0);
+            let mins = diff === 'basit' ? 10 : (diff === 'orta' ? 15 : 25); document.getElementById('timed-desc').innerText = `${mins} Dakika Süren Var`;
+            document.getElementById('btn-mode-timed').onclick = () => startCustomGame(diff, true, mins * 60); document.getElementById('btn-mode-normal').onclick = () => startCustomGame(diff, false, 0);
             document.getElementById('custom-mode-modal').classList.remove('hidden'); document.getElementById('custom-mode-modal').classList.add('flex');
         }
         function closeCustomModePrompt() { document.getElementById('custom-mode-modal').classList.add('hidden'); document.getElementById('custom-mode-modal').classList.remove('flex'); }
 
         function startCustomGame(diff, timed, seconds) {
-            closeCustomModePrompt();
-            gameMode = 'custom'; playingLevelId = 'custom'; currentDifficultyStr = diff;
+            closeCustomModePrompt(); gameMode = 'custom'; playingLevelId = 'custom'; currentDifficultyStr = diff;
             document.getElementById('modal-title').innerText = `Özel Oyun`; document.getElementById('modal-difficulty').innerText = diff;
-
-            let isLoaded = false;
-            const savedStr = localStorage.getItem('sudoku_custom_game');
+            let isLoaded = false; const savedStr = localStorage.getItem('sudoku_custom_game');
             if (savedStr) {
                 try {
                     const saved = JSON.parse(savedStr);
                     if (saved && saved.difficulty === diff && saved.userBoard && saved.userBoard.length === 9) {
                         if(confirm(`Yarım kalan bir "${diff}" oyununuz var. Devam etmek ister misiniz?`)) {
                             currentSolution = saved.currentSolution; initialBoard = saved.initialBoard; userBoard = saved.userBoard; 
-                            timeValue = saved.timeValue || 0; timeElapsed = saved.timeElapsed || 0; isCountdown = saved.isCountdown || false;
-                            currentSessionErrors = saved.currentSessionErrors || 0; isLoaded = true;
+                            timeValue = saved.timeValue || 0; timeElapsed = saved.timeElapsed || 0; isCountdown = saved.isCountdown || false; currentSessionErrors = saved.currentSessionErrors || 0; isLoaded = true;
                         } else localStorage.removeItem('sudoku_custom_game');
                     } else localStorage.removeItem('sudoku_custom_game');
                 } catch (e) { localStorage.removeItem('sudoku_custom_game'); }
             }
-
             if (!isLoaded) {
-                let data = SudokuGen.generate(diff);
-                currentSolution = data.solution.map(r => [...r]);
+                let data = SudokuGen.generate(diff); currentSolution = data.solution.map(r => [...r]);
                 initialBoard = data.puzzle.map(r => [...r]); userBoard = data.puzzle.map(r => [...r]);
                 timeValue = seconds; timeElapsed = 0; isCountdown = timed; currentSessionErrors = 0; saveGameState(); 
             }
@@ -625,45 +611,35 @@
         }
 
         function launchModal() {
-            selectedCell = null; temporaryError = null;
-            updateUI(); renderBoard();
-            document.getElementById('game-timer').innerText = formatTime(isCountdown ? timeValue : timeElapsed);
-            startTimer();
+            selectedCell = null; temporaryError = null; updateUI(); renderBoard();
+            document.getElementById('game-timer').innerText = formatTime(isCountdown ? timeValue : timeElapsed); startTimer();
             document.getElementById('sudoku-modal').classList.remove('hidden'); document.getElementById('sudoku-modal').classList.add('flex');
         }
 
         function closeModal() {
             document.getElementById('sudoku-modal').classList.add('hidden'); document.getElementById('sudoku-modal').classList.remove('flex');
-            playingLevelId = null; selectedCell = null;
-            if(errorTimeout) clearTimeout(errorTimeout); if(timerInterval) clearInterval(timerInterval); temporaryError = null;
+            playingLevelId = null; selectedCell = null; if(errorTimeout) clearTimeout(errorTimeout); if(timerInterval) clearInterval(timerInterval); temporaryError = null;
         }
 
         function useHint() {
             let availableCells = [];
             for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) if (userBoard[r][c] !== currentSolution[r][c]) availableCells.push({r, c});
             if (availableCells.length === 0) return; 
+            if (freeHints > 0) { freeHints--; localStorage.setItem('sudoku_free_hints', freeHints); } 
+            else if (userGold >= 20) { userGold -= 20; localStorage.setItem('sudoku_gold', userGold); } 
+            else { alert("İpucu için altın yetersiz!"); return; }
 
-            if (freeHints > 0) { freeHints--; localStorage.setItem('sudoku_free_hints', freeHints);
-            } else if (userGold >= 20) { userGold -= 20; localStorage.setItem('sudoku_gold', userGold);
-            } else { alert("İpucu için altın yetersiz!"); return; }
-
-            let randomCell = availableCells[Math.floor(Math.random() * availableCells.length)];
-            let correctNum = currentSolution[randomCell.r][randomCell.c];
+            let randomCell = availableCells[Math.floor(Math.random() * availableCells.length)]; let correctNum = currentSolution[randomCell.r][randomCell.c];
             initialBoard[randomCell.r][randomCell.c] = correctNum; userBoard[randomCell.r][randomCell.c] = correctNum;
             if (temporaryError && temporaryError.r === randomCell.r && temporaryError.c === randomCell.c) temporaryError = null;
-            saveGameState(); 
-            
-            let uname = localStorage.getItem('sudoku_username');
+
+            saveGameState(); let uname = localStorage.getItem('sudoku_username');
             if(uname && window.dbSaveProgress) window.dbSaveProgress(uname, currentLevel, userGold, {best_basit: bestBasit, best_orta: bestOrta, best_zor: bestZor, total_errors: totalErrors});
-            
-            updateUI(); renderBoard();
-            setTimeout(() => { let isFull = userBoard.every(row => row.every(val => val !== 0)); if(isFull) handleWin(); }, 300);
+            updateUI(); renderBoard(); setTimeout(() => { let isFull = userBoard.every(row => row.every(val => val !== 0)); if(isFull) handleWin(); }, 300);
         }
 
         function renderBoard() {
-            const boardEl = document.getElementById('sudoku-board');
-            if(!userBoard || userBoard.length !== 9) return; 
-            
+            const boardEl = document.getElementById('sudoku-board'); if(!userBoard || userBoard.length !== 9) return; 
             boardEl.innerHTML = '';
             for(let r=0; r<9; r++) {
                 for(let c=0; c<9; c++) {
@@ -671,22 +647,17 @@
                     let isSelected = selectedCell && selectedCell.r === r && selectedCell.c === c;
                     let isTempError = temporaryError && temporaryError.r === r && temporaryError.c === c;
                     
-                    let div = document.createElement('div');
-                    div.className = 'sudoku-cell'; div.dataset.row = r; div.dataset.col = c;
+                    let div = document.createElement('div'); div.className = 'sudoku-cell'; div.dataset.row = r; div.dataset.col = c;
                     if(val !== 0) div.innerText = val;
                     if (isFixed) div.classList.add('text-slate-900', 'bg-slate-100/50'); else div.classList.add('text-indigo-600');
                     if (isTempError) { div.classList.add('animate-error'); div.classList.remove('text-indigo-600'); } 
                     else if (isSelected) { div.classList.add('cell-selected'); }
-                    
-                    div.onclick = () => { if (isFixed) return; selectedCell = {r, c}; renderBoard(); };
+                    div.onclick = () => { if (isFixed) return; selectedCell = {r, c}; renderBoard(); playSound('tap'); };
                     boardEl.appendChild(div);
                 }
             }
             const numpad = document.getElementById('numpad-container');
-            if(numpad) {
-                if(selectedCell) numpad.classList.remove('opacity-50', 'pointer-events-none');
-                else numpad.classList.add('opacity-50', 'pointer-events-none');
-            }
+            if(numpad) { if(selectedCell) numpad.classList.remove('opacity-50', 'pointer-events-none'); else numpad.classList.add('opacity-50', 'pointer-events-none'); }
         }
 
         function handleInput(num) {
@@ -699,100 +670,77 @@
             }
 
             if (num !== currentSolution[r][c]) {
-                userBoard[r][c] = num; temporaryError = {r, c, num};
-                currentSessionErrors++; // İSTATİSTİK: HATA ARTTI
-                totalErrors++; // GLOBAL HATA ARTTI
-                localStorage.setItem('sudoku_total_errors', totalErrors);
-                
+                playSound('error'); doVibrate();
+                userBoard[r][c] = num; temporaryError = {r, c, num}; currentSessionErrors++; totalErrors++; localStorage.setItem('sudoku_total_errors', totalErrors);
                 if (userGold > 0) { userGold = Math.max(0, userGold - 5); localStorage.setItem('sudoku_gold', userGold); flashGoldPenalty(); }
-                if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-                if(errorTimeout) clearTimeout(errorTimeout);
-                
-                updateUI(); renderBoard();
+                if(errorTimeout) clearTimeout(errorTimeout); updateUI(); renderBoard();
                 errorTimeout = setTimeout(() => {
                     if (userBoard[r][c] === num) userBoard[r][c] = 0;
                     if (temporaryError && temporaryError.r === r && temporaryError.c === c) temporaryError = null;
                     saveGameState(); renderBoard();
                 }, 1000);
             } else {
-                userBoard[r][c] = num;
-                if (temporaryError && temporaryError.r === r && temporaryError.c === c) temporaryError = null;
-                saveGameState(); renderBoard();
-                setTimeout(() => { let isFull = userBoard.every(row => row.every(val => val !== 0)); if(isFull) handleWin(); }, 200);
+                userBoard[r][c] = num; if (temporaryError && temporaryError.r === r && temporaryError.c === c) temporaryError = null;
+                saveGameState(); renderBoard(); setTimeout(() => { let isFull = userBoard.every(row => row.every(val => val !== 0)); if(isFull) handleWin(); }, 200);
             }
         }
 
         function handleWin() {
-            if(timerInterval) clearInterval(timerInterval);
-            confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#4f46e5', '#10b981', '#f59e0b'] });
-            clearGameState(); 
+            if(timerInterval) clearInterval(timerInterval); playSound('win'); doVibrate();
+            confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#4f46e5', '#10b981', '#f59e0b'] }); clearGameState(); 
 
             let reward = currentDifficultyStr === 'basit' ? 5 : (currentDifficultyStr === 'orta' ? 10 : 20);
-            
-            // YENİ: ZAMAN REKORU HESAPLAMA
             let isNewRecord = false;
             if(currentDifficultyStr === 'basit' && (bestBasit === 0 || timeElapsed < bestBasit)) { bestBasit = timeElapsed; isNewRecord = true; localStorage.setItem('sudoku_best_basit', bestBasit); }
             if(currentDifficultyStr === 'orta' && (bestOrta === 0 || timeElapsed < bestOrta)) { bestOrta = timeElapsed; isNewRecord = true; localStorage.setItem('sudoku_best_orta', bestOrta); }
             if(currentDifficultyStr === 'zor' && (bestZor === 0 || timeElapsed < bestZor)) { bestZor = timeElapsed; isNewRecord = true; localStorage.setItem('sudoku_best_zor', bestZor); }
 
             let winMessage = gameMode === 'journey' ? `Seviye ${playingLevelId} Tamamlandı.` : `Özel Oyun (${currentDifficultyStr}) Tamamlandı.`;
-            
+            let shareMessage = gameMode === 'journey' ? `Yolculukta Seviye ${playingLevelId}'i` : `Özel Modda (${currentDifficultyStr}) zorluğu`;
+
             if (gameMode === 'journey' && playingLevelId === currentLevel && currentLevel <= TOTAL_LEVELS) {
-                userGold += reward; currentLevel++; 
-                localStorage.setItem('sudoku_level', currentLevel); localStorage.setItem('sudoku_gold', userGold);
-            } else if (gameMode === 'custom') {
-                userGold += reward; localStorage.setItem('sudoku_gold', userGold);
-            } else { reward = 0; }
+                userGold += reward; currentLevel++; localStorage.setItem('sudoku_level', currentLevel); localStorage.setItem('sudoku_gold', userGold);
+            } else if (gameMode === 'custom') { userGold += reward; localStorage.setItem('sudoku_gold', userGold); } else { reward = 0; }
             
             let uname = localStorage.getItem('sudoku_username');
-            if(uname && window.dbSaveProgress) {
-                window.dbSaveProgress(uname, currentLevel, userGold, {
-                    best_basit: bestBasit, best_orta: bestOrta, best_zor: bestZor, total_errors: totalErrors
-                });
-            }
+            if(uname && window.dbSaveProgress) window.dbSaveProgress(uname, currentLevel, userGold, {best_basit: bestBasit, best_orta: bestOrta, best_zor: bestZor, total_errors: totalErrors});
 
             const boardEl = document.getElementById('sudoku-board');
             boardEl.innerHTML = `
                 <div class="win-message flex flex-col items-center justify-center h-full w-full bg-emerald-50 rounded z-10 absolute inset-0 text-center px-4">
                     <div class="text-6xl mb-2 drop-shadow-md">🎉</div>
                     <h3 class="text-2xl font-black mb-1 text-emerald-800">Harika!</h3>
-                    <p class="font-bold text-emerald-600 mb-4 text-sm">${winMessage}</p>
+                    <p class="font-bold text-emerald-600 mb-3 text-sm">${winMessage}</p>
                     
-                    <div class="bg-white w-full rounded-xl p-3 shadow-sm mb-4 border border-emerald-100">
-                        <div class="flex justify-between items-center border-b border-emerald-50 pb-2 mb-2">
-                            <span class="text-xs font-bold text-slate-400 uppercase">Süre</span>
-                            <span class="font-mono font-black text-slate-700">${formatTime(timeElapsed)}</span>
-                        </div>
-                        <div class="flex justify-between items-center border-b border-emerald-50 pb-2 mb-2">
-                            <span class="text-xs font-bold text-slate-400 uppercase">Hata Sayısı</span>
-                            <span class="font-black ${currentSessionErrors > 0 ? 'text-red-500' : 'text-emerald-500'}">${currentSessionErrors}</span>
-                        </div>
+                    <div class="bg-white w-full rounded-xl p-3 shadow-sm mb-3 border border-emerald-100">
+                        <div class="flex justify-between items-center border-b border-emerald-50 pb-2 mb-2"><span class="text-xs font-bold text-slate-400 uppercase">Süre</span><span class="font-mono font-black text-slate-700">${formatTime(timeElapsed)}</span></div>
+                        <div class="flex justify-between items-center"><span class="text-xs font-bold text-slate-400 uppercase">Hata Sayısı</span><span class="font-black ${currentSessionErrors > 0 ? 'text-red-500' : 'text-emerald-500'}">${currentSessionErrors}</span></div>
                         ${isNewRecord ? `<div class="text-[10px] font-black text-amber-500 uppercase tracking-widest animate-pulse mt-2">🔥 YENİ REKOR!</div>` : ''}
                     </div>
 
-                    ${reward > 0 ? `<div class="bg-amber-100 text-amber-700 px-5 py-2.5 rounded-full font-black text-lg flex items-center gap-2 drop-shadow-sm animate-bounce">🪙 +${reward} Altın</div>` : ''}
+                    ${reward > 0 ? `<div class="bg-amber-100 text-amber-700 px-5 py-2.5 rounded-full font-black text-lg flex items-center gap-2 drop-shadow-sm mb-3">🪙 +${reward} Altın</div>` : ''}
+                    
+                    <button onclick="shareWin('${shareMessage}', '${formatTime(timeElapsed)}')" class="tap-effect w-full bg-indigo-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-sm">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                        Sonucu Paylaş
+                    </button>
                 </div>
             `;
-            
-            setTimeout(() => { closeModal(); if(gameMode === 'journey') { renderMap(); setTimeout(scrollToActiveNode, 300); } updateUI(); }, 4500); 
+            setTimeout(() => { closeModal(); if(gameMode === 'journey') { renderMap(); setTimeout(scrollToActiveNode, 300); } updateUI(); }, 6000); 
         }
 
         document.addEventListener('keydown', (e) => {
-            const modal = document.getElementById('sudoku-modal');
-            if(modal.classList.contains('hidden') || !selectedCell) return;
-            if(e.key >= '1' && e.key <= '9') handleInput(parseInt(e.key));
-            else if(e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') handleInput(0);
+            const modal = document.getElementById('sudoku-modal'); if(modal.classList.contains('hidden') || !selectedCell) return;
+            if(e.key >= '1' && e.key <= '9') { handleInput(parseInt(e.key)); playSound('tap'); }
+            else if(e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') { handleInput(0); playSound('tap'); }
         });
 
         function renderMap() {
-            const container = document.getElementById('map-nodes');
-            let htmlStr = '';
+            const container = document.getElementById('map-nodes'); let htmlStr = '';
             for (let id = 1; id <= TOTAL_LEVELS; id++) {
-                let diff = getJourneyLevelConfig(id);
-                let isUnlocked = id <= currentLevel; let isCompleted = id < currentLevel; let isCurrent = id === currentLevel;
+                let diff = getJourneyLevelConfig(id); let isUnlocked = id <= currentLevel; let isCompleted = id < currentLevel; let isCurrent = id === currentLevel;
                 let xOffset = id % 2 === 0 ? 'translate-x-[50px]' : '-translate-x-[50px]';
-                let bgClass = isCompleted ? 'bg-emerald-500 text-white shadow-[0_4px_0_#059669]' : 
-                              isCurrent ? 'bg-indigo-500 text-white shadow-[0_4px_0_#4f46e5] ring-4 ring-indigo-200 active-node' : 'bg-slate-200 text-slate-400 shadow-[0_4px_0_#cbd5e1]';
+                let bgClass = isCompleted ? 'bg-emerald-500 text-white shadow-[0_4px_0_#059669]' : isCurrent ? 'bg-indigo-500 text-white shadow-[0_4px_0_#4f46e5] ring-4 ring-indigo-200 active-node' : 'bg-slate-200 text-slate-400 shadow-[0_4px_0_#cbd5e1]';
                 let cursorClass = isUnlocked ? 'cursor-pointer hover:scale-105' : 'cursor-not-allowed opacity-70 grayscale';
                 let icon = isCompleted ? `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>` : id;
                 htmlStr += `<div class="relative flex justify-center w-full my-4" id="node-${id}"><div class="${xOffset} flex flex-col items-center group transition-transform duration-300"><button onclick="openJourneyLevel(${id})" ${!isUnlocked ? 'disabled' : ''} class="w-[70px] h-[70px] rounded-full flex items-center justify-center text-2xl font-black transition-all duration-300 ${bgClass} ${cursorClass}">${icon}</button><span class="mt-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white/90 px-3 py-1 rounded-full shadow-sm border border-slate-100">${diff}</span></div></div>`;
@@ -803,6 +751,7 @@
         function scrollToActiveNode() { const activeNode = document.getElementById(`node-${currentLevel}`); if(activeNode) activeNode.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
 
         document.addEventListener('DOMContentLoaded', () => {
+            initSettings();
             if(!localStorage.getItem('sudoku_username')) { document.getElementById('username-modal').classList.remove('hidden'); document.getElementById('username-modal').classList.add('flex'); }
             buildNumpad(); renderMap(); navigate('menu'); 
         });
