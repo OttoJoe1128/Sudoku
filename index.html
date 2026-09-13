@@ -25,7 +25,6 @@
         .hidden-scrollbar::-webkit-scrollbar { display: none; }
         .hidden-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* Sudoku Izgarası */
         .sudoku-grid {
             display: grid;
             grid-template-columns: repeat(9, 1fr);
@@ -52,18 +51,15 @@
             font-weight: 700;
         }
 
-        /* 3x3 Kalın Çizgiler */
         .sudoku-cell[data-col="2"], .sudoku-cell[data-col="5"] { border-right: 2px solid #1e293b; }
         .sudoku-cell[data-row="2"], .sudoku-cell[data-row="5"] { border-bottom: 2px solid #1e293b; }
 
-        /* Seçili Hücre Animasyonu */
         .cell-selected {
             background-color: #e0e7ff !important;
             box-shadow: inset 0 0 0 3px #4f46e5 !important;
             z-index: 10;
         }
 
-        /* YANLIŞ SAYI İÇİN TİTREME (SHAKE) JENERİĞİ */
         @keyframes error-shake {
             0% { transform: translateX(0); }
             20% { transform: translateX(-4px) scale(1.05); }
@@ -75,15 +71,77 @@
 
         .animate-error {
             animation: error-shake 0.4s ease-in-out;
-            background-color: #fee2e2 !important; /* Tailwind red-100 */
-            color: #dc2626 !important; /* Tailwind red-600 */
+            background-color: #fee2e2 !important; 
+            color: #dc2626 !important; 
             z-index: 20;
         }
 
         .tap-effect:active { transform: scale(0.92); }
     </style>
+
+    <!-- FİREBASE BAĞLANTISI (MODÜL) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDocs, collection, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAujJkjhPlSUPkBUbZ-XTMw6fKmCUFhLuQ",
+            authDomain: "sudokumap.firebaseapp.com",
+            projectId: "sudokumap",
+            storageBucket: "sudokumap.firebasestorage.app",
+            messagingSenderId: "725064430422",
+            appId: "1:725064430422:web:8b73102facc0f368a4dcf7",
+            measurementId: "G-HTDJ1GLMN9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Veri Kaydetme Fonksiyonu
+        window.dbSaveProgress = async function(username, level, gold) {
+            if(!username) return;
+            try {
+                await setDoc(doc(db, "leaderboard", username), {
+                    username: username,
+                    level: level,
+                    gold: gold,
+                    updatedAt: new Date()
+                });
+            } catch(e) {
+                console.error("Firebase kayıt hatası:", e);
+            }
+        };
+
+        // Liderlik Tablosunu Getirme Fonksiyonu
+        window.dbGetLeaderboard = async function() {
+            try {
+                // Önce seviyeye, sonra altına göre sırala. İlk 50'yi getir.
+                const q = query(collection(db, "leaderboard"), orderBy("level", "desc"), orderBy("gold", "desc"), limit(50));
+                const querySnapshot = await getDocs(q);
+                let list = [];
+                querySnapshot.forEach((doc) => {
+                    list.push(doc.data());
+                });
+                return list;
+            } catch(e) {
+                console.error("Firebase çekme hatası:", e);
+                return [];
+            }
+        };
+
+        // Sayfa yüklendiğinde mevcut oyuncu varsa sessizce arka planda bilgilerini güncelle
+        setTimeout(() => {
+            const savedUsername = localStorage.getItem('sudoku_username');
+            const lvl = parseInt(localStorage.getItem('sudoku_level')) || 1;
+            let gld = parseInt(localStorage.getItem('sudoku_gold'));
+            gld = isNaN(gld) ? 100 : gld;
+            if(savedUsername) {
+                window.dbSaveProgress(savedUsername, lvl, gld);
+            }
+        }, 2000);
+    </script>
 </head>
-<body class="flex justify-center items-center min-h-screen sm:p-6">
+<body class="flex justify-center items-center min-h-screen sm:p-6 relative">
 
     <!-- Ana Uygulama Konteyneri -->
     <div class="w-full max-w-[480px] h-[100dvh] sm:h-[850px] bg-slate-50 relative overflow-hidden sm:rounded-[2.5rem] sm:shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col sm:border-[10px] sm:border-slate-800">
@@ -109,23 +167,29 @@
         </header>
 
         <!-- EKRAN 1: ANA MENÜ -->
-        <div id="view-menu" class="flex-1 flex flex-col items-center justify-center p-6 gap-6 relative">
+        <div id="view-menu" class="flex-1 flex flex-col items-center justify-center p-6 gap-5 relative">
             <div class="absolute inset-0 opacity-[0.05] bg-[radial-gradient(circle_at_center,_#334155_2px,_transparent_2px)] bg-[size:24px_24px] pointer-events-none"></div>
             
-            <div class="text-center z-10 mb-6">
+            <div class="text-center z-10 mb-2">
                 <div class="text-7xl mb-4">🧩</div>
                 <h2 class="text-3xl font-black text-slate-800">Hoş Geldin!</h2>
-                <p class="text-slate-500 font-medium mt-2">Nasıl oynamak istersin?</p>
+                <p id="menu-player-name" class="text-indigo-600 font-bold mt-1 uppercase tracking-widest text-xs"></p>
             </div>
 
-            <button onclick="navigate('map')" class="tap-effect z-10 w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl p-5 shadow-[0_6px_0_#4338ca] active:shadow-[0_0px_0_#4338ca] active:translate-y-1.5 transition-all flex flex-col items-center gap-1">
+            <button onclick="navigate('map')" class="tap-effect z-10 w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl p-4 shadow-[0_6px_0_#4338ca] active:shadow-[0_0px_0_#4338ca] active:translate-y-1.5 transition-all flex flex-col items-center gap-1">
                 <span class="text-xl font-black">🗺️ Sudoku Yolculuğu</span>
                 <span class="text-indigo-200 text-sm font-semibold">Seviye <span id="menu-level-text">1</span>'den Devam Et</span>
             </button>
 
-            <button onclick="navigate('custom')" class="tap-effect z-10 w-full bg-white border-2 border-slate-200 text-slate-700 rounded-2xl p-5 shadow-[0_6px_0_#e2e8f0] active:shadow-[0_0px_0_#e2e8f0] active:translate-y-1.5 transition-all flex flex-col items-center gap-1 hover:border-indigo-300">
-                <span class="text-xl font-black">🎯 Özel Oyun</span>
-                <span class="text-slate-400 text-sm font-semibold">Serbest Zorluk Seçimi</span>
+            <button onclick="navigate('custom')" class="tap-effect z-10 w-full bg-white border-2 border-slate-200 text-slate-700 rounded-2xl p-4 shadow-[0_6px_0_#e2e8f0] active:shadow-[0_0px_0_#e2e8f0] active:translate-y-1.5 transition-all flex flex-col items-center gap-1 hover:border-indigo-300">
+                <span class="text-lg font-black">🎯 Özel Oyun</span>
+                <span class="text-slate-400 text-xs font-semibold">Serbest Zorluk Seçimi</span>
+            </button>
+
+            <!-- YENİ EKLENEN LİDERLİK TABLOSU BUTONU -->
+            <button onclick="openLeaderboard()" class="tap-effect z-10 w-full bg-amber-50 border-2 border-amber-200 text-amber-700 rounded-2xl p-4 shadow-[0_6px_0_#fde68a] active:shadow-[0_0px_0_#fde68a] active:translate-y-1.5 transition-all flex justify-between items-center hover:border-amber-300 mt-2">
+                <span class="text-lg font-black flex items-center gap-2">🏆 Sıralama</span>
+                <span class="text-amber-600 text-xs font-bold bg-amber-200 px-2 py-1 rounded-md">İlk 50</span>
             </button>
         </div>
 
@@ -208,6 +272,44 @@
                 </div>
             </div>
         </div>
+        
+        <!-- YENİ: KULLANICI ADI GİRİŞ MODALI -->
+        <div id="username-modal" class="absolute inset-0 bg-slate-900/90 hidden flex-col items-center justify-center z-[70] p-4 backdrop-blur-md sm:rounded-[2.5rem]">
+            <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl">
+                <div class="text-6xl mb-4">👋</div>
+                <h3 class="text-2xl font-black text-slate-800 mb-2">Aramıza Hoş Geldin!</h3>
+                <p class="text-sm text-slate-500 mb-6 font-medium">Sıralamada görünmek ve haritadaki yerini almak için bir oyuncu adı belirle.</p>
+                <input type="text" id="username-input" class="w-full bg-slate-100 border-2 border-slate-200 rounded-xl px-4 py-4 font-bold text-slate-700 focus:outline-none focus:border-indigo-500 mb-4 text-center text-lg" placeholder="Oyuncu Adın (Örn: HızlıÇözen)" maxlength="15">
+                <button onclick="saveUsername()" class="tap-effect w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-xl shadow-[0_6px_0_#4338ca] active:translate-y-1.5 active:shadow-none transition-all text-lg">Maceraya Başla!</button>
+            </div>
+        </div>
+
+        <!-- YENİ: LİDERLİK TABLOSU MODALI -->
+        <div id="leaderboard-modal" class="absolute inset-0 bg-slate-900/60 hidden flex-col items-center justify-center z-[60] p-4 backdrop-blur-sm sm:rounded-[2.5rem]">
+            <div class="bg-white rounded-3xl p-5 w-full max-w-sm flex flex-col h-[75vh] shadow-2xl relative overflow-hidden">
+                <div class="flex justify-between items-center mb-4 shrink-0">
+                    <h3 class="text-2xl font-black text-slate-800">🏆 Sıralama</h3>
+                    <button onclick="closeLeaderboard()" class="text-slate-400 hover:text-slate-700 bg-slate-100 rounded-full p-2 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                
+                <!-- Sütun Başlıkları -->
+                <div class="flex justify-between px-2 pb-2 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest shrink-0">
+                    <span>Oyuncu</span>
+                    <div class="flex gap-4">
+                        <span>Sv</span>
+                        <span>Altın</span>
+                    </div>
+                </div>
+
+                <!-- Liste -->
+                <div id="leaderboard-list" class="flex-1 overflow-y-auto hidden-scrollbar space-y-2 mt-2 pt-1 pb-4">
+                    <div class="text-center text-slate-400 py-10 font-bold animate-pulse">Liderler Yükleniyor...</div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -228,7 +330,6 @@
         let userBoard = [];
         let selectedCell = null;
         
-        // HATA SİSTEMİ İÇİN YENİ DEĞİŞKENLER
         let temporaryError = null; 
         let errorTimeout = null;
 
@@ -261,6 +362,9 @@
             document.getElementById('header-level').innerText = currentLevel > TOTAL_LEVELS ? TOTAL_LEVELS : currentLevel;
             document.getElementById('header-gold').innerText = userGold;
             
+            const uname = localStorage.getItem('sudoku_username');
+            if(uname) document.getElementById('menu-player-name').innerText = uname;
+
             const hintStatus = document.getElementById('hint-status');
             if(freeHints > 0) {
                 hintStatus.innerText = `${freeHints} Ücretsiz`;
@@ -269,6 +373,73 @@
                 hintStatus.innerHTML = `🪙 20 Altın`;
                 hintStatus.className = "bg-white text-amber-600 px-2 py-1 rounded-lg text-xs font-bold tracking-wide shadow-sm";
             }
+        }
+
+        // KULLANICI ADI KAYIT SİSTEMİ
+        function saveUsername() {
+            const input = document.getElementById('username-input').value.trim();
+            if(input.length < 3) {
+                alert("Lütfen en az 3 harfli bir ad girin!");
+                return;
+            }
+            localStorage.setItem('sudoku_username', input);
+            document.getElementById('username-modal').classList.add('hidden');
+            document.getElementById('username-modal').classList.remove('flex');
+            updateUI();
+            
+            if(window.dbSaveProgress) window.dbSaveProgress(input, currentLevel, userGold);
+        }
+
+        // LİDERLİK TABLOSU AÇ/KAPA
+        async function openLeaderboard() {
+            const modal = document.getElementById('leaderboard-modal');
+            const listEl = document.getElementById('leaderboard-list');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            listEl.innerHTML = '<div class="text-center text-slate-400 py-10 font-bold animate-pulse">Liderler Yükleniyor...</div>';
+            
+            if(window.dbGetLeaderboard) {
+                const data = await window.dbGetLeaderboard();
+                if(data.length === 0) {
+                    listEl.innerHTML = '<div class="text-center text-slate-400 py-10 font-bold">Henüz kimse yok. İlk sen ol!</div>';
+                    return;
+                }
+                
+                listEl.innerHTML = '';
+                const myName = localStorage.getItem('sudoku_username');
+                
+                data.forEach((user, index) => {
+                    let rankStr = `<span class="text-sm font-black text-slate-400 w-6 text-center">${index + 1}.</span>`;
+                    if(index === 0) rankStr = '<span class="text-xl w-6 text-center drop-shadow-md">🥇</span>';
+                    if(index === 1) rankStr = '<span class="text-xl w-6 text-center drop-shadow-md">🥈</span>';
+                    if(index === 2) rankStr = '<span class="text-xl w-6 text-center drop-shadow-md">🥉</span>';
+
+                    let isMe = user.username === myName;
+                    let bgClass = isMe ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-100';
+                    let nameColor = isMe ? 'text-indigo-700' : 'text-slate-700';
+
+                    listEl.innerHTML += `
+                        <div class="flex items-center justify-between p-3 rounded-xl border ${bgClass} shadow-sm">
+                            <div class="flex items-center gap-3">
+                                ${rankStr}
+                                <span class="font-bold text-sm ${nameColor}">${user.username}</span>
+                            </div>
+                            <div class="flex items-center gap-5 text-right">
+                                <span class="text-xs font-black text-indigo-600 w-6">${user.level}</span>
+                                <span class="text-xs font-bold text-amber-600 w-10">${user.gold}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                listEl.innerHTML = '<div class="text-center text-red-400 py-10 font-bold">Sunucuya bağlanılamadı. Lütfen internetinizi kontrol edin.</div>';
+            }
+        }
+
+        function closeLeaderboard() {
+            document.getElementById('leaderboard-modal').classList.add('hidden');
+            document.getElementById('leaderboard-modal').classList.remove('flex');
         }
 
         function getJourneyLevelConfig(id) {
@@ -417,7 +588,7 @@
         }
 
         function resetJourney() {
-            if(confirm("Tüm harita ilerlemeni sıfırlamak istediğine emin misin? (Altınların da sıfırlanacak)")) {
+            if(confirm("Tüm harita ilerlemeni sıfırlamak istediğine emin misin? (Altınların da sıfırlanacak ama oyuncu adın kalacak)")) {
                 localStorage.removeItem('sudoku_level');
                 localStorage.removeItem('sudoku_gold');
                 localStorage.removeItem('sudoku_free_hints');
@@ -426,6 +597,10 @@
                 currentLevel = 1;
                 userGold = 100;
                 freeHints = 5;
+                
+                // Sıfırlamayı Firebase'e bildir
+                let uname = localStorage.getItem('sudoku_username');
+                if(uname && window.dbSaveProgress) window.dbSaveProgress(uname, currentLevel, userGold);
                 
                 updateUI();
                 renderMap();
@@ -550,6 +725,11 @@
             }
 
             saveGameState(); 
+            
+            // Firebase'e altın düştüğünü bildir
+            let uname = localStorage.getItem('sudoku_username');
+            if(uname && window.dbSaveProgress) window.dbSaveProgress(uname, currentLevel, userGold);
+
             updateUI();
             renderBoard();
 
@@ -568,8 +748,6 @@
                     let val = userBoard[r][c];
                     let isFixed = initialBoard[r][c] !== 0;
                     let isSelected = selectedCell && selectedCell.r === r && selectedCell.c === c;
-                    
-                    // Geçici Hata Kontrolü (1 saniyelik jenerik için)
                     let isTempError = temporaryError && temporaryError.r === r && temporaryError.c === c;
                     
                     let div = document.createElement('div');
@@ -614,7 +792,6 @@
             let r = selectedCell.r;
             let c = selectedCell.c;
 
-            // Silme işlemi
             if (num === 0) {
                 userBoard[r][c] = 0;
                 if(temporaryError && temporaryError.r === r && temporaryError.c === c) temporaryError = null;
@@ -623,31 +800,23 @@
                 return;
             }
 
-            // GİRİLEN SAYI YANLIŞ İSE
             if (num !== currentSolution[r][c]) {
                 userBoard[r][c] = num;
                 temporaryError = {r, c, num};
                 
-                // Telefon Titretme (Haptic Feedback - Sadece destekleyen mobil cihazlarda)
                 if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
 
                 if(errorTimeout) clearTimeout(errorTimeout);
                 renderBoard();
 
                 errorTimeout = setTimeout(() => {
-                    // Kullanıcı araya girip başka sayı yazmadıysa sil
-                    if (userBoard[r][c] === num) {
-                        userBoard[r][c] = 0;
-                    }
-                    if (temporaryError && temporaryError.r === r && temporaryError.c === c) {
-                        temporaryError = null;
-                    }
+                    if (userBoard[r][c] === num) userBoard[r][c] = 0;
+                    if (temporaryError && temporaryError.r === r && temporaryError.c === c) temporaryError = null;
                     saveGameState();
                     renderBoard();
                 }, 1000);
             
             } else {
-                // GİRİLEN SAYI DOĞRU İSE
                 userBoard[r][c] = num;
                 if (temporaryError && temporaryError.r === r && temporaryError.c === c) temporaryError = null;
                 
@@ -656,7 +825,7 @@
                 
                 setTimeout(() => {
                     let isFull = userBoard.every(row => row.every(val => val !== 0));
-                    if(isFull) handleWin(); // Yanlış sayılar zaten barınamadığı için tahta doluysa kesin kazanılmıştır.
+                    if(isFull) handleWin(); 
                 }, 200);
             }
         }
@@ -686,6 +855,10 @@
                 localStorage.setItem('sudoku_gold', userGold);
             }
             
+            // Verileri Firebase'e anında eşitle
+            let uname = localStorage.getItem('sudoku_username');
+            if(uname && window.dbSaveProgress) window.dbSaveProgress(uname, currentLevel, userGold);
+
             const boardEl = document.getElementById('sudoku-board');
             boardEl.innerHTML = `
                 <div class="win-message flex flex-col items-center justify-center h-full w-full bg-emerald-50 rounded z-10 absolute inset-0">
@@ -727,6 +900,11 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Kullanıcı adı yoksa Modal'ı aç
+            if(!localStorage.getItem('sudoku_username')) {
+                document.getElementById('username-modal').classList.remove('hidden');
+                document.getElementById('username-modal').classList.add('flex');
+            }
             renderMap();
             navigate('menu'); 
         });
@@ -735,7 +913,6 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('Service Worker aktif!', reg))
                     .catch(err => console.error('SW hatası:', err));
             });
         }
