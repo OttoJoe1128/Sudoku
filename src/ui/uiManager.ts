@@ -31,6 +31,24 @@ export const UIManager = {
     `;
   },
 
+  renderMap(currentLevel: number) {
+    const container = document.getElementById('map-nodes');
+    if (!container) return;
+    container.innerHTML = Array.from({length: 1000}, (_, i) => i + 1).map(level => {
+        const isUnlocked = level <= currentLevel;
+        const isCurrent = level === currentLevel;
+        const onClick = isUnlocked ? `onclick="window.startJourney(${level})"` : 'disabled';
+        return `
+            <button ${onClick} class="w-12 h-12 rounded-full font-black transition-all ${isCurrent ? 'bg-indigo-600 text-white animate-pulse' : isUnlocked ? 'bg-emerald-500 text-white' : 'bg-slate-300 text-slate-500'} ${isUnlocked ? '' : 'cursor-not-allowed'}">
+                ${level}
+            </button>
+        `;
+    }).join('');
+    setTimeout(() => {
+        document.querySelector('.animate-pulse')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 500);
+  },
+
   renderLeaderboard(players: Player[], filter: 'gold' | 'time') {
     const listEl = document.getElementById('leaderboard-list');
     if (!listEl) return;
@@ -63,12 +81,23 @@ export const UIManager = {
     });
   },
 
-  showError(r: number, c: number) {
-    const cell = document.querySelector(`[data-row="${r}"][data-col="${c}"]`) as HTMLElement;
-    if (cell) {
-        cell.classList.add('bg-red-500', 'text-white', 'animate-pulse');
-        setTimeout(() => cell.classList.remove('bg-red-500', 'text-white', 'animate-pulse'), 1000);
+  renderNumpad(onNumberClick: (num: number) => void) {
+    const gameView = document.getElementById('game-view');
+    let numpadEl = document.getElementById('numpad-grid');
+    if (!numpadEl) {
+        numpadEl = document.createElement('div');
+        numpadEl.id = 'numpad-grid';
+        numpadEl.className = 'grid grid-cols-5 gap-2 mt-6 w-full max-w-[300px]';
+        gameView?.appendChild(numpadEl);
     }
+    numpadEl.innerHTML = '';
+    [1, 2, 3, 4, 5, 6, 7, 8, 9, 0].forEach(num => {
+        const btn = document.createElement('button');
+        btn.className = 'bg-white p-3 rounded-xl shadow border font-black text-xl hover:bg-indigo-100 transition-colors';
+        btn.innerText = num === 0 ? 'Sil' : num.toString();
+        btn.onclick = () => onNumberClick(num);
+        numpadEl.appendChild(btn);
+    });
   },
 
   toggleModal(id: string, show: boolean) {
