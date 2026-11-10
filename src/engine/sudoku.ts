@@ -1,8 +1,8 @@
 export class SudokuGen {
-  static getDifficulty(level: number): 'basit' | 'orta' | 'zor' {
-    if (level <= 300) return 'basit';
-    if (level <= 700) return 'orta';
-    return 'zor';
+  static getStartLevelForDifficulty(diff: 'basit' | 'orta' | 'zor'): number {
+    if (diff === 'basit') return 1;
+    if (diff === 'orta') return 301;
+    return 701;
   }
 
   static generate(difficulty: string) {

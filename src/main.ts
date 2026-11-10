@@ -87,9 +87,14 @@ document.getElementById('btn-custom')?.addEventListener('click', () => UIManager
 
 // Navigasyon & Oyun Başlatma Mantığı
 const openMap = (diff: 'basit' | 'orta' | 'zor') => {
+    // Kullanıcının mevcut ilerlemesi ile seçilen zorluğun başlangıcını kıyasla
+    const startLvl = SudokuGen.getStartLevelForDifficulty(diff);
+    const userLvl = UserManager.getCurrentLevel();
+    // Kullanıcı zaten o zorluğu geçtiyse kaldığı yerden, geçmediyse zorluğun başından
+    const activeLevel = Math.max(startLvl, userLvl);
+    
     UIManager.navigate('map');
-    UIManager.renderMap(UserManager.getCurrentLevel());
-    // Haritadaki butonlara tıklanınca startGame çalışacak
+    UIManager.renderMap(activeLevel);
 };
 
 // Global fonksiyon olarak harita tıklamasını expose ediyoruz
