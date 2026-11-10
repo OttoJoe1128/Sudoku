@@ -34,18 +34,22 @@ export const UIManager = {
   renderMap(currentLevel: number, startFocusLevel: number) {
     const container = document.getElementById('map-nodes');
     if (!container) return;
-    container.innerHTML = Array.from({length: 1000}, (_, i) => i + 1).map(level => {
+    
+    container.innerHTML = '';
+    Array.from({length: 1000}, (_, i) => i + 1).forEach(level => {
         const isUnlocked = level <= currentLevel;
         const isFocus = level === startFocusLevel;
-        return `
-            <button data-level="${level}" class="w-12 h-12 rounded-full font-black transition-all ${isFocus ? 'bg-indigo-600 text-white animate-pulse' : isUnlocked ? 'bg-emerald-500 text-white' : 'bg-slate-300 text-slate-500'} ${isUnlocked ? '' : 'cursor-not-allowed'}">
-                ${level}
-            </button>
-        `;
-    }).join('');
+        const btn = document.createElement('button');
+        btn.dataset.level = level.toString();
+        btn.className = `w-12 h-12 rounded-full font-black transition-all ${isFocus ? 'bg-indigo-600 text-white animate-pulse' : isUnlocked ? 'bg-emerald-500 text-white' : 'bg-slate-300 text-slate-500'} ${isUnlocked ? '' : 'cursor-not-allowed'}`;
+        btn.innerText = level.toString();
+        container.appendChild(btn);
+    });
+    
     setTimeout(() => {
-        document.querySelector('.animate-pulse')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 500);
+        const active = document.querySelector('.animate-pulse');
+        if (active) active.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 200);
   },
 
   renderLeaderboard(players: Player[], filter: 'gold' | 'time') {
