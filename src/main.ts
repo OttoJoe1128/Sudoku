@@ -48,8 +48,19 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor') => {
     
     UIManager.renderNumpad((num) => {
         if (selectedCell) {
-            GameEngine.processInput(selectedCell.r, selectedCell.c, num, userBoard, currentSolution);
+            GameEngine.processInput(selectedCell.r, selectedCell.c, num, userBoard, currentSolution, () => {
+                // Kazanma Mantığı
+                const userLvl = UserManager.getCurrentLevel();
+                if (level === userLvl) {
+                    localStorage.setItem('sudoku_level', (userLvl + 1).toString());
+                }
+                alert("Tebrikler! Seviyeyi tamamladın.");
+                if(timerInterval) clearInterval(timerInterval);
+                UIManager.navigate('menu');
+            });
             refresh();
+        } else {
+            alert("Lütfen önce bir hücre seç!");
         }
     });
 };

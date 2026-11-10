@@ -19,7 +19,7 @@ export const GameEngine = {
 
   doVibrate() { if (navigator.vibrate) navigator.vibrate([50]); },
   
-  processInput(r: number, c: number, num: number, userBoard: number[][], solution: number[][]) {
+  processInput(r: number, c: number, num: number, userBoard: number[][], solution: number[][], onWin: () => void) {
     if (num === 0) { 
       userBoard[r][c] = 0;
     } else if (num !== solution[r][c]) {
@@ -30,6 +30,14 @@ export const GameEngine = {
     } else {
       userBoard[r][c] = num;
       this.playSound('tap');
+      // Kazandık mı kontrol et
+      const isWin = userBoard.every((row, ri) => 
+        row.every((val, ci) => val === solution[ri][ci])
+      );
+      if (isWin) {
+        this.playSound('win');
+        onWin();
+      }
     }
     return true;
   }
