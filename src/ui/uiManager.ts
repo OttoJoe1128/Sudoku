@@ -31,15 +31,15 @@ export const UIManager = {
     `;
   },
 
-  renderMap(currentLevel: number) {
+  renderMap(currentLevel: number, startFocusLevel: number) {
     const container = document.getElementById('map-nodes');
     if (!container) return;
     container.innerHTML = Array.from({length: 1000}, (_, i) => i + 1).map(level => {
         const isUnlocked = level <= currentLevel;
-        const isCurrent = level === currentLevel;
+        const isFocus = level === startFocusLevel;
         const onClick = isUnlocked ? `onclick="window.startJourney(${level})"` : 'disabled';
         return `
-            <button ${onClick} class="w-12 h-12 rounded-full font-black transition-all ${isCurrent ? 'bg-indigo-600 text-white animate-pulse' : isUnlocked ? 'bg-emerald-500 text-white' : 'bg-slate-300 text-slate-500'} ${isUnlocked ? '' : 'cursor-not-allowed'}">
+            <button ${onClick} class="w-12 h-12 rounded-full font-black transition-all ${isFocus ? 'bg-indigo-600 text-white animate-pulse' : isUnlocked ? 'bg-emerald-500 text-white' : 'bg-slate-300 text-slate-500'} ${isUnlocked ? '' : 'cursor-not-allowed'}">
                 ${level}
             </button>
         `;
