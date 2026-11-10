@@ -24,9 +24,11 @@ export const UIManager = {
                 <button id="btn-back-menu" class="bg-slate-200 px-4 py-2 rounded-xl font-bold text-sm">⬅ Menü</button>
                 <div id="game-timer" class="font-mono font-bold text-lg">00:00</div>
             </div>
-            <h2 id="game-title" class="text-2xl font-black mb-4 text-slate-800">Seviye</h2>
-            <div id="sudoku-grid" class="grid grid-cols-9 gap-[1px] bg-slate-800 p-[1px] rounded-lg shadow-xl mb-6"></div>
-            <div id="numpad-grid" class="grid grid-cols-5 gap-2 w-full max-w-[320px]"></div>
+            <div id="sudoku-grid" class="grid grid-cols-9 gap-[1px] bg-slate-800 p-[1px] rounded-lg shadow-xl mb-4"></div>
+            <div class="flex gap-2 mb-4">
+                <button id="btn-hint" class="bg-amber-400 px-6 py-2 rounded-xl font-bold text-sm shadow">💡 İpucu (10🪙)</button>
+            </div>
+            <div id="numpad-grid" class="grid grid-cols-5 gap-2 w-full max-w-[300px]"></div>
         </div>
       </div>
     `;
@@ -35,31 +37,28 @@ export const UIManager = {
   renderMap(currentLevel: number, startFocusLevel: number) {
     const container = document.getElementById('map-nodes');
     if (!container) return;
-    
     container.innerHTML = '';
     Array.from({length: 1000}, (_, i) => i + 1).forEach(level => {
-        // MANTIK: Kullanıcının geldiği seviye VEYA her zorluk paketinin ilk seviyesi (1, 301, 701) her zaman açıktır.
         const isUnlocked = level <= currentLevel || level === 1 || level === 301 || level === 701;
         const isFocus = level === startFocusLevel;
-        
         const btn = document.createElement('button');
         btn.dataset.level = level.toString();
         btn.innerText = level.toString();
-        
-        if (!isUnlocked) {
-            btn.disabled = true;
-            btn.className = "w-12 h-12 rounded-full font-black bg-slate-200 text-slate-400 cursor-not-allowed opacity-50";
-        } else {
-            btn.className = `w-12 h-12 rounded-full font-black transition-all shadow-sm ${isFocus ? 'bg-indigo-600 text-white animate-pulse ring-4 ring-indigo-200' : 'bg-emerald-500 text-white hover:scale-110'}`;
-        }
+        btn.className = `w-12 h-12 rounded-full font-black transition-all ${isFocus ? 'bg-indigo-600 text-white animate-pulse ring-4 ring-indigo-200' : isUnlocked ? 'bg-emerald-500 text-white shadow-md' : 'bg-slate-300 text-slate-500 opacity-50'} ${isUnlocked ? 'cursor-pointer' : 'cursor-not-allowed'}`;
+        if (!isUnlocked) btn.disabled = true;
         container.appendChild(btn);
     });
-    
-    // Gecikmeli kaydırma (DOM'un yerleşmesi için)
-    setTimeout(() => {
-        const active = container.querySelector('.animate-pulse');
-        if (active) active.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 200);
+  },
+
+  renderLeaderboard(players: Player[], filter: 'gold' | 'time') {
+    const listEl = document.getElementById('leaderboard-list');
+    if (!listEl) return;
+    listEl.innerHTML = players.map((p, i) => `
+      <div class="flex justify-between p-3 bg-white border rounded-xl shadow-sm">
+        <span class="font-bold">${i+1}. ${p.username}</span>
+        <span>🪙 ${p.gold}</span>
+      </div>
+    `).join('');
   },
 
   renderBoard(board: number[][], onCellClick: (r: number, c: number) => void, selectedR: number, selectedC: number) {
@@ -85,19 +84,11 @@ export const UIManager = {
     grid.innerHTML = '';
     [1, 2, 3, 4, 5, 6, 7, 8, 9, 0].forEach(num => {
         const btn = document.createElement('button');
-        btn.className = "bg-white p-3 rounded-xl shadow-sm border border-slate-200 font-black text-xl hover:bg-indigo-100 transition-colors";
+        btn.className = "bg-white p-3 rounded-xl shadow-sm border font-black text-xl hover:bg-indigo-100";
         btn.innerText = num === 0 ? 'Sil' : num.toString();
         btn.onclick = () => onNumberClick(num);
         grid.appendChild(btn);
     });
-  },
-
-  showError(r: number, c: number) {
-    const cell = document.querySelector(`[data-row="${r}"][data-col="${c}"]`) as HTMLElement;
-    if (cell) {
-        cell.classList.add('bg-red-500', 'text-white', 'animate-pulse');
-        setTimeout(() => cell.classList.remove('bg-red-500', 'text-white', 'animate-pulse'), 1000);
-    }
   },
 
   toggleModal(id: string, show: boolean) {
