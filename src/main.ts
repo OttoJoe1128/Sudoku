@@ -23,19 +23,18 @@ const startGame = (diff: 'basit' | 'orta' | 'zor') => {
         UIManager.renderBoard(userBoard, (r, c) => {
             selectedCell = {r, c};
             refreshBoard();
-            const num = prompt("Sayı gir (1-9) veya sil (0):");
-            if (num !== null) {
-                if(GameEngine.processInput(r, c, parseInt(num), userBoard, currentSolution)) {
-                    localStorage.setItem('sudoku_saved_game', JSON.stringify({puzzle: userBoard, solution: currentSolution}));
-                }
-                refreshBoard();
-            }
         }, selectedCell?.r ?? -1, selectedCell?.c ?? -1);
     };
-    refreshBoard();
-};
 
-document.getElementById('btn-back-menu')?.addEventListener('click', () => UIManager.navigate('menu'));
+    refreshBoard();
+    UIManager.renderNumpad((num) => {
+        if (selectedCell) {
+            GameEngine.processInput(selectedCell.r, selectedCell.c, num, userBoard, currentSolution);
+            localStorage.setItem('sudoku_saved_game', JSON.stringify({puzzle: userBoard, solution: currentSolution}));
+            refreshBoard();
+        }
+    });
+};
 
 // Kullanıcı Akışı
 const checkUser = () => {
@@ -92,3 +91,5 @@ document.getElementById('btn-daily-reward')?.addEventListener('click', () => {
         alert("Ödülünü zaten aldın, yarın tekrar gel!");
     }
 });
+
+document.getElementById('btn-back-menu')?.addEventListener('click', () => UIManager.navigate('menu'));

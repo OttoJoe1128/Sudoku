@@ -38,10 +38,9 @@ export const UIManager = {
       row.forEach((val, c) => {
         const cell = document.createElement('div');
         const isSelected = r === selectedR && c === selectedC;
-        // Sabit sayı mı? (Daha önce 0'dan farklı olduğunu varsayıyoruz)
         const isFixed = val !== 0; 
         
-        cell.className = `w-9 h-9 flex items-center justify-center font-bold text-lg cursor-pointer transition-colors
+        cell.className = `w-9 h-9 border border-slate-300 flex items-center justify-center font-bold text-lg cursor-pointer transition-colors
           ${isSelected ? 'bg-indigo-300' : 'bg-white'} 
           ${isFixed ? 'text-slate-900 font-black' : 'text-indigo-600'}`;
           
@@ -49,6 +48,26 @@ export const UIManager = {
         cell.onclick = () => onCellClick(r, c);
         boardEl.appendChild(cell);
       });
+    });
+  },
+
+  renderNumpad(onNumberClick: (num: number) => void) {
+    const gameView = document.getElementById('game-view');
+    let numpadEl = document.getElementById('numpad-grid');
+    if (!numpadEl) {
+        numpadEl = document.createElement('div');
+        numpadEl.id = 'numpad-grid';
+        numpadEl.className = 'grid grid-cols-5 gap-2 mt-6 w-full max-w-[300px]';
+        gameView?.appendChild(numpadEl);
+    }
+    numpadEl.innerHTML = '';
+    
+    [1, 2, 3, 4, 5, 6, 7, 8, 9, 0].forEach(num => {
+        const btn = document.createElement('button');
+        btn.className = 'bg-white p-3 rounded-xl shadow border font-black text-xl hover:bg-indigo-100 transition-colors';
+        btn.innerText = num === 0 ? 'Sil' : num.toString();
+        btn.onclick = () => onNumberClick(num);
+        numpadEl.appendChild(btn);
     });
   },
 
