@@ -27,11 +27,14 @@ const startTimer = () => {
     }, 1000);
 };
 
-const startGame = (diff: 'basit' | 'orta' | 'zor') => {
-    const saved = localStorage.getItem('sudoku_saved_game');
-    const data = saved ? JSON.parse(saved) : SudokuGen.generate(diff);
+const startGame = (level: number, diff: 'basit' | 'orta' | 'zor') => {
+    const data = SudokuGen.generate(diff);
     currentSolution = data.solution;
     userBoard = data.puzzle;
+    
+    // Oyun başlığını seviye ile güncelle
+    const titleEl = document.getElementById('game-title');
+    if (titleEl) titleEl.innerText = `Seviye ${level}`;
     
     UIManager.navigate('game');
     startTimer();
@@ -56,13 +59,13 @@ const startGame = (diff: 'basit' | 'orta' | 'zor') => {
     });
 };
 
-// Harita tıklama delegasyonu (Global window yerine)
+// Harita tıklama delegasyonu (Düzeltilmiş)
 document.getElementById('map-nodes')?.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement;
-    const level = target.dataset.level;
-    if (level) {
-        const diff = SudokuGen.getDifficulty(parseInt(level));
-        startGame(diff);
+    const target = (e.target as HTMLElement).closest('button');
+    if (target && target.dataset.level) {
+        const level = parseInt(target.dataset.level);
+        const diff = SudokuGen.getDifficulty(level); 
+        startGame(level, diff);
     }
 });
 
