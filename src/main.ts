@@ -1,13 +1,63 @@
 import { UIManager } from './ui/uiManager';
-import { GameLogic } from './engine/gameLogic';
+import { GameEngine } from './engine/gameEngine';
+import { SudokuGen } from './engine/sudoku';
 import { Rewards } from './engine/rewards';
+import { UserManager } from './store/userState';
+import { Leaderboard } from './engine/leaderboard';
 
 UIManager.mountUI();
+
+let currentSolution: number[][];
+let userBoard: number[][];
+
+const startGame = (diff: 'basit' | 'orta' | 'zor') => {
+    const data = SudokuGen.generate(diff);
+    currentSolution = data.solution;
+    userBoard = data.puzzle;
+    
+    UIManager.navigate('game');
+    UIManager.renderBoard(userBoard, (r, c) => {
+        const num = prompt("Sayı gir (1-9) veya sil (0):");
+        if (num !== null) {
+            GameEngine.processInput(r, c, parseInt(num), userBoard, currentSolution);
+        }
+    });
+};
+
+// Navigasyon & Başlatma
+document.getElementById('btn-journey')?.addEventListener('click', () => UIManager.navigate('map'));
+document.getElementById('btn-custom')?.addEventListener('click', () => UIManager.navigate('custom'));
+
+document.getElementById('btn-diff-basit')?.addEventListener('click', () => startGame('basit'));
+document.getElementById('btn-diff-orta')?.addEventListener('click', () => startGame('orta'));
+document.getElementById('btn-diff-zor')?.addEventListener('click', () => startGame('zor'));
+
+// ... (Geri kalan eventler aynı)
+  if (!UserManager.getUsername()) {
+    UIManager.toggleModal('username-modal', true);
+  } else {
+    const nameEl = document.getElementById('menu-player-name');
+    if (nameEl) nameEl.innerText = UserManager.getUsername()!;
+    UIManager.navigate('menu');
+  }
+};
+
+document.getElementById('save-username')?.addEventListener('click', () => {
+  const input = document.getElementById('username-input') as HTMLInputElement;
+  if (input?.value.length >= 3) {
+    UserManager.saveUser(input.value);
+    UIManager.toggleModal('username-modal', false);
+    checkUser();
+  } else {
+    alert("En az 3 karakter!");
+  }
+});
+
+checkUser();
 
 // Navigasyon
 document.getElementById('btn-journey')?.addEventListener('click', () => UIManager.navigate('map'));
 document.getElementById('btn-custom')?.addEventListener('click', () => UIManager.navigate('custom'));
-import { Leaderboard } from './engine/leaderboard';
 
 // Modallar
 document.getElementById('btn-leaderboard')?.addEventListener('click', async () => {

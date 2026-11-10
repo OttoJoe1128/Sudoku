@@ -1,0 +1,43 @@
+import { UIManager } from '../ui/uiManager';
+import { updateGameState, getGameState } from '../store/gameState';
+
+export const GameEngine = {
+  playSound(type: 'tap' | 'error' | 'win') {
+    // Web Audio API ile 8-bit ses motoru (eski kodundaki gibi)
+    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    if (type === 'tap') osc.frequency.value = 600;
+    else if (type === 'error') osc.frequency.value = 150;
+    else osc.frequency.value = 800;
+    
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.1);
+  },
+
+  doVibrate() {
+    if (navigator.vibrate) navigator.vibrate([50]);
+  },
+  
+  processInput(r: number, c: number, num: number, userBoard: number[][], solution: number[][]) {
+    if (num === 0) { 
+      userBoard[r][c] = 0;
+    } else if (num !== solution[r][c]) {
+      this.playSound('error');
+      this.doVibrate();
+      UIManager.showError(r, c);
+      return false;
+    } else {
+      userBoard[r][c] = num;
+      this.playSound('tap');
+    }
+    UIManager.renderBoard(userBoard);
+    return true;
+  }
+};
