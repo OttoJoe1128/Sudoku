@@ -22,12 +22,26 @@ export const UIManager = {
         <div id="game-view" class="hidden flex-col items-center p-6 w-full h-full">
             <div class="w-full flex justify-between items-center mb-6">
                 <button id="btn-back-menu" class="bg-slate-200 px-4 py-2 rounded-xl font-bold text-sm">⬅ Menü</button>
-                <h2 id="game-title" class="text-xl font-black">Sudoku</h2>
+                <div id="game-timer" class="font-mono font-bold">00:00</div>
             </div>
             <div id="sudoku-grid" class="grid grid-cols-9 gap-[1px] bg-slate-800 p-[1px] rounded-lg shadow-xl"></div>
+            <div id="numpad-grid" class="grid grid-cols-5 gap-2 mt-6 w-full max-w-[300px]"></div>
         </div>
       </div>
     `;
+  },
+
+  renderLeaderboard(players: Player[], filter: 'gold' | 'time') {
+    const listEl = document.getElementById('leaderboard-list');
+    if (!listEl) return;
+    let sorted = [...players];
+    if (filter === 'gold') sorted.sort((a,b) => b.gold - a.gold);
+    listEl.innerHTML = sorted.map((p, i) => `
+      <div class="flex justify-between p-3 bg-white border rounded-xl shadow-sm">
+        <span class="font-bold">${i+1}. ${p.username}</span>
+        <span>🪙 ${p.gold}</span>
+      </div>
+    `).join('');
   },
 
   renderBoard(board: number[][], onCellClick: (r: number, c: number) => void, selectedR: number, selectedC: number) {
@@ -39,11 +53,9 @@ export const UIManager = {
         const cell = document.createElement('div');
         const isSelected = r === selectedR && c === selectedC;
         const isFixed = val !== 0; 
-        
-        cell.className = `w-9 h-9 border border-slate-300 flex items-center justify-center font-bold text-lg cursor-pointer transition-colors
+        cell.className = `w-9 h-9 border flex items-center justify-center font-bold text-lg cursor-pointer transition-colors
           ${isSelected ? 'bg-indigo-300' : 'bg-white'} 
           ${isFixed ? 'text-slate-900 font-black' : 'text-indigo-600'}`;
-          
         cell.innerText = val !== 0 ? val.toString() : '';
         cell.onclick = () => onCellClick(r, c);
         boardEl.appendChild(cell);
@@ -51,24 +63,12 @@ export const UIManager = {
     });
   },
 
-  renderNumpad(onNumberClick: (num: number) => void) {
-    const gameView = document.getElementById('game-view');
-    let numpadEl = document.getElementById('numpad-grid');
-    if (!numpadEl) {
-        numpadEl = document.createElement('div');
-        numpadEl.id = 'numpad-grid';
-        numpadEl.className = 'grid grid-cols-5 gap-2 mt-6 w-full max-w-[300px]';
-        gameView?.appendChild(numpadEl);
+  showError(r: number, c: number) {
+    const cell = document.querySelector(`[data-row="${r}"][data-col="${c}"]`) as HTMLElement;
+    if (cell) {
+        cell.classList.add('bg-red-500', 'text-white', 'animate-pulse');
+        setTimeout(() => cell.classList.remove('bg-red-500', 'text-white', 'animate-pulse'), 1000);
     }
-    numpadEl.innerHTML = '';
-    
-    [1, 2, 3, 4, 5, 6, 7, 8, 9, 0].forEach(num => {
-        const btn = document.createElement('button');
-        btn.className = 'bg-white p-3 rounded-xl shadow border font-black text-xl hover:bg-indigo-100 transition-colors';
-        btn.innerText = num === 0 ? 'Sil' : num.toString();
-        btn.onclick = () => onNumberClick(num);
-        numpadEl.appendChild(btn);
-    });
   },
 
   toggleModal(id: string, show: boolean) {
