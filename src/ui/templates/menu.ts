@@ -14,7 +14,7 @@ export const menuTemplate = `
     
     <button id="btn-journey" class="z-10 w-full bg-indigo-600 text-white rounded-2xl p-6 shadow-[0_6px_0_#4338ca] active:translate-y-1.5 transition-all text-center">
         <span class="text-2xl font-black block">🗺️ Sudoku Yolculuğu</span>
-        <span class="text-indigo-200">Seviyeyi devam ettir</span>
+        <span class="text-indigo-200">Başla / Devam Et</span>
     </button>
 
     <div class="grid grid-cols-3 gap-3 w-full z-10">

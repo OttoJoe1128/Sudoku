@@ -10,7 +10,8 @@ UIManager.mountUI();
 let currentSolution: number[][];
 let userBoard: number[][];
 
-const startGame = (diff: 'basit' | 'orta' | 'zor') => {
+const startGame = (mode: 'journey' | 'custom', diff: 'basit' | 'orta' | 'zor') => {
+    // Burada zorluk seviyesine göre Sudoku'yu oluştur
     const data = SudokuGen.generate(diff);
     currentSolution = data.solution;
     userBoard = data.puzzle;
@@ -24,7 +25,7 @@ const startGame = (diff: 'basit' | 'orta' | 'zor') => {
     });
 };
 
-// Kullanıcı Adı Kontrolü
+// Kullanıcı Akışı
 const checkUser = () => {
   if (!UserManager.getUsername()) {
     UIManager.toggleModal('username-modal', true);
@@ -46,13 +47,18 @@ document.getElementById('save-username')?.addEventListener('click', () => {
   }
 });
 
-// Başlangıç
 checkUser();
 
-// Navigasyon & Modallar
-document.getElementById('btn-journey')?.addEventListener('click', () => UIManager.navigate('map'));
+// Navigasyon
+document.getElementById('btn-journey')?.addEventListener('click', () => UIManager.navigate('custom')); // Zorluk seçimine yönlendir
 document.getElementById('btn-custom')?.addEventListener('click', () => UIManager.navigate('custom'));
 
+// Zorluk Seçimi (Oyunu Başlatır)
+document.getElementById('btn-diff-basit')?.addEventListener('click', () => startGame('journey', 'basit'));
+document.getElementById('btn-diff-orta')?.addEventListener('click', () => startGame('journey', 'orta'));
+document.getElementById('btn-diff-zor')?.addEventListener('click', () => startGame('journey', 'zor'));
+
+// Modallar ve Diğerleri
 document.getElementById('btn-leaderboard')?.addEventListener('click', async () => {
   UIManager.toggleModal('view-leaderboard', true);
   const players = await Leaderboard.fetchTopPlayers();
@@ -63,12 +69,6 @@ document.getElementById('close-leaderboard')?.addEventListener('click', () => UI
 document.getElementById('btn-shop')?.addEventListener('click', () => UIManager.toggleModal('view-shop', true));
 document.getElementById('close-shop')?.addEventListener('click', () => UIManager.toggleModal('view-shop', false));
 
-// Oyun Mantığı
-document.getElementById('btn-diff-basit')?.addEventListener('click', () => startGame('basit'));
-document.getElementById('btn-diff-orta')?.addEventListener('click', () => startGame('orta'));
-document.getElementById('btn-diff-zor')?.addEventListener('click', () => startGame('zor'));
-
-// Ödül Sistemi
 document.getElementById('btn-daily-reward')?.addEventListener('click', () => {
     const result = Rewards.claimReward();
     if(result.success) {
