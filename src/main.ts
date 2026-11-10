@@ -9,21 +9,33 @@ UIManager.mountUI();
 
 let currentSolution: number[][];
 let userBoard: number[][];
+let selectedCell: {r: number, c: number} | null = null;
 
-const startGame = (mode: 'journey' | 'custom', diff: 'basit' | 'orta' | 'zor') => {
-    // Burada zorluk seviyesine göre Sudoku'yu oluştur
-    const data = SudokuGen.generate(diff);
+const startGame = (diff: 'basit' | 'orta' | 'zor') => {
+    const saved = localStorage.getItem('sudoku_saved_game');
+    const data = saved ? JSON.parse(saved) : SudokuGen.generate(diff);
     currentSolution = data.solution;
     userBoard = data.puzzle;
     
     UIManager.navigate('game');
-    UIManager.renderBoard(userBoard, (r, c) => {
-        const num = prompt("Sayı gir (1-9) veya sil (0):");
-        if (num !== null) {
-            GameEngine.processInput(r, c, parseInt(num), userBoard, currentSolution);
-        }
-    });
+    
+    const refreshBoard = () => {
+        UIManager.renderBoard(userBoard, (r, c) => {
+            selectedCell = {r, c};
+            refreshBoard();
+            const num = prompt("Sayı gir (1-9) veya sil (0):");
+            if (num !== null) {
+                if(GameEngine.processInput(r, c, parseInt(num), userBoard, currentSolution)) {
+                    localStorage.setItem('sudoku_saved_game', JSON.stringify({puzzle: userBoard, solution: currentSolution}));
+                }
+                refreshBoard();
+            }
+        }, selectedCell?.r ?? -1, selectedCell?.c ?? -1);
+    };
+    refreshBoard();
 };
+
+document.getElementById('btn-back-menu')?.addEventListener('click', () => UIManager.navigate('menu'));
 
 // Kullanıcı Akışı
 const checkUser = () => {
@@ -50,15 +62,15 @@ document.getElementById('save-username')?.addEventListener('click', () => {
 checkUser();
 
 // Navigasyon
-document.getElementById('btn-journey')?.addEventListener('click', () => UIManager.navigate('custom')); // Zorluk seçimine yönlendir
+document.getElementById('btn-journey')?.addEventListener('click', () => UIManager.navigate('custom'));
 document.getElementById('btn-custom')?.addEventListener('click', () => UIManager.navigate('custom'));
 
-// Zorluk Seçimi (Oyunu Başlatır)
-document.getElementById('btn-diff-basit')?.addEventListener('click', () => startGame('journey', 'basit'));
-document.getElementById('btn-diff-orta')?.addEventListener('click', () => startGame('journey', 'orta'));
-document.getElementById('btn-diff-zor')?.addEventListener('click', () => startGame('journey', 'zor'));
+// Oyun Başlatma
+document.getElementById('btn-diff-basit')?.addEventListener('click', () => startGame('basit'));
+document.getElementById('btn-diff-orta')?.addEventListener('click', () => startGame('orta'));
+document.getElementById('btn-diff-zor')?.addEventListener('click', () => startGame('zor'));
 
-// Modallar ve Diğerleri
+// Modallar
 document.getElementById('btn-leaderboard')?.addEventListener('click', async () => {
   UIManager.toggleModal('view-leaderboard', true);
   const players = await Leaderboard.fetchTopPlayers();
@@ -69,6 +81,7 @@ document.getElementById('close-leaderboard')?.addEventListener('click', () => UI
 document.getElementById('btn-shop')?.addEventListener('click', () => UIManager.toggleModal('view-shop', true));
 document.getElementById('close-shop')?.addEventListener('click', () => UIManager.toggleModal('view-shop', false));
 
+// Ödül Sistemi
 document.getElementById('btn-daily-reward')?.addEventListener('click', () => {
     const result = Rewards.claimReward();
     if(result.success) {

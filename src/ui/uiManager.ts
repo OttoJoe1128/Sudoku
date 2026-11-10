@@ -19,46 +19,32 @@ export const UIManager = {
         ${leaderboardTemplate}
         ${shopTemplate}
         ${usernameModalTemplate}
-        <div id="game-view" class="hidden flex-col items-center p-6">
-            <h2 id="game-title" class="text-2xl font-black mb-4">Seviye 1</h2>
-            <div id="sudoku-grid" class="grid grid-cols-9 gap-1 bg-slate-800 p-1 rounded-lg"></div>
+        <div id="game-view" class="hidden flex-col items-center p-6 w-full h-full">
+            <div class="w-full flex justify-between items-center mb-6">
+                <button id="btn-back-menu" class="bg-slate-200 px-4 py-2 rounded-xl font-bold text-sm">⬅ Menü</button>
+                <h2 id="game-title" class="text-xl font-black">Sudoku</h2>
+            </div>
+            <div id="sudoku-grid" class="grid grid-cols-9 gap-[1px] bg-slate-800 p-[1px] rounded-lg shadow-xl"></div>
         </div>
       </div>
     `;
   },
 
-  toggleModal(id: string, show: boolean) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.toggle('hidden', !show);
-    el.classList.toggle('flex', show);
-  },
-
-  renderLeaderboard(players: Player[]) {
-    const listEl = document.getElementById('leaderboard-list');
-    if (!listEl) return;
-    listEl.innerHTML = players.map((player, index) => `
-      <div class="flex items-center justify-between p-3 rounded-xl bg-white border border-slate-100 shadow-sm">
-        <span class="font-black text-slate-400">${index + 1}.</span>
-        <span class="font-bold text-slate-700">${player.username}</span>
-        <div class="flex items-center gap-2">
-            <span class="text-xs font-bold text-indigo-400">Lv ${player.level}</span>
-            <span class="font-black text-amber-600">🪙 ${player.gold}</span>
-        </div>
-      </div>
-    `).join('');
-  },
-
-  renderBoard(board: number[][], onCellClick: (r: number, c: number) => void) {
+  renderBoard(board: number[][], onCellClick: (r: number, c: number) => void, selectedR: number, selectedC: number) {
     const boardEl = document.getElementById('sudoku-grid');
     if (!boardEl) return;
     boardEl.innerHTML = '';
     board.forEach((row, r) => {
       row.forEach((val, c) => {
         const cell = document.createElement('div');
-        cell.className = 'w-10 h-10 border border-slate-300 flex items-center justify-center font-bold text-slate-700 cursor-pointer bg-white hover:bg-indigo-100';
-        cell.dataset.row = r.toString();
-        cell.dataset.col = c.toString();
+        const isSelected = r === selectedR && c === selectedC;
+        // Sabit sayı mı? (Daha önce 0'dan farklı olduğunu varsayıyoruz)
+        const isFixed = val !== 0; 
+        
+        cell.className = `w-9 h-9 flex items-center justify-center font-bold text-lg cursor-pointer transition-colors
+          ${isSelected ? 'bg-indigo-300' : 'bg-white'} 
+          ${isFixed ? 'text-slate-900 font-black' : 'text-indigo-600'}`;
+          
         cell.innerText = val !== 0 ? val.toString() : '';
         cell.onclick = () => onCellClick(r, c);
         boardEl.appendChild(cell);
@@ -66,12 +52,11 @@ export const UIManager = {
     });
   },
 
-  showError(r: number, c: number) {
-    const cell = document.querySelector(`[data-row="${r}"][data-col="${c}"]`) as HTMLElement;
-    if (cell) {
-        cell.classList.add('bg-red-500', 'text-white', 'animate-pulse');
-        setTimeout(() => cell.classList.remove('bg-red-500', 'text-white', 'animate-pulse'), 1000);
-    }
+  toggleModal(id: string, show: boolean) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('hidden', !show);
+    el.classList.toggle('flex', show);
   },
 
   navigate(viewId: 'menu' | 'map' | 'custom' | 'game') {
