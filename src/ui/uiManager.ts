@@ -37,9 +37,8 @@ export const UIManager = {
     container.innerHTML = Array.from({length: 1000}, (_, i) => i + 1).map(level => {
         const isUnlocked = level <= currentLevel;
         const isFocus = level === startFocusLevel;
-        const onClick = isUnlocked ? `onclick="window.startJourney(${level})"` : 'disabled';
         return `
-            <button ${onClick} class="w-12 h-12 rounded-full font-black transition-all ${isFocus ? 'bg-indigo-600 text-white animate-pulse' : isUnlocked ? 'bg-emerald-500 text-white' : 'bg-slate-300 text-slate-500'} ${isUnlocked ? '' : 'cursor-not-allowed'}">
+            <button data-level="${level}" class="w-12 h-12 rounded-full font-black transition-all ${isFocus ? 'bg-indigo-600 text-white animate-pulse' : isUnlocked ? 'bg-emerald-500 text-white' : 'bg-slate-300 text-slate-500'} ${isUnlocked ? '' : 'cursor-not-allowed'}">
                 ${level}
             </button>
         `;

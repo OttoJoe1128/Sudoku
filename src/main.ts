@@ -28,7 +28,8 @@ const startTimer = () => {
 };
 
 const startGame = (diff: 'basit' | 'orta' | 'zor') => {
-    const data = SudokuGen.generate(diff);
+    const saved = localStorage.getItem('sudoku_saved_game');
+    const data = saved ? JSON.parse(saved) : SudokuGen.generate(diff);
     currentSolution = data.solution;
     userBoard = data.puzzle;
     
@@ -43,21 +44,57 @@ const startGame = (diff: 'basit' | 'orta' | 'zor') => {
     };
 
     refreshBoard();
+
     UIManager.renderNumpad((num) => {
         if (selectedCell) {
             GameEngine.processInput(selectedCell.r, selectedCell.c, num, userBoard, currentSolution);
+            localStorage.setItem('sudoku_saved_game', JSON.stringify({puzzle: userBoard, solution: currentSolution}));
             refreshBoard();
+        } else {
+            alert("Lütfen önce bir hücre seç!");
         }
     });
 };
 
-// Global fonksiyonlar
-(window as any).startJourney = (level: number) => {
-    const diff = SudokuGen.getDifficulty(level);
-    startGame(diff);
+// Harita tıklama delegasyonu (Global window yerine)
+document.getElementById('map-nodes')?.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    const level = target.dataset.level;
+    if (level) {
+        const diff = SudokuGen.getDifficulty(parseInt(level));
+        startGame(diff);
+    }
+});
+
+// Kullanıcı Akışı
+const checkUser = () => {
+  if (!UserManager.getUsername()) {
+    UIManager.toggleModal('username-modal', true);
+  } else {
+    const nameEl = document.getElementById('menu-player-name');
+    if (nameEl) nameEl.innerText = UserManager.getUsername()!;
+    UIManager.navigate('menu');
+  }
 };
 
-// Navigasyon ve Başlatma
+document.getElementById('save-username')?.addEventListener('click', () => {
+  const input = document.getElementById('username-input') as HTMLInputElement;
+  if (input?.value.length >= 3) {
+    UserManager.saveUser(input.value);
+    UIManager.toggleModal('username-modal', false);
+    checkUser();
+  } else {
+    alert("En az 3 karakter!");
+  }
+});
+
+checkUser();
+
+// Navigasyon
+document.getElementById('btn-journey')?.addEventListener('click', () => UIManager.navigate('custom'));
+document.getElementById('btn-custom')?.addEventListener('click', () => UIManager.navigate('custom'));
+
+// Zorluk Seçimi
 const openMap = (diff: 'basit' | 'orta' | 'zor') => {
     const startLvl = SudokuGen.getStartLevelForDifficulty(diff);
     const userLvl = UserManager.getCurrentLevel();
@@ -67,35 +104,11 @@ const openMap = (diff: 'basit' | 'orta' | 'zor') => {
     UIManager.renderMap(userLvl, focusLevel);
 };
 
-document.getElementById('btn-journey')?.addEventListener('click', () => UIManager.navigate('custom'));
-document.getElementById('btn-custom')?.addEventListener('click', () => UIManager.navigate('custom'));
 document.getElementById('btn-diff-basit')?.addEventListener('click', () => openMap('basit'));
 document.getElementById('btn-diff-orta')?.addEventListener('click', () => openMap('orta'));
 document.getElementById('btn-diff-zor')?.addEventListener('click', () => openMap('zor'));
-document.getElementById('btn-back-menu')?.addEventListener('click', () => {
-    if(timerInterval) clearInterval(timerInterval);
-    UIManager.navigate('menu');
-});
 
-// Kullanıcı ve Modallar
-const checkUser = () => {
-  if (!UserManager.getUsername()) UIManager.toggleModal('username-modal', true);
-  else {
-    const nameEl = document.getElementById('menu-player-name');
-    if (nameEl) nameEl.innerText = UserManager.getUsername()!;
-    UIManager.navigate('menu');
-  }
-};
-document.getElementById('save-username')?.addEventListener('click', () => {
-  const input = document.getElementById('username-input') as HTMLInputElement;
-  if (input?.value.length >= 3) {
-    UserManager.saveUser(input.value);
-    UIManager.toggleModal('username-modal', false);
-    checkUser();
-  }
-});
-checkUser();
-
+// Modallar
 document.getElementById('btn-leaderboard')?.addEventListener('click', async () => {
   UIManager.toggleModal('view-leaderboard', true);
   const players = await Leaderboard.fetchTopPlayers();
@@ -104,3 +117,20 @@ document.getElementById('btn-leaderboard')?.addEventListener('click', async () =
 document.getElementById('close-leaderboard')?.addEventListener('click', () => UIManager.toggleModal('view-leaderboard', false));
 document.getElementById('btn-shop')?.addEventListener('click', () => UIManager.toggleModal('view-shop', true));
 document.getElementById('close-shop')?.addEventListener('click', () => UIManager.toggleModal('view-shop', false));
+
+// Ödül
+document.getElementById('btn-daily-reward')?.addEventListener('click', () => {
+    const result = Rewards.claimReward();
+    if(result.success) {
+        alert(`Tebrikler! ${result.amount} Altın kazandın.`);
+        const status = document.getElementById('reward-status');
+        if(status) status.innerText = "Alındı";
+    } else {
+        alert("Ödülünü zaten aldın, yarın tekrar gel!");
+    }
+});
+
+document.getElementById('btn-back-menu')?.addEventListener('click', () => {
+    if(timerInterval) clearInterval(timerInterval);
+    UIManager.navigate('menu');
+});
