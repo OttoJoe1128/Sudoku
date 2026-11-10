@@ -32,34 +32,56 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor') => {
     currentSolution = data.solution;
     userBoard = data.puzzle;
     
+    const title = document.getElementById('game-title');
+    if (title) title.innerText = `Seviye ${level}`;
+    
     UIManager.navigate('game');
     startTimer();
     
-    const refreshBoard = () => {
+    const refresh = () => {
         UIManager.renderBoard(userBoard, (r, c) => {
             selectedCell = {r, c};
-            refreshBoard();
+            refresh();
         }, selectedCell?.r ?? -1, selectedCell?.c ?? -1);
     };
-
-    refreshBoard();
+    refresh();
+    
     UIManager.renderNumpad((num) => {
         if (selectedCell) {
             GameEngine.processInput(selectedCell.r, selectedCell.c, num, userBoard, currentSolution);
-            localStorage.setItem('sudoku_saved_game', JSON.stringify({puzzle: userBoard, solution: currentSolution}));
-            refreshBoard();
+            refresh();
         }
     });
 };
 
-// Harita tıklama delegasyonu
-document.getElementById('map-nodes')?.addEventListener('click', (e) => {
+// Harita Tıklama - Event Delegation (EN SAĞLAM YÖNTEM)
+document.addEventListener('click', (e) => {
     const target = (e.target as HTMLElement).closest('button');
     if (target && target.dataset.level) {
         const level = parseInt(target.dataset.level);
-        const diff = SudokuGen.getDifficulty(level); 
+        const diff = SudokuGen.getDifficulty(level);
         startGame(level, diff);
     }
+});
+
+const openMap = (diff: 'basit' | 'orta' | 'zor') => {
+    const startLvl = SudokuGen.getStartLevelForDifficulty(diff);
+    const userLvl = UserManager.getCurrentLevel();
+    UIManager.navigate('map');
+    // Haritayı render et ve startLvl'e odaklan
+    UIManager.renderMap(userLvl, startLvl);
+};
+
+// Buton Bağlantıları
+document.getElementById('btn-journey')?.addEventListener('click', () => UIManager.navigate('custom'));
+document.getElementById('btn-custom')?.addEventListener('click', () => UIManager.navigate('custom'));
+document.getElementById('btn-diff-basit')?.addEventListener('click', () => openMap('basit'));
+document.getElementById('btn-diff-orta')?.addEventListener('click', () => openMap('orta'));
+document.getElementById('btn-diff-zor')?.addEventListener('click', () => openMap('zor'));
+document.getElementById('btn-back-map')?.addEventListener('click', () => UIManager.navigate('menu'));
+document.getElementById('btn-back-menu')?.addEventListener('click', () => {
+    if(timerInterval) clearInterval(timerInterval);
+    UIManager.navigate('menu');
 });
 
 // Kullanıcı Akışı
@@ -81,20 +103,7 @@ document.getElementById('save-username')?.addEventListener('click', () => {
 });
 checkUser();
 
-document.getElementById('btn-journey')?.addEventListener('click', () => UIManager.navigate('custom'));
-document.getElementById('btn-custom')?.addEventListener('click', () => UIManager.navigate('custom'));
-
-const openMap = (diff: 'basit' | 'orta' | 'zor') => {
-    const startLvl = SudokuGen.getStartLevelForDifficulty(diff);
-    const userLvl = UserManager.getCurrentLevel();
-    UIManager.navigate('map');
-    UIManager.renderMap(userLvl, startLvl);
-};
-
-document.getElementById('btn-diff-basit')?.addEventListener('click', () => openMap('basit'));
-document.getElementById('btn-diff-orta')?.addEventListener('click', () => openMap('orta'));
-document.getElementById('btn-diff-zor')?.addEventListener('click', () => openMap('zor'));
-
+// Modallar
 document.getElementById('btn-leaderboard')?.addEventListener('click', async () => {
   UIManager.toggleModal('view-leaderboard', true);
   const players = await Leaderboard.fetchTopPlayers();
@@ -103,8 +112,3 @@ document.getElementById('btn-leaderboard')?.addEventListener('click', async () =
 document.getElementById('close-leaderboard')?.addEventListener('click', () => UIManager.toggleModal('view-leaderboard', false));
 document.getElementById('btn-shop')?.addEventListener('click', () => UIManager.toggleModal('view-shop', true));
 document.getElementById('close-shop')?.addEventListener('click', () => UIManager.toggleModal('view-shop', false));
-
-document.getElementById('btn-back-menu')?.addEventListener('click', () => {
-    if(timerInterval) clearInterval(timerInterval);
-    UIManager.navigate('menu');
-});

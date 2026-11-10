@@ -1,9 +1,11 @@
 export const mapTemplate = `
-<div id="view-map" class="flex-1 overflow-y-auto hidden-scrollbar relative bg-slate-50 hidden">
-    <div class="relative min-h-full py-16 flex flex-col-reverse justify-start items-center">
-        <div id="map-nodes" class="relative z-10 flex flex-col-reverse w-full gap-6 px-6">
-            <!-- Harita noktaları buraya dinamik eklenecek -->
-        </div>
+<div id="view-map" class="hidden flex-col items-center p-6 bg-slate-50 h-[100dvh] overflow-y-auto hidden-scrollbar">
+    <div class="flex justify-between w-full mb-6 shrink-0">
+        <button id="btn-back-map" class="bg-slate-200 px-4 py-2 rounded-xl font-bold text-sm">⬅ Menü</button>
+        <h2 class="text-xl font-black text-slate-800">Sudoku Yolculuğu</h2>
+    </div>
+    <div id="map-nodes" class="grid grid-cols-4 gap-4 w-full pb-20">
+        <!-- Seviye butonları buraya gelecek -->
     </div>
 </div>
 `;
