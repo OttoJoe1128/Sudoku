@@ -24,15 +24,8 @@ const startGame = (diff: 'basit' | 'orta' | 'zor') => {
     });
 };
 
-// Navigasyon & Başlatma
-document.getElementById('btn-journey')?.addEventListener('click', () => UIManager.navigate('map'));
-document.getElementById('btn-custom')?.addEventListener('click', () => UIManager.navigate('custom'));
-
-document.getElementById('btn-diff-basit')?.addEventListener('click', () => startGame('basit'));
-document.getElementById('btn-diff-orta')?.addEventListener('click', () => startGame('orta'));
-document.getElementById('btn-diff-zor')?.addEventListener('click', () => startGame('zor'));
-
-// ... (Geri kalan eventler aynı)
+// Kullanıcı Adı Kontrolü
+const checkUser = () => {
   if (!UserManager.getUsername()) {
     UIManager.toggleModal('username-modal', true);
   } else {
@@ -53,13 +46,13 @@ document.getElementById('save-username')?.addEventListener('click', () => {
   }
 });
 
+// Başlangıç
 checkUser();
 
-// Navigasyon
+// Navigasyon & Modallar
 document.getElementById('btn-journey')?.addEventListener('click', () => UIManager.navigate('map'));
 document.getElementById('btn-custom')?.addEventListener('click', () => UIManager.navigate('custom'));
 
-// Modallar
 document.getElementById('btn-leaderboard')?.addEventListener('click', async () => {
   UIManager.toggleModal('view-leaderboard', true);
   const players = await Leaderboard.fetchTopPlayers();
@@ -71,7 +64,9 @@ document.getElementById('btn-shop')?.addEventListener('click', () => UIManager.t
 document.getElementById('close-shop')?.addEventListener('click', () => UIManager.toggleModal('view-shop', false));
 
 // Oyun Mantığı
-document.getElementById('btn-diff-basit')?.addEventListener('click', () => GameLogic.initGame('basit'));
+document.getElementById('btn-diff-basit')?.addEventListener('click', () => startGame('basit'));
+document.getElementById('btn-diff-orta')?.addEventListener('click', () => startGame('orta'));
+document.getElementById('btn-diff-zor')?.addEventListener('click', () => startGame('zor'));
 
 // Ödül Sistemi
 document.getElementById('btn-daily-reward')?.addEventListener('click', () => {
