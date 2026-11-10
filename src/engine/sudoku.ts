@@ -5,6 +5,12 @@ export class SudokuGen {
     return 701;
   }
 
+  static getDifficulty(level: number): 'basit' | 'orta' | 'zor' {
+    if (level <= 300) return 'basit';
+    if (level <= 700) return 'orta';
+    return 'zor';
+  }
+
   static generate(difficulty: string) {
     let board = Array.from({ length: 9 }, () => Array(9).fill(0));
     this.fillDiagonal(board);
