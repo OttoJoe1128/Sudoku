@@ -28,7 +28,8 @@ const startTimer = () => {
 };
 
 const startGame = (diff: 'basit' | 'orta' | 'zor') => {
-    const data = SudokuGen.generate(diff);
+    const saved = localStorage.getItem('sudoku_saved_game');
+    const data = saved ? JSON.parse(saved) : SudokuGen.generate(diff);
     currentSolution = data.solution;
     userBoard = data.puzzle;
     
@@ -43,16 +44,18 @@ const startGame = (diff: 'basit' | 'orta' | 'zor') => {
     };
 
     refreshBoard();
+
+    // Numpad entegrasyonu
     UIManager.renderNumpad((num) => {
         if (selectedCell) {
             GameEngine.processInput(selectedCell.r, selectedCell.c, num, userBoard, currentSolution);
             localStorage.setItem('sudoku_saved_game', JSON.stringify({puzzle: userBoard, solution: currentSolution}));
             refreshBoard();
+        } else {
+            alert("Lütfen önce bir hücre seç!");
         }
     });
 };
-
-// ... (Kullanıcı Akışı ve diğer Event Listener'lar aynı)
 
 // Kullanıcı Akışı
 const checkUser = () => {
@@ -78,21 +81,44 @@ document.getElementById('save-username')?.addEventListener('click', () => {
 
 checkUser();
 
+// Navigasyon
 document.getElementById('btn-journey')?.addEventListener('click', () => UIManager.navigate('custom'));
 document.getElementById('btn-custom')?.addEventListener('click', () => UIManager.navigate('custom'));
-document.getElementById('btn-diff-basit')?.addEventListener('click', () => startGame('basit'));
-document.getElementById('btn-diff-orta')?.addEventListener('click', () => startGame('orta'));
-document.getElementById('btn-diff-zor')?.addEventListener('click', () => startGame('zor'));
 
+// Navigasyon & Oyun Başlatma Mantığı
+const openMap = (diff: 'basit' | 'orta' | 'zor') => {
+    UIManager.navigate('map');
+    UIManager.renderMap(UserManager.getCurrentLevel());
+    // Haritadaki butonlara tıklanınca startGame çalışacak
+};
+
+// Global fonksiyon olarak harita tıklamasını expose ediyoruz
+(window as any).startJourney = (level: number) => {
+    const diff = SudokuGen.getDifficulty(level);
+    startGame(diff);
+};
+
+// Navigasyon
+document.getElementById('btn-journey')?.addEventListener('click', () => UIManager.navigate('custom'));
+document.getElementById('btn-custom')?.addEventListener('click', () => UIManager.navigate('custom'));
+
+// Zorluk Seçimi -> Haritayı Aç
+document.getElementById('btn-diff-basit')?.addEventListener('click', () => openMap('basit'));
+document.getElementById('btn-diff-orta')?.addEventListener('click', () => openMap('orta'));
+document.getElementById('btn-diff-zor')?.addEventListener('click', () => openMap('zor'));
+
+// Modallar
 document.getElementById('btn-leaderboard')?.addEventListener('click', async () => {
   UIManager.toggleModal('view-leaderboard', true);
   const players = await Leaderboard.fetchTopPlayers();
   UIManager.renderLeaderboard(players, 'gold');
 });
 document.getElementById('close-leaderboard')?.addEventListener('click', () => UIManager.toggleModal('view-leaderboard', false));
+
 document.getElementById('btn-shop')?.addEventListener('click', () => UIManager.toggleModal('view-shop', true));
 document.getElementById('close-shop')?.addEventListener('click', () => UIManager.toggleModal('view-shop', false));
 
+// Ödül Sistemi
 document.getElementById('btn-daily-reward')?.addEventListener('click', () => {
     const result = Rewards.claimReward();
     if(result.success) {
