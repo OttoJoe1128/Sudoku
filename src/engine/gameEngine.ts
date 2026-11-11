@@ -34,15 +34,16 @@ export const GameEngine = {
     solution: number[][],
     onWin: () => void,
     onError?: (err: number) => void
-  ) {
+  ): { valid: boolean; won: boolean } {
     if (num === 0) { 
       userBoard[r][c] = 0;
+      return { valid: true, won: false };
     } else if (num !== solution[r][c]) {
       this.playSound('error');
       this.doVibrate();
       UIManager.showError(r, c);
       if (onError) onError(1);
-      return false;
+      return { valid: false, won: false };
     } else {
       userBoard[r][c] = num;
       this.playSound('tap');
@@ -53,8 +54,9 @@ export const GameEngine = {
       if (isWin) {
         this.playSound('win');
         onWin();
+        return { valid: true, won: true };
       }
     }
-    return true;
+    return { valid: true, won: false };
   }
 };

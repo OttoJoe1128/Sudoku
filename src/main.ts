@@ -3,9 +3,9 @@ import { GameEngine } from './engine/gameEngine';
 import { SudokuGen } from './engine/sudoku';
 import { UserManager } from './store/userState';
 import { Leaderboard } from './engine/leaderboard';
-import { AchievementManager } from './engine/achievements';
 import { ShopManager } from './engine/shop';
 import { Rewards } from './engine/rewards';
+import confetti from 'canvas-confetti';
 
 UIManager.mountUI();
 
@@ -18,6 +18,7 @@ interface SavedGameState {
   timeElapsed: number;
   errors: number;
   hintsUsed: number;
+  savedAt: number;
 }
 
 let currentSolution: number[][];
@@ -30,20 +31,38 @@ let errors = 0;
 let hintsUsed = 0;
 let timeElapsed = 0;
 let timerInterval: ReturnType<typeof setInterval> | null = null;
+let isGameActive = false;
 let refreshBoard = () => {};
 
-// --- OYUN KAYIT SİSTEMİ (AUTO-SAVE) ---
+// Tahtanın tamamen ve doğru şekilde tamamlanıp tamamlanmadığını kontrol eden yardımcı
+const isBoardComplete = (board: number[][], solution: number[][]): boolean => {
+  if (!board || !solution) return false;
+  return board.every((row, ri) =>
+    row.every((val, ci) => val !== 0 && val === solution[ri][ci])
+  );
+};
+
+// --- GÜVENLİ VE KALICI OYUN KAYIT SİSTEMİ ---
 const saveCurrentGameState = () => {
-  if (!userBoard || !currentSolution) return;
+  // Oyun aktif değilse veya oyun zaten bitmişse ASLA kaydetme!
+  if (!isGameActive || !userBoard || !currentSolution || !initialBoard) return;
+
+  // Eğer tahta zaten tamamlanmışsa kayıtlı oyunu hemen sil ve kaydetme
+  if (isBoardComplete(userBoard, currentSolution)) {
+    clearCurrentGameState();
+    return;
+  }
+
   const state: SavedGameState = {
     level: currentLevel,
     diff: currentDiff,
-    userBoard,
-    initialBoard,
-    solution: currentSolution,
+    userBoard: userBoard.map(row => [...row]),
+    initialBoard: initialBoard.map(row => [...row]),
+    solution: currentSolution.map(row => [...row]),
     timeElapsed,
     errors,
-    hintsUsed
+    hintsUsed,
+    savedAt: Date.now()
   };
   localStorage.setItem('sudoku_saved_game', JSON.stringify(state));
 };
@@ -55,9 +74,19 @@ const clearCurrentGameState = () => {
 const getSavedGameState = (): SavedGameState | null => {
   try {
     const raw = localStorage.getItem('sudoku_saved_game');
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.userBoard) && Array.isArray(parsed.solution)) {
+        // Eğer kaydedilmiş oyun zaten tamamlanmış bir tahtaysa geçersiz say ve temizle
+        if (isBoardComplete(parsed.userBoard, parsed.solution)) {
+          clearCurrentGameState();
+          return null;
+        }
+        return parsed;
+      }
+    }
   } catch {
-    // ignore corrupted JSON
+    clearCurrentGameState();
   }
   return null;
 };
@@ -68,19 +97,50 @@ const formatTime = (seconds: number) => {
   return `${m}:${s}`;
 };
 
+// Ana Menüdeki "Kayıtlı Oyundan Devam Et" Kartını Güncelle
 const updateMenuContinueCard = () => {
-  const card = document.getElementById('continue-card');
+  const btn = document.getElementById('btn-continue-game') as HTMLButtonElement;
   const title = document.getElementById('continue-game-title');
   const subtitle = document.getElementById('continue-game-subtitle');
-  if (!card) return;
+  const tag = document.getElementById('continue-tag');
+  const dot = document.getElementById('continue-dot');
+  if (!btn) return;
 
   const saved = getSavedGameState();
   if (saved) {
-    card.classList.remove('hidden');
-    if (title) title.innerText = `▶ Seviye ${saved.level} (${saved.diff.toUpperCase()}) - Devam Et`;
-    if (subtitle) subtitle.innerText = `Kalan Süre: ${formatTime(saved.timeElapsed)} • Hata: ${saved.errors}/3`;
+    btn.disabled = false;
+    btn.className = "w-full text-left rounded-2xl p-5 shadow-md active:scale-[0.98] transition-all border flex justify-between items-center group bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500 cursor-pointer";
+    if (title) title.innerText = `▶ Kayıtlı Oyundan Devam Et`;
+    if (subtitle) subtitle.innerText = `Seviye ${saved.level} (${saved.diff.toUpperCase()}) • ⏱ ${formatTime(saved.timeElapsed)} • Hata: ${saved.errors}/3`;
+    if (tag) tag.innerText = "Aktif Oyun Kayıtlı";
+    if (dot) dot.classList.remove('hidden');
   } else {
-    card.classList.add('hidden');
+    btn.disabled = true;
+    btn.className = "w-full text-left rounded-2xl p-5 border flex justify-between items-center bg-slate-100 text-slate-400 border-slate-200 opacity-60 cursor-not-allowed";
+    if (title) title.innerText = `▶ Kayıtlı Oyun Yok`;
+    if (subtitle) subtitle.innerText = `Yeni bir oyun başlatarak oynamaya başlayın`;
+    if (tag) tag.innerText = "Kayıt Yok";
+    if (dot) dot.classList.add('hidden');
+  }
+};
+
+// Günlük Ödül Durumunu Menüde Göster
+const updateDailyRewardUI = () => {
+  const icon = document.getElementById('daily-reward-icon');
+  const text = document.getElementById('daily-reward-text');
+  const btn = document.getElementById('btn-daily-reward') as HTMLButtonElement;
+  if (!btn || !text || !icon) return;
+
+  if (Rewards.isClaimedToday()) {
+    icon.innerText = "✅";
+    text.innerText = "Bugün Alındı";
+    btn.classList.remove('bg-amber-50', 'border-amber-200');
+    btn.classList.add('bg-slate-100', 'border-slate-200', 'opacity-70');
+  } else {
+    icon.innerText = "🎁";
+    text.innerText = "Günlük Ödül";
+    btn.classList.add('bg-amber-50', 'border-amber-200');
+    btn.classList.remove('bg-slate-100', 'border-slate-200', 'opacity-70');
   }
 };
 
@@ -90,17 +150,75 @@ const startTimer = () => {
   if (timerEl) timerEl.innerText = formatTime(timeElapsed);
 
   timerInterval = setInterval(() => {
+    if (!isGameActive) {
+      if (timerInterval) clearInterval(timerInterval);
+      return;
+    }
     timeElapsed++;
     if (timerEl) timerEl.innerText = formatTime(timeElapsed);
-    // Her 5 saniyede bir süre durumunu otomatik kaydet
+    // Her 5 saniyede bir otomatik süre güncellemesi kaydet
     if (timeElapsed % 5 === 0) {
       saveCurrentGameState();
     }
   }, 1000);
 };
 
+// --- ZAFER VE BÖLÜM BİTİRME MANTIĞI ---
+const handleVictory = async (level: number, diff: 'basit' | 'orta' | 'zor') => {
+  // 1. Oyunu anında pasif yap ve sayacı durdur
+  isGameActive = false;
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+
+  // 2. Kayıtlı oyunu kesin olarak temizle (bir daha yarım kaldı diye gözükmez!)
+  clearCurrentGameState();
+
+  // 3. İlerlemeyi ve altın ödülünü kaydet
+  const currentLvl = UserManager.getCurrentLevel();
+  // Seviye 301 bitirildiyse bir sonraki seviye 302 olur
+  const nextLevel = Math.max(currentLvl, level + 1);
+  const reward = diff === 'basit' ? 10 : diff === 'orta' ? 20 : 35;
+  const nextGold = UserManager.getGold() + reward;
+
+  await UserManager.updateProgress(nextLevel, nextGold);
+
+  const goldEl = document.getElementById('menu-gold');
+  if (goldEl) goldEl.innerText = nextGold.toString();
+
+  // 4. Konfeti patlat
+  try {
+    confetti({
+      particleCount: 120,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+  } catch {
+    // ignore
+  }
+
+  // 5. Oyun içi şık zafer modalını göster
+  UIManager.showVictoryModal(level, diff, formatTime(timeElapsed), errors, reward);
+  updateMenuContinueCard();
+  updateDailyRewardUI();
+};
+
+// --- OYUN BİTTİ (3 HATA) MANTIĞI ---
+const handleGameOver = () => {
+  isGameActive = false;
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  clearCurrentGameState();
+  updateMenuContinueCard();
+  UIManager.showGameOverModal(errors);
+};
+
+// İpucu Kullanımı
 const useHint = async () => {
-  if (!selectedCell) {
+  if (!isGameActive || !selectedCell) {
     alert("Lütfen önce doldurmak istediğin kutucuğu seç!");
     return;
   }
@@ -125,16 +243,36 @@ const useHint = async () => {
 
   userBoard[selectedCell.r][selectedCell.c] = currentSolution[selectedCell.r][selectedCell.c];
   hintsUsed++;
-  saveCurrentGameState();
   refreshBoard();
+
+  // Eğer ipucu son kutucuğu doldurduysa zaferi tetikle
+  if (isBoardComplete(userBoard, currentSolution)) {
+    await handleVictory(currentLevel, currentDiff);
+  } else {
+    saveCurrentGameState();
+  }
 };
 
+// Oyunu Başlat veya Kayıtlı Oyundan Sürdür
 const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', resumeState?: SavedGameState) => {
+  // Eğer daha önceden kalmış zafer veya gameover modalı varsa kapat
+  UIManager.hideVictoryModal();
+  UIManager.hideGameOverModal();
+
   currentLevel = level;
   currentDiff = diff;
   selectedCell = null;
 
   if (resumeState) {
+    // Eğer resumeState zaten tamamlanmışsa oyunu devam ettirme, zaferi kutla ve menüye dön
+    if (isBoardComplete(resumeState.userBoard, resumeState.solution)) {
+      clearCurrentGameState();
+      updateMenuContinueCard();
+      alert(`Seviye ${resumeState.level} zaten tamamlanmış! Yeni bir oyuna başlayabilirsiniz.`);
+      UIManager.navigate('menu');
+      return;
+    }
+
     currentSolution = resumeState.solution;
     userBoard = resumeState.userBoard;
     initialBoard = resumeState.initialBoard;
@@ -149,8 +287,10 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', resumeState?: 
     currentSolution = data.solution;
     userBoard = data.puzzle.map(row => [...row]);
     initialBoard = data.puzzle.map(row => [...row]);
-    saveCurrentGameState();
   }
+
+  isGameActive = true;
+  saveCurrentGameState();
 
   const title = document.getElementById('game-title');
   if (title) title.innerText = `Seviye ${level} (${diff.toUpperCase()})`;
@@ -162,6 +302,7 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', resumeState?: 
     UIManager.renderBoard(
       userBoard,
       (r, c) => {
+        if (!isGameActive) return;
         // Sabit başlangıç hücresi seçilemez
         if (initialBoard && initialBoard[r][c] !== 0) {
           selectedCell = null;
@@ -179,152 +320,151 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', resumeState?: 
   refreshBoard();
 
   UIManager.renderNumpad((num) => {
-    if (!selectedCell) return;
+    if (!isGameActive || !selectedCell) return;
 
     if (num === -1) {
       useHint();
       return;
     }
 
-    const success = GameEngine.processInput(
+    const result = GameEngine.processInput(
       selectedCell.r,
       selectedCell.c,
       num,
       userBoard,
       currentSolution,
       async () => {
-        // KAZANDI
-        if (timerInterval) clearInterval(timerInterval);
-        clearCurrentGameState();
-
-        const userLvl = UserManager.getCurrentLevel();
-        const nextLevel = level >= userLvl ? userLvl + 1 : userLvl;
-        const reward = diff === 'basit' ? 10 : diff === 'orta' ? 20 : 35;
-        const nextGold = UserManager.getGold() + reward;
-
-        await UserManager.updateProgress(nextLevel, nextGold);
-
-        const goldEl = document.getElementById('menu-gold');
-        if (goldEl) goldEl.innerText = nextGold.toString();
-
-        alert(`🎉 Harika! Seviye ${level} tamamlandı! 🪙 +${reward} Altın Kazandın.`);
-        updateMenuContinueCard();
-        UIManager.navigate('menu');
+        // --- ZAFER / BÖLÜM BİTTİ ---
+        await handleVictory(level, diff);
       },
       (err: number) => {
-        // HATA
+        // --- HATA YAPILDI ---
         errors += err;
-        saveCurrentGameState();
         if (errors >= 3) {
-          if (timerInterval) clearInterval(timerInterval);
-          clearCurrentGameState();
-          alert("❌ Oyun Bitti! 3 hata sınırına ulaştın.");
-          updateMenuContinueCard();
-          UIManager.navigate('menu');
+          handleGameOver();
+        } else {
+          saveCurrentGameState();
         }
       }
     );
 
-    if (success) {
+    // Zafer kazanıldıysa ASLA tekrar kaydetme!
+    if (result.won) {
+      return;
+    }
+
+    if (result.valid) {
       saveCurrentGameState();
       refreshBoard();
     }
   });
 };
 
-// --- BUTON DİNLENİCİLERİ ---
+// Tarayıcı kapanırken durumu sadece aktif oyun varsa kaydet
+window.addEventListener('beforeunload', () => {
+  if (isGameActive && userBoard && currentSolution) {
+    saveCurrentGameState();
+  }
+});
+
+// --- BUTON VE MENÜ DİNLENİCİLERİ ---
 
 // İpucu Butonu
 document.getElementById('btn-hint')?.addEventListener('click', () => {
   useHint();
 });
 
-// Kayıtlı Oyundan Devam Et
+// 1. Kayıtlı Oyundan Devam Et Butonu
 document.getElementById('btn-continue-game')?.addEventListener('click', () => {
   const saved = getSavedGameState();
   if (saved) {
     startGame(saved.level, saved.diff, saved);
   } else {
-    alert("Kayıtlı oyun bulunamadı.");
+    alert("Şu anda devam edebileceğiniz aktif bir kayıtlı oyun bulunmamaktadır.");
   }
 });
 
-// Yeni Oyun Başlat (Zorluk Seçim Sayfasına Yönlendirir)
+// 2. Yeni Oyun Başlat Butonu (Zorluk Seçim Ekranını Açar)
 document.getElementById('btn-new-game')?.addEventListener('click', () => {
   UIManager.navigate('custom');
 });
 
+// Yeni Oyun Başlatma Onayı (Mevcut kayıtlı oyunu koruma kalkanı)
+const requestStartNewGame = (diff: 'basit' | 'orta' | 'zor') => {
+  const saved = getSavedGameState();
+  if (saved) {
+    const onay = confirm(`Kayıtlı bir oyununuz bulunuyor (Seviye ${saved.level}).\n\nYeni bir oyun başlatırsanız önceki oyununuz silinecektir. Devam etmek istiyor musunuz?`);
+    if (!onay) return;
+  }
+  clearCurrentGameState();
+
+  const userLvl = UserManager.getCurrentLevel();
+  let lvl = userLvl;
+  if (diff === 'basit') lvl = userLvl <= 300 ? userLvl : 1;
+  else if (diff === 'orta') lvl = userLvl > 300 && userLvl <= 700 ? userLvl : 301;
+  else if (diff === 'zor') lvl = userLvl > 700 ? userLvl : 701;
+
+  startGame(lvl, diff);
+};
+
 // Zorluk Seçim Butonları
-document.getElementById('btn-start-basit')?.addEventListener('click', () => {
-  const userLvl = UserManager.getCurrentLevel();
-  startGame(userLvl <= 300 ? userLvl : 1, 'basit');
-});
-
-document.getElementById('btn-start-orta')?.addEventListener('click', () => {
-  const userLvl = UserManager.getCurrentLevel();
-  const lvl = userLvl > 300 && userLvl <= 700 ? userLvl : 301;
-  startGame(lvl, 'orta');
-});
-
-document.getElementById('btn-start-zor')?.addEventListener('click', () => {
-  const userLvl = UserManager.getCurrentLevel();
-  const lvl = userLvl > 700 ? userLvl : 701;
-  startGame(lvl, 'zor');
-});
+document.getElementById('btn-start-basit')?.addEventListener('click', () => requestStartNewGame('basit'));
+document.getElementById('btn-start-orta')?.addEventListener('click', () => requestStartNewGame('orta'));
+document.getElementById('btn-start-zor')?.addEventListener('click', () => requestStartNewGame('zor'));
 
 document.getElementById('btn-back-custom')?.addEventListener('click', () => {
   updateMenuContinueCard();
+  updateDailyRewardUI();
   UIManager.navigate('menu');
 });
 
-// Harita Navigasyonu
-document.getElementById('btn-journey')?.addEventListener('click', () => {
-  const userLvl = UserManager.getCurrentLevel();
-  UIManager.navigate('map');
-  UIManager.renderMap(userLvl, userLvl);
-});
-
-document.getElementById('btn-back-map')?.addEventListener('click', () => {
-  updateMenuContinueCard();
-  UIManager.navigate('menu');
-});
-
+// Oyundan Menüye Dönüş (Oyunu asla silmez, kaydeder ve durdurur)
 document.getElementById('btn-back-menu')?.addEventListener('click', () => {
-  if (timerInterval) clearInterval(timerInterval);
-  saveCurrentGameState();
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  if (isGameActive) {
+    saveCurrentGameState();
+  }
   updateMenuContinueCard();
+  updateDailyRewardUI();
   UIManager.navigate('menu');
 });
 
-// Harita Hızlı Atlama Sekmeleri
-document.getElementById('btn-map-jump-basit')?.addEventListener('click', () => {
-  UIManager.renderMap(UserManager.getCurrentLevel(), 1);
-});
-document.getElementById('btn-map-jump-orta')?.addEventListener('click', () => {
-  UIManager.renderMap(UserManager.getCurrentLevel(), 301);
-});
-document.getElementById('btn-map-jump-zor')?.addEventListener('click', () => {
-  UIManager.renderMap(UserManager.getCurrentLevel(), 701);
+// --- ZAFER VE OYUN BİTTİ MODAL BUTONLARI ---
+document.getElementById('btn-victory-next')?.addEventListener('click', () => {
+  UIManager.hideVictoryModal();
+  const currentLvl = UserManager.getCurrentLevel();
+  const nextDiff = SudokuGen.getDifficulty(currentLvl);
+  startGame(currentLvl, nextDiff);
 });
 
-// Haritadan Seviye Seçimi
-document.addEventListener('click', (e) => {
-  const target = (e.target as HTMLElement).closest('[data-level]');
-  if (target) {
-    const level = parseInt(target.getAttribute('data-level')!);
-    const diff = SudokuGen.getDifficulty(level);
-    startGame(level, diff);
-  }
+document.getElementById('btn-victory-menu')?.addEventListener('click', () => {
+  UIManager.hideVictoryModal();
+  updateMenuContinueCard();
+  updateDailyRewardUI();
+  UIManager.navigate('menu');
+});
+
+document.getElementById('btn-gameover-retry')?.addEventListener('click', () => {
+  UIManager.hideGameOverModal();
+  startGame(currentLevel, currentDiff);
+});
+
+document.getElementById('btn-gameover-menu')?.addEventListener('click', () => {
+  UIManager.hideGameOverModal();
+  updateMenuContinueCard();
+  updateDailyRewardUI();
+  UIManager.navigate('menu');
 });
 
 // --- LİDERLİK TABLOSU ---
 const openLeaderboard = async () => {
   UIManager.toggleModal('view-leaderboard', true);
-  // 1. Önce anında önbellekteki verileri bas (hiç bekleme yapmaz)
   const cached = Leaderboard.getCachedPlayers();
   UIManager.renderLeaderboard(cached, 'gold');
 
-  // 2. Arka planda Firebase'den canlı verileri çekip güncelle
   try {
     const fresh = await Leaderboard.fetchTopPlayers();
     UIManager.renderLeaderboard(fresh, 'gold');
@@ -370,16 +510,7 @@ document.getElementById('btn-daily-reward')?.addEventListener('click', async () 
   if (goldEl) {
     goldEl.innerText = UserManager.getGold().toString();
   }
-});
-
-// --- BAŞARILAR ---
-document.getElementById('btn-achievements')?.addEventListener('click', () => {
-  const list = AchievementManager.checkAchievements();
-  if (list.length === 0) {
-    alert("🎖️ Henüz kazanılmış bir başarım yok. Daha fazla seviye tamamlayarak veya 500 altına ulaşarak başarımları açabilirsin!");
-  } else {
-    alert("🎖️ Kazanılan Başarılar:\n\n" + list.join('\n'));
-  }
+  updateDailyRewardUI();
 });
 
 // --- KULLANICI PROFİLİ VE MODAL AKIŞI ---
@@ -391,6 +522,7 @@ const checkUser = async () => {
   if (goldEl) goldEl.innerText = currentGold.toString();
 
   updateMenuContinueCard();
+  updateDailyRewardUI();
 
   if (!currentUsername) {
     const closeBtn = document.getElementById('close-username-modal');
@@ -401,12 +533,12 @@ const checkUser = async () => {
     if (nameEl) nameEl.innerText = currentUsername;
     UIManager.navigate('menu');
 
-    // Arka planda Firebase ile senkronize et
     UserManager.initUser().then((synced) => {
       if (synced) {
         if (nameEl) nameEl.innerText = synced.username;
         if (goldEl) goldEl.innerText = synced.gold.toString();
         updateMenuContinueCard();
+        updateDailyRewardUI();
       }
     });
   }
