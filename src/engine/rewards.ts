@@ -1,4 +1,4 @@
-import { updateGameState, getGameState } from '../store/gameState';
+import { UserManager } from '../store/userState';
 
 export const Rewards = {
   checkDailyReward(): boolean {
@@ -7,13 +7,14 @@ export const Rewards = {
     return lastRewardDate !== today;
   },
 
-  claimReward() {
+  async claimReward(): Promise<{ success: boolean; amount: number; message: string }> {
     if (this.checkDailyReward()) {
-      const currentGold = getGameState().gold;
-      updateGameState({ gold: currentGold + 50 });
+      const currentGold = UserManager.getGold();
+      const newGold = currentGold + 50;
       localStorage.setItem('last_reward_date', new Date().toDateString());
-      return { success: true, amount: 50 };
+      await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
+      return { success: true, amount: 50, message: "Tebrikler! Günlük 50 🪙 ödülünü aldın!" };
     }
-    return { success: false, amount: 0 };
+    return { success: false, amount: 0, message: "Bugünkü günlük ödülünü zaten aldın. Yarın tekrar gel!" };
   }
 };

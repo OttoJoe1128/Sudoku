@@ -4,11 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SudokuMap</title>
+    <meta name="description" content="Interactive Sudoku adventure featuring a multi-level progression map, daily challenges, shop, achievements, and leaderboard.">
+    <meta property="og:title" content="SudokuMap">
+    <meta property="og:description" content="Interactive Sudoku adventure featuring a multi-level progression map, daily challenges, shop, achievements, and leaderboard.">
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module" src="/src/main.ts"></script>
 </head>
-<body class="flex justify-center items-center min-h-screen sm:p-6 relative bg-slate-900">
-    <!-- UI yapısı burada kalacak, JS kodları src/ klasörüne taşındı -->
-    <div id="app" class="w-full max-w-[480px] h-[100dvh] bg-slate-50"></div>
+<body class="flex justify-center items-center min-h-screen sm:p-6 relative bg-slate-900 select-none">
+    <div id="app" class="w-full max-w-[480px] h-[100dvh] bg-slate-50 shadow-2xl sm:rounded-2xl overflow-hidden"></div>
 </body>
 </html>
