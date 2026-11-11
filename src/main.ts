@@ -6,6 +6,10 @@ import { Leaderboard } from './engine/leaderboard';
 import { ShopManager } from './engine/shop';
 import { Rewards } from './engine/rewards';
 import confetti from 'canvas-confetti';
+import { registerSW } from 'virtual:pwa-register';
+
+// PWA Service Worker kaydı
+registerSW({ immediate: true });
 
 UIManager.mountUI();
 
@@ -15,6 +19,7 @@ interface SavedGameState {
   userBoard: number[][];
   initialBoard: number[][];
   solution: number[][];
+  notes?: { [key: string]: number[] };
   timeElapsed: number;
   errors: number;
   hintsUsed: number;
@@ -32,7 +37,54 @@ let hintsUsed = 0;
 let timeElapsed = 0;
 let timerInterval: ReturnType<typeof setInterval> | null = null;
 let isGameActive = false;
+let isNotesMode = false;
+let userNotes: { [key: string]: number[] } = {};
 let refreshBoard = () => {};
+
+// Tahtada kalan rakam sayılarını (1-9) hesapla
+const getNumberCounts = (board: number[][]): { [num: number]: number } => {
+  const counts: { [num: number]: number } = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 };
+  if (!board) return counts;
+  board.forEach(row => {
+    row.forEach(val => {
+      if (val >= 1 && val <= 9) {
+        counts[val] = (counts[val] || 0) + 1;
+      }
+    });
+  });
+  return counts;
+};
+
+// Sayı yerleştirildiğinde aynı satır, sütun ve 3x3 kutudaki aday notları temizle
+const pruneCandidateNotes = (row: number, col: number, placedNum: number) => {
+  delete userNotes[`${row}-${col}`];
+
+  for (let i = 0; i < 9; i++) {
+    const rowKey = `${row}-${i}`;
+    if (userNotes[rowKey]) {
+      userNotes[rowKey] = userNotes[rowKey].filter(n => n !== placedNum);
+      if (userNotes[rowKey].length === 0) delete userNotes[rowKey];
+    }
+
+    const colKey = `${i}-${col}`;
+    if (userNotes[colKey]) {
+      userNotes[colKey] = userNotes[colKey].filter(n => n !== placedNum);
+      if (userNotes[colKey].length === 0) delete userNotes[colKey];
+    }
+  }
+
+  const startRow = Math.floor(row / 3) * 3;
+  const startCol = Math.floor(col / 3) * 3;
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 3; c++) {
+      const blockKey = `${startRow + r}-${startCol + c}`;
+      if (userNotes[blockKey]) {
+        userNotes[blockKey] = userNotes[blockKey].filter(n => n !== placedNum);
+        if (userNotes[blockKey].length === 0) delete userNotes[blockKey];
+      }
+    }
+  }
+};
 
 // Tahtanın tamamen ve doğru şekilde tamamlanıp tamamlanmadığını kontrol eden yardımcı
 const isBoardComplete = (board: number[][], solution: number[][]): boolean => {
@@ -44,10 +96,8 @@ const isBoardComplete = (board: number[][], solution: number[][]): boolean => {
 
 // --- GÜVENLİ VE KALICI OYUN KAYIT SİSTEMİ ---
 const saveCurrentGameState = () => {
-  // Oyun aktif değilse veya oyun zaten bitmişse ASLA kaydetme!
   if (!isGameActive || !userBoard || !currentSolution || !initialBoard) return;
 
-  // Eğer tahta zaten tamamlanmışsa kayıtlı oyunu hemen sil ve kaydetme
   if (isBoardComplete(userBoard, currentSolution)) {
     clearCurrentGameState();
     return;
@@ -59,6 +109,7 @@ const saveCurrentGameState = () => {
     userBoard: userBoard.map(row => [...row]),
     initialBoard: initialBoard.map(row => [...row]),
     solution: currentSolution.map(row => [...row]),
+    notes: { ...userNotes },
     timeElapsed,
     errors,
     hintsUsed,
@@ -77,7 +128,6 @@ const getSavedGameState = (): SavedGameState | null => {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && Array.isArray(parsed.userBoard) && Array.isArray(parsed.solution)) {
-        // Eğer kaydedilmiş oyun zaten tamamlanmış bir tahtaysa geçersiz say ve temizle
         if (isBoardComplete(parsed.userBoard, parsed.solution)) {
           clearCurrentGameState();
           return null;
@@ -111,7 +161,7 @@ const updateMenuContinueCard = () => {
     btn.disabled = false;
     btn.className = "w-full text-left rounded-2xl p-5 shadow-md active:scale-[0.98] transition-all border flex justify-between items-center group bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500 cursor-pointer";
     if (title) title.innerText = `▶ Kayıtlı Oyundan Devam Et`;
-    if (subtitle) subtitle.innerText = `Seviye ${saved.level} (${saved.diff.toUpperCase()}) • ⏱ ${formatTime(saved.timeElapsed)} • Hata: ${saved.errors}/3`;
+    if (subtitle) subtitle.innerText = `Seviye ${saved.level} (${saved.diff.toUpperCase()}) • ⏱ ${formatTime(saved.timeElapsed)} • Hata: ${saved.errors}/5`;
     if (tag) tag.innerText = "Aktif Oyun Kayıtlı";
     if (dot) dot.classList.remove('hidden');
   } else {
@@ -156,7 +206,6 @@ const startTimer = () => {
     }
     timeElapsed++;
     if (timerEl) timerEl.innerText = formatTime(timeElapsed);
-    // Her 5 saniyede bir otomatik süre güncellemesi kaydet
     if (timeElapsed % 5 === 0) {
       saveCurrentGameState();
     }
@@ -165,19 +214,15 @@ const startTimer = () => {
 
 // --- ZAFER VE BÖLÜM BİTİRME MANTIĞI ---
 const handleVictory = async (level: number, diff: 'basit' | 'orta' | 'zor') => {
-  // 1. Oyunu anında pasif yap ve sayacı durdur
   isGameActive = false;
   if (timerInterval) {
     clearInterval(timerInterval);
     timerInterval = null;
   }
 
-  // 2. Kayıtlı oyunu kesin olarak temizle (bir daha yarım kaldı diye gözükmez!)
   clearCurrentGameState();
 
-  // 3. İlerlemeyi ve altın ödülünü kaydet
   const currentLvl = UserManager.getCurrentLevel();
-  // Seviye 301 bitirildiyse bir sonraki seviye 302 olur
   const nextLevel = Math.max(currentLvl, level + 1);
   const reward = diff === 'basit' ? 10 : diff === 'orta' ? 20 : 35;
   const nextGold = UserManager.getGold() + reward;
@@ -187,7 +232,6 @@ const handleVictory = async (level: number, diff: 'basit' | 'orta' | 'zor') => {
   const goldEl = document.getElementById('menu-gold');
   if (goldEl) goldEl.innerText = nextGold.toString();
 
-  // 4. Konfeti patlat
   try {
     confetti({
       particleCount: 120,
@@ -198,22 +242,19 @@ const handleVictory = async (level: number, diff: 'basit' | 'orta' | 'zor') => {
     // ignore
   }
 
-  // 5. Oyun içi şık zafer modalını göster
   UIManager.showVictoryModal(level, diff, formatTime(timeElapsed), errors, reward);
   updateMenuContinueCard();
   updateDailyRewardUI();
 };
 
-// --- OYUN BİTTİ (3 HATA) MANTIĞI ---
-const handleGameOver = () => {
-  isGameActive = false;
+// --- 5 HATA SINIRINA ULAŞILDIĞINDA (DEVAM ET YA DA BAŞTAN AL) ---
+const handleFiveErrorsReached = () => {
   if (timerInterval) {
     clearInterval(timerInterval);
     timerInterval = null;
   }
-  clearCurrentGameState();
-  updateMenuContinueCard();
-  UIManager.showGameOverModal(errors);
+  saveCurrentGameState();
+  UIManager.showErrorLimitModal();
 };
 
 // İpucu Kullanımı
@@ -241,11 +282,12 @@ const useHint = async () => {
   const goldEl = document.getElementById('menu-gold');
   if (goldEl) goldEl.innerText = newGold.toString();
 
-  userBoard[selectedCell.r][selectedCell.c] = currentSolution[selectedCell.r][selectedCell.c];
+  const correctVal = currentSolution[selectedCell.r][selectedCell.c];
+  userBoard[selectedCell.r][selectedCell.c] = correctVal;
+  pruneCandidateNotes(selectedCell.r, selectedCell.c, correctVal);
   hintsUsed++;
   refreshBoard();
 
-  // Eğer ipucu son kutucuğu doldurduysa zaferi tetikle
   if (isBoardComplete(userBoard, currentSolution)) {
     await handleVictory(currentLevel, currentDiff);
   } else {
@@ -255,16 +297,17 @@ const useHint = async () => {
 
 // Oyunu Başlat veya Kayıtlı Oyundan Sürdür
 const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', resumeState?: SavedGameState) => {
-  // Eğer daha önceden kalmış zafer veya gameover modalı varsa kapat
   UIManager.hideVictoryModal();
   UIManager.hideGameOverModal();
+  UIManager.hideErrorLimitModal();
 
   currentLevel = level;
   currentDiff = diff;
   selectedCell = null;
+  isNotesMode = false;
+  UIManager.updateNotesModeUI(isNotesMode);
 
   if (resumeState) {
-    // Eğer resumeState zaten tamamlanmışsa oyunu devam ettirme, zaferi kutla ve menüye dön
     if (isBoardComplete(resumeState.userBoard, resumeState.solution)) {
       clearCurrentGameState();
       updateMenuContinueCard();
@@ -276,6 +319,7 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', resumeState?: 
     currentSolution = resumeState.solution;
     userBoard = resumeState.userBoard;
     initialBoard = resumeState.initialBoard;
+    userNotes = resumeState.notes ? { ...resumeState.notes } : {};
     timeElapsed = resumeState.timeElapsed;
     errors = resumeState.errors;
     hintsUsed = resumeState.hintsUsed;
@@ -283,6 +327,7 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', resumeState?: 
     errors = 0;
     hintsUsed = 0;
     timeElapsed = 0;
+    userNotes = {};
     const data = SudokuGen.generate(diff);
     currentSolution = data.solution;
     userBoard = data.puzzle.map(row => [...row]);
@@ -295,15 +340,99 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', resumeState?: 
   const title = document.getElementById('game-title');
   if (title) title.innerText = `Seviye ${level} (${diff.toUpperCase()})`;
 
+  UIManager.updateErrorCount(errors, 5);
   UIManager.navigate('game');
   startTimer();
+
+  const handleNumpadClick = (num: number) => {
+    if (!isGameActive || !selectedCell) return;
+
+    if (num === -1) {
+      useHint();
+      return;
+    }
+
+    // Aday Not Alma (Pencil / Notes) Modu
+    if (isNotesMode) {
+      if (initialBoard && initialBoard[selectedCell.r][selectedCell.c] !== 0) return;
+      const key = `${selectedCell.r}-${selectedCell.c}`;
+
+      if (num === 0) {
+        // Sil: Seçili hücrenin notlarını temizle
+        delete userNotes[key];
+        saveCurrentGameState();
+        refreshBoard();
+        return;
+      }
+
+      // Hücrede zaten yerleştirilmiş bir ana sayı varsa not yazılmaz
+      if (userBoard[selectedCell.r][selectedCell.c] !== 0) {
+        return;
+      }
+
+      // 1-9 Aday sayısını ekle veya çıkar (toggle)
+      const list = userNotes[key] ? [...userNotes[key]] : [];
+      const idx = list.indexOf(num);
+      if (idx >= 0) {
+        list.splice(idx, 1);
+      } else {
+        list.push(num);
+        list.sort((a, b) => a - b);
+      }
+
+      if (list.length > 0) {
+        userNotes[key] = list;
+      } else {
+        delete userNotes[key];
+      }
+
+      saveCurrentGameState();
+      refreshBoard();
+      return;
+    }
+
+    // Normal Sayı Yerleştirme Modu
+    const result = GameEngine.processInput(
+      selectedCell.r,
+      selectedCell.c,
+      num,
+      userBoard,
+      currentSolution,
+      async () => {
+        await handleVictory(level, diff);
+      },
+      (err: number) => {
+        errors += err;
+        UIManager.updateErrorCount(errors, 5);
+
+        if (errors >= 5) {
+          handleFiveErrorsReached();
+        } else {
+          saveCurrentGameState();
+        }
+      }
+    );
+
+    if (result.won) {
+      return;
+    }
+
+    if (result.valid) {
+      if (num > 0) {
+        pruneCandidateNotes(selectedCell.r, selectedCell.c, num);
+      }
+      saveCurrentGameState();
+      refreshBoard();
+    }
+  };
 
   refreshBoard = () => {
     UIManager.renderBoard(
       userBoard,
+      initialBoard,
+      userNotes,
       (r, c) => {
         if (!isGameActive) return;
-        // Sabit başlangıç hücresi seçilemez
         if (initialBoard && initialBoard[r][c] !== 0) {
           selectedCell = null;
           refreshBoard();
@@ -315,49 +444,11 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', resumeState?: 
       selectedCell?.r ?? -1,
       selectedCell?.c ?? -1
     );
+
+    UIManager.renderNumpad(handleNumpadClick, getNumberCounts(userBoard));
   };
 
   refreshBoard();
-
-  UIManager.renderNumpad((num) => {
-    if (!isGameActive || !selectedCell) return;
-
-    if (num === -1) {
-      useHint();
-      return;
-    }
-
-    const result = GameEngine.processInput(
-      selectedCell.r,
-      selectedCell.c,
-      num,
-      userBoard,
-      currentSolution,
-      async () => {
-        // --- ZAFER / BÖLÜM BİTTİ ---
-        await handleVictory(level, diff);
-      },
-      (err: number) => {
-        // --- HATA YAPILDI ---
-        errors += err;
-        if (errors >= 3) {
-          handleGameOver();
-        } else {
-          saveCurrentGameState();
-        }
-      }
-    );
-
-    // Zafer kazanıldıysa ASLA tekrar kaydetme!
-    if (result.won) {
-      return;
-    }
-
-    if (result.valid) {
-      saveCurrentGameState();
-      refreshBoard();
-    }
-  });
 };
 
 // Tarayıcı kapanırken durumu sadece aktif oyun varsa kaydet
@@ -372,6 +463,13 @@ window.addEventListener('beforeunload', () => {
 // İpucu Butonu
 document.getElementById('btn-hint')?.addEventListener('click', () => {
   useHint();
+});
+
+// Not Alma (Pencil/Notes) Modu Butonu
+document.getElementById('btn-toggle-notes')?.addEventListener('click', () => {
+  if (!isGameActive) return;
+  isNotesMode = !isNotesMode;
+  UIManager.updateNotesModeUI(isNotesMode);
 });
 
 // 1. Kayıtlı Oyundan Devam Et Butonu
@@ -427,6 +525,53 @@ document.getElementById('btn-back-menu')?.addEventListener('click', () => {
   if (isGameActive) {
     saveCurrentGameState();
   }
+  updateMenuContinueCard();
+  updateDailyRewardUI();
+  UIManager.navigate('menu');
+});
+
+// --- 5 HATA MODAL BUTONLARI (50 ALTIN İLE DEVAM ET YA DA BAŞTAN AL) ---
+document.getElementById('btn-continue-with-gold')?.addEventListener('click', async () => {
+  const currentGold = UserManager.getGold();
+  if (currentGold < 50) {
+    alert(`Devam etmek için 50 🪙 gerekiyor.\nMevcut altınınız: ${currentGold} 🪙.\n\nOyunu baştan başlatabilir veya günlük ödülünüzü alabilirsiniz.`);
+    return;
+  }
+
+  // 50 altın düş ve oyuncuya 3 can hakkı tanımla (hatayı 2'ye çek, 5'e kadar 3 hakkı olsun)
+  const newGold = currentGold - 50;
+  await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
+  const goldEl = document.getElementById('menu-gold');
+  if (goldEl) goldEl.innerText = newGold.toString();
+
+  errors = 2; // 5 - 2 = 3 can hakkı sağlandı
+  UIManager.updateErrorCount(errors, 5);
+  UIManager.hideErrorLimitModal();
+
+  isGameActive = true;
+  saveCurrentGameState();
+  startTimer();
+  refreshBoard();
+});
+
+document.getElementById('btn-restart-level')?.addEventListener('click', () => {
+  // Ücretsiz baştan başlat: tahtayı başlangıç haline döndür, hataları ve süreyi sıfırla
+  UIManager.hideErrorLimitModal();
+  userBoard = initialBoard.map(row => [...row]);
+  userNotes = {};
+  errors = 0;
+  timeElapsed = 0;
+  hintsUsed = 0;
+
+  UIManager.updateErrorCount(errors, 5);
+  isGameActive = true;
+  saveCurrentGameState();
+  startTimer();
+  refreshBoard();
+});
+
+document.getElementById('btn-error-menu')?.addEventListener('click', () => {
+  UIManager.hideErrorLimitModal();
   updateMenuContinueCard();
   updateDailyRewardUI();
   UIManager.navigate('menu');
@@ -575,6 +720,61 @@ document.getElementById('save-username')?.addEventListener('click', async () => 
     alert("Lütfen en az 3 karakterli bir kullanıcı adı girin.");
   }
 });
+
+// --- PWA KURULUM VE ÇEVRİMDIŞI (OFFLINE) DESTEĞİ ---
+let deferredPrompt: any = null;
+const installBtn = document.getElementById('btn-install-pwa');
+
+// Halihazırda PWA olarak (standalone) çalışıp çalışmadığını kontrol et
+const isStandalone =
+  window.matchMedia('(display-mode: standalone)').matches ||
+  (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+
+const isIOS = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+
+if (!isStandalone) {
+  if (isIOS) {
+    if (installBtn) {
+      installBtn.classList.remove('hidden');
+      installBtn.classList.add('flex');
+    }
+  }
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (installBtn) {
+      installBtn.classList.remove('hidden');
+      installBtn.classList.add('flex');
+    }
+  });
+
+  installBtn?.addEventListener('click', async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        if (installBtn) {
+          installBtn.classList.add('hidden');
+          installBtn.classList.remove('flex');
+        }
+        deferredPrompt = null;
+      }
+    } else if (isIOS) {
+      alert("iPhone / iPad için kurulum:\n1. Safari'nin altındaki 'Paylaş' (Share) butonuna dokunun.\n2. Aşağı kaydırıp 'Ana Ekrana Ekle' seçeneğini seçin.");
+    } else {
+      alert("Tarayıcınızın menüsünden (üç nokta) 'Uygulamayı Yükle' veya 'Ana Ekrana Ekle' seçeneğini kullanarak yükleyebilirsiniz.");
+    }
+  });
+
+  window.addEventListener('appinstalled', () => {
+    if (installBtn) {
+      installBtn.classList.add('hidden');
+      installBtn.classList.remove('flex');
+    }
+    deferredPrompt = null;
+  });
+}
 
 // Uygulamayı başlat
 checkUser();

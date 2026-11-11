@@ -1,5 +1,5 @@
 export const menuTemplate = `
-<div id="view-menu" class="flex-1 flex flex-col p-6 gap-4 pb-8 overflow-y-auto hidden-scrollbar">
+<div id="view-menu" class="flex-1 flex flex-col p-6 gap-3.5 pb-8 overflow-y-auto hidden-scrollbar">
     <!-- Profil & Altın Barı -->
     <div class="w-full bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center">
         <div class="flex items-center gap-2.5">
@@ -19,6 +19,15 @@ export const menuTemplate = `
             <span id="menu-gold">100</span>
         </div>
     </div>
+
+    <!-- PWA Yükleme Kartı (Sadece tarayıcı desteklediğinde görünür) -->
+    <button id="btn-install-pwa" class="hidden w-full bg-slate-800 hover:bg-slate-700 text-white p-3.5 rounded-2xl text-xs font-bold items-center justify-between shadow-sm transition-all border border-slate-700">
+        <div class="flex items-center gap-2">
+            <span class="text-lg">📲</span>
+            <span class="font-bold">Uygulamayı Cihazına Yükle (PWA)</span>
+        </div>
+        <span class="bg-indigo-500 text-white text-[10px] font-black px-2.5 py-1 rounded-lg">YÜKLE</span>
+    </button>
 
     <!-- Ana Oyun Aksiyonları (Sadece 2 Ana Seçenek) -->
     <div class="flex flex-col gap-3 my-auto w-full">
