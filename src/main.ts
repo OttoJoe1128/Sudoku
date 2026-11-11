@@ -229,6 +229,16 @@ const handleVictory = async (level: number, diff: 'basit' | 'orta' | 'zor') => {
 
   await UserManager.updateProgress(nextLevel, nextGold);
 
+  // Süreyi ve bölüm detaylarını Firebase game_records koleksiyonuna kaydet
+  await UserManager.recordGameCompletion({
+    level,
+    difficulty: diff,
+    timeElapsed,
+    timeFormatted: formatTime(timeElapsed),
+    errors,
+    hintsUsed
+  });
+
   const goldEl = document.getElementById('menu-gold');
   if (goldEl) goldEl.innerText = nextGold.toString();
 
@@ -605,21 +615,100 @@ document.getElementById('btn-gameover-menu')?.addEventListener('click', () => {
 });
 
 // --- LİDERLİK TABLOSU ---
-const openLeaderboard = async () => {
-  UIManager.toggleModal('view-leaderboard', true);
-  const cached = Leaderboard.getCachedPlayers();
-  UIManager.renderLeaderboard(cached, 'gold');
+let currentLeaderboardTab: 'gold' | 'speed' = 'gold';
+let currentSpeedDiff: 'all' | 'basit' | 'orta' | 'zor' = 'all';
 
-  try {
-    const fresh = await Leaderboard.fetchTopPlayers();
-    UIManager.renderLeaderboard(fresh, 'gold');
-  } catch (err) {
-    console.warn("Liderlik güncellenemedi:", err);
+const updateLeaderboardView = async () => {
+  const goldTab = document.getElementById('btn-tab-gold');
+  const speedTab = document.getElementById('btn-tab-speed');
+  const filterRow = document.getElementById('speed-diff-filters');
+  const headerLeft = document.getElementById('lb-header-left');
+  const headerRight = document.getElementById('lb-header-right');
+
+  if (currentLeaderboardTab === 'gold') {
+    if (goldTab) {
+      goldTab.className = "flex-1 py-1.5 px-2 rounded-lg font-black text-xs transition-all bg-white text-indigo-700 shadow-sm";
+    }
+    if (speedTab) {
+      speedTab.className = "flex-1 py-1.5 px-2 rounded-lg font-bold text-xs transition-all text-slate-500 hover:text-slate-800";
+    }
+    if (filterRow) {
+      filterRow.classList.add('hidden');
+      filterRow.classList.remove('flex');
+    }
+    if (headerLeft) headerLeft.innerText = "Sıra & Oyuncu";
+    if (headerRight) headerRight.innerText = "🪙 Toplam Altın";
+
+    const cached = Leaderboard.getCachedPlayers();
+    UIManager.renderLeaderboard(cached, 'gold');
+
+    try {
+      const fresh = await Leaderboard.fetchTopPlayers();
+      UIManager.renderLeaderboard(fresh, 'gold');
+    } catch (err) {
+      console.warn("Liderlik güncellenemedi:", err);
+    }
+  } else {
+    // Speed tab
+    if (speedTab) {
+      speedTab.className = "flex-1 py-1.5 px-2 rounded-lg font-black text-xs transition-all bg-white text-indigo-700 shadow-sm";
+    }
+    if (goldTab) {
+      goldTab.className = "flex-1 py-1.5 px-2 rounded-lg font-bold text-xs transition-all text-slate-500 hover:text-slate-800";
+    }
+    if (filterRow) {
+      filterRow.classList.remove('hidden');
+      filterRow.classList.add('flex');
+    }
+    if (headerLeft) headerLeft.innerText = "Sıra & Oyuncu (Bölüm)";
+    if (headerRight) headerRight.innerText = "⏱ Bitirme Süresi";
+
+    const listEl = document.getElementById('leaderboard-list');
+    if (listEl) {
+      listEl.innerHTML = `<div class="text-center text-slate-400 py-10 font-bold animate-pulse">Süre rekorları yükleniyor...</div>`;
+    }
+
+    try {
+      const speedRecords = await Leaderboard.fetchFastestRecords(currentSpeedDiff);
+      UIManager.renderSpeedLeaderboard(speedRecords);
+    } catch (err) {
+      console.warn("Hız rekorları çekilemedi:", err);
+    }
   }
 };
 
+const openLeaderboard = async () => {
+  UIManager.toggleModal('view-leaderboard', true);
+  await updateLeaderboardView();
+};
+
+document.getElementById('btn-tab-gold')?.addEventListener('click', () => {
+  currentLeaderboardTab = 'gold';
+  updateLeaderboardView();
+});
+
+document.getElementById('btn-tab-speed')?.addEventListener('click', () => {
+  currentLeaderboardTab = 'speed';
+  updateLeaderboardView();
+});
+
+document.querySelectorAll('.speed-filter-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    const target = e.currentTarget as HTMLElement;
+    const diff = (target.dataset.diff as 'all' | 'basit' | 'orta' | 'zor') || 'all';
+    currentSpeedDiff = diff;
+
+    document.querySelectorAll('.speed-filter-btn').forEach(b => {
+      b.className = "speed-filter-btn flex-1 py-1 text-[11px] font-bold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200";
+    });
+    target.className = "speed-filter-btn flex-1 py-1 text-[11px] font-black rounded-lg bg-indigo-600 text-white shadow-sm";
+
+    updateLeaderboardView();
+  });
+});
+
 document.getElementById('btn-leaderboard')?.addEventListener('click', openLeaderboard);
-document.getElementById('refresh-leaderboard')?.addEventListener('click', openLeaderboard);
+document.getElementById('refresh-leaderboard')?.addEventListener('click', updateLeaderboardView);
 document.getElementById('close-leaderboard')?.addEventListener('click', () => {
   UIManager.toggleModal('view-leaderboard', false);
 });

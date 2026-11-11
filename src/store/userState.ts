@@ -1,11 +1,24 @@
 import { signInAnonymously } from 'firebase/auth';
-import { doc, getDoc, setDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, addDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../api/firebase';
+
+export interface GameCompletionDetails {
+  level: number;
+  difficulty: 'basit' | 'orta' | 'zor';
+  timeElapsed: number;
+  timeFormatted: string;
+  errors: number;
+  hintsUsed: number;
+}
 
 export interface UserData {
   username: string;
   gold: number;
   level: number;
+  best_basit?: number;
+  best_orta?: number;
+  best_zor?: number;
+  total_completed?: number;
 }
 
 export const UserManager = {
@@ -137,6 +150,55 @@ export const UserManager = {
       }
     } catch (e) {
       console.warn("Firestore ilerlemesi güncellenemedi:", e);
+    }
+  },
+
+  async recordGameCompletion(details: GameCompletionDetails): Promise<void> {
+    try {
+      const cred = auth.currentUser ? { user: auth.currentUser } : await signInAnonymously(auth);
+      const uid = cred.user.uid;
+      const username = this.getUsername() || 'Oyuncu';
+
+      const now = new Date();
+      const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+      // 1. game_records koleksiyonuna bağımsız oyun günlüğü ekle
+      await addDoc(collection(db, 'game_records'), {
+        uid,
+        username,
+        level: details.level,
+        difficulty: details.difficulty,
+        timeElapsed: details.timeElapsed,
+        timeFormatted: details.timeFormatted,
+        errors: details.errors,
+        hintsUsed: details.hintsUsed,
+        monthYear,
+        completedAt: serverTimestamp()
+      });
+
+      // 2. leaderboard dokümanındaki en iyi süreleri ve istatistikleri güncelle
+      const userDocRef = doc(db, 'leaderboard', uid);
+      const snap = await getDoc(userDocRef);
+      const currentData = snap.exists() ? snap.data() : {};
+
+      const updates: Record<string, any> = {
+        uid,
+        username,
+        updatedAt: serverTimestamp(),
+        total_completed: (typeof currentData.total_completed === 'number' ? currentData.total_completed : 0) + 1
+      };
+
+      // Zorluk bazında en iyi derece (rekor süre) kontrolü
+      const diffKey = details.difficulty === 'basit' ? 'best_basit' : details.difficulty === 'orta' ? 'best_orta' : 'best_zor';
+      const prevBest = typeof currentData[diffKey] === 'number' ? currentData[diffKey] : null;
+
+      if (prevBest === null || details.timeElapsed < prevBest) {
+        updates[diffKey] = details.timeElapsed;
+      }
+
+      await setDoc(userDocRef, updates, { merge: true });
+    } catch (e) {
+      console.warn("Oyun süresi ve kaydı Firebase'e yazılamadı:", e);
     }
   },
 

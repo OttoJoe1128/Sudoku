@@ -33,6 +33,7 @@
 - [x] **Not Alma (Pencil/Notes) Modu:** Hücrelere aday küçük sayılar (3x3 mini matris) yazabilme/çıkarabilme, hücreye asıl sayı girildiğinde ilgili satır, sütun ve 3x3 kutudaki aday sayıların otomatik ayıklanması (auto-prune), oyun kayıtlarında notların güvenle saklanması.
 - [x] **Numara Tamamlama Sayacı:** Sayı pad'inde 1'den 9'a kadar her rakam için tahtada kalan adet göstergesi ("X kaldı") ve 9 adedin tamamı yerleştiğinde yeşil rozetle ("✓ Bitti") görsel olarak tamamlanma durumu.
 - [x] **Tam Offline-First & PWA Entegrasyonu:** `vite-plugin-pwa` ile tam çevrimdışı çalışma, Service Worker otomatik önbellekleme (HTML, CSS/Tailwind, scriptler, ikonlar), Web Manifest, 192x192 ve 512x512 ikonlar, iOS Safari uyumluluğu ve oyun içi "Uygulamayı Cihazına Yükle (PWA)" butonu.
+- [x] **Firebase Süre & Bölüm Kayıt Mimarisi (`game_records`):** Her bitirilen oyun için UID, kullanıcı adı, bölüm, zorluk, net süre (saniye + formatlı), hata sayısı ve ay bilgisiyle Firebase `game_records` koleksiyonuna tekil kayıt düşülmesi; oyuncu profiline en iyi sürelerin (`best_basit`, `best_orta`, `best_zor`) ve toplam oyun adedinin işlenmesi; Sıralama tablosunda "⚡ En Hızlılar" sekmesi ve zorluk filtrelerinin canlı sunulması.
 
 ### 4. Aşama: Gelir Modeli
 - [ ] AdMob entegrasyonu (Ödüllü Reklam ile ücretsiz can kazanma: "Reklam İzle & Devam Et").

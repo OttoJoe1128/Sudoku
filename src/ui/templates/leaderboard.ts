@@ -20,9 +20,27 @@ export const leaderboardTemplate = `
                 </button>
             </div>
         </div>
-        <div class="bg-amber-50 text-amber-800 text-[11px] font-bold px-3 py-1.5 rounded-xl mb-3 flex justify-between items-center">
-            <span>Sıra & Oyuncu</span>
-            <span>🪙 Toplam Altın</span>
+        <!-- Sekmeler: Altın Sıralaması / En Hızlı Çözenler -->
+        <div class="flex gap-1.5 p-1 bg-slate-100 rounded-xl mb-3">
+            <button id="btn-tab-gold" class="flex-1 py-1.5 px-2 rounded-lg font-black text-xs transition-all bg-white text-indigo-700 shadow-sm">
+                🪙 Altın & Seviye
+            </button>
+            <button id="btn-tab-speed" class="flex-1 py-1.5 px-2 rounded-lg font-bold text-xs transition-all text-slate-500 hover:text-slate-800">
+                ⚡ En Hızlılar
+            </button>
+        </div>
+
+        <!-- En Hızlılar İçin Zorluk Filtresi (Başlangıçta Gizli) -->
+        <div id="speed-diff-filters" class="hidden gap-1.5 mb-2.5">
+            <button data-diff="all" class="speed-filter-btn flex-1 py-1 text-[11px] font-black rounded-lg bg-indigo-600 text-white shadow-sm">Tümü</button>
+            <button data-diff="basit" class="speed-filter-btn flex-1 py-1 text-[11px] font-bold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">Basit</button>
+            <button data-diff="orta" class="speed-filter-btn flex-1 py-1 text-[11px] font-bold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">Orta</button>
+            <button data-diff="zor" class="speed-filter-btn flex-1 py-1 text-[11px] font-bold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">Zor</button>
+        </div>
+
+        <div id="leaderboard-header-bar" class="bg-amber-50 text-amber-800 text-[11px] font-bold px-3 py-1.5 rounded-xl mb-3 flex justify-between items-center">
+            <span id="lb-header-left">Sıra & Oyuncu</span>
+            <span id="lb-header-right">🪙 Toplam Altın</span>
         </div>
         <div id="leaderboard-list" class="flex-1 overflow-y-auto space-y-2 pr-1">
             <div class="text-center text-slate-400 py-10 font-bold animate-pulse">Liderler yükleniyor...</div>

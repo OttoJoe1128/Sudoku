@@ -4,7 +4,7 @@ import { customModeTemplate } from './templates/custom';
 import { leaderboardTemplate } from './templates/leaderboard';
 import { shopTemplate } from './templates/shop';
 import { usernameModalTemplate } from './templates/usernameModal';
-import { Player } from '../engine/leaderboard';
+import { Player, SpeedRecord } from '../engine/leaderboard';
 
 export const UIManager = {
   mountUI() {
@@ -254,10 +254,41 @@ export const UIManager = {
           <span class="w-6 h-6 rounded-full flex items-center justify-center font-black text-xs ${i === 0 ? 'bg-amber-400 text-slate-900 shadow-sm' : i === 1 ? 'bg-slate-300 text-slate-800' : i === 2 ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-500'}">${i + 1}</span>
           <div>
             <p class="font-bold text-slate-800 text-sm leading-tight">${p.username}</p>
-            <p class="text-[10px] text-slate-400 font-bold">Seviye ${p.level}</p>
+            <p class="text-[10px] text-slate-400 font-bold">Seviye ${p.level}${typeof p.total_completed === 'number' && p.total_completed > 0 ? ` • ${p.total_completed} Oyun` : ''}</p>
           </div>
         </div>
         <span class="text-xs font-black bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full border border-amber-100">🪙 ${p.gold}</span>
+      </div>
+    `).join('');
+  },
+
+  renderSpeedLeaderboard(records: SpeedRecord[]) {
+    const listEl = document.getElementById('leaderboard-list');
+    if (!listEl) return;
+    if (records.length === 0) {
+      listEl.innerHTML = `
+        <div class="text-center text-slate-400 py-10 font-bold">
+          <p class="text-2xl mb-1">⏱</p>
+          Henüz tamamlanmış süre kaydı bulunmuyor.
+        </div>
+      `;
+      return;
+    }
+    listEl.innerHTML = records.map((r, i) => `
+      <div class="flex justify-between items-center p-3 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-indigo-100 transition-colors">
+        <div class="flex items-center gap-2.5">
+          <span class="w-6 h-6 rounded-full flex items-center justify-center font-black text-xs ${i === 0 ? 'bg-amber-400 text-slate-900 shadow-sm' : i === 1 ? 'bg-slate-300 text-slate-800' : i === 2 ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-500'}">${i + 1}</span>
+          <div>
+            <p class="font-bold text-slate-800 text-sm leading-tight">${r.username}</p>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <span class="text-[10px] font-bold ${r.difficulty === 'zor' ? 'text-rose-500' : r.difficulty === 'orta' ? 'text-amber-600' : 'text-emerald-600'} uppercase">Seviye ${r.level} (${r.difficulty})</span>
+              ${r.errors > 0 ? `<span class="text-[9px] text-slate-400 font-bold">• ${r.errors} Hata</span>` : `<span class="text-[9px] text-emerald-600 font-bold">• Kusursuz</span>`}
+            </div>
+          </div>
+        </div>
+        <div class="text-right">
+          <span class="text-xs font-black bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full border border-indigo-100 inline-block font-mono">⏱ ${r.timeFormatted}</span>
+        </div>
       </div>
     `).join('');
   },
