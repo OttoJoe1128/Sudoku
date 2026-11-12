@@ -29,23 +29,29 @@ export const menuTemplate = `
         <span class="bg-indigo-500 text-white text-[10px] font-black px-2.5 py-1 rounded-lg">YÜKLE</span>
     </button>
 
-    <!-- Ana Oyun Aksiyonları (Sadece 2 Ana Seçenek) -->
+    <!-- Ana Oyun Aksiyonları -->
     <div class="flex flex-col gap-3 my-auto w-full">
-        <!-- 1. Kayıtlı Oyundan Devam Et -->
-        <button id="btn-continue-game" class="w-full text-left rounded-2xl p-5 shadow-md active:scale-[0.98] transition-all border flex justify-between items-center group bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500">
-            <div>
-                <div class="flex items-center gap-2 mb-1">
-                    <span id="continue-dot" class="w-2.5 h-2.5 rounded-full bg-white animate-pulse"></span>
-                    <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-100" id="continue-tag">Aktif Oyun</span>
+        <!-- 1. Devam Et / Sıradaki Seviyeye Başla Kartı -->
+        <div class="relative w-full">
+            <button id="btn-continue-game" class="w-full text-left rounded-2xl p-5 shadow-md active:scale-[0.98] transition-all border flex justify-between items-center group bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500 cursor-pointer">
+                <div class="pr-9">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span id="continue-dot" class="w-2.5 h-2.5 rounded-full bg-white animate-pulse"></span>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-100" id="continue-tag">Aktif Oyun</span>
+                    </div>
+                    <span class="text-xl font-black block leading-tight" id="continue-game-title">▶ Kayıtlı Oyundan Devam Et</span>
+                    <span class="text-emerald-100 text-xs mt-0.5 block" id="continue-game-subtitle">Kaldığın yerden hemen sürdür</span>
                 </div>
-                <span class="text-xl font-black block" id="continue-game-title">▶ Kayıtlı Oyundan Devam Et</span>
-                <span class="text-emerald-100 text-xs" id="continue-game-subtitle">Kaldığın yerden hemen sürdür</span>
-            </div>
-            <span class="text-2xl group-hover:translate-x-1 transition-transform">➔</span>
-        </button>
+                <span id="continue-game-arrow" class="text-2xl group-hover:translate-x-1 transition-transform">➔</span>
+            </button>
+            <!-- Kayıtlı Oyunu Silme / Sıfırlama Butonu (Sadece yarım kalan oyun olduğunda görünür) -->
+            <button id="btn-delete-saved-game" title="Bu Yarım Kalan Oyunu Sil / Sıfırla" class="hidden absolute top-4 right-4 bg-black/25 hover:bg-rose-600 text-white w-8 h-8 rounded-xl text-xs font-bold items-center justify-center backdrop-blur-sm z-10 active:scale-90 transition-all shadow">
+                🗑️
+            </button>
+        </div>
 
         <!-- 2. Yeni Oyun Başlat -->
-        <button id="btn-new-game" class="w-full text-left rounded-2xl p-5 shadow-md active:scale-[0.98] transition-all border flex justify-between items-center group bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-500">
+        <button id="btn-new-game" class="w-full text-left rounded-2xl p-5 shadow-md active:scale-[0.98] transition-all border flex justify-between items-center group bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-500 cursor-pointer">
             <div>
                 <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-200 block mb-1">Sıfırdan Başla</span>
                 <span class="text-xl font-black block">✨ Yeni Oyun Başlat</span>
@@ -53,21 +59,47 @@ export const menuTemplate = `
             </div>
             <span class="text-3xl group-hover:rotate-12 transition-transform">🧩</span>
         </button>
+
+        <!-- 3. Sudoku Yolculuğu Haritası -->
+        <button id="btn-open-map" class="w-full bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-2xl p-3.5 flex justify-between items-center shadow-sm text-xs font-black transition-all active:scale-[0.98]">
+            <div class="flex items-center gap-2">
+                <span class="text-lg">🗺️</span>
+                <span>Sudoku Yolculuğu Haritası (1000 Seviye)</span>
+            </div>
+            <span class="text-slate-400 font-bold">➔</span>
+        </button>
+
+        <!-- 4. Seviye Belirleme Sınavı (Doğrudan 301 veya 701'e Atla) -->
+        <button id="btn-menu-placement-test" class="w-full bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 text-indigo-900 border border-indigo-200 rounded-2xl p-3 flex justify-between items-center shadow-sm text-xs font-black transition-all active:scale-[0.98]">
+            <div class="flex items-center gap-2.5">
+                <span class="text-xl">🎯</span>
+                <div class="text-left">
+                    <span class="block leading-tight">Seviye Belirleme Sınavı</span>
+                    <span class="text-[10px] font-bold text-indigo-600 block mt-0.5">Testi geç, doğrudan 301 veya 701'den başla!</span>
+                </div>
+            </div>
+            <span class="bg-indigo-600 text-white text-[10px] font-black px-2 py-1 rounded-lg shrink-0">SINAVA GİR</span>
+        </button>
     </div>
 
-    <!-- İkincil Araçlar (Sıralama, Mağaza, Günlük Ödül) -->
-    <div class="grid grid-cols-3 gap-2.5 w-full mt-auto">
-        <button id="btn-leaderboard" class="bg-white hover:bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-center font-bold text-xs shadow-sm flex flex-col items-center gap-1 active:scale-95 transition-transform">
+    <!-- İkincil Araçlar (Sıralama, Rozetler, Mağaza, Günlük Ödül) -->
+    <div class="grid grid-cols-4 gap-2 w-full mt-auto">
+        <button id="btn-leaderboard" class="bg-white hover:bg-slate-50 p-3 rounded-2xl border border-slate-200 text-center font-bold text-xs shadow-sm flex flex-col items-center gap-1 active:scale-95 transition-transform">
             <span class="text-xl">🏆</span>
-            <span class="text-slate-700">Sıralama</span>
+            <span class="text-[11px] text-slate-700">Sıralama</span>
         </button>
-        <button id="btn-shop" class="bg-white hover:bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-center font-bold text-xs shadow-sm flex flex-col items-center gap-1 active:scale-95 transition-transform">
+        <button id="btn-achievements" class="bg-white hover:bg-slate-50 p-3 rounded-2xl border border-slate-200 text-center font-bold text-xs shadow-sm flex flex-col items-center gap-1 active:scale-95 transition-transform relative">
+            <span class="text-xl">🎖️</span>
+            <span class="text-[11px] text-slate-700">Rozetler</span>
+            <span id="badge-notify-dot" class="hidden absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+        </button>
+        <button id="btn-shop" class="bg-white hover:bg-slate-50 p-3 rounded-2xl border border-slate-200 text-center font-bold text-xs shadow-sm flex flex-col items-center gap-1 active:scale-95 transition-transform">
             <span class="text-xl">🛍️</span>
-            <span class="text-slate-700">Mağaza</span>
+            <span class="text-[11px] text-slate-700">Mağaza</span>
         </button>
-        <button id="btn-daily-reward" class="bg-amber-50 hover:bg-amber-100 border border-amber-200 p-3.5 rounded-2xl text-center font-bold text-xs shadow-sm flex flex-col items-center gap-1 active:scale-95 transition-transform">
+        <button id="btn-daily-reward" class="bg-amber-50 hover:bg-amber-100 border border-amber-200 p-3 rounded-2xl text-center font-bold text-xs shadow-sm flex flex-col items-center gap-1 active:scale-95 transition-transform">
             <span id="daily-reward-icon" class="text-xl">🎁</span>
-            <span id="daily-reward-text" class="text-amber-800">Günlük Ödül</span>
+            <span id="daily-reward-text" class="text-[11px] text-amber-800">Günlük</span>
         </button>
     </div>
 </div>

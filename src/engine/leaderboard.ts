@@ -25,12 +25,19 @@ export interface SpeedRecord {
 }
 
 export const Leaderboard = {
-  getCachedPlayers(): Player[] {
+  getCachedPlayers(sortBy: 'level' | 'gold' = 'level'): Player[] {
     try {
       const saved = localStorage.getItem('sudoku_cached_leaderboard');
       if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        const parsed: Player[] = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          if (sortBy === 'level') {
+            parsed.sort((a, b) => b.level !== a.level ? b.level - a.level : b.gold - a.gold);
+          } else {
+            parsed.sort((a, b) => b.gold !== a.gold ? b.gold - a.gold : b.level - a.level);
+          }
+          return parsed;
+        }
       }
     } catch {
       // ignore
@@ -38,7 +45,7 @@ export const Leaderboard = {
     return [];
   },
 
-  async fetchTopPlayers(): Promise<Player[]> {
+  async fetchTopPlayers(sortBy: 'level' | 'gold' = 'level'): Promise<Player[]> {
     try {
       const fetchPromise = (async () => {
         const colRef = collection(db, 'leaderboard');
@@ -59,24 +66,34 @@ export const Leaderboard = {
             });
           });
 
-          // Puanlarına (altın) göre büyükten küçüğe sırala
-          list.sort((a, b) => b.gold - a.gold);
+          // Sıralama mantığı: Seviyeye göre (önce level, sonra gold) veya Altına göre
+          if (sortBy === 'level') {
+            list.sort((a, b) => {
+              if (b.level !== a.level) return b.level - a.level;
+              return b.gold - a.gold;
+            });
+          } else {
+            list.sort((a, b) => {
+              if (b.gold !== a.gold) return b.gold - a.gold;
+              return b.level - a.level;
+            });
+          }
 
           // Yerel önbelleğe kaydet
           localStorage.setItem('sudoku_cached_leaderboard', JSON.stringify(list));
           return list;
         }
-        return this.getCachedPlayers();
+        return this.getCachedPlayers(sortBy);
       })();
 
       const timeoutPromise = new Promise<Player[]>((resolve) =>
-        setTimeout(() => resolve(this.getCachedPlayers()), 4000)
+        setTimeout(() => resolve(this.getCachedPlayers(sortBy)), 4000)
       );
 
       return await Promise.race([fetchPromise, timeoutPromise]);
     } catch (e) {
       console.warn("Liderlik tablosu canlı çekilemedi:", e);
-      return this.getCachedPlayers();
+      return this.getCachedPlayers(sortBy);
     }
   },
 

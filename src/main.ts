@@ -5,6 +5,7 @@ import { UserManager } from './store/userState';
 import { Leaderboard } from './engine/leaderboard';
 import { ShopManager } from './engine/shop';
 import { Rewards } from './engine/rewards';
+import { AchievementManager } from './engine/achievements';
 import confetti from 'canvas-confetti';
 import { registerSW } from 'virtual:pwa-register';
 
@@ -24,6 +25,8 @@ interface SavedGameState {
   errors: number;
   hintsUsed: number;
   savedAt: number;
+  isPlacement?: boolean;
+  targetLevel?: number;
 }
 
 let currentSolution: number[][];
@@ -40,6 +43,17 @@ let isGameActive = false;
 let isNotesMode = false;
 let userNotes: { [key: string]: number[] } = {};
 let refreshBoard = () => {};
+
+// Seviye Belirleme Sınavı (Placement Test) Durumu
+let isPlacementMode = false;
+let placementTargetDiff: 'basit' | 'orta' | 'zor' = 'orta';
+let placementTargetLevel = 301;
+let placementTimeLimit = 420; // Orta için 7 dk (420 sn)
+
+// Liderlik Tablosu Durumu
+let currentLeaderboardTab: 'gold' | 'speed' = 'gold';
+let currentGeneralSort: 'level' | 'gold' = 'level'; // Varsayılan: Seviyeye göre sıralama
+let currentSpeedDiff: 'all' | 'basit' | 'orta' | 'zor' = 'all';
 
 // Tahtada kalan rakam sayılarını (1-9) hesapla
 const getNumberCounts = (board: number[][]): { [num: number]: number } => {
@@ -98,6 +112,7 @@ const isBoardComplete = (board: number[][], solution: number[][]): boolean => {
 const saveCurrentGameState = () => {
   if (!isGameActive || !userBoard || !currentSolution || !initialBoard) return;
 
+  // Eğer tahta tamamlanmışsa asla yarım kalan oyun olarak kaydetme!
   if (isBoardComplete(userBoard, currentSolution)) {
     clearCurrentGameState();
     return;
@@ -113,7 +128,9 @@ const saveCurrentGameState = () => {
     timeElapsed,
     errors,
     hintsUsed,
-    savedAt: Date.now()
+    savedAt: Date.now(),
+    isPlacement: isPlacementMode,
+    targetLevel: placementTargetLevel
   };
   localStorage.setItem('sudoku_saved_game', JSON.stringify(state));
 };
@@ -147,9 +164,10 @@ const formatTime = (seconds: number) => {
   return `${m}:${s}`;
 };
 
-// Ana Menüdeki "Kayıtlı Oyundan Devam Et" Kartını Güncelle
+// Ana Menüdeki "Devam Et / Sıradaki Seviyeye Başla" Kartını Güncelle
 const updateMenuContinueCard = () => {
   const btn = document.getElementById('btn-continue-game') as HTMLButtonElement;
+  const deleteBtn = document.getElementById('btn-delete-saved-game') as HTMLButtonElement;
   const title = document.getElementById('continue-game-title');
   const subtitle = document.getElementById('continue-game-subtitle');
   const tag = document.getElementById('continue-tag');
@@ -157,20 +175,51 @@ const updateMenuContinueCard = () => {
   if (!btn) return;
 
   const saved = getSavedGameState();
+  const currentLvl = UserManager.getCurrentLevel();
+  const nextDiff = SudokuGen.getDifficulty(currentLvl);
+
   if (saved) {
+    // 1. Yarım kalan bir oyun varsa: "Kaldığın Yerden Devam Et" ve silme butonu açık
     btn.disabled = false;
     btn.className = "w-full text-left rounded-2xl p-5 shadow-md active:scale-[0.98] transition-all border flex justify-between items-center group bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500 cursor-pointer";
-    if (title) title.innerText = `▶ Kayıtlı Oyundan Devam Et`;
-    if (subtitle) subtitle.innerText = `Seviye ${saved.level} (${saved.diff.toUpperCase()}) • ⏱ ${formatTime(saved.timeElapsed)} • Hata: ${saved.errors}/5`;
-    if (tag) tag.innerText = "Aktif Oyun Kayıtlı";
+    
+    if (saved.isPlacement) {
+      if (title) title.innerText = `▶ Sınava Devam Et: ${saved.diff.toUpperCase()}`;
+      if (subtitle) subtitle.innerText = `Hedef: Seviye ${saved.targetLevel || 301} • ⏱ ${formatTime(saved.timeElapsed)} • Hata: ${saved.errors}/3`;
+      if (tag) tag.innerText = "Yarım Kalan Sınav";
+    } else {
+      if (title) title.innerText = `▶ Kaldığın Yerden Devam Et`;
+      if (subtitle) subtitle.innerText = `Seviye ${saved.level} (${saved.diff.toUpperCase()}) • ⏱ ${formatTime(saved.timeElapsed)} • Hata: ${saved.errors}/5`;
+      if (tag) tag.innerText = "Yarım Kalan Oyun";
+    }
     if (dot) dot.classList.remove('hidden');
+
+    if (deleteBtn) {
+      deleteBtn.classList.remove('hidden');
+      deleteBtn.classList.add('flex');
+    }
   } else {
-    btn.disabled = true;
-    btn.className = "w-full text-left rounded-2xl p-5 border flex justify-between items-center bg-slate-100 text-slate-400 border-slate-200 opacity-60 cursor-not-allowed";
-    if (title) title.innerText = `▶ Kayıtlı Oyun Yok`;
-    if (subtitle) subtitle.innerText = `Yeni bir oyun başlatarak oynamaya başlayın`;
-    if (tag) tag.innerText = "Kayıt Yok";
-    if (dot) dot.classList.add('hidden');
+    // 2. Yarım kalan oyun yoksa: ASLA DEVRE DIŞI BIRAKMA! Sıradaki seviyeyi oynat
+    btn.disabled = false;
+    btn.className = "w-full text-left rounded-2xl p-5 shadow-md active:scale-[0.98] transition-all border flex justify-between items-center group bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500 cursor-pointer";
+    if (title) title.innerText = `▶ Seviye ${currentLvl}'e Başla`;
+    if (subtitle) subtitle.innerText = `Mevcut ilerlemen: Seviye ${currentLvl} (${nextDiff.toUpperCase()}) • Hemen oyna!`;
+    if (tag) tag.innerText = "Sıradaki Seviye";
+    if (dot) dot.classList.remove('hidden');
+
+    if (deleteBtn) {
+      deleteBtn.classList.add('hidden');
+      deleteBtn.classList.remove('flex');
+    }
+  }
+
+  // Rozet bildirimi kontrolü
+  const badgeStatus = AchievementManager.getAllBadgesWithStatus(currentLvl, UserManager.getGold());
+  const hasUnclaimed = badgeStatus.some(b => b.isUnlocked && !b.isClaimed);
+  const notifyDot = document.getElementById('badge-notify-dot');
+  if (notifyDot) {
+    if (hasUnclaimed) notifyDot.classList.remove('hidden');
+    else notifyDot.classList.add('hidden');
   }
 };
 
@@ -206,20 +255,27 @@ const startTimer = () => {
     }
     timeElapsed++;
     if (timerEl) timerEl.innerText = formatTime(timeElapsed);
+
+    // Sınav modu için süre sınırı kontrolü
+    if (isPlacementMode && timeElapsed >= placementTimeLimit) {
+      handlePlacementFailed('time');
+      return;
+    }
+
     if (timeElapsed % 5 === 0) {
       saveCurrentGameState();
     }
   }, 1000);
 };
 
-// --- ZAFER VE BÖLÜM BİTİRME MANTIĞI ---
-const handleVictory = async (level: number, diff: 'basit' | 'orta' | 'zor') => {
+// --- NORMAL ZAFER VE BÖLÜM BİTİRME MANTIĞI ---
+const handleVictory = (level: number, diff: 'basit' | 'orta' | 'zor') => {
+  // 1. ANINDA OYUNU DURDUR VE KAYDI SİL
   isGameActive = false;
   if (timerInterval) {
     clearInterval(timerInterval);
     timerInterval = null;
   }
-
   clearCurrentGameState();
 
   const currentLvl = UserManager.getCurrentLevel();
@@ -227,18 +283,7 @@ const handleVictory = async (level: number, diff: 'basit' | 'orta' | 'zor') => {
   const reward = diff === 'basit' ? 10 : diff === 'orta' ? 20 : 35;
   const nextGold = UserManager.getGold() + reward;
 
-  await UserManager.updateProgress(nextLevel, nextGold);
-
-  // Süreyi ve bölüm detaylarını Firebase game_records koleksiyonuna kaydet
-  await UserManager.recordGameCompletion({
-    level,
-    difficulty: diff,
-    timeElapsed,
-    timeFormatted: formatTime(timeElapsed),
-    errors,
-    hintsUsed
-  });
-
+  // 2. KULLANICI ARAYÜZÜNÜ ANINDA GÜNCELLE VE ZAFERİ KUTLA (Firebase beklemeden!)
   const goldEl = document.getElementById('menu-gold');
   if (goldEl) goldEl.innerText = nextGold.toString();
 
@@ -255,6 +300,113 @@ const handleVictory = async (level: number, diff: 'basit' | 'orta' | 'zor') => {
   UIManager.showVictoryModal(level, diff, formatTime(timeElapsed), errors, reward);
   updateMenuContinueCard();
   updateDailyRewardUI();
+
+  // 3. ARKA PLANDA FIREBASE VE ROZETLERİ GÜNCELLE
+  (async () => {
+    try {
+      await UserManager.updateProgress(nextLevel, nextGold);
+      await UserManager.recordGameCompletion({
+        level,
+        difficulty: diff,
+        timeElapsed,
+        timeFormatted: formatTime(timeElapsed),
+        errors,
+        hintsUsed
+      });
+      AchievementManager.checkAndUnlockBadges({
+        level: nextLevel,
+        gold: nextGold,
+        lastTimeElapsed: timeElapsed,
+        lastErrors: errors
+      });
+      updateMenuContinueCard();
+    } catch (err) {
+      console.warn("Arka plan Firebase senkronizasyon uyarısı:", err);
+    }
+  })();
+};
+
+// --- SEVİYE BELİRLEME SINAVI ZAFERİ ---
+const handlePlacementVictory = () => {
+  isGameActive = false;
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  clearCurrentGameState();
+
+  const currentLvl = UserManager.getCurrentLevel();
+  const finalLevel = Math.max(currentLvl, placementTargetLevel);
+  const bonusReward = placementTargetDiff === 'basit' ? 50 : placementTargetDiff === 'orta' ? 150 : 300;
+  const nextGold = UserManager.getGold() + bonusReward;
+
+  const goldEl = document.getElementById('menu-gold');
+  if (goldEl) goldEl.innerText = nextGold.toString();
+
+  try {
+    confetti({
+      particleCount: 150,
+      spread: 90,
+      origin: { y: 0.6 }
+    });
+  } catch {
+    // ignore
+  }
+
+  UIManager.showPlacementResultModal({
+    passed: true,
+    targetLevel: placementTargetLevel,
+    targetDiff: placementTargetDiff,
+    timeStr: formatTime(timeElapsed),
+    errorCount: errors,
+    reward: bonusReward
+  });
+
+  updateMenuContinueCard();
+
+  (async () => {
+    try {
+      await UserManager.updateProgress(finalLevel, nextGold);
+      await UserManager.recordGameCompletion({
+        level: placementTargetLevel,
+        difficulty: placementTargetDiff,
+        timeElapsed,
+        timeFormatted: formatTime(timeElapsed),
+        errors,
+        hintsUsed
+      });
+      AchievementManager.checkAndUnlockBadges({
+        level: finalLevel,
+        gold: nextGold,
+        lastTimeElapsed: timeElapsed,
+        lastErrors: errors
+      });
+      updateMenuContinueCard();
+    } catch (err) {
+      console.warn("Sınav sonucu Firebase senkronizasyon uyarısı:", err);
+    }
+  })();
+};
+
+// --- SEVİYE BELİRLEME SINAVI BAŞARISIZ OLDUĞUNDA ---
+const handlePlacementFailed = (_reason: 'errors' | 'time') => {
+  isGameActive = false;
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  clearCurrentGameState();
+
+  UIManager.showPlacementResultModal({
+    passed: false,
+    targetLevel: placementTargetLevel,
+    targetDiff: placementTargetDiff,
+    timeStr: formatTime(timeElapsed),
+    errorCount: errors,
+    reward: 0
+  });
+
+  updateMenuContinueCard();
 };
 
 // --- 5 HATA SINIRINA ULAŞILDIĞINDA (DEVAM ET YA DA BAŞTAN AL) ---
@@ -299,17 +451,40 @@ const useHint = async () => {
   refreshBoard();
 
   if (isBoardComplete(userBoard, currentSolution)) {
-    await handleVictory(currentLevel, currentDiff);
+    if (isPlacementMode) {
+      handlePlacementVictory();
+    } else {
+      handleVictory(currentLevel, currentDiff);
+    }
   } else {
     saveCurrentGameState();
   }
 };
 
+// Sınav Başlatıcı
+const startPlacementTest = (diff: 'basit' | 'orta' | 'zor', targetLevel: number) => {
+  isPlacementMode = true;
+  placementTargetDiff = diff;
+  placementTargetLevel = targetLevel;
+  placementTimeLimit = diff === 'basit' ? 300 : diff === 'orta' ? 420 : 600; // 5 dk, 7 dk, 10 dk
+
+  UIManager.toggleModal('placement-modal', false);
+  UIManager.hidePlacementResultModal();
+
+  startGame(targetLevel, diff, undefined, true);
+};
+
 // Oyunu Başlat veya Kayıtlı Oyundan Sürdür
-const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', resumeState?: SavedGameState) => {
+const startGame = (
+  level: number,
+  diff: 'basit' | 'orta' | 'zor',
+  resumeState?: SavedGameState,
+  asPlacement: boolean = false
+) => {
   UIManager.hideVictoryModal();
   UIManager.hideGameOverModal();
   UIManager.hideErrorLimitModal();
+  UIManager.hidePlacementResultModal();
 
   currentLevel = level;
   currentDiff = diff;
@@ -326,6 +501,13 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', resumeState?: 
       return;
     }
 
+    isPlacementMode = !!resumeState.isPlacement;
+    if (isPlacementMode) {
+      placementTargetLevel = resumeState.targetLevel || level;
+      placementTargetDiff = diff;
+      placementTimeLimit = diff === 'basit' ? 300 : diff === 'orta' ? 420 : 600;
+    }
+
     currentSolution = resumeState.solution;
     userBoard = resumeState.userBoard;
     initialBoard = resumeState.initialBoard;
@@ -334,6 +516,7 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', resumeState?: 
     errors = resumeState.errors;
     hintsUsed = resumeState.hintsUsed;
   } else {
+    isPlacementMode = asPlacement;
     errors = 0;
     hintsUsed = 0;
     timeElapsed = 0;
@@ -348,9 +531,16 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', resumeState?: 
   saveCurrentGameState();
 
   const title = document.getElementById('game-title');
-  if (title) title.innerText = `Seviye ${level} (${diff.toUpperCase()})`;
+  if (title) {
+    if (isPlacementMode) {
+      title.innerText = `🎯 Seviye Sınavı: ${diff.toUpperCase()} (Hedef: ${placementTargetLevel})`;
+    } else {
+      title.innerText = `Seviye ${level} (${diff.toUpperCase()})`;
+    }
+  }
 
-  UIManager.updateErrorCount(errors, 5);
+  const maxAllowedErrors = isPlacementMode ? 3 : 5;
+  UIManager.updateErrorCount(errors, maxAllowedErrors);
   UIManager.navigate('game');
   startTimer();
 
@@ -368,19 +558,16 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', resumeState?: 
       const key = `${selectedCell.r}-${selectedCell.c}`;
 
       if (num === 0) {
-        // Sil: Seçili hücrenin notlarını temizle
         delete userNotes[key];
         saveCurrentGameState();
         refreshBoard();
         return;
       }
 
-      // Hücrede zaten yerleştirilmiş bir ana sayı varsa not yazılmaz
       if (userBoard[selectedCell.r][selectedCell.c] !== 0) {
         return;
       }
 
-      // 1-9 Aday sayısını ekle veya çıkar (toggle)
       const list = userNotes[key] ? [...userNotes[key]] : [];
       const idx = list.indexOf(num);
       if (idx >= 0) {
@@ -408,17 +595,30 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', resumeState?: 
       num,
       userBoard,
       currentSolution,
-      async () => {
-        await handleVictory(level, diff);
+      () => {
+        if (isPlacementMode) {
+          handlePlacementVictory();
+        } else {
+          handleVictory(level, diff);
+        }
       },
       (err: number) => {
         errors += err;
-        UIManager.updateErrorCount(errors, 5);
+        const limit = isPlacementMode ? 3 : 5;
+        UIManager.updateErrorCount(errors, limit);
 
-        if (errors >= 5) {
-          handleFiveErrorsReached();
+        if (isPlacementMode) {
+          if (errors >= 3) {
+            handlePlacementFailed('errors');
+          } else {
+            saveCurrentGameState();
+          }
         } else {
-          saveCurrentGameState();
+          if (errors >= 5) {
+            handleFiveErrorsReached();
+          } else {
+            saveCurrentGameState();
+          }
         }
       }
     );
@@ -461,9 +661,9 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', resumeState?: 
   refreshBoard();
 };
 
-// Tarayıcı kapanırken durumu sadece aktif oyun varsa kaydet
+// Tarayıcı kapanırken durumu sadece aktif ve henüz bitmemiş oyun varsa kaydet
 window.addEventListener('beforeunload', () => {
-  if (isGameActive && userBoard && currentSolution) {
+  if (isGameActive && userBoard && currentSolution && !isBoardComplete(userBoard, currentSolution)) {
     saveCurrentGameState();
   }
 });
@@ -475,33 +675,52 @@ document.getElementById('btn-hint')?.addEventListener('click', () => {
   useHint();
 });
 
-// Not Alma (Pencil/Notes) Modu Butonu
+// Not Alma Modu Butonu
 document.getElementById('btn-toggle-notes')?.addEventListener('click', () => {
   if (!isGameActive) return;
   isNotesMode = !isNotesMode;
   UIManager.updateNotesModeUI(isNotesMode);
 });
 
-// 1. Kayıtlı Oyundan Devam Et Butonu
+// 1. Devam Et / Sıradaki Seviyeye Başla Butonu
 document.getElementById('btn-continue-game')?.addEventListener('click', () => {
   const saved = getSavedGameState();
   if (saved) {
     startGame(saved.level, saved.diff, saved);
   } else {
-    alert("Şu anda devam edebileceğiniz aktif bir kayıtlı oyun bulunmamaktadır.");
+    const currentLvl = UserManager.getCurrentLevel();
+    const currentDiff = SudokuGen.getDifficulty(currentLvl);
+    startGame(currentLvl, currentDiff);
   }
 });
 
-// 2. Yeni Oyun Başlat Butonu (Zorluk Seçim Ekranını Açar)
+// Kayıtlı Oyunu Silme / Sıfırlama Butonu
+document.getElementById('btn-delete-saved-game')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const saved = getSavedGameState();
+  if (!saved) return;
+
+  const infoText = saved.isPlacement
+    ? `Sınav kaydını (${saved.diff.toUpperCase()}) silmek istiyor musunuz?`
+    : `Seviye ${saved.level} (${saved.diff.toUpperCase()}) yarım kalan oyun kaydını silmek istiyor musunuz?`;
+
+  const onay = confirm(`${infoText}\n\nİlerlemeniz (Seviye ${UserManager.getCurrentLevel()}) ve altınlarınız korunur.`);
+  if (onay) {
+    clearCurrentGameState();
+    updateMenuContinueCard();
+  }
+});
+
+// 2. Yeni Oyun Başlat Butonu
 document.getElementById('btn-new-game')?.addEventListener('click', () => {
   UIManager.navigate('custom');
 });
 
-// Yeni Oyun Başlatma Onayı (Mevcut kayıtlı oyunu koruma kalkanı)
+// Yeni Oyun Başlatma Onayı
 const requestStartNewGame = (diff: 'basit' | 'orta' | 'zor') => {
   const saved = getSavedGameState();
   if (saved) {
-    const onay = confirm(`Kayıtlı bir oyununuz bulunuyor (Seviye ${saved.level}).\n\nYeni bir oyun başlatırsanız önceki oyununuz silinecektir. Devam etmek istiyor musunuz?`);
+    const onay = confirm(`Kayıtlı bir oyununuz bulunuyor (${saved.isPlacement ? 'Sınav' : `Seviye ${saved.level}`}).\n\nYeni bir oyun başlatırsanız önceki oyun kaydı silinecektir. Devam etmek istiyor musunuz?`);
     if (!onay) return;
   }
   clearCurrentGameState();
@@ -526,13 +745,13 @@ document.getElementById('btn-back-custom')?.addEventListener('click', () => {
   UIManager.navigate('menu');
 });
 
-// Oyundan Menüye Dönüş (Oyunu asla silmez, kaydeder ve durdurur)
+// Oyundan Menüye Dönüş (Tamamlanmamış oyunu kaydeder ve durdurur)
 document.getElementById('btn-back-menu')?.addEventListener('click', () => {
   if (timerInterval) {
     clearInterval(timerInterval);
     timerInterval = null;
   }
-  if (isGameActive) {
+  if (isGameActive && !isBoardComplete(userBoard, currentSolution)) {
     saveCurrentGameState();
   }
   updateMenuContinueCard();
@@ -540,7 +759,81 @@ document.getElementById('btn-back-menu')?.addEventListener('click', () => {
   UIManager.navigate('menu');
 });
 
-// --- 5 HATA MODAL BUTONLARI (50 ALTIN İLE DEVAM ET YA DA BAŞTAN AL) ---
+// --- SEVİYE BELİRLEME SINAVI DİNLENİCİLERİ ---
+const openPlacementModal = () => {
+  UIManager.toggleModal('placement-modal', true);
+};
+
+document.getElementById('btn-menu-placement-test')?.addEventListener('click', openPlacementModal);
+document.getElementById('btn-open-placement-test')?.addEventListener('click', openPlacementModal);
+document.getElementById('close-placement-modal')?.addEventListener('click', () => {
+  UIManager.toggleModal('placement-modal', false);
+});
+document.getElementById('btn-skip-placement')?.addEventListener('click', () => {
+  UIManager.toggleModal('placement-modal', false);
+});
+
+document.getElementById('btn-placement-basit')?.addEventListener('click', () => {
+  startPlacementTest('basit', 1);
+});
+document.getElementById('btn-placement-orta')?.addEventListener('click', () => {
+  startPlacementTest('orta', 301);
+});
+document.getElementById('btn-placement-zor')?.addEventListener('click', () => {
+  startPlacementTest('zor', 701);
+});
+
+// Sınav Sonuç Modalı Aksiyonları
+document.getElementById('btn-placement-action-primary')?.addEventListener('click', () => {
+  UIManager.hidePlacementResultModal();
+  // Geçildiyse hedef seviyeyi normal oyun olarak başlat, geçilemediyse testi tekrar dene
+  const currentLvl = UserManager.getCurrentLevel();
+  if (currentLvl >= placementTargetLevel) {
+    startGame(placementTargetLevel, placementTargetDiff);
+  } else {
+    startPlacementTest(placementTargetDiff, placementTargetLevel);
+  }
+});
+
+document.getElementById('btn-placement-action-secondary')?.addEventListener('click', () => {
+  UIManager.hidePlacementResultModal();
+  updateMenuContinueCard();
+  updateDailyRewardUI();
+  UIManager.navigate('menu');
+});
+
+// --- SUDOKU YOLCULUĞU HARİTASI ---
+const openMapView = (focusLevel?: number) => {
+  const currentLvl = UserManager.getCurrentLevel();
+  const focus = focusLevel || currentLvl;
+  UIManager.renderMap(currentLvl, focus);
+  UIManager.navigate('map');
+
+  // Haritadaki seviye butonlarını dinle
+  const container = document.getElementById('map-nodes');
+  if (container) {
+    container.querySelectorAll('button').forEach(btn => {
+      btn.onclick = () => {
+        const lvl = parseInt(btn.dataset.level || '1');
+        const diff = SudokuGen.getDifficulty(lvl);
+        startGame(lvl, diff);
+      };
+    });
+  }
+};
+
+document.getElementById('btn-open-map')?.addEventListener('click', () => openMapView());
+document.getElementById('btn-back-map')?.addEventListener('click', () => {
+  updateMenuContinueCard();
+  updateDailyRewardUI();
+  UIManager.navigate('menu');
+});
+
+document.getElementById('btn-map-jump-basit')?.addEventListener('click', () => openMapView(1));
+document.getElementById('btn-map-jump-orta')?.addEventListener('click', () => openMapView(301));
+document.getElementById('btn-map-jump-zor')?.addEventListener('click', () => openMapView(701));
+
+// --- 5 HATA MODAL BUTONLARI ---
 document.getElementById('btn-continue-with-gold')?.addEventListener('click', async () => {
   const currentGold = UserManager.getGold();
   if (currentGold < 50) {
@@ -548,13 +841,12 @@ document.getElementById('btn-continue-with-gold')?.addEventListener('click', asy
     return;
   }
 
-  // 50 altın düş ve oyuncuya 3 can hakkı tanımla (hatayı 2'ye çek, 5'e kadar 3 hakkı olsun)
   const newGold = currentGold - 50;
   await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
   const goldEl = document.getElementById('menu-gold');
   if (goldEl) goldEl.innerText = newGold.toString();
 
-  errors = 2; // 5 - 2 = 3 can hakkı sağlandı
+  errors = 2; // 3 can hakkı sağlandı
   UIManager.updateErrorCount(errors, 5);
   UIManager.hideErrorLimitModal();
 
@@ -565,7 +857,6 @@ document.getElementById('btn-continue-with-gold')?.addEventListener('click', asy
 });
 
 document.getElementById('btn-restart-level')?.addEventListener('click', () => {
-  // Ücretsiz baştan başlat: tahtayı başlangıç haline döndür, hataları ve süreyi sıfırla
   UIManager.hideErrorLimitModal();
   userBoard = initialBoard.map(row => [...row]);
   userNotes = {};
@@ -615,15 +906,16 @@ document.getElementById('btn-gameover-menu')?.addEventListener('click', () => {
 });
 
 // --- LİDERLİK TABLOSU ---
-let currentLeaderboardTab: 'gold' | 'speed' = 'gold';
-let currentSpeedDiff: 'all' | 'basit' | 'orta' | 'zor' = 'all';
-
 const updateLeaderboardView = async () => {
   const goldTab = document.getElementById('btn-tab-gold');
   const speedTab = document.getElementById('btn-tab-speed');
+  const sortFilters = document.getElementById('general-sort-filters');
   const filterRow = document.getElementById('speed-diff-filters');
   const headerLeft = document.getElementById('lb-header-left');
   const headerRight = document.getElementById('lb-header-right');
+
+  const btnSortLevel = document.getElementById('btn-sort-level');
+  const btnSortGold = document.getElementById('btn-sort-gold');
 
   if (currentLeaderboardTab === 'gold') {
     if (goldTab) {
@@ -632,19 +924,37 @@ const updateLeaderboardView = async () => {
     if (speedTab) {
       speedTab.className = "flex-1 py-1.5 px-2 rounded-lg font-bold text-xs transition-all text-slate-500 hover:text-slate-800";
     }
+    if (sortFilters) {
+      sortFilters.classList.remove('hidden');
+      sortFilters.classList.add('flex');
+    }
     if (filterRow) {
       filterRow.classList.add('hidden');
       filterRow.classList.remove('flex');
     }
-    if (headerLeft) headerLeft.innerText = "Sıra & Oyuncu";
-    if (headerRight) headerRight.innerText = "🪙 Toplam Altın";
 
-    const cached = Leaderboard.getCachedPlayers();
-    UIManager.renderLeaderboard(cached, 'gold');
+    // Alt sıralama butonlarının stilini güncelle
+    if (btnSortLevel && btnSortGold) {
+      if (currentGeneralSort === 'level') {
+        btnSortLevel.className = "flex-1 py-1.5 text-xs font-black rounded-xl bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1";
+        btnSortGold.className = "flex-1 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center gap-1";
+      } else {
+        btnSortGold.className = "flex-1 py-1.5 text-xs font-black rounded-xl bg-amber-500 text-white shadow-sm flex items-center justify-center gap-1";
+        btnSortLevel.className = "flex-1 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center gap-1";
+      }
+    }
+
+    if (headerLeft) headerLeft.innerText = "Sıra & Oyuncu";
+    if (headerRight) {
+      headerRight.innerText = currentGeneralSort === 'level' ? "🏅 Seviye" : "🪙 Toplam Altın";
+    }
+
+    const cached = Leaderboard.getCachedPlayers(currentGeneralSort);
+    UIManager.renderLeaderboard(cached, currentGeneralSort);
 
     try {
-      const fresh = await Leaderboard.fetchTopPlayers();
-      UIManager.renderLeaderboard(fresh, 'gold');
+      const fresh = await Leaderboard.fetchTopPlayers(currentGeneralSort);
+      UIManager.renderLeaderboard(fresh, currentGeneralSort);
     } catch (err) {
       console.warn("Liderlik güncellenemedi:", err);
     }
@@ -655,6 +965,10 @@ const updateLeaderboardView = async () => {
     }
     if (goldTab) {
       goldTab.className = "flex-1 py-1.5 px-2 rounded-lg font-bold text-xs transition-all text-slate-500 hover:text-slate-800";
+    }
+    if (sortFilters) {
+      sortFilters.classList.add('hidden');
+      sortFilters.classList.remove('flex');
     }
     if (filterRow) {
       filterRow.classList.remove('hidden');
@@ -692,6 +1006,18 @@ document.getElementById('btn-tab-speed')?.addEventListener('click', () => {
   updateLeaderboardView();
 });
 
+// Seviyeye Göre Sırala Butonu
+document.getElementById('btn-sort-level')?.addEventListener('click', () => {
+  currentGeneralSort = 'level';
+  updateLeaderboardView();
+});
+
+// Altına Göre Sırala Butonu
+document.getElementById('btn-sort-gold')?.addEventListener('click', () => {
+  currentGeneralSort = 'gold';
+  updateLeaderboardView();
+});
+
 document.querySelectorAll('.speed-filter-btn').forEach(btn => {
   btn.addEventListener('click', (e) => {
     const target = e.currentTarget as HTMLElement;
@@ -711,6 +1037,39 @@ document.getElementById('btn-leaderboard')?.addEventListener('click', openLeader
 document.getElementById('refresh-leaderboard')?.addEventListener('click', updateLeaderboardView);
 document.getElementById('close-leaderboard')?.addEventListener('click', () => {
   UIManager.toggleModal('view-leaderboard', false);
+});
+
+// --- BAŞARIMLAR & ROZETLER ---
+const openAchievementsModal = () => {
+  const currentLvl = UserManager.getCurrentLevel();
+  const currentGold = UserManager.getGold();
+  const badges = AchievementManager.getAllBadgesWithStatus(currentLvl, currentGold);
+
+  UIManager.renderAchievements(badges, async (badgeId) => {
+    const res = AchievementManager.claimBadgeReward(badgeId);
+    if (res.success) {
+      const newGold = UserManager.getGold() + res.goldAdded;
+      await UserManager.updateProgress(currentLvl, newGold);
+      const goldEl = document.getElementById('menu-gold');
+      if (goldEl) goldEl.innerText = newGold.toString();
+
+      try {
+        confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+      } catch {
+        // ignore
+      }
+
+      openAchievementsModal();
+      updateMenuContinueCard();
+    }
+  });
+
+  UIManager.toggleModal('view-achievements', true);
+};
+
+document.getElementById('btn-achievements')?.addEventListener('click', openAchievementsModal);
+document.getElementById('close-achievements')?.addEventListener('click', () => {
+  UIManager.toggleModal('view-achievements', false);
 });
 
 // --- MAĞAZA ---
@@ -814,7 +1173,6 @@ document.getElementById('save-username')?.addEventListener('click', async () => 
 let deferredPrompt: any = null;
 const installBtn = document.getElementById('btn-install-pwa');
 
-// Halihazırda PWA olarak (standalone) çalışıp çalışmadığını kontrol et
 const isStandalone =
   window.matchMedia('(display-mode: standalone)').matches ||
   (window.navigator as unknown as { standalone?: boolean }).standalone === true;

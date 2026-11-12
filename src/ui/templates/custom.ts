@@ -55,6 +55,18 @@ export const customModeTemplate = `
             <p class="text-xs text-rose-700 font-medium mb-1">Sudoku ustaları için derin eleme ve kombinasyon mücadelesi.</p>
             <span class="text-[11px] font-bold text-rose-600 block">55 boş kutu • Gerçek meydan okuma</span>
         </button>
+
+        <!-- Seviye Belirleme Sınavı Banner'ı -->
+        <button id="btn-open-placement-test" class="w-full bg-indigo-50 hover:bg-indigo-100 border-2 border-indigo-300 rounded-2xl p-4 text-left active:scale-[0.98] transition-all shadow-sm flex items-center justify-between group mt-1">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl group-hover:scale-110 transition-transform">🎯</span>
+                <div>
+                    <span class="text-sm font-black text-indigo-900 block leading-tight">Seviye Belirleme Sınavı</span>
+                    <span class="text-[11px] font-bold text-indigo-600 block mt-0.5">Testi geç, doğrudan 301 veya 701'e atla!</span>
+                </div>
+            </div>
+            <span class="text-xl text-indigo-500 group-hover:translate-x-1 transition-transform">➔</span>
+        </button>
     </div>
 </div>
 `;

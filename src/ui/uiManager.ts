@@ -3,8 +3,11 @@ import { mapTemplate } from './templates/map';
 import { customModeTemplate } from './templates/custom';
 import { leaderboardTemplate } from './templates/leaderboard';
 import { shopTemplate } from './templates/shop';
+import { achievementsTemplate } from './templates/achievements';
 import { usernameModalTemplate } from './templates/usernameModal';
+import { placementModalTemplate } from './templates/placementModal';
 import { Player, SpeedRecord } from '../engine/leaderboard';
+import { BadgeStatus } from '../engine/achievements';
 
 export const UIManager = {
   mountUI() {
@@ -17,6 +20,8 @@ export const UIManager = {
         ${mapTemplate}
         ${customModeTemplate}
         ${leaderboardTemplate}
+        ${achievementsTemplate}
+        ${placementModalTemplate}
         ${shopTemplate}
         ${usernameModalTemplate}
         <div id="game-view" class="hidden flex-col items-center p-6 w-full h-full">
@@ -239,7 +244,59 @@ export const UIManager = {
     }
   },
 
-  renderLeaderboard(players: Player[], _filter: 'gold' | 'time') {
+  showPlacementResultModal(params: {
+    passed: boolean;
+    targetLevel: number;
+    targetDiff: string;
+    timeStr: string;
+    errorCount: number;
+    reward: number;
+  }) {
+    const modal = document.getElementById('placement-result-modal');
+    const icon = document.getElementById('placement-result-icon');
+    const title = document.getElementById('placement-result-title');
+    const subtitle = document.getElementById('placement-result-subtitle');
+    const timeEl = document.getElementById('placement-result-time');
+    const errEl = document.getElementById('placement-result-errors');
+    const rewEl = document.getElementById('placement-result-reward');
+    const primaryBtn = document.getElementById('btn-placement-action-primary');
+    if (!modal) return;
+
+    if (timeEl) timeEl.innerText = params.timeStr;
+    if (errEl) errEl.innerText = `${params.errorCount} / 3`;
+
+    if (params.passed) {
+      if (icon) icon.innerText = '🎓';
+      if (title) title.innerText = 'Sınavı Geçtiniz!';
+      if (subtitle) subtitle.innerText = `Tebrikler! Seviye ${params.targetLevel} (${params.targetDiff.toUpperCase()}) açıldı!`;
+      if (rewEl) rewEl.innerText = `+${params.reward} 🪙`;
+      if (primaryBtn) {
+        primaryBtn.innerText = `Seviye ${params.targetLevel}'i Başlat ➔`;
+        primaryBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3.5 rounded-xl shadow-lg active:scale-95 transition-all text-sm";
+      }
+    } else {
+      if (icon) icon.innerText = '💡';
+      if (title) title.innerText = 'Sınav Tamamlanamadı';
+      if (subtitle) subtitle.innerText = `Bu zorluk seviyesi başlangıç için biraz zorlayıcı oldu.`;
+      if (rewEl) rewEl.innerText = '0 🪙';
+      if (primaryBtn) {
+        primaryBtn.innerText = 'Testi Tekrar Dene 🔄';
+        primaryBtn.className = "w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3.5 rounded-xl shadow-lg active:scale-95 transition-all text-sm";
+      }
+    }
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  },
+
+  hidePlacementResultModal() {
+    const modal = document.getElementById('placement-result-modal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  },
+
+  renderLeaderboard(players: Player[], sortBy: 'level' | 'gold' = 'level') {
     const listEl = document.getElementById('leaderboard-list');
     if (!listEl) return;
     if (players.length === 0) {
@@ -248,18 +305,31 @@ export const UIManager = {
       `;
       return;
     }
-    listEl.innerHTML = players.map((p, i) => `
-      <div class="flex justify-between items-center p-3 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-indigo-100 transition-colors">
-        <div class="flex items-center gap-2.5">
-          <span class="w-6 h-6 rounded-full flex items-center justify-center font-black text-xs ${i === 0 ? 'bg-amber-400 text-slate-900 shadow-sm' : i === 1 ? 'bg-slate-300 text-slate-800' : i === 2 ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-500'}">${i + 1}</span>
-          <div>
-            <p class="font-bold text-slate-800 text-sm leading-tight">${p.username}</p>
-            <p class="text-[10px] text-slate-400 font-bold">Seviye ${p.level}${typeof p.total_completed === 'number' && p.total_completed > 0 ? ` • ${p.total_completed} Oyun` : ''}</p>
+    listEl.innerHTML = players.map((p, i) => {
+      let rightBadge = '';
+      let subDetail = '';
+
+      if (sortBy === 'level') {
+        rightBadge = `<span class="text-xs font-black bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full border border-indigo-200">Seviye ${p.level}</span>`;
+        subDetail = `<p class="text-[10px] text-amber-600 font-bold mt-0.5">🪙 ${p.gold} Altın${typeof p.total_completed === 'number' && p.total_completed > 0 ? ` • ${p.total_completed} Oyun` : ''}</p>`;
+      } else {
+        rightBadge = `<span class="text-xs font-black bg-amber-50 text-amber-700 px-3 py-1 rounded-full border border-amber-200">🪙 ${p.gold}</span>`;
+        subDetail = `<p class="text-[10px] text-slate-400 font-bold mt-0.5">Seviye ${p.level}${typeof p.total_completed === 'number' && p.total_completed > 0 ? ` • ${p.total_completed} Oyun` : ''}</p>`;
+      }
+
+      return `
+        <div class="flex justify-between items-center p-3 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-indigo-100 transition-colors">
+          <div class="flex items-center gap-2.5">
+            <span class="w-6 h-6 rounded-full flex items-center justify-center font-black text-xs ${i === 0 ? 'bg-amber-400 text-slate-900 shadow-sm' : i === 1 ? 'bg-slate-300 text-slate-800' : i === 2 ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-500'}">${i + 1}</span>
+            <div>
+              <p class="font-bold text-slate-800 text-sm leading-tight">${p.username}</p>
+              ${subDetail}
+            </div>
           </div>
+          ${rightBadge}
         </div>
-        <span class="text-xs font-black bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full border border-amber-100">🪙 ${p.gold}</span>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   },
 
   renderSpeedLeaderboard(records: SpeedRecord[]) {
@@ -291,6 +361,52 @@ export const UIManager = {
         </div>
       </div>
     `).join('');
+  },
+
+  renderAchievements(badges: BadgeStatus[], onClaim: (badgeId: string) => void) {
+    const listEl = document.getElementById('achievements-list');
+    const countEl = document.getElementById('badges-unlocked-count');
+    const barEl = document.getElementById('badges-progress-bar');
+    if (!listEl) return;
+
+    const unlockedCount = badges.filter(b => b.isUnlocked).length;
+    if (countEl) countEl.innerText = `${unlockedCount} / ${badges.length}`;
+    if (barEl) barEl.style.width = `${(unlockedCount / badges.length) * 100}%`;
+
+    listEl.innerHTML = badges.map(b => {
+      let actionHtml = '';
+      if (!b.isUnlocked) {
+        actionHtml = `<span class="text-[10px] font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">🔒 Kilitli</span>`;
+      } else if (b.isClaimed) {
+        actionHtml = `<span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-lg">✅ Alındı</span>`;
+      } else {
+        actionHtml = `<button data-id="${b.id}" class="btn-claim-badge bg-amber-400 hover:bg-amber-500 text-slate-900 text-[10px] font-black px-2.5 py-1.5 rounded-lg shadow-sm active:scale-95 transition-all">Ödülü Al (+${b.rewardGold}🪙)</button>`;
+      }
+
+      return `
+        <div class="flex items-center justify-between p-3.5 rounded-2xl border transition-all ${b.isUnlocked ? 'bg-white border-indigo-100 shadow-sm' : 'bg-slate-50 border-slate-100 opacity-60'}">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${b.isUnlocked ? 'bg-amber-50 border border-amber-200 shadow-inner' : 'bg-slate-200 grayscale'}">
+              ${b.icon}
+            </div>
+            <div>
+              <p class="font-black text-slate-800 text-xs leading-tight">${b.title}</p>
+              <p class="text-[10px] text-slate-500 font-medium leading-normal mt-0.5">${b.desc}</p>
+            </div>
+          </div>
+          <div class="shrink-0 ml-2">
+            ${actionHtml}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    listEl.querySelectorAll('.btn-claim-badge').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).dataset.id;
+        if (id) onClaim(id);
+      });
+    });
   },
 
   renderBoard(
