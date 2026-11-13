@@ -932,17 +932,21 @@ document.querySelectorAll('.speed-filter-btn').forEach(btn => {
 });
 
 // Modallar: Mağaza
-document.getElementById('btn-shop')?.addEventListener('click', () => {
-  UIManager.toggleModal('view-shop', true);
+const openAndRenderShop = () => {
   UIManager.renderShop(async (itemId) => {
     const result = await ShopManager.buyItem(itemId);
     UIManager.showToast(result.msg, result.success ? "success" : "error");
     if (result.success) {
       updateGoldDisplay();
       UIManager.applyTheme(ShopManager.getActiveTheme());
-      UIManager.renderShop((id) => ShopManager.buyItem(id));
+      openAndRenderShop(); // Sınırsız art arda satın alma ve tema değiştirme düzeltmesi
     }
   });
+};
+
+document.getElementById('btn-shop')?.addEventListener('click', () => {
+  UIManager.toggleModal('view-shop', true);
+  openAndRenderShop();
 });
 
 document.getElementById('close-shop')?.addEventListener('click', () => {
@@ -950,12 +954,23 @@ document.getElementById('close-shop')?.addEventListener('click', () => {
 });
 
 // Modallar: Başarımlar / Rozetler
-document.getElementById('btn-achievements')?.addEventListener('click', () => {
-  UIManager.toggleModal('view-achievements', true);
+const updateBadgeNotificationDot = (unclaimedCount: number) => {
+  const dot = document.getElementById('badge-notify-dot');
+  if (dot) {
+    if (unclaimedCount > 0) dot.classList.remove('hidden');
+    else dot.classList.add('hidden');
+  }
+};
+
+const openAndRenderAchievements = () => {
   const badges = AchievementManager.getAllBadgesWithStatus(
     UserManager.getCurrentLevel(),
     UserManager.getGold()
   );
+
+  const unclaimedCount = badges.filter(b => b.isUnlocked && !b.isClaimed).length;
+  updateBadgeNotificationDot(unclaimedCount);
+
   UIManager.renderAchievements(badges, async (badgeId) => {
     const claimResult = AchievementManager.claimBadgeReward(badgeId);
     UIManager.showToast(claimResult.message, claimResult.success ? "success" : "info");
@@ -963,15 +978,14 @@ document.getElementById('btn-achievements')?.addEventListener('click', () => {
       const newGold = UserManager.getGold() + claimResult.goldAdded;
       await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
       updateGoldDisplay();
-      const updatedBadges = AchievementManager.getAllBadgesWithStatus(
-        UserManager.getCurrentLevel(),
-        newGold
-      );
-      UIManager.renderAchievements(updatedBadges, (id) => {
-        // re-claim
-      });
+      openAndRenderAchievements(); // Sınırsız art arda ödül alma düzeltmesi
     }
   });
+};
+
+document.getElementById('btn-achievements')?.addEventListener('click', () => {
+  UIManager.toggleModal('view-achievements', true);
+  openAndRenderAchievements();
 });
 
 document.getElementById('close-achievements')?.addEventListener('click', () => {
