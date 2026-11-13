@@ -1,0 +1,6 @@
+{
+  "name": "SudokuMap",
+  "description": "Interactive Sudoku adventure featuring a multi-level progression map, daily challenges, shop, achievements, and leaderboard.",
+  "permissions": [],
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

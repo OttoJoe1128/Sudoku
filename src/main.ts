@@ -40,10 +40,10 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor') => {
     // Derin kopya (deep copy) alarak başlangıç bulmacasını saklıyoruz
     userBoard = data.puzzle.map(row => [...row]);
     initialBoard = data.puzzle.map(row => [...row]);
-    
+
     const title = document.getElementById('game-title');
     if (title) title.innerText = `Seviye ${level}`;
-    
+
     const updateErrorUI = () => {
         const errorEl = document.getElementById('game-errors');
         if (errorEl) errorEl.innerText = `Hata: ${errors}/3`;
@@ -52,7 +52,7 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor') => {
 
     UIManager.navigate('game');
     startTimer();
-    
+
     const refresh = () => {
         UIManager.renderBoard(
             userBoard,
@@ -88,7 +88,7 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor') => {
 
     UIManager.renderNumpad((num) => {
         if (!selectedCell) return;
-        
+
         if (num === -1) { // İpucu Butonu Numpad'den tetiklenirse
             if (hintsUsed >= 5) return alert("İpucu sınırı doldu!");
             if (initialBoard[selectedCell.r][selectedCell.c] !== 0) return;
