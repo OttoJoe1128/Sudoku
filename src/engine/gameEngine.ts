@@ -17,22 +17,32 @@ function getAudioContext(): AudioContext | null {
 
 export const GameEngine = {
   playSound(type: 'tap' | 'error' | 'win') {
-    const ctx = getAudioContext();
-    if (!ctx) return;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    if (type === 'tap') osc.frequency.value = 600;
-    else if (type === 'error') osc.frequency.value = 150;
-    else osc.frequency.value = 800;
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.1);
+    try {
+      const ctx = getAudioContext();
+      if (!ctx) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      if (type === 'tap') osc.frequency.value = 600;
+      else if (type === 'error') osc.frequency.value = 180;
+      else osc.frequency.value = 880;
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.15);
+    } catch {
+      // ignore audio errors
+    }
   },
 
-  doVibrate() { if (navigator.vibrate) navigator.vibrate([50]); },
-  
+  doVibrate() {
+    try {
+      if (navigator.vibrate) navigator.vibrate([60]);
+    } catch {
+      // ignore
+    }
+  },
+
   processInput(
     r: number,
     c: number,
@@ -42,31 +52,42 @@ export const GameEngine = {
     initialBoard: number[][],
     onWin: () => void,
     onError: (count: number) => void
-  ) {
+  ): boolean {
     // 1. Orijinal hücre kilit kontrolü: verilen sayılar değiştirilemez
-    if (initialBoard && initialBoard[r][c] !== 0) {
+    if (initialBoard && initialBoard[r] && initialBoard[r][c] !== 0) {
+      UIManager.showToast("Bu başlangıç hücresidir, değiştirilemez.", "info");
       return false;
     }
 
     if (num === 0) { 
       userBoard[r][c] = 0;
-    } else if (num !== solution[r][c]) {
+      return true;
+    }
+
+    if (!solution || !solution[r] || solution[r][c] === undefined) {
+      console.error("Çözüm verisi bulunamadı!");
+      return false;
+    }
+
+    if (num !== solution[r][c]) {
       this.playSound('error');
       this.doVibrate();
       UIManager.showError(r, c);
+      UIManager.showToast("❌ Hatalı hamle!", "error");
       onError(1);
       return false;
-    } else {
-      userBoard[r][c] = num;
-      this.playSound('tap');
-      // Kazandık mı kontrol et
-      const isWin = userBoard.every((row, ri) => 
-        row.every((val, ci) => val === solution[ri][ci])
-      );
-      if (isWin) {
-        this.playSound('win');
-        onWin();
-      }
+    }
+
+    userBoard[r][c] = num;
+    this.playSound('tap');
+
+    // Kazandık mı kontrol et
+    const isWin = userBoard.every((row, ri) =>
+      row.every((val, ci) => val === solution[ri][ci])
+    );
+    if (isWin) {
+      this.playSound('win');
+      onWin();
     }
     return true;
   }

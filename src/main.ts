@@ -169,7 +169,7 @@ const handleMatchTimeExpired = async () => {
 };
 
 const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: MatchState, restoredState?: any) => {
-    errors = restoredState ? restoredState.errors : 0;
+    errors = restoredState && typeof restoredState.errors === 'number' ? restoredState.errors : 0;
     hintsUsed = 0;
     selectedCell = null;
     currentDifficulty = diff;
@@ -178,27 +178,35 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
     activeMatch = matchData || null;
     isNotesMode = false;
 
+    // Geçerli Kayıt Doğrulaması
+    const isValidRestored = restoredState &&
+      Array.isArray(restoredState.currentSolution) && restoredState.currentSolution.length === 9 &&
+      Array.isArray(restoredState.userBoard) && restoredState.userBoard.length === 9 &&
+      Array.isArray(restoredState.initialBoard) && restoredState.initialBoard.length === 9;
+
     // Notlar Matrisi
-    if (restoredState && restoredState.notesBoard) {
+    if (isValidRestored && restoredState.notesBoard) {
       notesBoard = restoredState.notesBoard.map((row: any) => row.map((arr: any) => new Set<number>(arr)));
     } else {
       notesBoard = Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => new Set<number>()));
     }
 
     let data;
-    if (restoredState) {
+    if (isValidRestored) {
       data = { puzzle: restoredState.initialBoard, solution: restoredState.currentSolution };
       userBoard = restoredState.userBoard.map((row: any) => [...row]);
       initialBoard = restoredState.initialBoard.map((row: any) => [...row]);
       currentSolution = restoredState.currentSolution;
-      timeElapsed = restoredState.timeElapsed;
+      timeElapsed = typeof restoredState.timeElapsed === 'number' ? restoredState.timeElapsed : 0;
     } else if (matchData) {
+      if (restoredState) clearSavedGame();
       data = { puzzle: matchData.puzzle, solution: matchData.solution };
       currentSolution = data.solution;
       userBoard = data.puzzle.map(row => [...row]);
       initialBoard = data.puzzle.map(row => [...row]);
       timeElapsed = 0;
     } else {
+      if (restoredState) clearSavedGame();
       data = SudokuGen.generate(diff);
       currentSolution = data.solution;
       userBoard = data.puzzle.map(row => [...row]);
@@ -275,11 +283,7 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
         UIManager.renderBoard(
             userBoard,
             (r, c) => {
-                if (initialBoard[r][c] !== 0) {
-                    selectedCell = null;
-                } else {
-                    selectedCell = {r, c};
-                }
+                selectedCell = { r, c };
                 refresh();
             },
             selectedCell?.r ?? -1,
@@ -295,7 +299,10 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
       if (!selectedCell) return;
       const { r, c } = selectedCell;
 
-      if (initialBoard[r][c] !== 0) return;
+      if (initialBoard[r][c] !== 0) {
+        UIManager.showToast("Bu başlangıç hücresidir, değiştirilemez.", "info");
+        return;
+      }
 
       // Not Modu
       if (isNotesMode) {

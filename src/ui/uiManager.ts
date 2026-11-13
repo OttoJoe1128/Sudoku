@@ -466,9 +466,9 @@ export const UIManager = {
     const index = r * 9 + c;
     const cell = boardEl.children[index] as HTMLElement;
     if (cell) {
-      cell.classList.add('bg-rose-500', 'text-white', 'animate-pulse');
+      cell.classList.add('!bg-rose-600', '!text-white', 'animate-pulse');
       setTimeout(() => {
-        cell.classList.remove('bg-rose-500', 'text-white', 'animate-pulse');
+        cell.classList.remove('!bg-rose-600', '!text-white', 'animate-pulse');
       }, 600);
     }
   },
@@ -503,18 +503,18 @@ export const UIManager = {
 
         const isMatchingValue = selectedVal !== 0 && val === selectedVal;
 
-        let stateClass = isInitial ? 'sudoku-cell-initial bg-slate-200 text-slate-900 font-black cursor-not-allowed' : 'sudoku-cell-empty bg-white text-indigo-600 font-bold';
-
-        if (isRelatedGroup && !isSelected && !isMatchingValue) {
-          stateClass += ' sudoku-cell-related bg-indigo-50/90';
-        }
-
-        if (isMatchingValue && !isSelected) {
-          stateClass += ' sudoku-cell-matching bg-indigo-200 text-indigo-950 font-black ring-2 ring-indigo-400';
-        }
+        let stateClass = '';
 
         if (isSelected) {
-          stateClass += ' sudoku-cell-selected bg-indigo-600 text-white font-black shadow-inner ring-2 ring-indigo-600';
+          stateClass = 'sudoku-cell-selected bg-indigo-600 text-white font-black shadow-lg ring-2 ring-indigo-500 z-10';
+        } else if (isMatchingValue) {
+          stateClass = 'sudoku-cell-matching bg-indigo-200 text-indigo-950 font-black ring-2 ring-indigo-400 z-1';
+        } else if (isRelatedGroup) {
+          stateClass = 'sudoku-cell-related bg-indigo-50/90 text-indigo-900 font-bold';
+        } else if (isInitial) {
+          stateClass = 'sudoku-cell-initial bg-slate-200 text-slate-900 font-black cursor-pointer';
+        } else {
+          stateClass = 'sudoku-cell-empty bg-white text-indigo-600 font-bold cursor-pointer';
         }
 
         const borderRight = (c === 2 || c === 5) ? 'border-r-4 border-r-slate-800' : '';
@@ -552,13 +552,18 @@ export const UIManager = {
         const isCompleted = remaining <= 0;
 
         const btn = document.createElement('button');
+        btn.type = "button";
         btn.className = `bg-white p-1.5 sm:p-2 rounded-xl border border-slate-200 font-black text-sm sm:text-base hover:bg-indigo-50 text-slate-800 active:scale-95 transition-all flex flex-col items-center justify-center relative shadow-sm ${isCompleted ? 'opacity-40 pointer-events-none bg-slate-100' : ''}`;
 
         btn.innerHTML = `
-          <span>${num}</span>
-          <span class="text-[9px] font-bold text-indigo-600">${isCompleted ? '✓' : remaining}</span>
+          <span class="pointer-events-none">${num}</span>
+          <span class="text-[9px] font-bold text-indigo-600 pointer-events-none">${isCompleted ? '✓' : remaining}</span>
         `;
-        btn.onclick = () => onNumberClick(num);
+        btn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onNumberClick(num);
+        };
         grid.appendChild(btn);
     });
   },
