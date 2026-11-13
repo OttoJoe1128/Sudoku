@@ -2,11 +2,17 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../api/firebase';
 
 export interface Player {
+  uid?: string;
   username: string;
   gold: number;
   level: number;
+  avatar?: string;
+  title?: string;
   total_errors?: number;
   total_completed?: number;
+  duel_wins?: number;
+  duel_losses?: number;
+  duel_mmr?: number;
   best_basit?: number;
   best_orta?: number;
   best_zor?: number;
@@ -14,6 +20,7 @@ export interface Player {
 
 export interface SpeedRecord {
   id?: string;
+  uid?: string;
   username: string;
   level: number;
   difficulty: 'basit' | 'orta' | 'zor';
@@ -52,21 +59,26 @@ export const Leaderboard = {
         const snapshot = await getDocs(colRef);
         if (!snapshot.empty) {
           const list: Player[] = [];
-          snapshot.docs.forEach((doc) => {
-            const d = doc.data();
+          snapshot.docs.forEach((docSnap) => {
+            const d = docSnap.data();
             list.push({
-              username: d.username || doc.id || 'Oyuncu',
+              uid: d.uid || docSnap.id || d.username,
+              username: d.username || docSnap.id || 'Oyuncu',
               gold: typeof d.gold === 'number' ? d.gold : parseInt(d.gold) || 0,
               level: typeof d.level === 'number' ? d.level : parseInt(d.level) || 1,
+              avatar: d.avatar || '🎮',
+              title: d.title || 'Çırak',
               total_errors: d.total_errors,
               total_completed: d.total_completed,
+              duel_wins: d.duel_wins,
+              duel_losses: d.duel_losses,
+              duel_mmr: d.duel_mmr,
               best_basit: d.best_basit,
               best_orta: d.best_orta,
               best_zor: d.best_zor
             });
           });
 
-          // Sıralama mantığı: Seviyeye göre (önce level, sonra gold) veya Altına göre
           if (sortBy === 'level') {
             list.sort((a, b) => {
               if (b.level !== a.level) return b.level - a.level;
@@ -79,7 +91,6 @@ export const Leaderboard = {
             });
           }
 
-          // Yerel önbelleğe kaydet
           localStorage.setItem('sudoku_cached_leaderboard', JSON.stringify(list));
           return list;
         }
@@ -104,11 +115,12 @@ export const Leaderboard = {
       if (snapshot.empty) return [];
 
       let list: SpeedRecord[] = [];
-      snapshot.docs.forEach((doc) => {
-        const d = doc.data();
+      snapshot.docs.forEach((docSnap) => {
+        const d = docSnap.data();
         if (typeof d.timeElapsed === 'number' && d.timeElapsed > 0) {
           list.push({
-            id: doc.id,
+            id: docSnap.id,
+            uid: d.uid,
             username: d.username || 'Oyuncu',
             level: typeof d.level === 'number' ? d.level : 1,
             difficulty: d.difficulty || 'basit',
@@ -125,7 +137,6 @@ export const Leaderboard = {
         list = list.filter(r => r.difficulty === diffFilter);
       }
 
-      // En hızlı bitirenler en üstte (küçük süreden büyüğe)
       list.sort((a, b) => a.timeElapsed - b.timeElapsed);
 
       return list.slice(0, 30);

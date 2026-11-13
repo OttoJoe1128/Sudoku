@@ -46,7 +46,10 @@ export const UIManager = {
             </div>
 
             <div class="w-full flex justify-between items-center mb-4">
-                <button id="btn-back-menu" class="bg-slate-200 hover:bg-slate-300 px-4 py-2 rounded-xl font-bold text-sm text-slate-800 transition-colors">⬅ Menü</button>
+                <button id="btn-back-menu" class="bg-slate-200 hover:bg-slate-300 px-4 py-2 rounded-xl font-bold text-xs text-slate-800 transition-colors flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+                    <span>Menü</span>
+                </button>
                 <div id="game-errors" class="text-rose-600 font-bold text-sm">Hata: 0/3</div>
                 <div id="game-timer" class="font-mono font-bold text-lg text-slate-800">00:00</div>
             </div>
@@ -57,13 +60,16 @@ export const UIManager = {
             <!-- Oyun Kontrol Araç Çubuğu (İpucu, Kalem/Not Modu, Sil) -->
             <div class="flex gap-2 mb-3 w-full max-w-[380px] justify-center">
                 <button id="btn-hint" class="flex-1 bg-amber-400 hover:bg-amber-500 text-amber-950 py-2.5 px-2 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1">
-                    <span>💡</span><span>İpucu (10🪙)</span>
+                    <svg class="w-4 h-4 text-amber-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                    <span>İpucu (10🪙)</span>
                 </button>
                 <button id="btn-toggle-notes" class="bg-slate-200 hover:bg-slate-300 text-slate-800 py-2.5 px-3 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1">
-                    <span>✏️</span><span id="notes-status-text">Not: Kapalı</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                    <span id="notes-status-text">Not: Kapalı</span>
                 </button>
                 <button id="btn-erase" class="bg-rose-100 hover:bg-rose-200 text-rose-800 py-2.5 px-3 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1">
-                    <span>🧹</span><span>Sil</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    <span>Sil</span>
                 </button>
             </div>
 
@@ -108,15 +114,15 @@ export const UIManager = {
     container.classList.remove('theme-dark', 'theme-neon', 'theme-emerald');
     if (themeId === 'theme-dark') {
       container.classList.add('theme-dark');
-      container.style.backgroundColor = '#0f172a';
+      container.style.backgroundColor = '#0b0f19';
     } else if (themeId === 'theme-neon') {
       container.classList.add('theme-neon');
-      container.style.backgroundColor = '#1e1b4b';
+      container.style.backgroundColor = '#0d061a';
     } else if (themeId === 'theme-emerald') {
       container.classList.add('theme-emerald');
-      container.style.backgroundColor = '#064e3b';
+      container.style.backgroundColor = '#041f1a';
     } else {
-      container.style.backgroundColor = '#f8fafc';
+      container.style.backgroundColor = '#f3f4f8';
     }
   },
 
@@ -178,7 +184,7 @@ export const UIManager = {
     if (levelEl) levelEl.innerText = `🏅 Seviye ${stats.level}`;
     if (goldEl) goldEl.innerText = `🪙 ${stats.gold} Altın`;
     if (avatarEl) avatarEl.innerText = stats.avatar || '🎮';
-    if (titleEl) titleEl.innerText = stats.title || 'Çaylak Bulmacacı';
+    if (titleEl) titleEl.innerText = stats.title || 'Çırak';
     if (completedEl) completedEl.innerText = stats.totalCompleted.toString();
     if (duelEl) duelEl.innerText = `${stats.duelWins} G / ${stats.duelLosses} M`;
     if (mmrEl) mmrEl.innerText = `${stats.duelMmr} MMR`;
@@ -192,7 +198,6 @@ export const UIManager = {
         otherControls.classList.add('hidden');
         if (notifyToggle) notifyToggle.checked = stats.notificationsEnabled;
 
-        // Avatar Seçici Render
         const avatarSelector = document.getElementById('profile-avatar-selector');
         if (avatarSelector) {
           const avatars = ['🎮', '🐯', '🦊', '🐼', '🤖', '👑', '🦁', '🦉'];
@@ -203,11 +208,10 @@ export const UIManager = {
           `).join('');
         }
 
-        // Unvan Seçici Render
         const titleSelect = document.getElementById('profile-title-select') as HTMLSelectElement;
         if (titleSelect) {
           const unlockedBadgeTitles = badges.filter(b => b.isUnlocked).map(b => b.title);
-          const allTitleOptions = Array.from(new Set(['Çaylak Bulmacacı', 'Sudoku Ustası', 'Efsanevi Çözücü', ...unlockedBadgeTitles]));
+          const allTitleOptions = Array.from(new Set(['Çırak', 'Sudoku Ustası', 'Efsanevi Çözücü', ...unlockedBadgeTitles]));
 
           titleSelect.innerHTML = allTitleOptions.map(t => `
             <option value="${t}" ${t === stats.title ? 'selected' : ''}>${t}</option>
@@ -315,7 +319,17 @@ export const UIManager = {
 
     if (!listEl) return;
     if (players.length === 0) {
-      listEl.innerHTML = `<div class="text-center text-slate-400 py-10 font-bold">Kayıt bulunamadı.</div>`;
+      if (type === 'speed') {
+        listEl.innerHTML = `
+          <div class="flex flex-col items-center justify-center py-12 text-center">
+            <svg class="w-12 h-12 text-indigo-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <p class="text-xs font-bold text-slate-600 mb-1">Bu zorlukta henüz rekor kırılmadı.</p>
+            <p class="text-[11px] text-slate-400">İlk rekoru kıran sen ol!</p>
+          </div>
+        `;
+      } else {
+        listEl.innerHTML = `<div class="text-center text-slate-400 py-10 font-bold">Kayıt bulunamadı.</div>`;
+      }
       return;
     }
 
@@ -331,7 +345,7 @@ export const UIManager = {
         rightVal = `🪙 ${gold}`;
       } else if (isSpeed) {
         const speed = p as SpeedRecord;
-        rightVal = `⚡ ${speed.timeFormatted} (${speed.difficulty})`;
+        rightVal = `⚡ ${speed.timeFormatted} (${speed.difficulty.toUpperCase()})`;
       }
 
       return `
@@ -381,13 +395,15 @@ export const UIManager = {
       return `
         <div class="p-3.5 border border-slate-200 rounded-2xl flex justify-between items-center bg-white shadow-sm">
           <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-xl border" style="background-color: ${item.previewColor}"></div>
+            <div class="w-8 h-8 rounded-xl border flex items-center justify-center p-1 shadow-inner" style="background-color: ${item.previewColor}">
+              <div class="w-3.5 h-3.5 rounded-full" style="background-color: ${item.accentColor}"></div>
+            </div>
             <div>
               <p class="font-black text-slate-800 text-sm">${item.name}</p>
               <p class="text-[10px] text-slate-400 font-bold">${isPurchased ? 'Satın Alındı' : 'Mağaza Ürünü'}</p>
             </div>
           </div>
-          <button data-shop-id="${item.id}" class="shop-action-btn ${btnClass} px-4 py-2 rounded-xl font-bold text-xs shadow-sm transition-all active:scale-95">
+          <button data-shop-id="${item.id}" class="shop-action-btn ${btnClass} px-4 py-2 rounded-xl font-bold text-xs shadow-sm transition-all active:scale-95 shrink-0 whitespace-nowrap">
             ${btnText}
           </button>
         </div>
@@ -414,12 +430,12 @@ export const UIManager = {
     if (!listEl) return;
 
     listEl.innerHTML = badges.map(b => {
-      let statusBtn = `<span class="text-xs font-bold text-slate-400 bg-slate-100 px-3 py-1.5 rounded-xl">Kilitli</span>`;
+      let statusBtn = `<span class="text-xs font-bold text-slate-400 bg-slate-100 px-3 py-1.5 rounded-xl shrink-0 whitespace-nowrap">Kilitli</span>`;
 
       if (b.isClaimed) {
-        statusBtn = `<span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">Alındı ✓</span>`;
+        statusBtn = `<span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 shrink-0 whitespace-nowrap">Alındı ✓</span>`;
       } else if (b.isUnlocked) {
-        statusBtn = `<button data-badge-id="${b.id}" class="claim-badge-btn bg-amber-500 hover:bg-amber-600 text-white font-black text-xs px-3.5 py-1.5 rounded-xl shadow active:scale-95 transition-transform animate-pulse">+${b.rewardGold} 🪙 Al</button>`;
+        statusBtn = `<button data-badge-id="${b.id}" class="claim-badge-btn bg-amber-500 hover:bg-amber-600 text-white font-black text-xs px-3.5 py-1.5 rounded-xl shadow active:scale-95 transition-transform animate-pulse shrink-0 whitespace-nowrap">+${b.rewardGold} 🪙 Al</button>`;
       }
 
       return `
