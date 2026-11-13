@@ -36,36 +36,70 @@ export interface ChallengeRequest {
   createdAt?: any;
 }
 
-// Firestore 2D Matris (Nested Array) Serileştirme & Ayrıştırma Yardımcıları
-export const serializePuzzle = (grid?: number[][]): string => {
-  if (!grid || !Array.isArray(grid)) return "[]";
-  return JSON.stringify(grid);
-};
-
-export const deserializePuzzle = (data: any): number[][] => {
-  if (typeof data === 'string') {
+// 9x9 2D Matrisi Firestore uyumlu 1D 81 elemanlı diziye çevirir (Nested array hatasını engeller)
+export const serializePuzzle = (grid: any): number[] => {
+  if (!grid) return new Array(81).fill(0);
+  if (Array.isArray(grid) && grid.length === 81 && typeof grid[0] === 'number') {
+    return grid;
+  }
+  if (Array.isArray(grid) && grid.length === 9 && Array.isArray(grid[0])) {
+    return grid.flat();
+  }
+  if (typeof grid === 'string') {
     try {
-      const parsed = JSON.parse(data);
-      if (Array.isArray(parsed)) return parsed;
+      const parsed = JSON.parse(grid);
+      if (Array.isArray(parsed) && parsed.length === 9) return parsed.flat();
+      if (Array.isArray(parsed) && parsed.length === 81) return parsed;
     } catch {
       // fallback
     }
   }
-  if (Array.isArray(data) && Array.isArray(data[0])) {
-    return data;
+  return new Array(81).fill(0);
+};
+
+// Firestore'dan gelen 1D 81 elemanlı diziyi tekrar 9x9 2D matrise çevirir
+export const deserializePuzzle = (data: any): number[][] => {
+  let flat: number[] = [];
+
+  if (Array.isArray(data)) {
+    if (data.length === 81 && typeof data[0] === 'number') {
+      flat = data;
+    } else if (data.length === 9 && Array.isArray(data[0])) {
+      return data;
+    } else {
+      flat = data.flat();
+    }
+  } else if (typeof data === 'string') {
+    try {
+      const parsed = JSON.parse(data);
+      return deserializePuzzle(parsed);
+    } catch {
+      flat = new Array(81).fill(0);
+    }
   }
-  return Array.from({ length: 9 }, () => Array(9).fill(0));
+
+  if (flat.length !== 81) {
+    flat = new Array(81).fill(0);
+  }
+
+  const grid: number[][] = [];
+  for (let i = 0; i < 9; i++) {
+    grid.push(flat.slice(i * 9, (i + 1) * 9));
+  }
+  return grid;
 };
 
 export const serializeMatchForFirestore = (match: MatchState): any => {
-  return JSON.parse(JSON.stringify({
+  if (!match) return null;
+  return {
     ...match,
     puzzle: serializePuzzle(match.puzzle),
     solution: serializePuzzle(match.solution)
-  }));
+  };
 };
 
 export const deserializeMatchFromFirestore = (data: any): MatchState => {
+  if (!data) return null as any;
   return {
     ...data,
     puzzle: deserializePuzzle(data.puzzle),
@@ -74,6 +108,7 @@ export const deserializeMatchFromFirestore = (data: any): MatchState => {
 };
 
 export const serializeChallengeForFirestore = (chal: ChallengeRequest): any => {
+  if (!chal) return null;
   const payload: any = { ...chal };
   if (payload.matchData) {
     payload.matchData = serializeMatchForFirestore(payload.matchData);
@@ -82,6 +117,7 @@ export const serializeChallengeForFirestore = (chal: ChallengeRequest): any => {
 };
 
 export const deserializeChallengeFromFirestore = (data: any): ChallengeRequest => {
+  if (!data) return null as any;
   const chal = { ...data };
   if (chal.matchData) {
     chal.matchData = deserializeMatchFromFirestore(chal.matchData);
