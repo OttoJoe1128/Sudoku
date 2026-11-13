@@ -768,21 +768,25 @@ document.getElementById('close-username-modal')?.addEventListener('click', () =>
 
 // Modal: Profil & Avatar/Unvan Seçimi
 let currentlyViewedTargetUid: string | undefined = undefined;
+let currentlyViewedTargetUsername: string | undefined = undefined;
 
 const openPlayerProfile = async (targetData?: any) => {
   UIManager.toggleModal('view-profile', true);
 
-  const isOwn = !targetData || targetData.username === UserManager.getUsername();
+  const currentUsername = UserManager.getUsername();
+  const isOwn = !targetData || targetData.username === currentUsername;
   let stats: any;
 
   if (isOwn) {
     stats = await UserManager.getUserProfileStats();
     currentlyViewedTargetUid = undefined;
+    currentlyViewedTargetUsername = undefined;
   } else {
-    currentlyViewedTargetUid = targetData.uid;
+    currentlyViewedTargetUid = targetData.uid || targetData.username || 'target';
+    currentlyViewedTargetUsername = targetData.username || 'Oyuncu';
     stats = {
-      uid: targetData.uid,
-      username: targetData.username || 'Oyuncu',
+      uid: currentlyViewedTargetUid,
+      username: currentlyViewedTargetUsername,
       level: targetData.level || 1,
       gold: targetData.gold || 0,
       avatar: targetData.avatar || '🎮',
@@ -880,14 +884,20 @@ document.getElementById('toggle-notifications')?.addEventListener('change', asyn
 
 // Başka Bir Oyuncuya Çift Taraflı Düello İsteği Gönder (Gelen Kutusuna Düşer)
 document.getElementById('btn-challenge-player')?.addEventListener('click', async () => {
-  if (!currentlyViewedTargetUid) return;
+  const targetUsername = currentlyViewedTargetUsername || document.getElementById('profile-username')?.innerText || 'Oyuncu';
+  const targetUid = currentlyViewedTargetUid || targetUsername;
+
+  if (!targetUid || targetUsername === UserManager.getUsername()) {
+    return UIManager.showToast("Kendi profilinize davet gönderemezsiniz.", "info");
+  }
+
   try {
-    const targetUsername = document.getElementById('profile-username')?.innerText || 'Oyuncu';
-    await MatchEngine.sendDirectChallenge(currentlyViewedTargetUid, targetUsername, 'basit');
+    await MatchEngine.sendDirectChallenge(targetUid, targetUsername, 'basit');
     UIManager.showToast(`⚔️ Düello daveti ${targetUsername} adlı oyuncunun gelen kutusuna gönderildi!`, 'success');
     UIManager.toggleModal('view-profile', false);
-  } catch (e) {
-    UIManager.showToast('Davet gönderilemedi.', 'error');
+  } catch (e: any) {
+    console.error("Düello davet gönderme hatası:", e);
+    UIManager.showToast(`Davet gönderilemedi: ${e?.message || 'Bağlantı hatası'}`, 'error');
   }
 });
 

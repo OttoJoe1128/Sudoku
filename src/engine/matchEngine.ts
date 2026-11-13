@@ -58,12 +58,15 @@ export const MatchEngine = {
     const challengeId = `chal_${Date.now()}`;
     const generated = SudokuGen.generate(difficulty);
 
+    const safeTargetUid = targetUid || targetUsername || 'target_player';
+    const safeTargetUsername = targetUsername || 'Oyuncu';
+
     const challengeData: ChallengeRequest = {
       challengeId,
       fromUid: currentUid,
       fromUsername: currentUsername,
-      targetUid,
-      targetUsername,
+      targetUid: safeTargetUid,
+      targetUsername: safeTargetUsername,
       difficulty,
       status: 'pending',
       matchData: {
@@ -82,8 +85,11 @@ export const MatchEngine = {
       }
     };
 
+    // Firestore setDoc için undefined alanları temizle
+    const payload = JSON.parse(JSON.stringify(challengeData));
+
     await setDoc(doc(db, 'challenges', challengeId), {
-      ...challengeData,
+      ...payload,
       createdAt: serverTimestamp()
     });
 
@@ -105,7 +111,11 @@ export const MatchEngine = {
       const list: ChallengeRequest[] = [];
       snap.docs.forEach((d) => {
         const data = d.data() as ChallengeRequest;
-        if (data.targetUid === currentUid || (currentUsername && data.targetUsername === currentUsername)) {
+        if (
+          data.targetUid === currentUid ||
+          (currentUsername && data.targetUsername === currentUsername) ||
+          (data.targetUid && data.targetUid === currentUsername)
+        ) {
           list.push(data);
         }
       });
@@ -133,7 +143,11 @@ export const MatchEngine = {
         const list: ChallengeRequest[] = [];
         snap.docs.forEach((d) => {
           const data = d.data() as ChallengeRequest;
-          if (data.targetUid === currentUid || (currentUsername && data.targetUsername === currentUsername)) {
+          if (
+            data.targetUid === currentUid ||
+            (currentUsername && data.targetUsername === currentUsername) ||
+            (data.targetUid && data.targetUid === currentUsername)
+          ) {
             list.push(data);
           }
         });
