@@ -36,6 +36,59 @@ export interface ChallengeRequest {
   createdAt?: any;
 }
 
+// Firestore 2D Matris (Nested Array) Serileştirme & Ayrıştırma Yardımcıları
+export const serializePuzzle = (grid?: number[][]): string => {
+  if (!grid || !Array.isArray(grid)) return "[]";
+  return JSON.stringify(grid);
+};
+
+export const deserializePuzzle = (data: any): number[][] => {
+  if (typeof data === 'string') {
+    try {
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      // fallback
+    }
+  }
+  if (Array.isArray(data) && Array.isArray(data[0])) {
+    return data;
+  }
+  return Array.from({ length: 9 }, () => Array(9).fill(0));
+};
+
+export const serializeMatchForFirestore = (match: MatchState): any => {
+  return JSON.parse(JSON.stringify({
+    ...match,
+    puzzle: serializePuzzle(match.puzzle),
+    solution: serializePuzzle(match.solution)
+  }));
+};
+
+export const deserializeMatchFromFirestore = (data: any): MatchState => {
+  return {
+    ...data,
+    puzzle: deserializePuzzle(data.puzzle),
+    solution: deserializePuzzle(data.solution)
+  };
+};
+
+export const serializeChallengeForFirestore = (chal: ChallengeRequest): any => {
+  const payload: any = { ...chal };
+  if (payload.matchData) {
+    payload.matchData = serializeMatchForFirestore(payload.matchData);
+  }
+  return JSON.parse(JSON.stringify(payload));
+};
+
+export const deserializeChallengeFromFirestore = (data: any): ChallengeRequest => {
+  const chal = { ...data };
+  if (chal.matchData) {
+    chal.matchData = deserializeMatchFromFirestore(chal.matchData);
+  }
+  return chal;
+};
+
 let activeMatchSnapshotUnsubscribe: (() => void) | null = null;
 let challengeSnapshotUnsubscribe: (() => void) | null = null;
 let botTimerInterval: any = null;
@@ -85,8 +138,7 @@ export const MatchEngine = {
       }
     };
 
-    // Firestore setDoc için undefined alanları temizle
-    const payload = JSON.parse(JSON.stringify(challengeData));
+    const payload = serializeChallengeForFirestore(challengeData);
 
     await setDoc(doc(db, 'challenges', challengeId), {
       ...payload,
@@ -110,7 +162,7 @@ export const MatchEngine = {
       const snap = await getDocs(q);
       const list: ChallengeRequest[] = [];
       snap.docs.forEach((d) => {
-        const data = d.data() as ChallengeRequest;
+        const data = deserializeChallengeFromFirestore(d.data());
         if (
           data.targetUid === currentUid ||
           (currentUsername && data.targetUsername === currentUsername) ||
@@ -142,7 +194,7 @@ export const MatchEngine = {
       challengeSnapshotUnsubscribe = onSnapshot(q, (snap) => {
         const list: ChallengeRequest[] = [];
         snap.docs.forEach((d) => {
-          const data = d.data() as ChallengeRequest;
+          const data = deserializeChallengeFromFirestore(d.data());
           if (
             data.targetUid === currentUid ||
             (currentUsername && data.targetUsername === currentUsername) ||
@@ -194,8 +246,9 @@ export const MatchEngine = {
         }
       };
 
-      await setDoc(doc(db, 'matches', matchId), match);
-      await updateDoc(chalRef, { status: 'accepted', matchId, matchData: match });
+      const matchPayload = serializeMatchForFirestore(match);
+      await setDoc(doc(db, 'matches', matchId), matchPayload);
+      await updateDoc(chalRef, { status: 'accepted', matchId, matchData: matchPayload });
       return match;
     } catch (e) {
       console.warn("Davete yanıt verilemedi:", e);
@@ -225,7 +278,7 @@ export const MatchEngine = {
 
       if (!snap.empty) {
         const foundDoc = snap.docs[0];
-        const matchData = foundDoc.data() as MatchState;
+        const matchData = deserializeMatchFromFirestore(foundDoc.data());
 
         if (matchData.player1.uid !== currentUid) {
           if (onStatusUpdate) onStatusUpdate("Açık rakip bulundu, maça bağlanılıyor...");
@@ -274,8 +327,9 @@ export const MatchEngine = {
     };
 
     try {
+      const matchPayload = serializeMatchForFirestore(initialMatch);
       await setDoc(doc(db, 'matches', matchId), {
-        ...initialMatch,
+        ...matchPayload,
         createdAt: serverTimestamp()
       });
     } catch (e) {
@@ -315,7 +369,7 @@ export const MatchEngine = {
       const matchRef = doc(db, 'matches', matchId);
       activeMatchSnapshotUnsubscribe = onSnapshot(matchRef, (docSnap) => {
         if (docSnap.exists()) {
-          const data = docSnap.data() as MatchState;
+          const data = deserializeMatchFromFirestore(docSnap.data());
           if (data.status === 'in_progress' && data.player2 && !data.player2.isBot) {
             clearTimeout(botTimeout);
             onMatchFound(data);
@@ -347,7 +401,7 @@ export const MatchEngine = {
       const matchRef = doc(db, 'matches', matchId);
       activeMatchSnapshotUnsubscribe = onSnapshot(matchRef, (docSnap) => {
         if (docSnap.exists()) {
-          onUpdate(docSnap.data() as MatchState);
+          onUpdate(deserializeMatchFromFirestore(docSnap.data()));
         }
       });
     } catch (e) {
