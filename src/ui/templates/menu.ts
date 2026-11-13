@@ -1,13 +1,13 @@
 export const menuTemplate = `
 <div id="view-menu" class="flex-1 flex flex-col p-6 gap-3.5 pb-8 overflow-y-auto hidden-scrollbar">
     <!-- Profil & Altın Barı -->
-    <div class="w-full bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center">
+    <div id="btn-open-profile" class="w-full bg-white hover:bg-slate-50 p-4 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center cursor-pointer active:scale-[0.98] transition-all">
         <div class="flex items-center gap-2.5">
-            <div class="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-xl">
+            <div class="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-xl shadow-inner">
                 🎮
             </div>
             <div>
-                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Oyuncu</p>
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Oyuncu Profili ➔</p>
                 <div class="flex items-center gap-1.5">
                     <p id="menu-player-name" class="font-black text-slate-800 text-sm tracking-wide">Misafir</p>
                     <button id="btn-edit-username" title="İsmi Değiştir" class="text-slate-400 hover:text-indigo-600 text-xs p-0.5">✏️</button>

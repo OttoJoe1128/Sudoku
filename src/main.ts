@@ -216,6 +216,30 @@ document.getElementById('close-username-modal')?.addEventListener('click', () =>
   }
 });
 
+// Modal: Profil
+document.getElementById('btn-open-profile')?.addEventListener('click', async () => {
+  UIManager.toggleModal('view-profile', true);
+  const stats = await UserManager.getUserProfileStats();
+  const badges = AchievementManager.getAllBadgesWithStatus(stats.level, stats.gold, stats.totalCompleted);
+  UIManager.renderProfileModal(stats, badges);
+});
+
+document.getElementById('close-profile')?.addEventListener('click', () => {
+  UIManager.toggleModal('view-profile', false);
+});
+
+document.getElementById('btn-profile-edit-name')?.addEventListener('click', () => {
+  UIManager.toggleModal('view-profile', false);
+  const input = document.getElementById('username-input') as HTMLInputElement;
+  if (input) input.value = UserManager.getUsername() || '';
+  UIManager.toggleModal('username-modal', true);
+});
+
+document.getElementById('btn-profile-open-achievements')?.addEventListener('click', () => {
+  UIManager.toggleModal('view-profile', false);
+  document.getElementById('btn-achievements')?.click();
+});
+
 // Ana Menü Buton Bağlantıları
 document.getElementById('btn-continue-game')?.addEventListener('click', () => {
     const userLvl = UserManager.getCurrentLevel();
@@ -383,7 +407,7 @@ checkUser();
 
 // Android Donanım Geri Tuşu Mantığı (Capacitor)
 App.addListener('backButton', () => {
-    const modals = ['username-modal', 'view-leaderboard', 'view-shop', 'view-achievements', 'placement-modal', 'placement-result-modal'];
+    const modals = ['username-modal', 'view-profile', 'view-leaderboard', 'view-shop', 'view-achievements', 'placement-modal', 'placement-result-modal'];
     const openModal = modals.find(id => {
         const el = document.getElementById(id);
         return el && !el.classList.contains('hidden');

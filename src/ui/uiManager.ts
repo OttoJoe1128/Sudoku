@@ -6,9 +6,11 @@ import { shopTemplate } from './templates/shop';
 import { usernameModalTemplate } from './templates/usernameModal';
 import { achievementsTemplate } from './templates/achievements';
 import { placementModalTemplate } from './templates/placementModal';
+import { profileModalTemplate } from './templates/profileModal';
 import { Player } from '../engine/leaderboard';
 import { ShopItems, ShopManager } from '../engine/shop';
 import { BadgeStatus } from '../engine/achievements';
+import { ProfileStats } from '../store/userState';
 
 export const UIManager = {
   mountUI() {
@@ -24,6 +26,7 @@ export const UIManager = {
         ${shopTemplate}
         ${achievementsTemplate}
         ${placementModalTemplate}
+        ${profileModalTemplate}
         ${usernameModalTemplate}
         <div id="game-view" class="hidden flex-col items-center p-6 w-full h-full">
             <div class="w-full flex justify-between items-center mb-6">
@@ -66,6 +69,42 @@ export const UIManager = {
     const goldEl = document.getElementById('menu-gold');
     if (goldEl) {
       goldEl.innerText = gold.toString();
+    }
+  },
+
+  renderProfileModal(stats: ProfileStats, badges: BadgeStatus[]) {
+    const nameEl = document.getElementById('profile-username');
+    const levelEl = document.getElementById('profile-level-badge');
+    const goldEl = document.getElementById('profile-gold-badge');
+    const completedEl = document.getElementById('profile-stat-completed');
+    const basitEl = document.getElementById('profile-best-basit');
+    const ortaEl = document.getElementById('profile-best-orta');
+    const zorEl = document.getElementById('profile-best-zor');
+    const badgesCountEl = document.getElementById('profile-badges-count');
+    const badgesPreviewEl = document.getElementById('profile-badges-preview');
+
+    if (nameEl) nameEl.innerText = stats.username;
+    if (levelEl) levelEl.innerText = `🏅 Seviye ${stats.level}`;
+    if (goldEl) goldEl.innerText = `🪙 ${stats.gold} Altın`;
+    if (completedEl) completedEl.innerText = stats.totalCompleted.toString();
+    if (basitEl) basitEl.innerText = stats.bestBasitFormatted;
+    if (ortaEl) ortaEl.innerText = stats.bestOrtaFormatted;
+    if (zorEl) zorEl.innerText = stats.bestZorFormatted;
+
+    const unlockedBadges = badges.filter(b => b.isUnlocked);
+    if (badgesCountEl) badgesCountEl.innerText = `${unlockedBadges.length} / ${badges.length} Rozet`;
+
+    if (badgesPreviewEl) {
+      if (unlockedBadges.length === 0) {
+        badgesPreviewEl.innerHTML = `<p class="text-xs text-slate-400 font-medium py-1">Henüz rozet kazanılmadı.</p>`;
+      } else {
+        badgesPreviewEl.innerHTML = unlockedBadges.slice(0, 4).map(b => `
+          <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-xl shrink-0">
+            <span class="text-base">${b.icon}</span>
+            <span class="text-[11px] font-bold text-slate-700">${b.title}</span>
+          </div>
+        `).join('');
+      }
     }
   },
 

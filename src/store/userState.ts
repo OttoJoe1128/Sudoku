@@ -21,13 +21,22 @@ export interface UserData {
   total_completed?: number;
 }
 
+export interface ProfileStats {
+  username: string;
+  level: number;
+  gold: number;
+  totalCompleted: number;
+  bestBasitFormatted: string;
+  bestOrtaFormatted: string;
+  bestZorFormatted: string;
+}
+
 export const UserManager = {
   async initUser(): Promise<UserData | null> {
     try {
       const cred = auth.currentUser ? { user: auth.currentUser } : await signInAnonymously(auth);
       const uid = cred.user.uid;
 
-      // 1. Önce kullanıcının kendi UID dokümanını kontrol et
       const userDocRef = doc(db, 'leaderboard', uid);
       const userDocSnap = await getDoc(userDocRef);
 
@@ -44,14 +53,12 @@ export const UserManager = {
         return { username, gold, level };
       }
 
-      // 2. Eğer UID ile henüz doküman yoksa ama yerel kullanıcı adı varsa, veritabanından ismi ara
       const localUsername = this.getUsername();
       if (localUsername) {
         const found = await this.findUserByName(localUsername);
         if (found) {
           localStorage.setItem('sudoku_gold', found.gold.toString());
           localStorage.setItem('sudoku_level', found.level.toString());
-          // Kullanıcının UID dokümanına da bağla
           await setDoc(userDocRef, {
             uid,
             username: found.username,
@@ -70,7 +77,6 @@ export const UserManager = {
 
   async findUserByName(username: string): Promise<UserData | null> {
     try {
-      // Önce doğrudan ID olarak ara (eski sürümlerde doküman ID'si isim olabiliyordu)
       const directDocRef = doc(db, 'leaderboard', username);
       const directSnap = await getDoc(directDocRef);
       if (directSnap.exists()) {
@@ -82,7 +88,6 @@ export const UserManager = {
         };
       }
 
-      // Ardından username alanına göre ara
       const q = query(collection(db, 'leaderboard'), where('username', '==', username));
       const querySnap = await getDocs(q);
       if (!querySnap.empty) {
@@ -108,7 +113,6 @@ export const UserManager = {
       const cred = auth.currentUser ? { user: auth.currentUser } : await signInAnonymously(auth);
       const uid = cred.user.uid;
 
-      // Eğer bu kullanıcı adına ait eski kayıt varsa, puan ve seviyeyi geri yükle
       const existing = await this.findUserByName(username);
       if (existing) {
         gold = existing.gold;
@@ -117,7 +121,6 @@ export const UserManager = {
         localStorage.setItem('sudoku_level', level.toString());
       }
 
-      // Firestore'a kaydet / güncelle
       await setDoc(doc(db, 'leaderboard', uid), {
         uid,
         username,
@@ -162,7 +165,6 @@ export const UserManager = {
       const now = new Date();
       const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-      // 1. game_records koleksiyonuna bağımsız oyun günlüğü ekle
       await addDoc(collection(db, 'game_records'), {
         uid,
         username,
@@ -176,7 +178,6 @@ export const UserManager = {
         completedAt: serverTimestamp()
       });
 
-      // 2. leaderboard dokümanındaki en iyi süreleri ve istatistikleri güncelle
       const userDocRef = doc(db, 'leaderboard', uid);
       const snap = await getDoc(userDocRef);
       const currentData = snap.exists() ? snap.data() : {};
@@ -188,7 +189,6 @@ export const UserManager = {
         total_completed: (typeof currentData.total_completed === 'number' ? currentData.total_completed : 0) + 1
       };
 
-      // Zorluk bazında en iyi derece (rekor süre) kontrolü
       const diffKey = details.difficulty === 'basit' ? 'best_basit' : details.difficulty === 'orta' ? 'best_orta' : 'best_zor';
       const prevBest = typeof currentData[diffKey] === 'number' ? currentData[diffKey] : null;
 
@@ -200,6 +200,51 @@ export const UserManager = {
     } catch (e) {
       console.warn("Oyun süresi ve kaydı Firebase'e yazılamadı:", e);
     }
+  },
+
+  async getUserProfileStats(): Promise<ProfileStats> {
+    const username = this.getUsername() || 'Oyuncu';
+    const level = this.getCurrentLevel();
+    const gold = this.getGold();
+
+    let totalCompleted = 0;
+    let bestBasit = null;
+    let bestOrta = null;
+    let bestZor = null;
+
+    try {
+      if (auth.currentUser) {
+        const uid = auth.currentUser.uid;
+        const userDocRef = doc(db, 'leaderboard', uid);
+        const snap = await getDoc(userDocRef);
+        if (snap.exists()) {
+          const data = snap.data();
+          totalCompleted = typeof data.total_completed === 'number' ? data.total_completed : 0;
+          bestBasit = typeof data.best_basit === 'number' ? data.best_basit : null;
+          bestOrta = typeof data.best_orta === 'number' ? data.best_orta : null;
+          bestZor = typeof data.best_zor === 'number' ? data.best_zor : null;
+        }
+      }
+    } catch (e) {
+      console.warn("Profil istatistikleri çekilemedi:", e);
+    }
+
+    const formatTime = (secs: number | null) => {
+      if (secs === null || secs === undefined) return '--:--';
+      const m = Math.floor(secs / 60).toString().padStart(2, '0');
+      const s = (secs % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    };
+
+    return {
+      username,
+      level,
+      gold,
+      totalCompleted,
+      bestBasitFormatted: formatTime(bestBasit),
+      bestOrtaFormatted: formatTime(bestOrta),
+      bestZorFormatted: formatTime(bestZor)
+    };
   },
 
   getUsername(): string | null {
