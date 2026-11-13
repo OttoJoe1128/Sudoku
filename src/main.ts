@@ -896,8 +896,17 @@ document.getElementById('btn-challenge-player')?.addEventListener('click', async
     UIManager.showToast(`⚔️ Düello daveti ${targetUsername} adlı oyuncunun gelen kutusuna gönderildi!`, 'success');
     UIManager.toggleModal('view-profile', false);
   } catch (e: any) {
-    console.error("Düello davet gönderme hatası:", e);
-    UIManager.showToast(`Davet gönderilemedi: ${e?.message || 'Bağlantı hatası'}`, 'error');
+    console.warn("Düello davet gönderme yetki hatası:", e);
+    UIManager.toggleModal('view-profile', false);
+
+    if (e?.code === 'permission-denied' || e?.message?.includes('permissions')) {
+      UIManager.showToast(`⚠️ Firebase 'challenges' yetki kuralı gereği Gölge Bot ile düello başlatılıyor!`, 'info');
+      MatchEngine.startMatchSearch('basit', (match) => {
+        startGame(1, 'basit', match);
+      });
+    } else {
+      UIManager.showToast(`Davet gönderilemedi: ${e?.message || 'Bağlantı hatası'}`, 'error');
+    }
   }
 });
 
