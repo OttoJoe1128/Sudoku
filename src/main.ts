@@ -1168,7 +1168,7 @@ document.getElementById('btn-daily-reward')?.addEventListener('click', async () 
 });
 
 // Modallar: Liderlik Tablosu & Filtreleme & Oyuncu Profili Açma
-let currentLeaderboardType: 'level' | 'gold' | 'speed' = 'level';
+let currentLeaderboardType: 'level' | 'gold' | 'pvp_mmr' | 'bot_mmr' | 'speed' = 'level';
 
 const loadLeaderboardData = async () => {
   if (currentLeaderboardType === 'speed') {
@@ -1197,7 +1197,7 @@ document.getElementById('refresh-leaderboard')?.addEventListener('click', () => 
 document.getElementById('btn-tab-gold')?.addEventListener('click', () => {
   currentLeaderboardType = 'level';
   document.getElementById('general-sort-filters')?.classList.remove('hidden');
-  document.getElementById('general-sort-filters')?.classList.add('flex');
+  document.getElementById('general-sort-filters')?.classList.add('grid');
   document.getElementById('speed-diff-filters')?.classList.add('hidden');
   document.getElementById('speed-diff-filters')?.classList.remove('flex');
 
@@ -1209,7 +1209,7 @@ document.getElementById('btn-tab-gold')?.addEventListener('click', () => {
 document.getElementById('btn-tab-speed')?.addEventListener('click', async () => {
   currentLeaderboardType = 'speed';
   document.getElementById('general-sort-filters')?.classList.add('hidden');
-  document.getElementById('general-sort-filters')?.classList.remove('flex');
+  document.getElementById('general-sort-filters')?.classList.remove('grid');
   document.getElementById('speed-diff-filters')?.classList.remove('hidden');
   document.getElementById('speed-diff-filters')?.classList.add('flex');
 
@@ -1218,19 +1218,31 @@ document.getElementById('btn-tab-speed')?.addEventListener('click', async () => 
   loadLeaderboardData();
 });
 
-document.getElementById('btn-sort-level')?.addEventListener('click', () => {
-  currentLeaderboardType = 'level';
-  document.getElementById('btn-sort-level')?.classList.add('bg-indigo-600', 'text-white');
-  document.getElementById('btn-sort-gold')?.classList.remove('bg-indigo-600', 'text-white');
-  loadLeaderboardData();
-});
+const updateSortFilterBtns = (activeSort: 'level' | 'gold' | 'pvp_mmr' | 'bot_mmr') => {
+  currentLeaderboardType = activeSort;
+  const sortBtns = {
+    level: document.getElementById('btn-sort-level'),
+    gold: document.getElementById('btn-sort-gold'),
+    pvp_mmr: document.getElementById('btn-sort-pvp-mmr'),
+    bot_mmr: document.getElementById('btn-sort-bot-mmr')
+  };
 
-document.getElementById('btn-sort-gold')?.addEventListener('click', () => {
-  currentLeaderboardType = 'gold';
-  document.getElementById('btn-sort-gold')?.classList.add('bg-indigo-600', 'text-white');
-  document.getElementById('btn-sort-level')?.classList.remove('bg-indigo-600', 'text-white');
+  Object.entries(sortBtns).forEach(([key, btn]) => {
+    if (!btn) return;
+    if (key === activeSort) {
+      btn.className = "py-1.5 text-[10px] font-black rounded-xl bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-0.5";
+    } else {
+      btn.className = "py-1.5 text-[10px] font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center gap-0.5";
+    }
+  });
+
   loadLeaderboardData();
-});
+};
+
+document.getElementById('btn-sort-level')?.addEventListener('click', () => updateSortFilterBtns('level'));
+document.getElementById('btn-sort-gold')?.addEventListener('click', () => updateSortFilterBtns('gold'));
+document.getElementById('btn-sort-pvp-mmr')?.addEventListener('click', () => updateSortFilterBtns('pvp_mmr'));
+document.getElementById('btn-sort-bot-mmr')?.addEventListener('click', () => updateSortFilterBtns('bot_mmr'));
 
 document.querySelectorAll('.speed-filter-btn').forEach(btn => {
   btn.addEventListener('click', async (e) => {

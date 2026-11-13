@@ -31,13 +31,19 @@ export const leaderboardTemplate = `
             </button>
         </div>
 
-        <!-- Genel Sıralama Filtreleri: Seviyeye Göre vs Altına Göre -->
-        <div id="general-sort-filters" class="flex gap-2 mb-2.5">
-            <button id="btn-sort-level" class="flex-1 py-1.5 text-xs font-black rounded-xl bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1">
-                <span>🏅</span> Seviyeye Göre
+        <!-- Genel Sıralama Filtreleri: Seviye, Altın, PvP MMR, YZ Puanı -->
+        <div id="general-sort-filters" class="grid grid-cols-4 gap-1 mb-2.5">
+            <button id="btn-sort-level" class="py-1.5 text-[10px] font-black rounded-xl bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-0.5">
+                <span>🏅</span> Seviye
             </button>
-            <button id="btn-sort-gold" class="flex-1 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center gap-1">
-                <span>🪙</span> Altına Göre
+            <button id="btn-sort-gold" class="py-1.5 text-[10px] font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center gap-0.5">
+                <span>🪙</span> Altın
+            </button>
+            <button id="btn-sort-pvp-mmr" class="py-1.5 text-[10px] font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center gap-0.5">
+                <span>⚔️</span> PvP
+            </button>
+            <button id="btn-sort-bot-mmr" class="py-1.5 text-[10px] font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center gap-0.5">
+                <span>🤖</span> YZ
             </button>
         </div>
 

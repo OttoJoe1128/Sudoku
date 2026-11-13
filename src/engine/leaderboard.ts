@@ -99,7 +99,7 @@ export const Leaderboard = {
     return filtered;
   },
 
-  async fetchTopPlayers(sortBy: 'level' | 'gold' = 'level'): Promise<Player[]> {
+  async fetchTopPlayers(sortBy: 'level' | 'gold' | 'pvp_mmr' | 'bot_mmr' = 'level'): Promise<Player[]> {
     try {
       const fetchPromise = (async () => {
         const colRef = collection(db, 'leaderboard');
@@ -119,7 +119,8 @@ export const Leaderboard = {
               total_completed: d.total_completed,
               duel_wins: d.duel_wins,
               duel_losses: d.duel_losses,
-              duel_mmr: d.duel_mmr,
+              duel_mmr: typeof d.duel_mmr === 'number' ? d.duel_mmr : 1000,
+              bot_mmr: typeof d.bot_mmr === 'number' ? d.bot_mmr : 1000,
               best_basit: d.best_basit,
               best_orta: d.best_orta,
               best_zor: d.best_zor
@@ -127,21 +128,19 @@ export const Leaderboard = {
           });
 
           if (sortBy === 'level') {
-            list.sort((a, b) => {
-              if (b.level !== a.level) return b.level - a.level;
-              return b.gold - a.gold;
-            });
-          } else {
-            list.sort((a, b) => {
-              if (b.gold !== a.gold) return b.gold - a.gold;
-              return b.level - a.level;
-            });
+            list.sort((a, b) => b.level !== a.level ? b.level - a.level : b.gold - a.gold);
+          } else if (sortBy === 'gold') {
+            list.sort((a, b) => b.gold !== a.gold ? b.gold - a.gold : b.level - a.level);
+          } else if (sortBy === 'pvp_mmr') {
+            list.sort((a, b) => (b.duel_mmr || 1000) !== (a.duel_mmr || 1000) ? (b.duel_mmr || 1000) - (a.duel_mmr || 1000) : b.level - a.level);
+          } else if (sortBy === 'bot_mmr') {
+            list.sort((a, b) => (b.bot_mmr || 1000) !== (a.bot_mmr || 1000) ? (b.bot_mmr || 1000) - (a.bot_mmr || 1000) : b.level - a.level);
           }
 
           localStorage.setItem('sudoku_cached_leaderboard', JSON.stringify(list));
           return list;
         }
-        return this.getCachedPlayers(sortBy);
+        return this.getCachedPlayers(sortBy === 'pvp_mmr' || sortBy === 'bot_mmr' ? 'level' : sortBy);
       })();
 
       const timeoutPromise = new Promise<Player[]>((resolve) =>

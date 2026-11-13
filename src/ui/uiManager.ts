@@ -528,7 +528,7 @@ export const UIManager = {
 
   renderLeaderboard(
     players: (Player | SpeedRecord)[],
-    type: 'level' | 'gold' | 'speed',
+    type: 'level' | 'gold' | 'speed' | 'pvp_mmr' | 'bot_mmr',
     onPlayerClick?: (playerData: Player | SpeedRecord) => void
   ) {
     const listEl = document.getElementById('leaderboard-list');
@@ -537,6 +537,8 @@ export const UIManager = {
     if (headerRight) {
       if (type === 'level') headerRight.innerText = '🏅 Seviye';
       else if (type === 'gold') headerRight.innerText = '🪙 Altın';
+      else if (type === 'pvp_mmr') headerRight.innerText = '⚔️ PvP MMR';
+      else if (type === 'bot_mmr') headerRight.innerText = '🤖 YZ MMR';
       else headerRight.innerText = '⚡ Rekor Süre';
     }
 
@@ -559,13 +561,16 @@ export const UIManager = {
     listEl.innerHTML = players.map((p, i) => {
       let rightVal = '';
       let isSpeed = 'difficulty' in p;
+      const playerObj = p as Player;
 
       if (type === 'level') {
-        const level = 'level' in p ? p.level : 1;
-        rightVal = `🏅 Sev. ${level}`;
+        rightVal = `🏅 Sev. ${playerObj.level || 1}`;
       } else if (type === 'gold') {
-        const gold = 'gold' in p ? p.gold : 0;
-        rightVal = `🪙 ${gold}`;
+        rightVal = `🪙 ${playerObj.gold || 0}`;
+      } else if (type === 'pvp_mmr') {
+        rightVal = `⚔️ ${playerObj.duel_mmr || 1000} MMR`;
+      } else if (type === 'bot_mmr') {
+        rightVal = `🤖 ${playerObj.bot_mmr || 1000} YZ`;
       } else if (isSpeed) {
         const speed = p as SpeedRecord;
         rightVal = `⚡ ${speed.timeFormatted} (${speed.difficulty.toUpperCase()})`;
