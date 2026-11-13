@@ -22,6 +22,7 @@ export const UIManager = {
         <div id="game-view" class="hidden flex-col items-center p-6 w-full h-full">
             <div class="w-full flex justify-between items-center mb-6">
                 <button id="btn-back-menu" class="bg-slate-200 px-4 py-2 rounded-xl font-bold text-sm">⬅ Menü</button>
+                <div id="game-errors" class="text-rose-600 font-bold text-sm">Hata: 0/3</div>
                 <div id="game-timer" class="font-mono font-bold text-lg">00:00</div>
             </div>
             <div id="sudoku-grid" class="grid grid-cols-9 gap-[1px] bg-slate-800 p-[1px] rounded-lg shadow-xl mb-4"></div>
@@ -61,7 +62,20 @@ export const UIManager = {
     `).join('');
   },
 
-  renderBoard(board: number[][], onCellClick: (r: number, c: number) => void, selectedR: number, selectedC: number) {
+  showError(r: number, c: number) {
+    const boardEl = document.getElementById('sudoku-grid');
+    if (!boardEl) return;
+    const index = r * 9 + c;
+    const cell = boardEl.children[index] as HTMLElement;
+    if (cell) {
+      cell.classList.add('bg-rose-500', 'text-white', 'animate-pulse');
+      setTimeout(() => {
+        cell.classList.remove('bg-rose-500', 'text-white', 'animate-pulse');
+      }, 600);
+    }
+  },
+
+  renderBoard(board: number[][], onCellClick: (r: number, c: number) => void, selectedR: number, selectedC: number, initialBoard?: number[][]) {
     const boardEl = document.getElementById('sudoku-grid');
     if (!boardEl) return;
     boardEl.innerHTML = '';
@@ -69,8 +83,23 @@ export const UIManager = {
       row.forEach((val, c) => {
         const cell = document.createElement('div');
         const isSelected = r === selectedR && c === selectedC;
-        const isFixed = val !== 0; 
-        cell.className = `w-9 h-9 border flex items-center justify-center font-bold text-lg cursor-pointer transition-colors ${isSelected ? 'bg-indigo-300' : 'bg-white'} ${isFixed ? 'text-slate-900 font-black' : 'text-indigo-600'}`;
+        const isInitial = initialBoard ? initialBoard[r][c] !== 0 : false;
+
+        let bgClass = 'bg-white';
+        let textClass = 'text-indigo-600 font-bold';
+
+        if (isInitial) {
+          bgClass = 'bg-slate-200';
+          textClass = 'text-slate-900 font-black cursor-not-allowed';
+        } else if (isSelected) {
+          bgClass = 'bg-indigo-300';
+        }
+
+        // 3x3 Blok görsel ayrımları (3. ve 6. sütun sağına, 3. ve 6. satır altına kalın kenarlık)
+        const borderRight = (c === 2 || c === 5) ? 'border-r-4 border-r-slate-800' : '';
+        const borderBottom = (r === 2 || r === 5) ? 'border-b-4 border-b-slate-800' : '';
+
+        cell.className = `w-9 h-9 sm:w-11 sm:h-11 aspect-square border flex items-center justify-center text-lg select-none cursor-pointer active:scale-95 transition-all ${bgClass} ${textClass} ${borderRight} ${borderBottom}`;
         cell.innerText = val !== 0 ? val.toString() : '';
         cell.onclick = () => onCellClick(r, c);
         boardEl.appendChild(cell);

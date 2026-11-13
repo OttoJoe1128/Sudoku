@@ -26,7 +26,7 @@ export class SudokuGen {
     }
     
     let removes = 0;
-    while (removes < targetRemoves) {
+    while (removes < targetRemoves && positions.length > 0) {
       let idx = Math.floor(Math.random() * positions.length);
       let { r, c } = positions[idx];
       let backup = board[r][c];
@@ -52,6 +52,7 @@ export class SudokuGen {
               board[r][c] = num;
               count = this.countSolutions(board, count);
               board[r][c] = 0;
+              if (count > 1) return count; // 1'den fazla çözüm bulunduğunda derhal erken çıkış yap
             }
           }
           return count;

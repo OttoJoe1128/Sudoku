@@ -12,6 +12,10 @@
     "vite": "^6.0.0"
   },
   "dependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/app": "^7.0.0",
+    "@capacitor/cli": "^8.6.2",
+    "@capacitor/core": "^8.6.2",
     "firebase": "^13.2.0"
   }
 }
