@@ -52,6 +52,53 @@ export const Leaderboard = {
     return [];
   },
 
+  getCachedFastestRecords(diffFilter: 'all' | 'basit' | 'orta' | 'zor' = 'all'): SpeedRecord[] {
+    try {
+      const saved = localStorage.getItem('sudoku_cached_fastest_records');
+      if (saved) {
+        let parsed: SpeedRecord[] = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          if (diffFilter !== 'all') {
+            parsed = parsed.filter(r => r.difficulty === diffFilter);
+          }
+          parsed.sort((a, b) => a.timeElapsed - b.timeElapsed);
+          return parsed;
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    // Fallback: oyuncu önbelleğinden süresi olanları üret
+    const cachedPlayers = this.getCachedPlayers('level');
+    const fallbackList: SpeedRecord[] = [];
+    cachedPlayers.forEach(p => {
+      const formatTime = (sec?: number) => {
+        if (typeof sec !== 'number' || sec <= 0) return '--:--';
+        const m = Math.floor(sec / 60).toString().padStart(2, '0');
+        const s = (sec % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+      };
+
+      if (typeof p.best_basit === 'number' && p.best_basit > 0) {
+        fallbackList.push({ uid: p.uid, username: p.username, level: p.level, difficulty: 'basit', timeElapsed: p.best_basit, timeFormatted: formatTime(p.best_basit), errors: 0 });
+      }
+      if (typeof p.best_orta === 'number' && p.best_orta > 0) {
+        fallbackList.push({ uid: p.uid, username: p.username, level: p.level, difficulty: 'orta', timeElapsed: p.best_orta, timeFormatted: formatTime(p.best_orta), errors: 0 });
+      }
+      if (typeof p.best_zor === 'number' && p.best_zor > 0) {
+        fallbackList.push({ uid: p.uid, username: p.username, level: p.level, difficulty: 'zor', timeElapsed: p.best_zor, timeFormatted: formatTime(p.best_zor), errors: 0 });
+      }
+    });
+
+    let filtered = fallbackList;
+    if (diffFilter !== 'all') {
+      filtered = filtered.filter(r => r.difficulty === diffFilter);
+    }
+    filtered.sort((a, b) => a.timeElapsed - b.timeElapsed);
+    return filtered;
+  },
+
   async fetchTopPlayers(sortBy: 'level' | 'gold' = 'level'): Promise<Player[]> {
     try {
       const fetchPromise = (async () => {
@@ -110,39 +157,110 @@ export const Leaderboard = {
 
   async fetchFastestRecords(diffFilter: 'all' | 'basit' | 'orta' | 'zor' = 'all'): Promise<SpeedRecord[]> {
     try {
-      const colRef = collection(db, 'game_records');
-      const snapshot = await getDocs(colRef);
-      if (snapshot.empty) return [];
+      const fetchPromise = (async () => {
+        const recordsMap = new Map<string, SpeedRecord>();
 
-      let list: SpeedRecord[] = [];
-      snapshot.docs.forEach((docSnap) => {
-        const d = docSnap.data();
-        if (typeof d.timeElapsed === 'number' && d.timeElapsed > 0) {
-          list.push({
-            id: docSnap.id,
-            uid: d.uid,
-            username: d.username || 'Oyuncu',
-            level: typeof d.level === 'number' ? d.level : 1,
-            difficulty: d.difficulty || 'basit',
-            timeElapsed: d.timeElapsed,
-            timeFormatted: d.timeFormatted || `${Math.floor(d.timeElapsed / 60).toString().padStart(2, '0')}:${(d.timeElapsed % 60).toString().padStart(2, '0')}`,
-            errors: typeof d.errors === 'number' ? d.errors : 0,
-            hintsUsed: typeof d.hintsUsed === 'number' ? d.hintsUsed : 0,
-            monthYear: d.monthYear
-          });
+        const formatTime = (sec: number) => {
+          const m = Math.floor(sec / 60).toString().padStart(2, '0');
+          const s = (sec % 60).toString().padStart(2, '0');
+          return `${m}:${s}`;
+        };
+
+        // 1. Veri Kaynağı: leaderboard koleksiyonundaki best_basit, best_orta, best_zor alanları
+        try {
+          const lbSnap = await getDocs(collection(db, 'leaderboard'));
+          if (!lbSnap.empty) {
+            lbSnap.docs.forEach((docSnap) => {
+              const d = docSnap.data();
+              const username = d.username || docSnap.id || 'Oyuncu';
+              const level = typeof d.level === 'number' ? d.level : 1;
+              const uid = d.uid || docSnap.id;
+
+              const checkAndAdd = (diff: 'basit' | 'orta' | 'zor', timeSec?: number) => {
+                if (typeof timeSec === 'number' && timeSec > 0) {
+                  const key = `${username}_${diff}`;
+                  const existing = recordsMap.get(key);
+                  if (!existing || timeSec < existing.timeElapsed) {
+                    recordsMap.set(key, {
+                      uid,
+                      username,
+                      level,
+                      difficulty: diff,
+                      timeElapsed: timeSec,
+                      timeFormatted: formatTime(timeSec),
+                      errors: 0
+                    });
+                  }
+                }
+              };
+
+              checkAndAdd('basit', d.best_basit);
+              checkAndAdd('orta', d.best_orta);
+              checkAndAdd('zor', d.best_zor);
+            });
+          }
+        } catch {
+          // ignore
         }
-      });
 
-      if (diffFilter !== 'all') {
-        list = list.filter(r => r.difficulty === diffFilter);
-      }
+        // 2. Veri Kaynağı: game_records koleksiyonundaki tamamlanmış oyun detayları
+        try {
+          const recSnap = await getDocs(collection(db, 'game_records'));
+          if (!recSnap.empty) {
+            recSnap.docs.forEach((docSnap) => {
+              const d = docSnap.data();
+              if (typeof d.timeElapsed === 'number' && d.timeElapsed > 0) {
+                const username = d.username || 'Oyuncu';
+                const diff: 'basit' | 'orta' | 'zor' = d.difficulty || 'basit';
+                const key = `${username}_${diff}`;
+                const existing = recordsMap.get(key);
 
-      list.sort((a, b) => a.timeElapsed - b.timeElapsed);
+                if (!existing || d.timeElapsed < existing.timeElapsed) {
+                  recordsMap.set(key, {
+                    id: docSnap.id,
+                    uid: d.uid,
+                    username,
+                    level: typeof d.level === 'number' ? d.level : 1,
+                    difficulty: diff,
+                    timeElapsed: d.timeElapsed,
+                    timeFormatted: d.timeFormatted || formatTime(d.timeElapsed),
+                    errors: typeof d.errors === 'number' ? d.errors : 0,
+                    hintsUsed: typeof d.hintsUsed === 'number' ? d.hintsUsed : 0,
+                    monthYear: d.monthYear
+                  });
+                }
+              }
+            });
+          }
+        } catch {
+          // ignore
+        }
 
-      return list.slice(0, 30);
+        let resultList = Array.from(recordsMap.values());
+
+        if (resultList.length === 0) {
+          return this.getCachedFastestRecords(diffFilter);
+        }
+
+        if (diffFilter !== 'all') {
+          resultList = resultList.filter(r => r.difficulty === diffFilter);
+        }
+
+        resultList.sort((a, b) => a.timeElapsed - b.timeElapsed);
+
+        const sliced = resultList.slice(0, 30);
+        localStorage.setItem('sudoku_cached_fastest_records', JSON.stringify(sliced));
+        return sliced;
+      })();
+
+      const timeoutPromise = new Promise<SpeedRecord[]>((resolve) =>
+        setTimeout(() => resolve(this.getCachedFastestRecords(diffFilter)), 4000)
+      );
+
+      return await Promise.race([fetchPromise, timeoutPromise]);
     } catch (e) {
       console.warn("En hızlılar tablosu çekilemedi:", e);
-      return [];
+      return this.getCachedFastestRecords(diffFilter);
     }
   }
 };

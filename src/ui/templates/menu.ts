@@ -92,17 +92,6 @@ export const menuTemplate = `
             </div>
             <span class="text-slate-400 font-bold">➔</span>
         </button>
-
-        <button id="btn-menu-placement-test" class="w-full bg-gradient-to-r from-indigo-50/80 to-purple-50/80 hover:from-indigo-100 hover:to-purple-100 text-indigo-900 border border-indigo-200/80 rounded-2xl p-3 flex justify-between items-center shadow-sm text-xs font-black transition-all active:scale-[0.98]">
-            <div class="flex items-center gap-2.5">
-                <span class="text-xl">🎯</span>
-                <div class="text-left">
-                    <span class="block leading-tight">Seviye Atlama Sınavı</span>
-                    <span class="text-[10px] font-bold text-indigo-600 block mt-0.5">Üst bölümlerin kilidini doğrudan aç</span>
-                </div>
-            </div>
-            <span class="bg-indigo-600 text-white text-[10px] font-black px-2.5 py-1 rounded-xl shrink-0 shadow-sm">SINAVA GİR</span>
-        </button>
     </div>
 
     <!-- Floating Bottom Dock (Ekranın En Altındaki Alt Bar) -->

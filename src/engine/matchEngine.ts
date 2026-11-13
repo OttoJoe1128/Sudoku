@@ -246,6 +246,32 @@ export const MatchEngine = {
     }
   },
 
+  listenOutgoingChallenges(onChallengeAccepted: (challenge: ChallengeRequest) => void) {
+    if (!auth.currentUser) return;
+    const currentUid = auth.currentUser.uid;
+
+    const q = query(
+      collection(db, 'challenges'),
+      where('fromUid', '==', currentUid),
+      where('status', '==', 'accepted')
+    );
+
+    try {
+      onSnapshot(q, (snap) => {
+        snap.docChanges().forEach((change) => {
+          if (change.type === 'added' || change.type === 'modified') {
+            const data = deserializeChallengeFromFirestore(change.doc.data());
+            if (data.status === 'accepted' && data.matchData) {
+              onChallengeAccepted(data);
+            }
+          }
+        });
+      });
+    } catch (e) {
+      console.warn("Gönderilen davetler dinlenemedi:", e);
+    }
+  },
+
   async respondToChallenge(challengeId: string, accept: boolean, challengeData?: ChallengeRequest): Promise<MatchState | null> {
     try {
       const chalRef = doc(db, 'challenges', challengeId);

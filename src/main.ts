@@ -739,6 +739,12 @@ const checkUser = async () => {
     MatchEngine.listenPendingChallenges((list) => {
       UIManager.updateInboxBadge(list.length);
     });
+    MatchEngine.listenOutgoingChallenges((acceptedChal) => {
+      if (acceptedChal.matchData) {
+        UIManager.showToast(`⚔️ ${acceptedChal.targetUsername || 'Rakip'} davetinizi kabul etti! Maç başlıyor...`, 'success');
+        startGame(1, acceptedChal.difficulty, acceptedChal.matchData);
+      }
+    });
     MatchEngine.listenIncomingChallenges((chal) => handleIncomingChallenge(chal));
   }
 };
