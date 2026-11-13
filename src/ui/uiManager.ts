@@ -503,30 +503,24 @@ export const UIManager = {
 
         const isMatchingValue = selectedVal !== 0 && val === selectedVal;
 
-        let bgClass = 'bg-white';
-        let textClass = 'text-indigo-600 font-bold';
-
-        if (isInitial) {
-          bgClass = 'bg-slate-200';
-          textClass = 'text-slate-900 font-black cursor-not-allowed';
-        }
+        let stateClass = isInitial ? 'sudoku-cell-initial bg-slate-200 text-slate-900 font-black cursor-not-allowed' : 'sudoku-cell-empty bg-white text-indigo-600 font-bold';
 
         if (isRelatedGroup && !isSelected && !isMatchingValue) {
-          bgClass = 'bg-indigo-50/90';
+          stateClass += ' sudoku-cell-related bg-indigo-50/90';
         }
 
         if (isMatchingValue && !isSelected) {
-          bgClass = 'bg-indigo-200 text-indigo-950 font-black ring-2 ring-indigo-400';
+          stateClass += ' sudoku-cell-matching bg-indigo-200 text-indigo-950 font-black ring-2 ring-indigo-400';
         }
 
         if (isSelected) {
-          bgClass = 'bg-indigo-400 text-white font-black shadow-inner ring-2 ring-indigo-600';
+          stateClass += ' sudoku-cell-selected bg-indigo-600 text-white font-black shadow-inner ring-2 ring-indigo-600';
         }
 
         const borderRight = (c === 2 || c === 5) ? 'border-r-4 border-r-slate-800' : '';
         const borderBottom = (r === 2 || r === 5) ? 'border-b-4 border-b-slate-800' : '';
 
-        cell.className = `w-9 h-9 sm:w-11 sm:h-11 aspect-square border border-slate-300 flex items-center justify-center text-lg select-none cursor-pointer active:scale-95 transition-all relative ${bgClass} ${textClass} ${borderRight} ${borderBottom}`;
+        cell.className = `w-9 h-9 sm:w-11 sm:h-11 aspect-square border border-slate-300/80 flex items-center justify-center text-lg select-none cursor-pointer active:scale-95 transition-all relative ${stateClass} ${borderRight} ${borderBottom}`;
 
         const cellNotes = notesBoard ? notesBoard[r][c] : undefined;
         if (val === 0 && cellNotes && cellNotes.size > 0) {

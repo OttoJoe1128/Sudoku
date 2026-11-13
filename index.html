@@ -29,7 +29,6 @@
       .font-mono {
         font-family: 'JetBrains Mono', monospace;
       }
-      /* Gizli Scrollbar Stil Sınıfı */
       .hidden-scrollbar::-webkit-scrollbar {
         display: none;
       }
@@ -38,64 +37,203 @@
         scrollbar-width: none;
       }
 
-      /* Tema Özel Stilleri */
+      /* ==================== TEMA DEĞİŞKENLERİ VE DÜZELTMELERİ ==================== */
+
+      /* 1) KARANLIK GECE TEMASI (theme-dark) */
       #container.theme-dark {
-        background-color: #0f172a !important;
+        background-color: #0b0f19 !important;
         color: #f8fafc !important;
       }
       #container.theme-dark .bg-white {
+        background-color: #151c2c !important;
+        border-color: #334155 !important;
+        color: #f8fafc !important;
+      }
+      #container.theme-dark .bg-slate-50,
+      #container.theme-dark .bg-slate-100,
+      #container.theme-dark .bg-slate-200 {
         background-color: #1e293b !important;
         border-color: #334155 !important;
         color: #f8fafc !important;
       }
       #container.theme-dark .text-slate-800,
-      #container.theme-dark .text-slate-700 {
+      #container.theme-dark .text-slate-700,
+      #container.theme-dark .text-slate-900,
+      #container.theme-dark .text-slate-600 {
         color: #f1f5f9 !important;
       }
       #container.theme-dark .text-slate-500,
       #container.theme-dark .text-slate-400 {
         color: #94a3b8 !important;
       }
-      #container.theme-dark .bg-slate-50,
-      #container.theme-dark .bg-slate-100 {
-        background-color: #0f172a !important;
+      /* Profil & Pastel Kart Düzeltmeleri */
+      #container.theme-dark .from-indigo-50,
+      #container.theme-dark .from-purple-50,
+      #container.theme-dark .from-pink-50,
+      #container.theme-dark .bg-purple-50,
+      #container.theme-dark .bg-emerald-50,
+      #container.theme-dark .bg-amber-50,
+      #container.theme-dark .bg-rose-50 {
+        background: #1e293b !important;
+        border-color: #334155 !important;
+      }
+      #container.theme-dark .text-indigo-900,
+      #container.theme-dark .text-purple-900,
+      #container.theme-dark .text-emerald-900,
+      #container.theme-dark .text-amber-900,
+      #container.theme-dark .text-rose-900,
+      #container.theme-dark .text-emerald-800,
+      #container.theme-dark .text-amber-800,
+      #container.theme-dark .text-rose-800 {
+        color: #f8fafc !important;
+      }
+      /* Alt Dock & Şerit Düzeltmeleri */
+      #container.theme-dark .bg-white\/80,
+      #container.theme-dark .bg-amber-100\/80 {
+        background-color: rgba(30, 41, 59, 0.85) !important;
+        border-color: #334155 !important;
+      }
+      /* Sudoku Hücre Düzeltmeleri (Dama görüntüsünü yok etme) */
+      #container.theme-dark .sudoku-cell-initial {
+        background-color: #1e293b !important;
         color: #f1f5f9 !important;
+        border-color: #334155 !important;
+      }
+      #container.theme-dark .sudoku-cell-empty {
+        background-color: #0f172a !important;
+        color: #818cf8 !important;
+        border-color: #334155 !important;
+      }
+      #container.theme-dark .sudoku-cell-related {
+        background-color: #1e1b4b !important;
+      }
+      #container.theme-dark .sudoku-cell-matching {
+        background-color: #312e81 !important;
+        color: #ffffff !important;
+      }
+      #container.theme-dark .sudoku-cell-selected {
+        background-color: #6366f1 !important;
+        color: #ffffff !important;
       }
 
+      /* 2) NEON SİBER TEMASI (theme-neon) */
       #container.theme-neon {
-        background-color: #1a103c !important;
-        color: #e0e7ff !important;
+        background-color: #0d061a !important;
+        color: #f3e8ff !important;
       }
-      #container.theme-neon .bg-white {
-        background-color: #2e1065 !important;
-        border-color: #581c87 !important;
+      #container.theme-neon .bg-white,
+      #container.theme-neon .bg-slate-50,
+      #container.theme-neon .bg-slate-100,
+      #container.theme-neon .bg-slate-200 {
+        background-color: #1a0b2e !important;
+        border-color: #4c1d95 !important;
         color: #f3e8ff !important;
       }
       #container.theme-neon .text-slate-800,
-      #container.theme-neon .text-slate-700 {
+      #container.theme-neon .text-slate-700,
+      #container.theme-neon .text-slate-900,
+      #container.theme-neon .text-slate-600 {
         color: #f3e8ff !important;
       }
-      #container.theme-neon .bg-slate-50,
-      #container.theme-neon .bg-slate-100 {
-        background-color: #130a2a !important;
+      #container.theme-neon .text-slate-500,
+      #container.theme-neon .text-slate-400 {
+        color: #a78bfa !important;
+      }
+      #container.theme-neon .from-indigo-50,
+      #container.theme-neon .from-purple-50,
+      #container.theme-neon .from-pink-50,
+      #container.theme-neon .bg-purple-50,
+      #container.theme-neon .bg-emerald-50,
+      #container.theme-neon .bg-amber-50,
+      #container.theme-neon .bg-rose-50 {
+        background: #2e1065 !important;
+        border-color: #581c87 !important;
+      }
+      #container.theme-neon .bg-white\/80,
+      #container.theme-neon .bg-amber-100\/80 {
+        background-color: rgba(46, 16, 101, 0.85) !important;
+        border-color: #581c87 !important;
+      }
+      #container.theme-neon .sudoku-cell-initial {
+        background-color: #24123e !important;
+        color: #f3e8ff !important;
+        border-color: #4c1d95 !important;
+      }
+      #container.theme-neon .sudoku-cell-empty {
+        background-color: #120722 !important;
+        color: #22d3ee !important;
+        border-color: #4c1d95 !important;
+      }
+      #container.theme-neon .sudoku-cell-related {
+        background-color: #2e1065 !important;
+      }
+      #container.theme-neon .sudoku-cell-matching {
+        background-color: #4c1d95 !important;
+        color: #00f5ff !important;
+      }
+      #container.theme-neon .sudoku-cell-selected {
+        background-color: #d946ef !important;
+        color: #ffffff !important;
       }
 
+      /* 3) ZÜMRÜT ORMAN TEMASI (theme-emerald) */
       #container.theme-emerald {
-        background-color: #064e3b !important;
+        background-color: #041f1a !important;
         color: #ecfdf5 !important;
       }
-      #container.theme-emerald .bg-white {
-        background-color: #065f46 !important;
-        border-color: #047857 !important;
+      #container.theme-emerald .bg-white,
+      #container.theme-emerald .bg-slate-50,
+      #container.theme-emerald .bg-slate-100,
+      #container.theme-emerald .bg-slate-200 {
+        background-color: #08332c !important;
+        border-color: #0f5247 !important;
         color: #ecfdf5 !important;
       }
       #container.theme-emerald .text-slate-800,
-      #container.theme-emerald .text-slate-700 {
+      #container.theme-emerald .text-slate-700,
+      #container.theme-emerald .text-slate-900,
+      #container.theme-emerald .text-slate-600 {
         color: #ecfdf5 !important;
       }
-      #container.theme-emerald .bg-slate-50,
-      #container.theme-emerald .bg-slate-100 {
-        background-color: #022c22 !important;
+      #container.theme-emerald .text-slate-500,
+      #container.theme-emerald .text-slate-400 {
+        color: #6ee7b7 !important;
+      }
+      #container.theme-emerald .from-indigo-50,
+      #container.theme-emerald .from-purple-50,
+      #container.theme-emerald .from-pink-50,
+      #container.theme-emerald .bg-purple-50,
+      #container.theme-emerald .bg-emerald-50,
+      #container.theme-emerald .bg-amber-50,
+      #container.theme-emerald .bg-rose-50 {
+        background: #065f46 !important;
+        border-color: #047857 !important;
+      }
+      #container.theme-emerald .bg-white\/80,
+      #container.theme-emerald .bg-amber-100\/80 {
+        background-color: rgba(6, 95, 70, 0.85) !important;
+        border-color: #047857 !important;
+      }
+      #container.theme-emerald .sudoku-cell-initial {
+        background-color: #0d4239 !important;
+        color: #ecfdf5 !important;
+        border-color: #0f5247 !important;
+      }
+      #container.theme-emerald .sudoku-cell-empty {
+        background-color: #052620 !important;
+        color: #34d399 !important;
+        border-color: #0f5247 !important;
+      }
+      #container.theme-emerald .sudoku-cell-related {
+        background-color: #064e3b !important;
+      }
+      #container.theme-emerald .sudoku-cell-matching {
+        background-color: #047857 !important;
+        color: #ecfdf5 !important;
+      }
+      #container.theme-emerald .sudoku-cell-selected {
+        background-color: #10b981 !important;
+        color: #022c22 !important;
       }
     </style>
     <script type="module" src="/src/main.ts"></script>
