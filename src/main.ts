@@ -14,12 +14,15 @@ UIManager.mountUI();
 let currentSolution: number[][];
 let userBoard: number[][];
 let initialBoard: number[][];
+let notesBoard: Set<number>[][];
 let selectedCell: {r: number, c: number} | null = null;
 let errors = 0;
 let hintsUsed = 0;
 let timeElapsed = 0;
 let timerInterval: any = null;
 let currentDifficulty: 'basit' | 'orta' | 'zor' = 'basit';
+let isNotesMode = false;
+let currentLevelNumber = 1;
 
 // Maç / Düello Modu Değişkenleri
 let activeMatch: MatchState | null = null;
@@ -27,7 +30,7 @@ let isMatchMode = false;
 let matchUserFilled = 0;
 let matchEnemyFilled = 0;
 let matchTotalEmpty = 30;
-let selectedMatchTimeSec = 180; // Varsayılan 3 Dk (180 sn)
+let selectedMatchTimeSec = 180;
 let matchTimeRemaining = 180;
 
 const updateGoldDisplay = () => {
@@ -35,9 +38,75 @@ const updateGoldDisplay = () => {
   UIManager.updateHeaderGold(gold);
 };
 
+// Numpad Kalan Rakam Sayacı Hesaplama
+const calculateRemainingCounts = (board: number[][]): Map<number, number> => {
+  const counts = new Map<number, number>();
+  for (let i = 1; i <= 9; i++) counts.set(i, 9);
+
+  board.forEach((row, r) => {
+    row.forEach((val, c) => {
+      if (val >= 1 && val <= 9) {
+        const prev = counts.get(val) ?? 9;
+        counts.set(val, Math.max(0, prev - 1));
+      }
+    });
+  });
+
+  return counts;
+};
+
+// Kayıtlı Oyunu Saklama ve Temizleme
+const saveActiveGame = () => {
+  if (isMatchMode || !userBoard || !initialBoard) return;
+  const saveData = {
+    level: currentLevelNumber,
+    diff: currentDifficulty,
+    userBoard,
+    initialBoard,
+    currentSolution,
+    errors,
+    timeElapsed,
+    notesBoard: notesBoard ? notesBoard.map(row => row.map(s => Array.from(s))) : []
+  };
+  localStorage.setItem('sudoku_saved_game', JSON.stringify(saveData));
+  updateContinueCardUI();
+};
+
+const clearSavedGame = () => {
+  localStorage.removeItem('sudoku_saved_game');
+  updateContinueCardUI();
+};
+
+const updateContinueCardUI = () => {
+  const saved = localStorage.getItem('sudoku_saved_game');
+  const deleteBtn = document.getElementById('btn-delete-saved-game');
+  const titleEl = document.getElementById('continue-game-title');
+  const subtitleEl = document.getElementById('continue-game-subtitle');
+  const tagEl = document.getElementById('continue-tag');
+
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      const m = Math.floor(parsed.timeElapsed / 60).toString().padStart(2, '0');
+      const s = (parsed.timeElapsed % 60).toString().padStart(2, '0');
+
+      if (deleteBtn) deleteBtn.classList.remove('hidden');
+      if (titleEl) titleEl.innerText = `▶ Devam Et (Seviye ${parsed.level})`;
+      if (subtitleEl) subtitleEl.innerText = `Kaldığın yer: ${m}:${s} • ${parsed.diff.toUpperCase()}`;
+      if (tagEl) tagEl.innerText = 'Kayıtlı Oyun';
+    } catch {
+      if (deleteBtn) deleteBtn.classList.add('hidden');
+    }
+  } else {
+    if (deleteBtn) deleteBtn.classList.add('hidden');
+    if (titleEl) titleEl.innerText = '▶ Oyuna Başla / Devam Et';
+    if (subtitleEl) subtitleEl.innerText = `Sıradaki Seviye: ${UserManager.getCurrentLevel()}`;
+    if (tagEl) tagEl.innerText = 'Aktif İlerleme';
+  }
+};
+
 const startTimer = (limitSeconds: number = 0) => {
     if (timerInterval) clearInterval(timerInterval);
-    timeElapsed = 0;
     matchTimeRemaining = limitSeconds;
 
     timerInterval = setInterval(() => {
@@ -63,6 +132,11 @@ const startTimer = (limitSeconds: number = 0) => {
               const s = (timeElapsed % 60).toString().padStart(2, '0');
               timerEl.innerText = `${m}:${s}`;
           }
+        }
+
+        // Periyodik kaydet
+        if (!isMatchMode && timeElapsed % 5 === 0) {
+          saveActiveGame();
         }
     }, 1000);
 };
@@ -92,25 +166,44 @@ const handleMatchTimeExpired = async () => {
   }
 };
 
-const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: MatchState) => {
-    errors = 0;
+const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: MatchState, restoredState?: any) => {
+    errors = restoredState ? restoredState.errors : 0;
     hintsUsed = 0;
     selectedCell = null;
     currentDifficulty = diff;
+    currentLevelNumber = level;
     isMatchMode = !!matchData;
     activeMatch = matchData || null;
+    isNotesMode = false;
 
-    let data;
-    if (matchData) {
-      data = { puzzle: matchData.puzzle, solution: matchData.solution };
+    // Notlar Matrisi
+    if (restoredState && restoredState.notesBoard) {
+      notesBoard = restoredState.notesBoard.map((row: any) => row.map((arr: any) => new Set<number>(arr)));
     } else {
-      data = SudokuGen.generate(diff);
-      UIManager.hideMatchHeader();
+      notesBoard = Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => new Set<number>()));
     }
 
-    currentSolution = data.solution;
-    userBoard = data.puzzle.map(row => [...row]);
-    initialBoard = data.puzzle.map(row => [...row]);
+    let data;
+    if (restoredState) {
+      data = { puzzle: restoredState.initialBoard, solution: restoredState.currentSolution };
+      userBoard = restoredState.userBoard.map((row: any) => [...row]);
+      initialBoard = restoredState.initialBoard.map((row: any) => [...row]);
+      currentSolution = restoredState.currentSolution;
+      timeElapsed = restoredState.timeElapsed;
+    } else if (matchData) {
+      data = { puzzle: matchData.puzzle, solution: matchData.solution };
+      currentSolution = data.solution;
+      userBoard = data.puzzle.map(row => [...row]);
+      initialBoard = data.puzzle.map(row => [...row]);
+      timeElapsed = 0;
+    } else {
+      data = SudokuGen.generate(diff);
+      currentSolution = data.solution;
+      userBoard = data.puzzle.map(row => [...row]);
+      initialBoard = data.puzzle.map(row => [...row]);
+      timeElapsed = 0;
+      UIManager.hideMatchHeader();
+    }
 
     // Düello Modu İlerleme Hesaplama
     if (isMatchMode && activeMatch) {
@@ -126,7 +219,6 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
       const enemyName = activeMatch.player2?.username || 'Rakip';
       UIManager.renderMatchProgress(0, 0, enemyName, matchTotalEmpty);
 
-      // Bot (AI) Maç Mantığı
       if (activeMatch.player2?.isBot) {
         MatchEngine.startBotAI(diff, async (botProgress) => {
           matchEnemyFilled = botProgress;
@@ -171,18 +263,175 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
             },
             selectedCell?.r ?? -1,
             selectedCell?.c ?? -1,
-            initialBoard
+            initialBoard,
+            notesBoard
         );
+
+        UIManager.renderNumpad((num) => handleNumpadInput(num), calculateRemainingCounts(userBoard));
     };
 
-    refresh();
+    const handleNumpadInput = (num: number) => {
+      if (!selectedCell) return;
+      const { r, c } = selectedCell;
 
-    // Ekrandaki İpucu Butonu Dinleyicisi
+      if (initialBoard[r][c] !== 0) return;
+
+      // Not Modu Açıkken Aday Ekleme/Çıkarma
+      if (isNotesMode) {
+        if (num >= 1 && num <= 9) {
+          if (notesBoard[r][c].has(num)) {
+            notesBoard[r][c].delete(num);
+          } else {
+            notesBoard[r][c].add(num);
+          }
+          saveActiveGame();
+          refresh();
+        }
+        return;
+      }
+
+      // Gerçek Sayı Yazma
+      const success = GameEngine.processInput(
+          r,
+          c,
+          num,
+          userBoard,
+          currentSolution,
+          initialBoard,
+          async () => {
+              if (timerInterval) clearInterval(timerInterval);
+              clearSavedGame();
+
+              if (isMatchMode) {
+                const reward = diff === 'basit' ? 50 : diff === 'orta' ? 100 : 200;
+                const newGold = UserManager.getGold() + reward;
+                await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
+                await UserManager.recordDuelResult(true);
+                updateGoldDisplay();
+
+                isMatchMode = false;
+                MatchEngine.clearActiveMatch();
+                UIManager.hideMatchHeader();
+                showMatchResult(true, reward, activeMatch?.player2?.username || 'Rakip');
+                return;
+              }
+
+              // Normal Bölüm Zaferi
+              const reward = diff === 'basit' ? 10 : diff === 'orta' ? 20 : 35;
+              const userLvl = UserManager.getCurrentLevel();
+              const nextLevel = level === userLvl ? userLvl + 1 : userLvl;
+              const newGold = UserManager.getGold() + reward;
+
+              await UserManager.updateProgress(nextLevel, newGold);
+              updateGoldDisplay();
+
+              const minutes = Math.floor(timeElapsed / 60).toString().padStart(2, '0');
+              const seconds = (timeElapsed % 60).toString().padStart(2, '0');
+              await UserManager.recordGameCompletion({
+                  level,
+                  difficulty: diff,
+                  timeElapsed,
+                  timeFormatted: `${minutes}:${seconds}`,
+                  errors,
+                  hintsUsed
+              });
+
+              AchievementManager.checkAndUnlockBadges({
+                  level: nextLevel,
+                  gold: newGold,
+                  lastTimeElapsed: timeElapsed,
+                  lastErrors: errors
+              });
+
+              UIManager.showToast(`🎉 Tebrikler, Seviye ${level} Tamamlandı! +${reward} 🪙`, "success");
+              UIManager.navigate('menu');
+          },
+          async (errCount) => {
+              errors += errCount;
+              updateErrorUI();
+              saveActiveGame();
+              if (errors >= 3) {
+                  if (timerInterval) clearInterval(timerInterval);
+                  clearSavedGame();
+                  if (isMatchMode) {
+                    isMatchMode = false;
+                    MatchEngine.clearActiveMatch();
+                    UIManager.hideMatchHeader();
+                    await UserManager.recordDuelResult(false);
+                    showMatchResult(false, 0, activeMatch?.player2?.username || 'Rakip');
+                  } else {
+                    UIManager.showToast("❌ Oyun Bitti! 3 Hata Yaptınız.", "error");
+                    UIManager.navigate('menu');
+                  }
+              }
+          }
+      );
+
+      if (success) {
+        // İlgili hücrenin notlarını temizle
+        notesBoard[r][c].clear();
+
+        // Aynı satır, sütun ve 3x3 kutudaki aday notlarından num'u kaldır
+        const boxR = Math.floor(r / 3) * 3;
+        const boxC = Math.floor(c / 3) * 3;
+        for (let i = 0; i < 9; i++) {
+          notesBoard[r][i].delete(num);
+          notesBoard[i][c].delete(num);
+        }
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+            notesBoard[boxR + i][boxC + j].delete(num);
+          }
+        }
+
+        if (isMatchMode) {
+          matchUserFilled++;
+          const enemyName = activeMatch?.player2?.username || 'Rakip';
+          UIManager.renderMatchProgress(matchUserFilled, matchEnemyFilled, enemyName, matchTotalEmpty);
+        }
+
+        saveActiveGame();
+        refresh();
+      }
+    };
+
+    // Kalem / Not Modu Butonu
+    const toggleNotesBtn = document.getElementById('btn-toggle-notes');
+    const notesTextEl = document.getElementById('notes-status-text');
+    if (toggleNotesBtn) {
+      toggleNotesBtn.onclick = () => {
+        isNotesMode = !isNotesMode;
+        if (notesTextEl) notesTextEl.innerText = isNotesMode ? 'Not: Açık' : 'Not: Kapalı';
+        if (isNotesMode) {
+          toggleNotesBtn.className = "bg-indigo-600 text-white py-2.5 px-3 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1";
+          UIManager.showToast("✏️ Kalem / Not modu aktif!", "info");
+        } else {
+          toggleNotesBtn.className = "bg-slate-200 hover:bg-slate-300 text-slate-800 py-2.5 px-3 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1";
+        }
+      };
+    }
+
+    // Sil Butonu
+    const eraseBtn = document.getElementById('btn-erase');
+    if (eraseBtn) {
+      eraseBtn.onclick = () => {
+        if (!selectedCell) return;
+        const { r, c } = selectedCell;
+        if (initialBoard[r][c] !== 0) return;
+        userBoard[r][c] = 0;
+        notesBoard[r][c].clear();
+        saveActiveGame();
+        refresh();
+      };
+    }
+
+    // İpucu Butonu
     const hintBtn = document.getElementById('btn-hint');
     if (hintBtn) {
         hintBtn.onclick = async () => {
             if (!selectedCell) return UIManager.showToast("Lütfen önce boş bir hücre seçin!", "info");
-            if (initialBoard[selectedCell.r][selectedCell.c] !== 0) return UIManager.showToast("Bu hücre kilitli!", "info");
+            const { r, c } = selectedCell;
+            if (initialBoard[r][c] !== 0) return UIManager.showToast("Bu hücre kilitli!", "info");
             if (hintsUsed >= 5) return UIManager.showToast("İpucu sınırı doldu!", "error");
 
             const currentGold = UserManager.getGold();
@@ -194,7 +443,8 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
             await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
             updateGoldDisplay();
 
-            userBoard[selectedCell.r][selectedCell.c] = currentSolution[selectedCell.r][selectedCell.c];
+            userBoard[r][c] = currentSolution[r][c];
+            notesBoard[r][c].clear();
             hintsUsed++;
 
             if (isMatchMode) {
@@ -203,121 +453,53 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
               UIManager.renderMatchProgress(matchUserFilled, matchEnemyFilled, enemyName, matchTotalEmpty);
             }
 
+            saveActiveGame();
             refresh();
         };
     }
 
-    UIManager.renderNumpad((num) => {
-        if (!selectedCell) return;
-
-        if (num === -1) {
-            hintBtn?.click();
-            return;
-        }
-
-        const success = GameEngine.processInput(
-            selectedCell.r,
-            selectedCell.c,
-            num,
-            userBoard,
-            currentSolution,
-            initialBoard,
-            async () => {
-                if (timerInterval) clearInterval(timerInterval);
-
-                if (isMatchMode) {
-                  const reward = diff === 'basit' ? 50 : diff === 'orta' ? 100 : 200;
-                  const newGold = UserManager.getGold() + reward;
-                  await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
-                  await UserManager.recordDuelResult(true);
-                  updateGoldDisplay();
-
-                  isMatchMode = false;
-                  MatchEngine.clearActiveMatch();
-                  UIManager.hideMatchHeader();
-                  showMatchResult(true, reward, activeMatch?.player2?.username || 'Rakip');
-                  return;
-                }
-
-                // Normal Bölüm Zaferi
-                const reward = diff === 'basit' ? 10 : diff === 'orta' ? 20 : 35;
-                const userLvl = UserManager.getCurrentLevel();
-                const nextLevel = level === userLvl ? userLvl + 1 : userLvl;
-                const newGold = UserManager.getGold() + reward;
-
-                await UserManager.updateProgress(nextLevel, newGold);
-                updateGoldDisplay();
-
-                const minutes = Math.floor(timeElapsed / 60).toString().padStart(2, '0');
-                const seconds = (timeElapsed % 60).toString().padStart(2, '0');
-                await UserManager.recordGameCompletion({
-                    level,
-                    difficulty: diff,
-                    timeElapsed,
-                    timeFormatted: `${minutes}:${seconds}`,
-                    errors,
-                    hintsUsed
-                });
-
-                AchievementManager.checkAndUnlockBadges({
-                    level: nextLevel,
-                    gold: newGold,
-                    lastTimeElapsed: timeElapsed,
-                    lastErrors: errors
-                });
-
-                UIManager.showToast(`🎉 Tebrikler, Seviye ${level} Tamamlandı! +${reward} 🪙`, "success");
-                UIManager.navigate('menu');
-            },
-            async (errCount) => {
-                errors += errCount;
-                updateErrorUI();
-                if (errors >= 3) {
-                    if (timerInterval) clearInterval(timerInterval);
-                    if (isMatchMode) {
-                      isMatchMode = false;
-                      MatchEngine.clearActiveMatch();
-                      UIManager.hideMatchHeader();
-                      await UserManager.recordDuelResult(false);
-                      showMatchResult(false, 0, activeMatch?.player2?.username || 'Rakip');
-                    } else {
-                      UIManager.showToast("❌ Oyun Bitti! 3 Hata Yaptınız.", "error");
-                      UIManager.navigate('menu');
-                    }
-                }
-            }
-        );
-
-        if (success && isMatchMode) {
-          matchUserFilled++;
-          const enemyName = activeMatch?.player2?.username || 'Rakip';
-          UIManager.renderMatchProgress(matchUserFilled, matchEnemyFilled, enemyName, matchTotalEmpty);
-        }
-
-        if (success) refresh();
-    });
+    refresh();
 };
 
-// Düello Çıkış Cezası Mantığı (50 Altın)
-const handleExitGameRequest = async () => {
+// Düello Çıkış Cezası Modalı Mantığı
+const handleExitGameRequest = async (): Promise<boolean> => {
   if (isMatchMode) {
-    const confirmExit = confirm("Düellodan çekiliyorsunuz! Ceza olarak kasanızdan 50 🪙 altın düşülecek. Çıkmak istediğinize emin misiniz?");
-    if (confirmExit) {
-      if (timerInterval) clearInterval(timerInterval);
-      const currentGold = UserManager.getGold();
-      const newGold = Math.max(0, currentGold - 50);
-      await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
-      await UserManager.recordDuelResult(false);
-      updateGoldDisplay();
+    return new Promise((resolve) => {
+      UIManager.toggleModal('duel-exit-modal', true);
 
-      isMatchMode = false;
-      MatchEngine.clearActiveMatch();
-      UIManager.hideMatchHeader();
-      UIManager.navigate('menu');
-      UIManager.showToast("Düellodan çekildiniz (-50 🪙)", "error");
-      return true;
-    }
-    return false;
+      const confirmBtn = document.getElementById('btn-confirm-duel-exit');
+      const cancelBtn = document.getElementById('btn-cancel-duel-exit');
+
+      const cleanup = () => {
+        UIManager.toggleModal('duel-exit-modal', false);
+      };
+
+      if (confirmBtn) {
+        confirmBtn.onclick = async () => {
+          cleanup();
+          if (timerInterval) clearInterval(timerInterval);
+          const currentGold = UserManager.getGold();
+          const newGold = Math.max(0, currentGold - 50);
+          await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
+          await UserManager.recordDuelResult(false);
+          updateGoldDisplay();
+
+          isMatchMode = false;
+          MatchEngine.clearActiveMatch();
+          UIManager.hideMatchHeader();
+          UIManager.navigate('menu');
+          UIManager.showToast("Düellodan çekildiniz (-50 🪙)", "error");
+          resolve(true);
+        };
+      }
+
+      if (cancelBtn) {
+        cancelBtn.onclick = () => {
+          cleanup();
+          resolve(false);
+        };
+      }
+    });
   }
 
   if (timerInterval) clearInterval(timerInterval);
@@ -398,9 +580,9 @@ const checkUser = async () => {
     if (avatarBox) avatarBox.innerText = user.avatar || '🎮';
 
     updateGoldDisplay();
+    updateContinueCardUI();
     UIManager.navigate('menu');
 
-    // Canlı düello isteklerini dinlemeye başla
     MatchEngine.listenIncomingChallenges((chal) => handleIncomingChallenge(chal));
   }
 };
@@ -433,7 +615,7 @@ document.getElementById('close-username-modal')?.addEventListener('click', () =>
   }
 });
 
-// Profil Modalını Açma (Kendi Profilimiz veya Başka Oyuncu)
+// Modal: Profil & Avatar/Unvan Seçimi
 let currentlyViewedTargetUid: string | undefined = undefined;
 
 const openPlayerProfile = async (targetData?: any) => {
@@ -587,11 +769,30 @@ document.getElementById('btn-match-basit')?.addEventListener('click', () => star
 document.getElementById('btn-match-orta')?.addEventListener('click', () => startMatchWithDiff('orta'));
 document.getElementById('btn-match-zor')?.addEventListener('click', () => startMatchWithDiff('zor'));
 
-// Ana Menü Buton Bağlantıları
+// Ana Menü Buton Bağlantıları & Kayıtlı Oyunu Sürdürme
 document.getElementById('btn-continue-game')?.addEventListener('click', () => {
+    const saved = localStorage.getItem('sudoku_saved_game');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        startGame(parsed.level, parsed.diff, undefined, parsed);
+        UIManager.showToast("▶ Kayıtlı oyuna devam ediliyor!", "success");
+        return;
+      } catch {
+        clearSavedGame();
+      }
+    }
     const userLvl = UserManager.getCurrentLevel();
     const diff = SudokuGen.getDifficulty(userLvl);
     startGame(userLvl, diff);
+});
+
+document.getElementById('btn-delete-saved-game')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (confirm("Kayıtlı oyununuz silinecek. Emin misiniz?")) {
+    clearSavedGame();
+    UIManager.showToast("🗑️ Kayıtlı oyun silindi.", "info");
+  }
 });
 
 document.getElementById('btn-new-game')?.addEventListener('click', () => {
@@ -811,7 +1012,7 @@ checkUser();
 
 // Android Donanım Geri Tuşu Mantığı (Capacitor)
 App.addListener('backButton', async () => {
-    const modals = ['username-modal', 'view-profile', 'view-leaderboard', 'view-shop', 'view-achievements', 'placement-modal', 'placement-result-modal', 'match-search-modal', 'match-result-modal'];
+    const modals = ['username-modal', 'view-profile', 'view-leaderboard', 'view-shop', 'view-achievements', 'placement-modal', 'placement-result-modal', 'match-search-modal', 'match-result-modal', 'duel-exit-modal'];
     const openModal = modals.find(id => {
         const el = document.getElementById(id);
         return el && !el.classList.contains('hidden');

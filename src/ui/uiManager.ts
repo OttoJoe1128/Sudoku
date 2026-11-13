@@ -11,7 +11,7 @@ import { matchModalTemplate } from './templates/matchModal';
 import { Player, SpeedRecord } from '../engine/leaderboard';
 import { ShopItems, ShopManager } from '../engine/shop';
 import { BadgeStatus } from '../engine/achievements';
-import { ProfileStats, UserManager } from '../store/userState';
+import { ProfileStats } from '../store/userState';
 import { ChallengeRequest } from '../engine/matchEngine';
 
 export const UIManager = {
@@ -33,7 +33,7 @@ export const UIManager = {
         ${usernameModalTemplate}
         <div id="game-view" class="hidden flex-col items-center p-6 w-full h-full">
             <!-- Düello Canlı İlerleme Çubuğu -->
-            <div id="match-header-bar" class="hidden w-full bg-slate-900 text-white p-3 rounded-2xl mb-4 shadow-lg flex-col gap-2">
+            <div id="match-header-bar" class="hidden w-full bg-slate-900 text-white p-3 rounded-2xl mb-3 shadow-lg flex-col gap-2">
                 <div class="flex justify-between items-center text-xs font-black">
                     <span id="match-user-name">Siz (%0)</span>
                     <span class="text-amber-400 font-extrabold text-sm">VS</span>
@@ -45,16 +45,30 @@ export const UIManager = {
                 </div>
             </div>
 
-            <div class="w-full flex justify-between items-center mb-6">
-                <button id="btn-back-menu" class="bg-slate-200 px-4 py-2 rounded-xl font-bold text-sm text-slate-800">⬅ Menü</button>
+            <div class="w-full flex justify-between items-center mb-4">
+                <button id="btn-back-menu" class="bg-slate-200 hover:bg-slate-300 px-4 py-2 rounded-xl font-bold text-sm text-slate-800 transition-colors">⬅ Menü</button>
                 <div id="game-errors" class="text-rose-600 font-bold text-sm">Hata: 0/3</div>
-                <div id="game-timer" class="font-mono font-bold text-lg">00:00</div>
+                <div id="game-timer" class="font-mono font-bold text-lg text-slate-800">00:00</div>
             </div>
-            <div id="sudoku-grid" class="grid grid-cols-9 gap-[1px] bg-slate-800 p-[1px] rounded-lg shadow-xl mb-4"></div>
-            <div class="flex gap-2 mb-4">
-                <button id="btn-hint" class="bg-amber-400 hover:bg-amber-500 text-amber-950 px-6 py-2 rounded-xl font-bold text-sm shadow active:scale-95 transition-all">💡 İpucu (10🪙)</button>
+
+            <!-- Sudoku Grid -->
+            <div id="sudoku-grid" class="grid grid-cols-9 gap-[1px] bg-slate-800 p-[1.5px] rounded-2xl shadow-2xl mb-3 border-2 border-slate-800"></div>
+
+            <!-- Oyun Kontrol Araç Çubuğu (İpucu, Kalem/Not Modu, Sil) -->
+            <div class="flex gap-2 mb-3 w-full max-w-[340px] justify-center">
+                <button id="btn-hint" class="flex-1 bg-amber-400 hover:bg-amber-500 text-amber-950 py-2.5 px-2 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1">
+                    <span>💡</span><span>İpucu (10🪙)</span>
+                </button>
+                <button id="btn-toggle-notes" class="bg-slate-200 hover:bg-slate-300 text-slate-800 py-2.5 px-3 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1">
+                    <span>✏️</span><span id="notes-status-text">Not: Kapalı</span>
+                </button>
+                <button id="btn-erase" class="bg-rose-100 hover:bg-rose-200 text-rose-800 py-2.5 px-3 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1">
+                    <span>🧹</span><span>Sil</span>
+                </button>
             </div>
-            <div id="numpad-grid" class="grid grid-cols-5 gap-2 w-full max-w-[300px]"></div>
+
+            <!-- Ergonomik 1-9 Numpad -->
+            <div id="numpad-grid" class="grid grid-cols-5 gap-2 w-full max-w-[340px]"></div>
         </div>
       </div>
     `;
@@ -421,15 +435,35 @@ export const UIManager = {
     }
   },
 
-  renderBoard(board: number[][], onCellClick: (r: number, c: number) => void, selectedR: number, selectedC: number, initialBoard?: number[][]) {
+  renderBoard(
+    board: number[][],
+    onCellClick: (r: number, c: number) => void,
+    selectedR: number,
+    selectedC: number,
+    initialBoard?: number[][],
+    notesBoard?: Set<number>[][]
+  ) {
     const boardEl = document.getElementById('sudoku-grid');
     if (!boardEl) return;
     boardEl.innerHTML = '';
+
+    const selectedVal = (selectedR >= 0 && selectedC >= 0) ? board[selectedR][selectedC] : 0;
+    const selectedBoxR = selectedR >= 0 ? Math.floor(selectedR / 3) : -1;
+    const selectedBoxC = selectedC >= 0 ? Math.floor(selectedC / 3) : -1;
+
     board.forEach((row, r) => {
       row.forEach((val, c) => {
         const cell = document.createElement('div');
         const isSelected = r === selectedR && c === selectedC;
         const isInitial = initialBoard ? initialBoard[r][c] !== 0 : false;
+
+        const isRelatedGroup = selectedR >= 0 && (
+          r === selectedR ||
+          c === selectedC ||
+          (Math.floor(r / 3) === selectedBoxR && Math.floor(c / 3) === selectedBoxC)
+        );
+
+        const isMatchingValue = selectedVal !== 0 && val === selectedVal;
 
         let bgClass = 'bg-white';
         let textClass = 'text-indigo-600 font-bold';
@@ -437,30 +471,62 @@ export const UIManager = {
         if (isInitial) {
           bgClass = 'bg-slate-200';
           textClass = 'text-slate-900 font-black cursor-not-allowed';
-        } else if (isSelected) {
-          bgClass = 'bg-indigo-300';
         }
 
-        // 3x3 Blok görsel ayrımları (3. ve 6. sütun sağına, 3. ve 6. satır altına kalın kenarlık)
+        if (isRelatedGroup && !isSelected && !isMatchingValue) {
+          bgClass = 'bg-indigo-50/90';
+        }
+
+        if (isMatchingValue && !isSelected) {
+          bgClass = 'bg-indigo-200 text-indigo-950 font-black ring-2 ring-indigo-400';
+        }
+
+        if (isSelected) {
+          bgClass = 'bg-indigo-400 text-white font-black shadow-inner ring-2 ring-indigo-600';
+        }
+
         const borderRight = (c === 2 || c === 5) ? 'border-r-4 border-r-slate-800' : '';
         const borderBottom = (r === 2 || r === 5) ? 'border-b-4 border-b-slate-800' : '';
 
-        cell.className = `w-9 h-9 sm:w-11 sm:h-11 aspect-square border flex items-center justify-center text-lg select-none cursor-pointer active:scale-95 transition-all ${bgClass} ${textClass} ${borderRight} ${borderBottom}`;
-        cell.innerText = val !== 0 ? val.toString() : '';
+        cell.className = `w-9 h-9 sm:w-11 sm:h-11 aspect-square border border-slate-300 flex items-center justify-center text-lg select-none cursor-pointer active:scale-95 transition-all relative ${bgClass} ${textClass} ${borderRight} ${borderBottom}`;
+
+        // Aday Notları Gösterimi (Eğer değer boşsa ve not varsa)
+        const cellNotes = notesBoard ? notesBoard[r][c] : undefined;
+        if (val === 0 && cellNotes && cellNotes.size > 0) {
+          cell.innerHTML = `
+            <div class="grid grid-cols-3 gap-0 w-full h-full p-0.5 pointer-events-none text-[8px] font-mono leading-none text-slate-500 font-bold items-center justify-center text-center">
+              ${[1,2,3,4,5,6,7,8,9].map(n => `<div>${cellNotes.has(n) ? n : ''}</div>`).join('')}
+            </div>
+          `;
+        } else {
+          cell.innerText = val !== 0 ? val.toString() : '';
+        }
+
         cell.onclick = () => onCellClick(r, c);
         boardEl.appendChild(cell);
       });
     });
   },
 
-  renderNumpad(onNumberClick: (num: number) => void) {
+  renderNumpad(
+    onNumberClick: (num: number) => void,
+    remainingCounts?: Map<number, number>
+  ) {
     const grid = document.getElementById('numpad-grid');
     if (!grid) return;
     grid.innerHTML = '';
-    [1, 2, 3, 4, 5, 6, 7, 8, 9, 0].forEach(num => {
+
+    [1, 2, 3, 4, 5, 6, 7, 8, 9].forEach(num => {
+        const remaining = remainingCounts ? remainingCounts.get(num) ?? 9 : 9;
+        const isCompleted = remaining <= 0;
+
         const btn = document.createElement('button');
-        btn.className = "bg-white p-3 rounded-xl shadow-sm border font-black text-xl hover:bg-indigo-100 text-slate-800 active:scale-95 transition-transform";
-        btn.innerText = num === 0 ? 'Sil' : num.toString();
+        btn.className = `bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200 font-black text-xl hover:bg-indigo-50 text-slate-800 active:scale-95 transition-all flex flex-col items-center justify-center relative ${isCompleted ? 'opacity-40 pointer-events-none bg-slate-100' : ''}`;
+
+        btn.innerHTML = `
+          <span>${num}</span>
+          <span class="text-[9px] font-bold text-indigo-600">${isCompleted ? '✓' : remaining}</span>
+        `;
         btn.onclick = () => onNumberClick(num);
         grid.appendChild(btn);
     });

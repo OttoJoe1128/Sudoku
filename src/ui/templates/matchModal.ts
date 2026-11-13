@@ -50,6 +50,28 @@ export const matchModalTemplate = `
     </div>
 </div>
 
+<!-- Düello Çıkış Onay Modalı -->
+<div id="duel-exit-modal" class="absolute inset-0 bg-slate-900/85 hidden flex-col items-center justify-center z-[92] p-4 backdrop-blur-md">
+    <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl relative border border-slate-100">
+        <div class="w-14 h-14 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-3">
+            ⚠️
+        </div>
+        <h3 class="text-xl font-black text-slate-800 mb-1">Düellodan Çekiliyor Musunuz?</h3>
+        <p class="text-xs font-medium text-slate-500 mb-5 leading-relaxed">
+            Maç henüz bitmedi. Çekilmeniz durumunda kasanızdan ceza olarak <strong class="text-rose-600 font-black">50 🪙 Altın</strong> düşülecektir.
+        </p>
+
+        <div class="flex flex-col gap-2.5 w-full">
+            <button id="btn-confirm-duel-exit" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-black py-3.5 rounded-2xl shadow-lg active:scale-95 transition-all text-xs tracking-wide">
+                Çekil (-50 🪙)
+            </button>
+            <button id="btn-cancel-duel-exit" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-2xl active:scale-95 transition-all text-xs">
+                Maça Dön
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Düello Sonuç Modalı -->
 <div id="match-result-modal" class="absolute inset-0 bg-slate-900/85 hidden flex-col items-center justify-center z-[88] p-4 backdrop-blur-md">
     <div class="bg-white rounded-3xl p-6 w-full max-w-sm flex flex-col items-center text-center shadow-2xl relative">
