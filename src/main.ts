@@ -299,8 +299,8 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
       if (!selectedCell) return;
       const { r, c } = selectedCell;
 
-      if (initialBoard[r][c] !== 0) {
-        UIManager.showToast("Bu başlangıç hücresidir, değiştirilemez.", "info");
+      if (userBoard[r][c] !== 0) {
+        UIManager.showToast("Bu hücre tamamlanmıştır, değiştirilemez.", "info");
         return;
       }
 
@@ -445,35 +445,73 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
       eraseBtn.onclick = () => {
         if (!selectedCell) return;
         const { r, c } = selectedCell;
-        if (initialBoard[r][c] !== 0) return;
-        userBoard[r][c] = 0;
+        if (userBoard[r][c] !== 0) {
+          UIManager.showToast("Bu hücre tamamlanmıştır, silinemez.", "info");
+          return;
+        }
         notesBoard[r][c].clear();
         saveActiveGame();
         refresh();
       };
     }
 
-    // İpucu Butonu
+    // Akıllı İpucu Butonu
     const hintBtn = document.getElementById('btn-hint');
     if (hintBtn) {
         hintBtn.onclick = async () => {
-            if (!selectedCell) return UIManager.showToast("Lütfen önce boş bir hücre seçin!", "info");
-            const { r, c } = selectedCell;
-            if (initialBoard[r][c] !== 0) return UIManager.showToast("Bu hücre kilitli!", "info");
-            if (hintsUsed >= 5) return UIManager.showToast("İpucu sınırı doldu!", "error");
-
             const currentGold = UserManager.getGold();
             if (currentGold < 10) {
                 return UIManager.showToast("Yetersiz altın! İpucu için en az 10 🪙 gerekiyor.", "error");
+            }
+            if (hintsUsed >= 5) {
+                return UIManager.showToast("İpucu sınırı doldu (Max 5/oyun)!", "error");
+            }
+
+            // Boş hücre bul (Seçili hücre boşsa onu kullan, değilse tahtadaki ilk boş hücreyi bul)
+            let targetR = -1;
+            let targetC = -1;
+
+            if (selectedCell && userBoard[selectedCell.r][selectedCell.c] === 0) {
+              targetR = selectedCell.r;
+              targetC = selectedCell.c;
+            } else {
+              for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                  if (userBoard[r][c] === 0) {
+                    targetR = r;
+                    targetC = c;
+                    break;
+                  }
+                }
+                if (targetR !== -1) break;
+              }
+            }
+
+            if (targetR === -1 || targetC === -1) {
+              return UIManager.showToast("Tahtada doldurulacak boş hücre kalmadı!", "info");
             }
 
             const newGold = currentGold - 10;
             await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
             updateGoldDisplay();
 
-            userBoard[r][c] = currentSolution[r][c];
-            notesBoard[r][c].clear();
+            const correctNum = currentSolution[targetR][targetC];
+            userBoard[targetR][targetC] = correctNum;
+            selectedCell = { r: targetR, c: targetC };
             hintsUsed++;
+
+            notesBoard[targetR][targetC].clear();
+            const boxR = Math.floor(targetR / 3) * 3;
+            const boxC = Math.floor(targetC / 3) * 3;
+            for (let i = 0; i < 9; i++) {
+              notesBoard[targetR][i].delete(correctNum);
+              notesBoard[i][targetC].delete(correctNum);
+            }
+            for (let i = 0; i < 3; i++) {
+              for (let j = 0; j < 3; j++) {
+                notesBoard[boxR + i][boxC + j].delete(correctNum);
+              }
+            }
 
             if (isMatchMode && activeMatch) {
               matchUserFilled++;
@@ -485,6 +523,60 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
 
             saveActiveGame();
             refresh();
+
+            // Zafer Kontrolü (İpucu ile son hücre doldurulduysa)
+            const isWin = userBoard.every((row, ri) =>
+              row.every((val, ci) => val === currentSolution[ri][ci])
+            );
+
+            if (isWin) {
+              if (timerInterval) clearInterval(timerInterval);
+              clearSavedGame();
+
+              if (isMatchMode) {
+                const reward = currentDifficulty === 'basit' ? 50 : currentDifficulty === 'orta' ? 100 : 200;
+                const finalGold = UserManager.getGold() + reward;
+                await UserManager.updateProgress(UserManager.getCurrentLevel(), finalGold);
+                await UserManager.recordDuelResult(true);
+                updateGoldDisplay();
+
+                isMatchMode = false;
+                MatchEngine.clearActiveMatch();
+                UIManager.hideMatchHeader();
+                showMatchResult(true, reward, activeMatch?.player2?.username || 'Rakip');
+              } else {
+                const reward = currentDifficulty === 'basit' ? 10 : currentDifficulty === 'orta' ? 20 : 35;
+                const userLvl = UserManager.getCurrentLevel();
+                const nextLevel = currentLevelNumber === userLvl ? userLvl + 1 : userLvl;
+                const finalGold = UserManager.getGold() + reward;
+
+                await UserManager.updateProgress(nextLevel, finalGold);
+                updateGoldDisplay();
+
+                const minutes = Math.floor(timeElapsed / 60).toString().padStart(2, '0');
+                const seconds = (timeElapsed % 60).toString().padStart(2, '0');
+                await UserManager.recordGameCompletion({
+                    level: currentLevelNumber,
+                    difficulty: currentDifficulty,
+                    timeElapsed,
+                    timeFormatted: `${minutes}:${seconds}`,
+                    errors,
+                    hintsUsed
+                });
+
+                AchievementManager.checkAndUnlockBadges({
+                    level: nextLevel,
+                    gold: finalGold,
+                    lastTimeElapsed: timeElapsed,
+                    lastErrors: errors
+                });
+
+                UIManager.showToast(`🎉 Tebrikler, Seviye ${currentLevelNumber} Tamamlandı! +${reward} 🪙`, "success");
+                UIManager.navigate('menu');
+              }
+            } else {
+              UIManager.showToast("💡 İpucu yerleştirildi! (-10 🪙)", "success");
+            }
         };
     }
 

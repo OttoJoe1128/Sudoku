@@ -48,12 +48,16 @@ export const UIManager = {
             </div>
 
             <div class="w-full flex justify-between items-center mb-4">
-                <button id="btn-back-menu" class="bg-slate-200 hover:bg-slate-300 px-4 py-2 rounded-xl font-bold text-xs text-slate-800 transition-colors flex items-center gap-1">
+                <button id="btn-back-menu" class="bg-slate-200 hover:bg-slate-300 px-3.5 py-1.5 rounded-xl font-bold text-xs text-slate-800 transition-colors flex items-center gap-1">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
                     <span>Menü</span>
                 </button>
-                <div id="game-errors" class="text-rose-600 font-bold text-sm">Hata: 0/3</div>
-                <div id="game-timer" class="font-mono font-bold text-lg text-slate-800">00:00</div>
+                <div class="bg-amber-100 text-amber-950 px-3 py-1 rounded-xl font-black text-xs border border-amber-200 shadow-sm flex items-center gap-1">
+                    <span>🪙</span>
+                    <span id="game-gold" class="font-mono font-black">100</span>
+                </div>
+                <div id="game-errors" class="text-rose-600 font-bold text-xs sm:text-sm">Hata: 0/3</div>
+                <div id="game-timer" class="font-mono font-bold text-base sm:text-lg text-slate-800">00:00</div>
             </div>
 
             <!-- Sudoku Grid -->
@@ -130,8 +134,12 @@ export const UIManager = {
 
   updateHeaderGold(gold: number) {
     const goldEl = document.getElementById('menu-gold');
+    const gameGoldEl = document.getElementById('game-gold');
     if (goldEl) {
       goldEl.innerText = gold.toString();
+    }
+    if (gameGoldEl) {
+      gameGoldEl.innerText = gold.toString();
     }
   },
 

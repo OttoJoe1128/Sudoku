@@ -53,15 +53,14 @@ export const GameEngine = {
     onWin: () => void,
     onError: (count: number) => void
   ): boolean {
-    // 1. Orijinal hücre kilit kontrolü: verilen sayılar değiştirilemez
-    if (initialBoard && initialBoard[r] && initialBoard[r][c] !== 0) {
-      UIManager.showToast("Bu başlangıç hücresidir, değiştirilemez.", "info");
+    // 1. Hücre kilit kontrolü: Zaten doğru çözülmüş veya başlangıçta verilmiş olan dolu hücreler değiştirilemez
+    if (userBoard && userBoard[r] && userBoard[r][c] !== 0) {
+      UIManager.showToast("Bu hücre tamamlanmıştır, değiştirilemez.", "info");
       return false;
     }
 
     if (num === 0) { 
-      userBoard[r][c] = 0;
-      return true;
+      return false;
     }
 
     if (!solution || !solution[r] || solution[r][c] === undefined) {
