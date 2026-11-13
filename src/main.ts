@@ -915,8 +915,8 @@ document.getElementById('toggle-notifications')?.addEventListener('change', asyn
   }
 });
 
-// Başka Bir Oyuncuya Çift Taraflı Düello İsteği Gönder (Gelen Kutusuna Düşer)
-document.getElementById('btn-challenge-player')?.addEventListener('click', async () => {
+// Başka Bir Oyuncuya Çift Taraflı Düello İsteği Gönder (Önce Süre Modu Seçilir)
+document.getElementById('btn-challenge-player')?.addEventListener('click', () => {
   const targetUsername = currentlyViewedTargetUsername || document.getElementById('profile-username')?.innerText || 'Oyuncu';
   const targetUid = currentlyViewedTargetUid || targetUsername;
 
@@ -924,24 +924,29 @@ document.getElementById('btn-challenge-player')?.addEventListener('click', async
     return UIManager.showToast("Kendi profilinize davet gönderemezsiniz.", "info");
   }
 
-  try {
-    await MatchEngine.sendDirectChallenge(targetUid, targetUsername, 'basit');
-    UIManager.showToast(`⚔️ Düello daveti ${targetUsername} adlı oyuncunun gelen kutusuna gönderildi!`, 'success');
-    UIManager.toggleModal('view-profile', false);
-  } catch (e: any) {
-    console.warn("Düello davet gönderme yetki hatası:", e);
-    UIManager.toggleModal('view-profile', false);
+  // 1. Önce Süre Modu Seçim Arayüzünü Aç
+  UIManager.renderChallengeDurationSelectModal(targetUsername, async (durationSec) => {
+    try {
+      // 2. Kullanıcı Süre Modunu Seçtikten Sonra Daveti Gönder
+      await MatchEngine.sendDirectChallenge(targetUid, targetUsername, 'basit', durationSec);
+      const modeText = durationSec > 0 ? `${Math.floor(durationSec / 60)} Dk` : 'Süresiz';
+      UIManager.showToast(`⚔️ Düello daveti (${modeText}) ${targetUsername} adlı oyuncunun gelen kutusuna gönderildi!`, 'success');
+      UIManager.toggleModal('view-profile', false);
+    } catch (e: any) {
+      console.warn("Düello davet gönderme yetki hatası:", e);
+      UIManager.toggleModal('view-profile', false);
 
-    UIManager.renderBotFallbackPromptModal(
-      () => {
-        const expertBot = BotCharacters.find(b => b.level === 300) || BotCharacters[0];
-        startBotMatch(expertBot);
-      },
-      () => {
-        UIManager.navigate('menu');
-      }
-    );
-  }
+      UIManager.renderBotFallbackPromptModal(
+        () => {
+          const expertBot = BotCharacters.find(b => b.level === 300) || BotCharacters[0];
+          startBotMatch(expertBot);
+        },
+        () => {
+          UIManager.navigate('menu');
+        }
+      );
+    }
+  });
 });
 
 // AI Bot Karakterleri & Eşleşme Mantığı
