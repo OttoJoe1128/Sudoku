@@ -417,10 +417,10 @@ export const MatchEngine = {
     }
   },
 
-  startBotAI(difficulty: string, onBotProgress: (progress: number) => void) {
+  startBotAI(difficulty: string, onBotProgress: (progress: number) => void, customSpeedMs?: number) {
     if (botTimerInterval) clearInterval(botTimerInterval);
     let botProgress = 0;
-    const intervalMs = difficulty === 'basit' ? 2500 : difficulty === 'orta' ? 2000 : 1500;
+    const intervalMs = customSpeedMs || (difficulty === 'basit' ? 2500 : difficulty === 'orta' ? 2000 : 1500);
 
     botTimerInterval = setInterval(() => {
       botProgress += Math.floor(Math.random() * 2) + 1;

@@ -7,6 +7,7 @@ import { ShopManager } from './engine/shop';
 import { Rewards } from './engine/rewards';
 import { AchievementManager } from './engine/achievements';
 import { MatchEngine, MatchState, ChallengeRequest } from './engine/matchEngine';
+import { BotCharacters, BotCharacter } from './engine/botData';
 import { App } from '@capacitor/app';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './api/firebase';
@@ -899,20 +900,97 @@ document.getElementById('btn-challenge-player')?.addEventListener('click', async
     console.warn("Düello davet gönderme yetki hatası:", e);
     UIManager.toggleModal('view-profile', false);
 
-    if (e?.code === 'permission-denied' || e?.message?.includes('permissions')) {
-      UIManager.showToast(`⚠️ Firebase 'challenges' yetki kuralı gereği Gölge Bot ile düello başlatılıyor!`, 'info');
-      MatchEngine.startMatchSearch('basit', (match) => {
-        startGame(1, 'basit', match);
-      });
-    } else {
-      UIManager.showToast(`Davet gönderilemedi: ${e?.message || 'Bağlantı hatası'}`, 'error');
-    }
+    UIManager.renderBotFallbackPromptModal(
+      () => {
+        const expertBot = BotCharacters.find(b => b.level === 300) || BotCharacters[0];
+        startBotMatch(expertBot);
+      },
+      () => {
+        UIManager.navigate('menu');
+      }
+    );
   }
 });
+
+// AI Bot Karakterleri & Eşleşme Mantığı
+let currentBotTabDiff: 'basit' | 'orta' | 'zor' = 'basit';
+
+const startBotMatch = (bot: BotCharacter) => {
+  UIManager.toggleModal('match-search-modal', false);
+
+  const currentUsername = UserManager.getUsername() || 'Oyuncu';
+  const currentUid = auth.currentUser ? auth.currentUser.uid : `user_${Date.now()}`;
+  const generated = SudokuGen.generate(bot.difficulty);
+
+  const matchData: MatchState = {
+    matchId: `match_${Date.now()}`,
+    difficulty: bot.difficulty,
+    puzzle: generated.puzzle,
+    solution: generated.solution,
+    status: 'in_progress',
+    player1: {
+      uid: currentUid,
+      username: currentUsername,
+      isBot: false,
+      progress: 0,
+      errors: 0
+    },
+    player2: {
+      uid: bot.id,
+      username: `${bot.avatar} ${bot.name} (Sev. ${bot.level})`,
+      isBot: true,
+      progress: 0,
+      errors: 0
+    }
+  };
+
+  startGame(bot.level, bot.difficulty, matchData);
+
+  const enemyName = `${bot.avatar} ${bot.name}`;
+  MatchEngine.startBotAI(bot.difficulty, async (botProgress) => {
+    matchEnemyFilled = botProgress;
+    UIManager.renderMatchProgress(matchUserFilled, matchEnemyFilled, enemyName, matchTotalEmpty);
+
+    if (matchEnemyFilled >= matchTotalEmpty && isMatchMode) {
+      if (timerInterval) clearInterval(timerInterval);
+      isMatchMode = false;
+      MatchEngine.clearActiveMatch();
+      UIManager.hideMatchHeader();
+      await UserManager.recordDuelResult(false);
+      showMatchResult(false, 0, enemyName);
+    }
+  }, bot.speedMs);
+};
+
+const loadBotCharactersUI = (diff: 'basit' | 'orta' | 'zor') => {
+  currentBotTabDiff = diff;
+  const filtered = BotCharacters.filter(b => b.difficulty === diff);
+
+  const countLabel = document.getElementById('bot-count-label');
+  if (countLabel) countLabel.innerText = `${filtered.length} Karakter (${diff.toUpperCase()})`;
+
+  ['basit', 'orta', 'zor'].forEach(d => {
+    const btn = document.getElementById(`btn-bot-tab-${d}`);
+    if (btn) {
+      if (d === diff) {
+        btn.className = "bot-tab-btn flex-1 py-1.5 rounded-lg font-black text-[10px] transition-all bg-indigo-600 text-white shadow-sm";
+      } else {
+        btn.className = "bot-tab-btn flex-1 py-1.5 rounded-lg font-bold text-[10px] transition-all text-slate-600 hover:text-slate-900 bg-transparent";
+      }
+    }
+  });
+
+  UIManager.renderBotCharacters(filtered, (selectedBot) => startBotMatch(selectedBot));
+};
+
+document.getElementById('btn-bot-tab-basit')?.addEventListener('click', () => loadBotCharactersUI('basit'));
+document.getElementById('btn-bot-tab-orta')?.addEventListener('click', () => loadBotCharactersUI('orta'));
+document.getElementById('btn-bot-tab-zor')?.addEventListener('click', () => loadBotCharactersUI('zor'));
 
 // Modal: Düello / Maç
 document.getElementById('btn-open-match')?.addEventListener('click', () => {
   UIManager.toggleModal('match-search-modal', true);
+  loadBotCharactersUI(currentBotTabDiff);
 });
 
 document.getElementById('close-match-search')?.addEventListener('click', () => {
@@ -920,6 +998,10 @@ document.getElementById('close-match-search')?.addEventListener('click', () => {
   const box = document.getElementById('match-search-status-box');
   if (box) box.classList.add('hidden');
   UIManager.toggleModal('match-search-modal', false);
+});
+
+document.getElementById('btn-quick-online-match')?.addEventListener('click', () => {
+  startMatchWithDiff(currentBotTabDiff);
 });
 
 // Düello Süre Seçim Butonları
@@ -965,10 +1047,6 @@ const startMatchWithDiff = (diff: 'basit' | 'orta' | 'zor') => {
     }
   );
 };
-
-document.getElementById('btn-match-basit')?.addEventListener('click', () => startMatchWithDiff('basit'));
-document.getElementById('btn-match-orta')?.addEventListener('click', () => startMatchWithDiff('orta'));
-document.getElementById('btn-match-zor')?.addEventListener('click', () => startMatchWithDiff('zor'));
 
 // Ana Menü Buton Bağlantıları & Kayıtlı Oyunu Sürdürme
 document.getElementById('btn-continue-game')?.addEventListener('click', () => {

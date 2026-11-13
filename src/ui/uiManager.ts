@@ -14,6 +14,7 @@ import { ShopItems, ShopManager } from '../engine/shop';
 import { BadgeStatus } from '../engine/achievements';
 import { ProfileStats, UserManager } from '../store/userState';
 import { ChallengeRequest } from '../engine/matchEngine';
+import { BotCharacter } from '../engine/botData';
 
 export const UIManager = {
   mountUI() {
@@ -327,6 +328,83 @@ export const UIManager = {
         const target = challenges.find(c => c.challengeId === id);
         if (target) onDecline(target);
       });
+    });
+  },
+
+  renderBotCharacters(
+    bots: BotCharacter[],
+    onSelectBot: (bot: BotCharacter) => void
+  ) {
+    const listEl = document.getElementById('bot-characters-list');
+    if (!listEl) return;
+
+    listEl.innerHTML = bots.map(bot => `
+      <div class="p-3 border border-slate-200 hover:border-indigo-300 rounded-2xl bg-white shadow-sm flex items-center justify-between transition-all">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-xl shrink-0">
+            ${bot.avatar}
+          </div>
+          <div class="text-left">
+            <div class="flex items-center gap-1.5">
+              <span class="font-black text-slate-800 text-xs">${bot.name}</span>
+              <span class="bg-indigo-100 text-indigo-800 text-[9px] font-black px-1.5 py-0.5 rounded-md">Sev. ${bot.level}</span>
+            </div>
+            <p class="text-[10px] text-slate-500 font-medium line-clamp-1">${bot.desc}</p>
+          </div>
+        </div>
+        <button data-bot-id="${bot.id}" class="select-bot-btn bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs px-3 py-1.5 rounded-xl shadow-sm active:scale-95 transition-transform shrink-0 whitespace-nowrap">
+          ⚔️ Oyna
+        </button>
+      </div>
+    `).join('');
+
+    listEl.querySelectorAll('.select-bot-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute('data-bot-id');
+        const selected = bots.find(b => b.id === id);
+        if (selected) onSelectBot(selected);
+      });
+    });
+  },
+
+  renderBotFallbackPromptModal(onAccept: () => void, onCancel: () => void) {
+    const existing = document.getElementById('bot-prompt-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'bot-prompt-modal';
+    modal.className = "fixed inset-0 bg-slate-900/80 z-[95] flex items-center justify-center p-4 backdrop-blur-md";
+
+    modal.innerHTML = `
+      <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl relative border border-slate-100 animate-in fade-in zoom-in duration-200">
+        <div class="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl flex items-center justify-center text-3xl mx-auto mb-3 shadow-lg shadow-indigo-200">
+          🤖
+        </div>
+        <h3 class="text-xl font-black text-slate-800 mb-2">SudokuMap Uzmanı ile Düello</h3>
+        <p class="text-xs text-slate-500 font-medium mb-5 leading-relaxed">
+          Rakip şu an çevrimdışı. Yapay Zekâ <strong>SudokuMap Uzmanı</strong> ile düello oynamak ister misiniz?
+        </p>
+        <div class="flex flex-col gap-2.5 w-full">
+          <button id="btn-accept-bot-prompt" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-black py-3.5 rounded-2xl shadow-lg active:scale-95 transition-all text-xs tracking-wide">
+            ⚔️ Evet, Düelloya Başla
+          </button>
+          <button id="btn-cancel-bot-prompt" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-2xl active:scale-95 transition-all text-xs">
+            İptal (Ana Menüye Dön)
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    document.getElementById('btn-accept-bot-prompt')?.addEventListener('click', () => {
+      modal.remove();
+      onAccept();
+    });
+
+    document.getElementById('btn-cancel-bot-prompt')?.addEventListener('click', () => {
+      modal.remove();
+      onCancel();
     });
   },
 

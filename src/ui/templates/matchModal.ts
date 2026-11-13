@@ -1,18 +1,18 @@
 export const matchModalTemplate = `
 <!-- Eşleşme Arama Modalı -->
 <div id="match-search-modal" class="absolute inset-0 bg-slate-900/80 hidden flex-col items-center justify-center z-[80] p-4 backdrop-blur-md">
-    <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl relative">
+    <div class="bg-white rounded-3xl p-5 w-full max-w-sm flex flex-col max-h-[85vh] shadow-2xl relative overflow-y-auto hidden-scrollbar border border-slate-100">
         <button id="close-match-search" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 text-sm">✕</button>
 
-        <div class="w-16 h-16 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-3 shadow-inner">
+        <div class="w-14 h-14 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-2 shadow-inner">
             ⚔️
         </div>
-        <h3 class="text-2xl font-black text-slate-800 mb-1">Sudoku Düello Modu</h3>
-        <p class="text-xs text-slate-500 mb-4 font-medium">Aynı bulmacada rakibinle eşzamanlı yarış! İlk bitiren veya daha çok çözen kazanır.</p>
+        <h3 class="text-xl font-black text-slate-800 mb-0.5">Düello Arenası</h3>
+        <p class="text-[11px] text-slate-500 mb-3 font-medium">İster online oyuncularla yarış, ister Seviyeli YZ Karakterlere meydan oku!</p>
 
         <!-- Süre Modu Seçimi -->
-        <div class="mb-3.5 w-full">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider text-left mb-1.5">Süre Modu Seç</p>
+        <div class="mb-3 w-full">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider text-left mb-1">Süre Modu</p>
             <div class="flex gap-1 p-1 bg-slate-100 rounded-xl">
                 <button id="btn-match-time-3m" data-time="180" class="match-time-btn flex-1 py-1.5 rounded-lg font-black text-[11px] transition-all bg-indigo-600 text-white shadow-sm">
                     ⚡ 3 Dk (Blitz)
@@ -26,21 +26,37 @@ export const matchModalTemplate = `
             </div>
         </div>
 
-        <!-- Zorluk Seçimi -->
-        <div class="flex flex-col gap-2.5 w-full mb-4">
-            <button id="btn-match-basit" class="w-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-2xl p-3.5 flex justify-between items-center text-left active:scale-[0.98] transition-all">
-                <span class="font-black text-emerald-800 text-sm">🟢 Basit Düello</span>
-                <span class="bg-emerald-200 text-emerald-900 text-[11px] font-black px-2.5 py-1 rounded-full">+50 🪙</span>
-            </button>
-            <button id="btn-match-orta" class="w-full bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-2xl p-3.5 flex justify-between items-center text-left active:scale-[0.98] transition-all">
-                <span class="font-black text-amber-800 text-sm">🟡 Orta Düello</span>
-                <span class="bg-amber-200 text-amber-900 text-[11px] font-black px-2.5 py-1 rounded-full">+100 🪙</span>
-            </button>
-            <button id="btn-match-zor" class="w-full bg-rose-50 hover:bg-rose-100 border border-rose-300 rounded-2xl p-3.5 flex justify-between items-center text-left active:scale-[0.98] transition-all">
-                <span class="font-black text-rose-800 text-sm">🔴 Zor Düello</span>
-                <span class="bg-rose-200 text-rose-900 text-[11px] font-black px-2.5 py-1 rounded-full">+200 🪙</span>
-            </button>
+        <!-- Seviye Karakter Filtre Sekmeleri -->
+        <div class="mb-2.5 w-full">
+            <div class="flex gap-1 p-1 bg-slate-100 rounded-xl">
+                <button id="btn-bot-tab-basit" data-diff="basit" class="bot-tab-btn flex-1 py-1.5 rounded-lg font-black text-[10px] transition-all bg-emerald-600 text-white shadow-sm">
+                    🟢 Basit (1-300)
+                </button>
+                <button id="btn-bot-tab-orta" data-diff="orta" class="bot-tab-btn flex-1 py-1.5 rounded-lg font-bold text-[10px] transition-all text-slate-600 hover:text-slate-900">
+                    🟡 Orta (301-700)
+                </button>
+                <button id="btn-bot-tab-zor" data-diff="zor" class="bot-tab-btn flex-1 py-1.5 rounded-lg font-bold text-[10px] transition-all text-slate-600 hover:text-slate-900">
+                    🔴 Zor (701-1000)
+                </button>
+            </div>
         </div>
+
+        <!-- Chess.com Tarzı AI Bot Karakter Listesi -->
+        <div class="w-full mb-3">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider text-left mb-1.5 flex justify-between items-center">
+                <span>🤖 Yapay Zekâ Rakipleri</span>
+                <span id="bot-count-label" class="text-indigo-600 font-bold">5 Karakter</span>
+            </p>
+            <div id="bot-characters-list" class="flex flex-col gap-2 max-h-[240px] overflow-y-auto hidden-scrollbar pr-0.5">
+                <!-- Bot Kartları Render Edilecek -->
+            </div>
+        </div>
+
+        <!-- Çevrimiçi Arama Aksiyon Butonu -->
+        <button id="btn-quick-online-match" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-black py-3 rounded-2xl shadow-md active:scale-95 transition-all text-xs flex items-center justify-center gap-2 mb-2">
+            <span>🌐</span>
+            <span>Rastgele Çevrimiçi Rakip Ara</span>
+        </button>
 
         <!-- Arama Durum Göstergesi -->
         <div id="match-search-status-box" class="hidden flex-col items-center gap-2 py-3 bg-indigo-50 border border-indigo-100 rounded-2xl">
