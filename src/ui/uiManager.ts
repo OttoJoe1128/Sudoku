@@ -7,6 +7,7 @@ import { usernameModalTemplate } from './templates/usernameModal';
 import { achievementsTemplate } from './templates/achievements';
 import { placementModalTemplate } from './templates/placementModal';
 import { profileModalTemplate } from './templates/profileModal';
+import { matchModalTemplate } from './templates/matchModal';
 import { Player } from '../engine/leaderboard';
 import { ShopItems, ShopManager } from '../engine/shop';
 import { BadgeStatus } from '../engine/achievements';
@@ -27,8 +28,22 @@ export const UIManager = {
         ${achievementsTemplate}
         ${placementModalTemplate}
         ${profileModalTemplate}
+        ${matchModalTemplate}
         ${usernameModalTemplate}
         <div id="game-view" class="hidden flex-col items-center p-6 w-full h-full">
+            <!-- Düello Canlı İlerleme Çubuğu -->
+            <div id="match-header-bar" class="hidden w-full bg-slate-900 text-white p-3 rounded-2xl mb-4 shadow-lg flex-col gap-2">
+                <div class="flex justify-between items-center text-xs font-black">
+                    <span id="match-user-name">Siz (%0)</span>
+                    <span class="text-amber-400 font-extrabold text-sm">VS</span>
+                    <span id="match-enemy-name">Rakip (%0)</span>
+                </div>
+                <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden flex">
+                    <div id="match-user-bar" class="bg-indigo-500 h-full transition-all duration-300" style="width: 0%"></div>
+                    <div id="match-enemy-bar" class="bg-rose-500 h-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+
             <div class="w-full flex justify-between items-center mb-6">
                 <button id="btn-back-menu" class="bg-slate-200 px-4 py-2 rounded-xl font-bold text-sm text-slate-800">⬅ Menü</button>
                 <div id="game-errors" class="text-rose-600 font-bold text-sm">Hata: 0/3</div>
@@ -69,6 +84,35 @@ export const UIManager = {
     const goldEl = document.getElementById('menu-gold');
     if (goldEl) {
       goldEl.innerText = gold.toString();
+    }
+  },
+
+  renderMatchProgress(userFilled: number, enemyFilled: number, enemyName: string, totalEmpty: number) {
+    const barBox = document.getElementById('match-header-bar');
+    const userBar = document.getElementById('match-user-bar');
+    const enemyBar = document.getElementById('match-enemy-bar');
+    const userNameEl = document.getElementById('match-user-name');
+    const enemyNameEl = document.getElementById('match-enemy-name');
+
+    if (barBox) {
+      barBox.classList.remove('hidden');
+      barBox.classList.add('flex');
+    }
+
+    const userPct = totalEmpty > 0 ? Math.round((userFilled / totalEmpty) * 100) : 0;
+    const enemyPct = totalEmpty > 0 ? Math.round((enemyFilled / totalEmpty) * 100) : 0;
+
+    if (userBar) userBar.style.width = `${userPct}%`;
+    if (enemyBar) enemyBar.style.width = `${enemyPct}%`;
+    if (userNameEl) userNameEl.innerText = `Siz (%${userPct})`;
+    if (enemyNameEl) enemyNameEl.innerText = `${enemyName} (%${enemyPct})`;
+  },
+
+  hideMatchHeader() {
+    const barBox = document.getElementById('match-header-bar');
+    if (barBox) {
+      barBox.classList.add('hidden');
+      barBox.classList.remove('flex');
     }
   },
 

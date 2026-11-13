@@ -60,7 +60,19 @@ export const menuTemplate = `
             <span class="text-3xl group-hover:rotate-12 transition-transform">🧩</span>
         </button>
 
-        <!-- 3. Sudoku Yolculuğu Haritası -->
+        <!-- 3. Sudoku Düello / Maç Modu -->
+        <button id="btn-open-match" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-2xl p-4 flex justify-between items-center shadow-md active:scale-[0.98] transition-all cursor-pointer border border-purple-400">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl">⚔️</span>
+                <div class="text-left">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-purple-200 block">Çok Oyunculu / Rekabet</span>
+                    <span class="text-base font-black block">Sudoku Düello Modu</span>
+                </div>
+            </div>
+            <span class="bg-amber-400 text-amber-950 font-black text-xs px-3 py-1.5 rounded-xl shadow-sm shrink-0">OYNA ➔</span>
+        </button>
+
+        <!-- 4. Sudoku Yolculuğu Haritası -->
         <button id="btn-open-map" class="w-full bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-2xl p-3.5 flex justify-between items-center shadow-sm text-xs font-black transition-all active:scale-[0.98]">
             <div class="flex items-center gap-2">
                 <span class="text-lg">🗺️</span>
@@ -69,7 +81,7 @@ export const menuTemplate = `
             <span class="text-slate-400 font-bold">➔</span>
         </button>
 
-        <!-- 4. Seviye Belirleme Sınavı (Doğrudan 301 veya 701'e Atla) -->
+        <!-- 5. Seviye Belirleme Sınavı -->
         <button id="btn-menu-placement-test" class="w-full bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 text-indigo-900 border border-indigo-200 rounded-2xl p-3 flex justify-between items-center shadow-sm text-xs font-black transition-all active:scale-[0.98]">
             <div class="flex items-center gap-2.5">
                 <span class="text-xl">🎯</span>
