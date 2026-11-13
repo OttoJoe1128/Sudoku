@@ -612,14 +612,17 @@ const checkUser = async () => {
 
 document.getElementById('save-username')?.addEventListener('click', async () => {
   const input = document.getElementById('username-input') as HTMLInputElement;
-  if (input?.value && input.value.trim().length >= 3) {
-    const user = await UserManager.saveUser(input.value.trim());
+  const newName = input?.value?.trim();
+  if (newName && newName.length >= 3) {
+    const user = await UserManager.saveUser(newName);
     const nameEl = document.getElementById('menu-player-name');
+    const profileNameEl = document.getElementById('profile-username');
     if (nameEl) nameEl.innerText = user.username;
+    if (profileNameEl) profileNameEl.innerText = user.username;
+
     updateGoldDisplay();
     UIManager.toggleModal('username-modal', false);
-    checkUser();
-    UIManager.showToast(`Hoş geldin ${user.username}!`, 'success');
+    UIManager.showToast(`Kullanıcı adı güncellendi: ${user.username}`, 'success');
   } else {
     UIManager.showToast("Lütfen en az 3 karakterden oluşan bir isim giriniz!", "error");
   }
@@ -628,7 +631,9 @@ document.getElementById('save-username')?.addEventListener('click', async () => 
 document.getElementById('btn-edit-username')?.addEventListener('click', (e) => {
   e.stopPropagation();
   const input = document.getElementById('username-input') as HTMLInputElement;
+  const closeBtn = document.getElementById('close-username-modal');
   if (input) input.value = UserManager.getUsername() || '';
+  if (closeBtn) closeBtn.classList.remove('hidden');
   UIManager.toggleModal('username-modal', true);
 });
 

@@ -7,16 +7,16 @@ export const menuTemplate = `
                 🎮
             </div>
             <div>
-                <p id="menu-player-title" class="text-[10px] text-indigo-600 font-bold uppercase tracking-wider block">Çaylak Bulmacacı</p>
+                <p id="menu-player-title" class="text-[10px] text-indigo-600 font-bold uppercase tracking-wider block">Çırak</p>
                 <div class="flex items-center gap-1.5">
                     <p id="menu-player-name" class="font-black text-slate-800 text-sm tracking-wide">Misafir</p>
-                    <button id="btn-edit-username" title="İsmi Değiştir" class="text-slate-400 hover:text-indigo-600 text-xs p-0.5">✏️</button>
+                    <button id="btn-edit-username" title="Kullanıcı Adını Düzenle" class="text-slate-400 hover:text-indigo-600 text-xs p-1 rounded-lg hover:bg-slate-100 transition-colors">✏️</button>
                 </div>
             </div>
         </div>
-        <div class="bg-gradient-to-r from-amber-50 to-amber-100 text-amber-900 px-3.5 py-2 rounded-2xl font-black text-xs border border-amber-200/80 shadow-sm flex items-center gap-1.5">
+        <div class="bg-amber-100 text-amber-950 font-black px-3.5 py-2 rounded-2xl text-xs border border-amber-200 shadow-sm flex items-center gap-1.5 shrink-0">
             <span class="text-sm">🪙</span>
-            <span id="menu-gold">100</span>
+            <span id="menu-gold" class="font-mono font-black text-sm">100</span>
         </div>
     </div>
 
@@ -59,8 +59,8 @@ export const menuTemplate = `
                     <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
                 </div>
                 <div>
-                    <span class="text-[9px] font-black uppercase tracking-wider text-purple-200 block">Canlı PvP</span>
-                    <span class="text-sm font-black block leading-snug">Sudoku Düello</span>
+                    <span class="text-[9px] font-black uppercase tracking-wider text-purple-200 block">REKABET</span>
+                    <span class="text-sm font-black block leading-snug">Düello Arenası</span>
                 </div>
             </button>
 
@@ -71,8 +71,8 @@ export const menuTemplate = `
                     <span class="text-xs text-indigo-600 font-bold">Zorluk Seç</span>
                 </div>
                 <div>
-                    <span class="text-[9px] font-black uppercase tracking-wider text-slate-400 block">Sıfırdan Başla</span>
-                    <span class="text-sm font-black block leading-snug">Yeni Oyun</span>
+                    <span class="text-[9px] font-black uppercase tracking-wider text-slate-400 block">SERBEST MOD</span>
+                    <span class="text-sm font-black block leading-snug">Klasik Sudoku</span>
                 </div>
             </button>
         </div>
@@ -81,7 +81,7 @@ export const menuTemplate = `
         <button id="btn-open-map" class="w-full bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/80 rounded-2xl p-3.5 flex justify-between items-center shadow-sm text-xs font-black transition-all active:scale-[0.98]">
             <div class="flex items-center gap-2.5">
                 <span class="text-lg">🗺️</span>
-                <span>Sudoku Yolculuğu Haritası (1000 Seviye)</span>
+                <span>Yolculuk Haritası • 1000 Bölüm</span>
             </div>
             <span class="text-slate-400 font-bold">➔</span>
         </button>
@@ -90,8 +90,8 @@ export const menuTemplate = `
             <div class="flex items-center gap-2.5">
                 <span class="text-xl">🎯</span>
                 <div class="text-left">
-                    <span class="block leading-tight">Seviye Belirleme Sınavı</span>
-                    <span class="text-[10px] font-bold text-indigo-600 block mt-0.5">Testi geç, doğrudan 301 veya 701'e atla!</span>
+                    <span class="block leading-tight">Seviye Atlama Sınavı</span>
+                    <span class="text-[10px] font-bold text-indigo-600 block mt-0.5">Üst bölümlerin kilidini doğrudan aç</span>
                 </div>
             </div>
             <span class="bg-indigo-600 text-white text-[10px] font-black px-2.5 py-1 rounded-xl shrink-0 shadow-sm">SINAVA GİR</span>
@@ -101,20 +101,20 @@ export const menuTemplate = `
     <!-- Floating Bottom Dock (Ekranın En Altındaki Alt Bar) -->
     <div class="fixed bottom-3 left-1/2 -translate-x-1/2 w-full max-w-[440px] px-4 z-40">
         <div class="bg-white/80 backdrop-blur-md border border-slate-200/80 p-2 rounded-3xl shadow-xl grid grid-cols-4 gap-1.5">
-            <button id="btn-leaderboard" class="hover:bg-slate-100/80 p-2.5 rounded-2xl text-center font-bold text-xs flex flex-col items-center gap-0.5 active:scale-95 transition-transform text-slate-700">
+            <button id="btn-leaderboard" class="hover:bg-slate-100/80 p-2.5 rounded-2xl text-center font-bold text-xs flex flex-col items-center gap-0.5 active:scale-95 transition-transform text-slate-800 dark:text-slate-100">
                 <span class="text-lg">🏆</span>
                 <span class="text-[10px]">Sıralama</span>
             </button>
-            <button id="btn-achievements" class="hover:bg-slate-100/80 p-2.5 rounded-2xl text-center font-bold text-xs flex flex-col items-center gap-0.5 active:scale-95 transition-transform text-slate-700 relative">
+            <button id="btn-achievements" class="hover:bg-slate-100/80 p-2.5 rounded-2xl text-center font-bold text-xs flex flex-col items-center gap-0.5 active:scale-95 transition-transform text-slate-800 dark:text-slate-100 relative">
                 <span class="text-lg">🎖️</span>
                 <span class="text-[10px]">Rozetler</span>
                 <span id="badge-notify-dot" class="hidden absolute top-2 right-4 w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
             </button>
-            <button id="btn-shop" class="hover:bg-slate-100/80 p-2.5 rounded-2xl text-center font-bold text-xs flex flex-col items-center gap-0.5 active:scale-95 transition-transform text-slate-700">
+            <button id="btn-shop" class="hover:bg-slate-100/80 p-2.5 rounded-2xl text-center font-bold text-xs flex flex-col items-center gap-0.5 active:scale-95 transition-transform text-slate-800 dark:text-slate-100">
                 <span class="text-lg">🛍️</span>
                 <span class="text-[10px]">Mağaza</span>
             </button>
-            <button id="btn-daily-reward" class="bg-amber-100/80 hover:bg-amber-200/80 border border-amber-200/80 p-2.5 rounded-2xl text-center font-bold text-xs flex flex-col items-center gap-0.5 active:scale-95 transition-transform text-amber-900 shadow-sm">
+            <button id="btn-daily-reward" class="bg-amber-100/90 hover:bg-amber-200/90 border border-amber-300 p-2.5 rounded-2xl text-center font-bold text-xs flex flex-col items-center gap-0.5 active:scale-95 transition-transform text-amber-950 shadow-sm">
                 <span id="daily-reward-icon" class="text-lg">🎁</span>
                 <span id="daily-reward-text" class="text-[10px] font-black">Günlük</span>
             </button>
