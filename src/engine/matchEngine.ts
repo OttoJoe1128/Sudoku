@@ -23,7 +23,19 @@ export interface MatchState {
   winnerUid?: string;
 }
 
+export interface ChallengeRequest {
+  challengeId: string;
+  fromUid: string;
+  fromUsername: string;
+  targetUid: string;
+  targetUsername: string;
+  difficulty: 'basit' | 'orta' | 'zor';
+  status: 'pending' | 'accepted' | 'declined' | 'expired';
+  createdAt?: any;
+}
+
 let activeMatchSnapshotUnsubscribe: (() => void) | null = null;
+let challengeSnapshotUnsubscribe: (() => void) | null = null;
 let botTimerInterval: any = null;
 
 export const MatchEngine = {
@@ -35,6 +47,95 @@ export const MatchEngine = {
     if (botTimerInterval) {
       clearInterval(botTimerInterval);
       botTimerInterval = null;
+    }
+  },
+
+  async sendDirectChallenge(targetUid: string, targetUsername: string, difficulty: 'basit' | 'orta' | 'zor'): Promise<{ challengeId: string }> {
+    const currentUsername = UserManager.getUsername() || 'Oyuncu';
+    const currentUid = auth.currentUser ? auth.currentUser.uid : `user_${Date.now()}`;
+    const challengeId = `chal_${Date.now()}`;
+
+    const challengeData: ChallengeRequest = {
+      challengeId,
+      fromUid: currentUid,
+      fromUsername: currentUsername,
+      targetUid,
+      targetUsername,
+      difficulty,
+      status: 'pending'
+    };
+
+    await setDoc(doc(db, 'challenges', challengeId), {
+      ...challengeData,
+      createdAt: serverTimestamp()
+    });
+
+    return { challengeId };
+  },
+
+  listenIncomingChallenges(onChallengeReceived: (challenge: ChallengeRequest) => void) {
+    if (challengeSnapshotUnsubscribe) challengeSnapshotUnsubscribe();
+
+    if (!UserManager.getNotificationsEnabled()) return;
+    if (!auth.currentUser) return;
+
+    const currentUid = auth.currentUser.uid;
+    const q = query(
+      collection(db, 'challenges'),
+      where('targetUid', '==', currentUid),
+      where('status', '==', 'pending')
+    );
+
+    try {
+      challengeSnapshotUnsubscribe = onSnapshot(q, (snap) => {
+        snap.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            const data = change.doc.data() as ChallengeRequest;
+            onChallengeReceived(data);
+          }
+        });
+      });
+    } catch (e) {
+      console.warn("Gelen düello davetleri dinlenemedi:", e);
+    }
+  },
+
+  async respondToChallenge(challengeId: string, accept: boolean): Promise<MatchState | null> {
+    try {
+      const chalRef = doc(db, 'challenges', challengeId);
+      if (!accept) {
+        await updateDoc(chalRef, { status: 'declined' });
+        return null;
+      }
+
+      await updateDoc(chalRef, { status: 'accepted' });
+
+      // Kabul edilirse maç oluştur
+      const currentUsername = UserManager.getUsername() || 'Oyuncu';
+      const currentUid = auth.currentUser ? auth.currentUser.uid : `user_${Date.now()}`;
+      const matchId = `match_${Date.now()}`;
+      const generated = SudokuGen.generate('basit');
+
+      const match: MatchState = {
+        matchId,
+        difficulty: 'basit',
+        puzzle: generated.puzzle,
+        solution: generated.solution,
+        status: 'in_progress',
+        player1: {
+          uid: currentUid,
+          username: currentUsername,
+          isBot: false,
+          progress: 0,
+          errors: 0
+        }
+      };
+
+      await setDoc(doc(db, 'matches', matchId), match);
+      return match;
+    } catch (e) {
+      console.warn("Davete yanıt verilemedi:", e);
+      return null;
     }
   },
 
@@ -50,7 +151,6 @@ export const MatchEngine = {
     if (onStatusUpdate) onStatusUpdate("Açık maçlar taranıyor...");
 
     try {
-      // 1. Bekleyen maçları ara
       const q = query(
         collection(db, 'matches'),
         where('difficulty', '==', difficulty),
@@ -90,7 +190,6 @@ export const MatchEngine = {
       console.warn("Online maç arama hatası, offline moda düşülüyor:", e);
     }
 
-    // 2. Eğer açık maç bulunamadıysa oda oluştur ve 5s bekle
     if (onStatusUpdate) onStatusUpdate("Oda oluşturuluyor, rakip bekleniyor...");
     const matchId = `match_${Date.now()}`;
     const generated = SudokuGen.generate(difficulty);
@@ -119,7 +218,6 @@ export const MatchEngine = {
       console.warn("Firestore maç oluşturma atlandı:", e);
     }
 
-    // 5 saniye sonra rakip gelmezse Bot (AI) ile maçı başlat
     let botTimeout = setTimeout(() => {
       if (onStatusUpdate) onStatusUpdate("Rakip bulunamadı. Yapay Zekâ (Bot) ile maç başlatılıyor!");
 
@@ -149,7 +247,6 @@ export const MatchEngine = {
       onMatchFound(initialMatch);
     }, 4000);
 
-    // Gerçek oyuncu gelirse timeout'ı iptal et ve maçı başlat
     try {
       const matchRef = doc(db, 'matches', matchId);
       activeMatchSnapshotUnsubscribe = onSnapshot(matchRef, (docSnap) => {
@@ -169,11 +266,10 @@ export const MatchEngine = {
   startBotAI(difficulty: string, onBotProgress: (progress: number) => void) {
     if (botTimerInterval) clearInterval(botTimerInterval);
     let botProgress = 0;
-    // Zorluğa göre bot hızı (sn)
     const intervalMs = difficulty === 'basit' ? 2500 : difficulty === 'orta' ? 2000 : 1500;
 
     botTimerInterval = setInterval(() => {
-      botProgress += Math.floor(Math.random() * 2) + 1; // 1 veya 2 adım ilerler
+      botProgress += Math.floor(Math.random() * 2) + 1;
       if (botProgress > 81) botProgress = 81;
       onBotProgress(botProgress);
       if (botProgress >= 81) {

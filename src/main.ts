@@ -6,7 +6,7 @@ import { Leaderboard, Player, SpeedRecord } from './engine/leaderboard';
 import { ShopManager } from './engine/shop';
 import { Rewards } from './engine/rewards';
 import { AchievementManager } from './engine/achievements';
-import { MatchEngine, MatchState } from './engine/matchEngine';
+import { MatchEngine, MatchState, ChallengeRequest } from './engine/matchEngine';
 import { App } from '@capacitor/app';
 
 UIManager.mountUI();
@@ -80,13 +80,14 @@ const handleMatchTimeExpired = async () => {
     const reward = currentDifficulty === 'basit' ? 50 : currentDifficulty === 'orta' ? 100 : 200;
     const newGold = UserManager.getGold() + reward;
     await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
+    await UserManager.recordDuelResult(true);
     updateGoldDisplay();
     showMatchResult(true, reward, enemyName);
   } else if (matchUserFilled < matchEnemyFilled) {
+    await UserManager.recordDuelResult(false);
     showMatchResult(false, 0, enemyName);
   } else {
-    // Beraberlik durumu
-    alert("⏱️ Süre Doldu! Her iki taraf da eşit sayıda hücre çözdü.");
+    UIManager.showToast("⏱️ Süre Doldu! Her iki taraf da eşit sayıda hücre çözdü.", "info");
     UIManager.navigate('menu');
   }
 };
@@ -127,7 +128,7 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
 
       // Bot (AI) Maç Mantığı
       if (activeMatch.player2?.isBot) {
-        MatchEngine.startBotAI(diff, (botProgress) => {
+        MatchEngine.startBotAI(diff, async (botProgress) => {
           matchEnemyFilled = botProgress;
           UIManager.renderMatchProgress(matchUserFilled, matchEnemyFilled, enemyName, matchTotalEmpty);
 
@@ -136,6 +137,7 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
             isMatchMode = false;
             MatchEngine.clearActiveMatch();
             UIManager.hideMatchHeader();
+            await UserManager.recordDuelResult(false);
             showMatchResult(false, 0, enemyName);
           }
         });
@@ -179,13 +181,13 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
     const hintBtn = document.getElementById('btn-hint');
     if (hintBtn) {
         hintBtn.onclick = async () => {
-            if (!selectedCell) return alert("Lütfen önce boş bir hücre seçin!");
-            if (initialBoard[selectedCell.r][selectedCell.c] !== 0) return alert("Bu hücre kilitli!");
-            if (hintsUsed >= 5) return alert("İpucu sınırı doldu!");
+            if (!selectedCell) return UIManager.showToast("Lütfen önce boş bir hücre seçin!", "info");
+            if (initialBoard[selectedCell.r][selectedCell.c] !== 0) return UIManager.showToast("Bu hücre kilitli!", "info");
+            if (hintsUsed >= 5) return UIManager.showToast("İpucu sınırı doldu!", "error");
 
             const currentGold = UserManager.getGold();
             if (currentGold < 10) {
-                return alert("Yetersiz altın! İpucu için en az 10 🪙 gerekiyor.");
+                return UIManager.showToast("Yetersiz altın! İpucu için en az 10 🪙 gerekiyor.", "error");
             }
 
             const newGold = currentGold - 10;
@@ -227,6 +229,7 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
                   const reward = diff === 'basit' ? 50 : diff === 'orta' ? 100 : 200;
                   const newGold = UserManager.getGold() + reward;
                   await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
+                  await UserManager.recordDuelResult(true);
                   updateGoldDisplay();
 
                   isMatchMode = false;
@@ -263,10 +266,10 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
                     lastErrors: errors
                 });
 
-                alert(`🎉 Tebrikler, Seviye ${level} Tamamlandı!\nKazanılan Ödül: +${reward} 🪙`);
+                UIManager.showToast(`🎉 Tebrikler, Seviye ${level} Tamamlandı! +${reward} 🪙`, "success");
                 UIManager.navigate('menu');
             },
-            (errCount) => {
+            async (errCount) => {
                 errors += errCount;
                 updateErrorUI();
                 if (errors >= 3) {
@@ -275,9 +278,10 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
                       isMatchMode = false;
                       MatchEngine.clearActiveMatch();
                       UIManager.hideMatchHeader();
+                      await UserManager.recordDuelResult(false);
                       showMatchResult(false, 0, activeMatch?.player2?.username || 'Rakip');
                     } else {
-                      alert("❌ Oyun Bitti! 3 Hata Yaptınız.");
+                      UIManager.showToast("❌ Oyun Bitti! 3 Hata Yaptınız.", "error");
                       UIManager.navigate('menu');
                     }
                 }
@@ -303,15 +307,17 @@ const handleExitGameRequest = async () => {
       const currentGold = UserManager.getGold();
       const newGold = Math.max(0, currentGold - 50);
       await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
+      await UserManager.recordDuelResult(false);
       updateGoldDisplay();
 
       isMatchMode = false;
       MatchEngine.clearActiveMatch();
       UIManager.hideMatchHeader();
       UIManager.navigate('menu');
+      UIManager.showToast("Düellodan çekildiniz (-50 🪙)", "error");
       return true;
     }
-    return false; // İptal etti
+    return false;
   }
 
   if (timerInterval) clearInterval(timerInterval);
@@ -359,6 +365,24 @@ document.addEventListener('click', (e) => {
     }
 });
 
+// Canlı Düello Davet Dinleyicisi
+const handleIncomingChallenge = (challenge: ChallengeRequest) => {
+  UIManager.renderIncomingChallengePopup(
+    challenge,
+    async () => {
+      const match = await MatchEngine.respondToChallenge(challenge.challengeId, true);
+      if (match) {
+        UIManager.showToast('⚔️ Düello başladı!', 'success');
+        startGame(1, challenge.difficulty, match);
+      }
+    },
+    async () => {
+      await MatchEngine.respondToChallenge(challenge.challengeId, false);
+      UIManager.showToast('Düello daveti reddedildi.', 'info');
+    }
+  );
+};
+
 // Kullanıcı Profil Giriş Akışı
 const checkUser = async () => {
   const user = await UserManager.initUser();
@@ -366,9 +390,18 @@ const checkUser = async () => {
     UIManager.toggleModal('username-modal', true);
   } else {
     const nameEl = document.getElementById('menu-player-name');
+    const titleEl = document.getElementById('menu-player-title');
+    const avatarBox = document.getElementById('menu-avatar-box');
+
     if (nameEl) nameEl.innerText = user.username;
+    if (titleEl) titleEl.innerText = user.title || 'Çaylak Bulmacacı';
+    if (avatarBox) avatarBox.innerText = user.avatar || '🎮';
+
     updateGoldDisplay();
     UIManager.navigate('menu');
+
+    // Canlı düello isteklerini dinlemeye başla
+    MatchEngine.listenIncomingChallenges((chal) => handleIncomingChallenge(chal));
   }
 };
 
@@ -381,12 +414,14 @@ document.getElementById('save-username')?.addEventListener('click', async () => 
     updateGoldDisplay();
     UIManager.toggleModal('username-modal', false);
     checkUser();
+    UIManager.showToast(`Hoş geldin ${user.username}!`, 'success');
   } else {
-    alert("Lütfen en az 3 karakterden oluşan geçerli bir isim giriniz!");
+    UIManager.showToast("Lütfen en az 3 karakterden oluşan bir isim giriniz!", "error");
   }
 });
 
-document.getElementById('btn-edit-username')?.addEventListener('click', () => {
+document.getElementById('btn-edit-username')?.addEventListener('click', (e) => {
+  e.stopPropagation();
   const input = document.getElementById('username-input') as HTMLInputElement;
   if (input) input.value = UserManager.getUsername() || '';
   UIManager.toggleModal('username-modal', true);
@@ -398,25 +433,44 @@ document.getElementById('close-username-modal')?.addEventListener('click', () =>
   }
 });
 
-// Modal: Profil
-const openPlayerProfile = async (playerData: any) => {
+// Profil Modalını Açma (Kendi Profilimiz veya Başka Oyuncu)
+let currentlyViewedTargetUid: string | undefined = undefined;
+
+const openPlayerProfile = async (targetData?: any) => {
   UIManager.toggleModal('view-profile', true);
-  const stats = {
-    username: playerData.username || 'Oyuncu',
-    level: playerData.level || 1,
-    gold: playerData.gold || 0,
-    totalCompleted: playerData.total_completed || 0,
-    bestBasitFormatted: playerData.best_basit ? `${Math.floor(playerData.best_basit / 60).toString().padStart(2, '0')}:${(playerData.best_basit % 60).toString().padStart(2, '0')}` : '--:--',
-    bestOrtaFormatted: playerData.best_orta ? `${Math.floor(playerData.best_orta / 60).toString().padStart(2, '0')}:${(playerData.best_orta % 60).toString().padStart(2, '0')}` : '--:--',
-    bestZorFormatted: playerData.best_zor ? `${Math.floor(playerData.best_zor / 60).toString().padStart(2, '0')}:${(playerData.best_zor % 60).toString().padStart(2, '0')}` : '--:--'
-  };
+
+  const isOwn = !targetData || targetData.username === UserManager.getUsername();
+  let stats: any;
+
+  if (isOwn) {
+    stats = await UserManager.getUserProfileStats();
+    currentlyViewedTargetUid = undefined;
+  } else {
+    currentlyViewedTargetUid = targetData.uid;
+    stats = {
+      uid: targetData.uid,
+      username: targetData.username || 'Oyuncu',
+      level: targetData.level || 1,
+      gold: targetData.gold || 0,
+      avatar: targetData.avatar || '🎮',
+      title: targetData.title || 'Usta Oyuncu',
+      notificationsEnabled: false,
+      totalCompleted: targetData.total_completed || 0,
+      duelWins: targetData.duel_wins || 0,
+      duelLosses: targetData.duel_losses || 0,
+      duelMmr: targetData.duel_mmr || 1000,
+      bestBasitFormatted: UserManager.formatTime(targetData.best_basit),
+      bestOrtaFormatted: UserManager.formatTime(targetData.best_orta),
+      bestZorFormatted: UserManager.formatTime(targetData.best_zor)
+    };
+  }
+
   const badges = AchievementManager.getAllBadgesWithStatus(stats.level, stats.gold, stats.totalCompleted);
-  UIManager.renderProfileModal(stats, badges);
+  UIManager.renderProfileModal(stats, badges, isOwn);
 };
 
 document.getElementById('btn-open-profile')?.addEventListener('click', async () => {
-  const stats = await UserManager.getUserProfileStats();
-  openPlayerProfile(stats);
+  openPlayerProfile();
 });
 
 document.getElementById('close-profile')?.addEventListener('click', () => {
@@ -433,6 +487,44 @@ document.getElementById('btn-profile-edit-name')?.addEventListener('click', () =
 document.getElementById('btn-profile-open-achievements')?.addEventListener('click', () => {
   UIManager.toggleModal('view-profile', false);
   document.getElementById('btn-achievements')?.click();
+});
+
+// Bildirim Toggle Dinleyicisi
+document.getElementById('toggle-notifications')?.addEventListener('change', async (e) => {
+  const checked = (e.target as HTMLInputElement).checked;
+  if (checked) {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        UserManager.saveNotificationsEnabled(true);
+        UIManager.showToast('🔔 Canlı düello bildirimleri açıldı!', 'success');
+        MatchEngine.listenIncomingChallenges((chal) => handleIncomingChallenge(chal));
+      } else {
+        (e.target as HTMLInputElement).checked = false;
+        UserManager.saveNotificationsEnabled(false);
+        UIManager.showToast('⚠️ Bildirim izni verilmedi.', 'error');
+      }
+    } else {
+      UserManager.saveNotificationsEnabled(true);
+      UIManager.showToast('🔔 Düello bildirimleri aktif!', 'success');
+    }
+  } else {
+    UserManager.saveNotificationsEnabled(false);
+    UIManager.showToast('🔕 Bildirimler kapatıldı.', 'info');
+  }
+});
+
+// Başka Bir Oyuncuya Düello İsteği Gönder
+document.getElementById('btn-challenge-player')?.addEventListener('click', async () => {
+  if (!currentlyViewedTargetUid) return;
+  try {
+    const targetUsername = document.getElementById('profile-username')?.innerText || 'Oyuncu';
+    await MatchEngine.sendDirectChallenge(currentlyViewedTargetUid, targetUsername, 'basit');
+    UIManager.showToast(`⚔️ ${targetUsername} adlı oyuncuya düello daveti gönderildi!`, 'success');
+    UIManager.toggleModal('view-profile', false);
+  } catch (e) {
+    UIManager.showToast('Davet gönderilemedi.', 'error');
+  }
 });
 
 // Modal: Düello / Maç
@@ -554,7 +646,7 @@ document.getElementById('btn-map-jump-zor')?.addEventListener('click', () => {
 // Günlük Ödül
 document.getElementById('btn-daily-reward')?.addEventListener('click', async () => {
     const result = await Rewards.claimReward();
-    alert(result.message);
+    UIManager.showToast(result.message, result.success ? "success" : "info");
     if (result.success) {
         updateGoldDisplay();
         AchievementManager.checkAndUnlockBadges({
@@ -643,7 +735,7 @@ document.getElementById('btn-shop')?.addEventListener('click', () => {
   UIManager.toggleModal('view-shop', true);
   UIManager.renderShop(async (itemId) => {
     const result = await ShopManager.buyItem(itemId);
-    alert(result.msg);
+    UIManager.showToast(result.msg, result.success ? "success" : "error");
     if (result.success) {
       updateGoldDisplay();
       UIManager.applyTheme(ShopManager.getActiveTheme());
@@ -665,7 +757,7 @@ document.getElementById('btn-achievements')?.addEventListener('click', () => {
   );
   UIManager.renderAchievements(badges, async (badgeId) => {
     const claimResult = AchievementManager.claimBadgeReward(badgeId);
-    alert(claimResult.message);
+    UIManager.showToast(claimResult.message, claimResult.success ? "success" : "info");
     if (claimResult.success) {
       const newGold = UserManager.getGold() + claimResult.goldAdded;
       await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
@@ -736,7 +828,7 @@ App.addListener('backButton', async () => {
 
     if (gameView && !gameView.classList.contains('hidden')) {
         const exited = await handleExitGameRequest();
-        if (!exited) return; // Kullanıcı düellodan çıkışı iptal etti
+        if (!exited) return;
         return;
     }
 

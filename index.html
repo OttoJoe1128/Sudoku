@@ -3,12 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>SudokuMap</title>
+    <title>SudokuMap - Akıllı Sudoku & Düello</title>
+    <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@600;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+              mono: ['"JetBrains Mono"', 'monospace'],
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .font-mono {
+        font-family: 'JetBrains Mono', monospace;
+      }
+      /* Gizli Scrollbar Stil Sınıfı */
+      .hidden-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .hidden-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+
+      /* Tema Özel Stilleri */
+      #container.theme-dark {
+        background-color: #0f172a !important;
+        color: #f8fafc !important;
+      }
+      #container.theme-dark .bg-white {
+        background-color: #1e293b !important;
+        border-color: #334155 !important;
+        color: #f8fafc !important;
+      }
+      #container.theme-dark .text-slate-800,
+      #container.theme-dark .text-slate-700 {
+        color: #f1f5f9 !important;
+      }
+      #container.theme-dark .text-slate-500,
+      #container.theme-dark .text-slate-400 {
+        color: #94a3b8 !important;
+      }
+      #container.theme-dark .bg-slate-50,
+      #container.theme-dark .bg-slate-100 {
+        background-color: #0f172a !important;
+        color: #f1f5f9 !important;
+      }
+
+      #container.theme-neon {
+        background-color: #1a103c !important;
+        color: #e0e7ff !important;
+      }
+      #container.theme-neon .bg-white {
+        background-color: #2e1065 !important;
+        border-color: #581c87 !important;
+        color: #f3e8ff !important;
+      }
+      #container.theme-neon .text-slate-800,
+      #container.theme-neon .text-slate-700 {
+        color: #f3e8ff !important;
+      }
+      #container.theme-neon .bg-slate-50,
+      #container.theme-neon .bg-slate-100 {
+        background-color: #130a2a !important;
+      }
+
+      #container.theme-emerald {
+        background-color: #064e3b !important;
+        color: #ecfdf5 !important;
+      }
+      #container.theme-emerald .bg-white {
+        background-color: #065f46 !important;
+        border-color: #047857 !important;
+        color: #ecfdf5 !important;
+      }
+      #container.theme-emerald .text-slate-800,
+      #container.theme-emerald .text-slate-700 {
+        color: #ecfdf5 !important;
+      }
+      #container.theme-emerald .bg-slate-50,
+      #container.theme-emerald .bg-slate-100 {
+        background-color: #022c22 !important;
+      }
+    </style>
     <script type="module" src="/src/main.ts"></script>
 </head>
-<body class="flex justify-center items-center min-h-screen sm:p-6 relative bg-slate-900">
-    <!-- UI yapısı burada kalacak, JS kodları src/ klasörüne taşındı -->
-    <div id="app" class="w-full max-w-[480px] h-[100dvh] bg-slate-50"></div>
+<body class="flex justify-center items-center min-h-screen sm:p-6 relative bg-slate-950 font-sans antialiased selection:bg-indigo-500 selection:text-white">
+    <!-- Ana Kapsayıcı -->
+    <div id="app" class="w-full max-w-[480px] h-[100dvh] bg-slate-50 shadow-2xl relative overflow-hidden"></div>
+
+    <!-- Global Toast Container -->
+    <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 w-full max-w-xs pointer-events-none px-4"></div>
 </body>
 </html>

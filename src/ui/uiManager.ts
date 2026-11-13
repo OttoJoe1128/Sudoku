@@ -11,7 +11,8 @@ import { matchModalTemplate } from './templates/matchModal';
 import { Player, SpeedRecord } from '../engine/leaderboard';
 import { ShopItems, ShopManager } from '../engine/shop';
 import { BadgeStatus } from '../engine/achievements';
-import { ProfileStats } from '../store/userState';
+import { ProfileStats, UserManager } from '../store/userState';
+import { ChallengeRequest } from '../engine/matchEngine';
 
 export const UIManager = {
   mountUI() {
@@ -19,7 +20,7 @@ export const UIManager = {
     if (!app) return;
 
     app.innerHTML = `
-      <div id="container" class="w-full max-w-[480px] h-[100dvh] bg-slate-50 flex flex-col relative overflow-hidden transition-colors duration-300">
+      <div id="container" class="w-full max-w-[480px] h-[100dvh] bg-slate-50 flex flex-col relative overflow-hidden transition-colors duration-300 font-sans">
         ${menuTemplate}
         ${mapTemplate}
         ${customModeTemplate}
@@ -59,6 +60,31 @@ export const UIManager = {
     `;
 
     this.applyTheme(ShopManager.getActiveTheme());
+  },
+
+  showToast(message: string, type: 'success' | 'error' | 'info' = 'info') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    let bgClass = 'bg-slate-800 text-white';
+    if (type === 'success') bgClass = 'bg-emerald-600 text-white';
+    if (type === 'error') bgClass = 'bg-rose-600 text-white';
+
+    toast.className = `${bgClass} p-3.5 rounded-2xl shadow-xl border border-white/10 text-xs font-bold flex items-center justify-between pointer-events-auto transition-all transform duration-300 translate-y-[-10px] opacity-0`;
+    toast.innerText = message;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+      toast.classList.remove('translate-y-[-10px]', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+    }, 10);
+
+    setTimeout(() => {
+      toast.classList.add('opacity-0', 'translate-y-[-10px]');
+      setTimeout(() => toast.remove(), 300);
+    }, 3500);
   },
 
   applyTheme(themeId: string) {
@@ -116,24 +142,46 @@ export const UIManager = {
     }
   },
 
-  renderProfileModal(stats: ProfileStats, badges: BadgeStatus[]) {
+  renderProfileModal(stats: ProfileStats, badges: BadgeStatus[], isOwnProfile: boolean = true) {
     const nameEl = document.getElementById('profile-username');
     const levelEl = document.getElementById('profile-level-badge');
     const goldEl = document.getElementById('profile-gold-badge');
+    const avatarEl = document.getElementById('profile-avatar-display');
+    const titleEl = document.getElementById('profile-player-title');
     const completedEl = document.getElementById('profile-stat-completed');
+    const duelEl = document.getElementById('profile-stat-duel');
+    const mmrEl = document.getElementById('profile-stat-mmr');
     const basitEl = document.getElementById('profile-best-basit');
     const ortaEl = document.getElementById('profile-best-orta');
     const zorEl = document.getElementById('profile-best-zor');
     const badgesCountEl = document.getElementById('profile-badges-count');
     const badgesPreviewEl = document.getElementById('profile-badges-preview');
+    const ownControls = document.getElementById('profile-own-controls');
+    const otherControls = document.getElementById('profile-other-controls');
+    const notifyToggle = document.getElementById('toggle-notifications') as HTMLInputElement;
 
     if (nameEl) nameEl.innerText = stats.username;
     if (levelEl) levelEl.innerText = `🏅 Seviye ${stats.level}`;
     if (goldEl) goldEl.innerText = `🪙 ${stats.gold} Altın`;
+    if (avatarEl) avatarEl.innerText = stats.avatar || '🎮';
+    if (titleEl) titleEl.innerText = stats.title || 'Çaylak Bulmacacı';
     if (completedEl) completedEl.innerText = stats.totalCompleted.toString();
+    if (duelEl) duelEl.innerText = `${stats.duelWins} G / ${stats.duelLosses} M`;
+    if (mmrEl) mmrEl.innerText = `${stats.duelMmr} MMR`;
     if (basitEl) basitEl.innerText = stats.bestBasitFormatted;
     if (ortaEl) ortaEl.innerText = stats.bestOrtaFormatted;
     if (zorEl) zorEl.innerText = stats.bestZorFormatted;
+
+    if (ownControls && otherControls) {
+      if (isOwnProfile) {
+        ownControls.classList.remove('hidden');
+        otherControls.classList.add('hidden');
+        if (notifyToggle) notifyToggle.checked = stats.notificationsEnabled;
+      } else {
+        ownControls.classList.add('hidden');
+        otherControls.classList.remove('hidden');
+      }
+    }
 
     const unlockedBadges = badges.filter(b => b.isUnlocked);
     if (badgesCountEl) badgesCountEl.innerText = `${unlockedBadges.length} / ${badges.length} Rozet`;
@@ -150,6 +198,53 @@ export const UIManager = {
         `).join('');
       }
     }
+  },
+
+  renderIncomingChallengePopup(challenge: ChallengeRequest, onAccept: () => void, onDecline: () => void) {
+    const existing = document.getElementById('challenge-popup');
+    if (existing) existing.remove();
+
+    const popup = document.createElement('div');
+    popup.id = 'challenge-popup';
+    popup.className = "fixed bottom-5 right-5 z-[95] bg-slate-900 text-white p-4 rounded-3xl shadow-2xl border border-indigo-500/50 flex flex-col gap-2 w-72 animate-bounce";
+
+    popup.innerHTML = `
+      <div class="flex justify-between items-center">
+        <span class="text-xs font-black text-amber-400 uppercase tracking-wider">⚔️ Canlı Düello İsteği!</span>
+        <span id="challenge-popup-timer" class="text-xs font-mono font-bold bg-slate-800 px-2 py-0.5 rounded-lg text-rose-400">15s</span>
+      </div>
+      <p class="text-xs font-medium text-slate-200"><span class="font-black text-white">${challenge.fromUsername}</span> seni <strong>${challenge.difficulty.toUpperCase()}</strong> düelloya davet ediyor!</p>
+      <div class="flex gap-2 mt-1">
+        <button id="btn-accept-challenge" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2 rounded-xl text-xs active:scale-95 transition-transform">Kabul Et</button>
+        <button id="btn-decline-challenge" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold py-2 rounded-xl text-xs active:scale-95 transition-transform">Reddet</button>
+      </div>
+    `;
+
+    document.body.appendChild(popup);
+
+    let timeLeft = 15;
+    const timer = setInterval(() => {
+      timeLeft--;
+      const timerEl = document.getElementById('challenge-popup-timer');
+      if (timerEl) timerEl.innerText = `${timeLeft}s`;
+      if (timeLeft <= 0) {
+        clearInterval(timer);
+        popup.remove();
+        onDecline();
+      }
+    }, 1000);
+
+    document.getElementById('btn-accept-challenge')?.addEventListener('click', () => {
+      clearInterval(timer);
+      popup.remove();
+      onAccept();
+    });
+
+    document.getElementById('btn-decline-challenge')?.addEventListener('click', () => {
+      clearInterval(timer);
+      popup.remove();
+      onDecline();
+    });
   },
 
   renderMap(currentLevel: number, startFocusLevel: number) {
