@@ -2,7 +2,7 @@ import { UIManager } from './ui/uiManager';
 import { GameEngine } from './engine/gameEngine';
 import { SudokuGen } from './engine/sudoku';
 import { UserManager } from './store/userState';
-import { Leaderboard } from './engine/leaderboard';
+import { Leaderboard, Player, SpeedRecord } from './engine/leaderboard';
 import { ShopManager } from './engine/shop';
 import { Rewards } from './engine/rewards';
 import { AchievementManager } from './engine/achievements';
@@ -27,24 +27,68 @@ let isMatchMode = false;
 let matchUserFilled = 0;
 let matchEnemyFilled = 0;
 let matchTotalEmpty = 30;
+let selectedMatchTimeSec = 180; // Varsayılan 3 Dk (180 sn)
+let matchTimeRemaining = 180;
 
 const updateGoldDisplay = () => {
   const gold = UserManager.getGold();
   UIManager.updateHeaderGold(gold);
 };
 
-const startTimer = () => {
+const startTimer = (limitSeconds: number = 0) => {
     if (timerInterval) clearInterval(timerInterval);
     timeElapsed = 0;
+    matchTimeRemaining = limitSeconds;
+
     timerInterval = setInterval(() => {
         timeElapsed++;
-        const timerEl = document.getElementById('game-timer');
-        if (timerEl) {
-            const m = Math.floor(timeElapsed / 60).toString().padStart(2, '0');
-            const s = (timeElapsed % 60).toString().padStart(2, '0');
-            timerEl.innerText = `${m}:${s}`;
+
+        if (limitSeconds > 0) {
+          matchTimeRemaining--;
+          const timerEl = document.getElementById('game-timer');
+          if (timerEl) {
+              const m = Math.floor(Math.max(0, matchTimeRemaining) / 60).toString().padStart(2, '0');
+              const s = (Math.max(0, matchTimeRemaining) % 60).toString().padStart(2, '0');
+              timerEl.innerText = `⏱️ ${m}:${s}`;
+          }
+
+          if (matchTimeRemaining <= 0) {
+            clearInterval(timerInterval);
+            handleMatchTimeExpired();
+          }
+        } else {
+          const timerEl = document.getElementById('game-timer');
+          if (timerEl) {
+              const m = Math.floor(timeElapsed / 60).toString().padStart(2, '0');
+              const s = (timeElapsed % 60).toString().padStart(2, '0');
+              timerEl.innerText = `${m}:${s}`;
+          }
         }
     }, 1000);
+};
+
+// Düello Süresi Dolduğunda Kazanan Tespiti
+const handleMatchTimeExpired = async () => {
+  if (!isMatchMode) return;
+  isMatchMode = false;
+  MatchEngine.clearActiveMatch();
+  UIManager.hideMatchHeader();
+
+  const enemyName = activeMatch?.player2?.username || 'Rakip';
+
+  if (matchUserFilled > matchEnemyFilled) {
+    const reward = currentDifficulty === 'basit' ? 50 : currentDifficulty === 'orta' ? 100 : 200;
+    const newGold = UserManager.getGold() + reward;
+    await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
+    updateGoldDisplay();
+    showMatchResult(true, reward, enemyName);
+  } else if (matchUserFilled < matchEnemyFilled) {
+    showMatchResult(false, 0, enemyName);
+  } else {
+    // Beraberlik durumu
+    alert("⏱️ Süre Doldu! Her iki taraf da eşit sayıda hücre çözdü.");
+    UIManager.navigate('menu');
+  }
 };
 
 const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: MatchState) => {
@@ -81,13 +125,12 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
       const enemyName = activeMatch.player2?.username || 'Rakip';
       UIManager.renderMatchProgress(0, 0, enemyName, matchTotalEmpty);
 
-      // Eğer rakip bir Bot (AI) ise bot simülasyonunu başlat
+      // Bot (AI) Maç Mantığı
       if (activeMatch.player2?.isBot) {
         MatchEngine.startBotAI(diff, (botProgress) => {
           matchEnemyFilled = botProgress;
           UIManager.renderMatchProgress(matchUserFilled, matchEnemyFilled, enemyName, matchTotalEmpty);
 
-          // Bot maçı bitirdiyse mağlubiyet
           if (matchEnemyFilled >= matchTotalEmpty && isMatchMode) {
             if (timerInterval) clearInterval(timerInterval);
             isMatchMode = false;
@@ -111,7 +154,7 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
     updateErrorUI();
 
     UIManager.navigate('game');
-    startTimer();
+    startTimer(isMatchMode ? selectedMatchTimeSec : 0);
 
     const refresh = () => {
         UIManager.renderBoard(
@@ -181,7 +224,6 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
                 if (timerInterval) clearInterval(timerInterval);
 
                 if (isMatchMode) {
-                  // Düello Zaferi!
                   const reward = diff === 'basit' ? 50 : diff === 'orta' ? 100 : 200;
                   const newGold = UserManager.getGold() + reward;
                   await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
@@ -251,6 +293,35 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
         if (success) refresh();
     });
 };
+
+// Düello Çıkış Cezası Mantığı (50 Altın)
+const handleExitGameRequest = async () => {
+  if (isMatchMode) {
+    const confirmExit = confirm("Düellodan çekiliyorsunuz! Ceza olarak kasanızdan 50 🪙 altın düşülecek. Çıkmak istediğinize emin misiniz?");
+    if (confirmExit) {
+      if (timerInterval) clearInterval(timerInterval);
+      const currentGold = UserManager.getGold();
+      const newGold = Math.max(0, currentGold - 50);
+      await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
+      updateGoldDisplay();
+
+      isMatchMode = false;
+      MatchEngine.clearActiveMatch();
+      UIManager.hideMatchHeader();
+      UIManager.navigate('menu');
+      return true;
+    }
+    return false; // İptal etti
+  }
+
+  if (timerInterval) clearInterval(timerInterval);
+  UIManager.navigate('menu');
+  return true;
+};
+
+document.getElementById('btn-back-menu')?.addEventListener('click', () => {
+  handleExitGameRequest();
+});
 
 const showMatchResult = (isWin: boolean, rewardGold: number, enemyName: string) => {
   const modal = document.getElementById('match-result-modal');
@@ -328,11 +399,24 @@ document.getElementById('close-username-modal')?.addEventListener('click', () =>
 });
 
 // Modal: Profil
-document.getElementById('btn-open-profile')?.addEventListener('click', async () => {
+const openPlayerProfile = async (playerData: any) => {
   UIManager.toggleModal('view-profile', true);
-  const stats = await UserManager.getUserProfileStats();
+  const stats = {
+    username: playerData.username || 'Oyuncu',
+    level: playerData.level || 1,
+    gold: playerData.gold || 0,
+    totalCompleted: playerData.total_completed || 0,
+    bestBasitFormatted: playerData.best_basit ? `${Math.floor(playerData.best_basit / 60).toString().padStart(2, '0')}:${(playerData.best_basit % 60).toString().padStart(2, '0')}` : '--:--',
+    bestOrtaFormatted: playerData.best_orta ? `${Math.floor(playerData.best_orta / 60).toString().padStart(2, '0')}:${(playerData.best_orta % 60).toString().padStart(2, '0')}` : '--:--',
+    bestZorFormatted: playerData.best_zor ? `${Math.floor(playerData.best_zor / 60).toString().padStart(2, '0')}:${(playerData.best_zor % 60).toString().padStart(2, '0')}` : '--:--'
+  };
   const badges = AchievementManager.getAllBadgesWithStatus(stats.level, stats.gold, stats.totalCompleted);
   UIManager.renderProfileModal(stats, badges);
+};
+
+document.getElementById('btn-open-profile')?.addEventListener('click', async () => {
+  const stats = await UserManager.getUserProfileStats();
+  openPlayerProfile(stats);
 });
 
 document.getElementById('close-profile')?.addEventListener('click', () => {
@@ -362,6 +446,31 @@ document.getElementById('close-match-search')?.addEventListener('click', () => {
   if (box) box.classList.add('hidden');
   UIManager.toggleModal('match-search-modal', false);
 });
+
+// Düello Süre Seçim Butonları
+const setupMatchTimeButtons = () => {
+  const btn3m = document.getElementById('btn-match-time-3m');
+  const btn7m = document.getElementById('btn-match-time-7m');
+  const btnNoLimit = document.getElementById('btn-match-time-no-limit');
+
+  const updateTimeBtns = (activeSec: number) => {
+    selectedMatchTimeSec = activeSec;
+    [btn3m, btn7m, btnNoLimit].forEach(btn => {
+      if (!btn) return;
+      const sec = parseInt(btn.getAttribute('data-time') || '0');
+      if (sec === activeSec) {
+        btn.className = "match-time-btn flex-1 py-1.5 rounded-lg font-black text-[11px] transition-all bg-indigo-600 text-white shadow-sm";
+      } else {
+        btn.className = "match-time-btn flex-1 py-1.5 rounded-lg font-bold text-[11px] transition-all text-slate-600 hover:text-slate-900 bg-transparent";
+      }
+    });
+  };
+
+  btn3m?.addEventListener('click', () => updateTimeBtns(180));
+  btn7m?.addEventListener('click', () => updateTimeBtns(420));
+  btnNoLimit?.addEventListener('click', () => updateTimeBtns(0));
+};
+setupMatchTimeButtons();
 
 const startMatchWithDiff = (diff: 'basit' | 'orta' | 'zor') => {
   const box = document.getElementById('match-search-status-box');
@@ -456,20 +565,77 @@ document.getElementById('btn-daily-reward')?.addEventListener('click', async () 
     }
 });
 
-// Modallar: Liderlik Tablosu
+// Modallar: Liderlik Tablosu & Filtreleme & Oyuncu Profili Açma
+let currentLeaderboardType: 'level' | 'gold' | 'speed' = 'level';
+
+const loadLeaderboardData = async () => {
+  if (currentLeaderboardType === 'speed') {
+    const records = await Leaderboard.fetchFastestRecords('all');
+    UIManager.renderLeaderboard(records, 'speed', (p) => openPlayerProfile(p));
+  } else {
+    const players = await Leaderboard.fetchTopPlayers(currentLeaderboardType);
+    UIManager.renderLeaderboard(players, currentLeaderboardType, (p) => openPlayerProfile(p));
+  }
+};
+
 document.getElementById('btn-leaderboard')?.addEventListener('click', async () => {
   UIManager.toggleModal('view-leaderboard', true);
-  const players = await Leaderboard.fetchTopPlayers();
-  UIManager.renderLeaderboard(players, 'gold');
+  loadLeaderboardData();
 });
 
 document.getElementById('close-leaderboard')?.addEventListener('click', () => {
   UIManager.toggleModal('view-leaderboard', false);
 });
 
-document.getElementById('refresh-leaderboard')?.addEventListener('click', async () => {
-  const players = await Leaderboard.fetchTopPlayers();
-  UIManager.renderLeaderboard(players, 'gold');
+document.getElementById('refresh-leaderboard')?.addEventListener('click', () => {
+  loadLeaderboardData();
+});
+
+// Sekme Dinleyicileri
+document.getElementById('btn-tab-gold')?.addEventListener('click', () => {
+  currentLeaderboardType = 'level';
+  document.getElementById('general-sort-filters')?.classList.remove('hidden');
+  document.getElementById('general-sort-filters')?.classList.add('flex');
+  document.getElementById('speed-diff-filters')?.classList.add('hidden');
+  document.getElementById('speed-diff-filters')?.classList.remove('flex');
+
+  document.getElementById('btn-tab-gold')?.classList.add('bg-white', 'text-indigo-700', 'shadow-sm');
+  document.getElementById('btn-tab-speed')?.classList.remove('bg-white', 'text-indigo-700', 'shadow-sm');
+  loadLeaderboardData();
+});
+
+document.getElementById('btn-tab-speed')?.addEventListener('click', async () => {
+  currentLeaderboardType = 'speed';
+  document.getElementById('general-sort-filters')?.classList.add('hidden');
+  document.getElementById('general-sort-filters')?.classList.remove('flex');
+  document.getElementById('speed-diff-filters')?.classList.remove('hidden');
+  document.getElementById('speed-diff-filters')?.classList.add('flex');
+
+  document.getElementById('btn-tab-speed')?.classList.add('bg-white', 'text-indigo-700', 'shadow-sm');
+  document.getElementById('btn-tab-gold')?.classList.remove('bg-white', 'text-indigo-700', 'shadow-sm');
+  loadLeaderboardData();
+});
+
+document.getElementById('btn-sort-level')?.addEventListener('click', () => {
+  currentLeaderboardType = 'level';
+  document.getElementById('btn-sort-level')?.classList.add('bg-indigo-600', 'text-white');
+  document.getElementById('btn-sort-gold')?.classList.remove('bg-indigo-600', 'text-white');
+  loadLeaderboardData();
+});
+
+document.getElementById('btn-sort-gold')?.addEventListener('click', () => {
+  currentLeaderboardType = 'gold';
+  document.getElementById('btn-sort-gold')?.classList.add('bg-indigo-600', 'text-white');
+  document.getElementById('btn-sort-level')?.classList.remove('bg-indigo-600', 'text-white');
+  loadLeaderboardData();
+});
+
+document.querySelectorAll('.speed-filter-btn').forEach(btn => {
+  btn.addEventListener('click', async (e) => {
+    const diff = (e.currentTarget as HTMLElement).getAttribute('data-diff') as any;
+    const records = await Leaderboard.fetchFastestRecords(diff || 'all');
+    UIManager.renderLeaderboard(records, 'speed', (p) => openPlayerProfile(p));
+  });
 });
 
 // Modallar: Mağaza
@@ -552,7 +718,7 @@ document.getElementById('btn-placement-zor')?.addEventListener('click', () => {
 checkUser();
 
 // Android Donanım Geri Tuşu Mantığı (Capacitor)
-App.addListener('backButton', () => {
+App.addListener('backButton', async () => {
     const modals = ['username-modal', 'view-profile', 'view-leaderboard', 'view-shop', 'view-achievements', 'placement-modal', 'placement-result-modal', 'match-search-modal', 'match-result-modal'];
     const openModal = modals.find(id => {
         const el = document.getElementById(id);
@@ -569,13 +735,8 @@ App.addListener('backButton', () => {
     const customView = document.getElementById('view-custom');
 
     if (gameView && !gameView.classList.contains('hidden')) {
-        if (timerInterval) clearInterval(timerInterval);
-        if (isMatchMode) {
-          isMatchMode = false;
-          MatchEngine.clearActiveMatch();
-          UIManager.hideMatchHeader();
-        }
-        UIManager.navigate('menu');
+        const exited = await handleExitGameRequest();
+        if (!exited) return; // Kullanıcı düellodan çıkışı iptal etti
         return;
     }
 

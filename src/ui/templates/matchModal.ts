@@ -8,7 +8,23 @@ export const matchModalTemplate = `
             ⚔️
         </div>
         <h3 class="text-2xl font-black text-slate-800 mb-1">Sudoku Düello Modu</h3>
-        <p class="text-xs text-slate-500 mb-4 font-medium">Aynı bulmacada rakibinle eşzamanlı yarış! İlk bitiren veya en az hata yapan kazanır.</p>
+        <p class="text-xs text-slate-500 mb-4 font-medium">Aynı bulmacada rakibinle eşzamanlı yarış! İlk bitiren veya daha çok çözen kazanır.</p>
+
+        <!-- Süre Modu Seçimi -->
+        <div class="mb-3.5 w-full">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider text-left mb-1.5">Süre Modu Seç</p>
+            <div class="flex gap-1 p-1 bg-slate-100 rounded-xl">
+                <button id="btn-match-time-3m" data-time="180" class="match-time-btn flex-1 py-1.5 rounded-lg font-black text-[11px] transition-all bg-indigo-600 text-white shadow-sm">
+                    ⚡ 3 Dk (Blitz)
+                </button>
+                <button id="btn-match-time-7m" data-time="420" class="match-time-btn flex-1 py-1.5 rounded-lg font-bold text-[11px] transition-all text-slate-600 hover:text-slate-900">
+                    ⏱️ 7 Dk
+                </button>
+                <button id="btn-match-time-no-limit" data-time="0" class="match-time-btn flex-1 py-1.5 rounded-lg font-bold text-[11px] transition-all text-slate-600 hover:text-slate-900">
+                    ♾️ Süresiz
+                </button>
+            </div>
+        </div>
 
         <!-- Zorluk Seçimi -->
         <div class="flex flex-col gap-2.5 w-full mb-4">
@@ -26,7 +42,7 @@ export const matchModalTemplate = `
             </button>
         </div>
 
-        <!-- Arama Durum Göstergesi (Arama Esnasında Görünür) -->
+        <!-- Arama Durum Göstergesi -->
         <div id="match-search-status-box" class="hidden flex-col items-center gap-2 py-3 bg-indigo-50 border border-indigo-100 rounded-2xl">
             <div class="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
             <p id="match-search-status-text" class="text-xs font-bold text-indigo-700 animate-pulse">Açık maçlar taranıyor...</p>

@@ -8,7 +8,7 @@ import { achievementsTemplate } from './templates/achievements';
 import { placementModalTemplate } from './templates/placementModal';
 import { profileModalTemplate } from './templates/profileModal';
 import { matchModalTemplate } from './templates/matchModal';
-import { Player } from '../engine/leaderboard';
+import { Player, SpeedRecord } from '../engine/leaderboard';
 import { ShopItems, ShopManager } from '../engine/shop';
 import { BadgeStatus } from '../engine/achievements';
 import { ProfileStats } from '../store/userState';
@@ -168,19 +168,61 @@ export const UIManager = {
     });
   },
 
-  renderLeaderboard(players: Player[], filter: 'gold' | 'time') {
+  renderLeaderboard(
+    players: (Player | SpeedRecord)[],
+    type: 'level' | 'gold' | 'speed',
+    onPlayerClick?: (playerData: Player | SpeedRecord) => void
+  ) {
     const listEl = document.getElementById('leaderboard-list');
+    const headerRight = document.getElementById('lb-header-right');
+
+    if (headerRight) {
+      if (type === 'level') headerRight.innerText = '🏅 Seviye';
+      else if (type === 'gold') headerRight.innerText = '🪙 Altın';
+      else headerRight.innerText = '⚡ Rekor Süre';
+    }
+
     if (!listEl) return;
     if (players.length === 0) {
       listEl.innerHTML = `<div class="text-center text-slate-400 py-10 font-bold">Kayıt bulunamadı.</div>`;
       return;
     }
-    listEl.innerHTML = players.map((p, i) => `
-      <div class="flex justify-between items-center p-3 bg-white border rounded-xl shadow-sm">
-        <span class="font-bold text-slate-800 text-sm">${i+1}. ${p.username}</span>
-        <span class="font-black text-amber-600 text-sm">🪙 ${p.gold}</span>
-      </div>
-    `).join('');
+
+    listEl.innerHTML = players.map((p, i) => {
+      let rightVal = '';
+      let isSpeed = 'difficulty' in p;
+
+      if (type === 'level') {
+        const level = 'level' in p ? p.level : 1;
+        rightVal = `🏅 Sev. ${level}`;
+      } else if (type === 'gold') {
+        const gold = 'gold' in p ? p.gold : 0;
+        rightVal = `🪙 ${gold}`;
+      } else if (isSpeed) {
+        const speed = p as SpeedRecord;
+        rightVal = `⚡ ${speed.timeFormatted} (${speed.difficulty})`;
+      }
+
+      return `
+        <div data-lb-index="${i}" class="leaderboard-row-item flex justify-between items-center p-3 bg-white border border-slate-200 hover:border-indigo-300 rounded-xl shadow-sm cursor-pointer active:scale-[0.98] transition-all">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center font-black text-xs text-slate-600">${i + 1}</span>
+            <span class="font-bold text-slate-800 text-sm">${p.username}</span>
+          </div>
+          <span class="font-black text-indigo-600 text-xs">${rightVal}</span>
+        </div>
+      `;
+    }).join('');
+
+    if (onPlayerClick) {
+      listEl.querySelectorAll('.leaderboard-row-item').forEach(el => {
+        el.addEventListener('click', (e) => {
+          const index = parseInt((e.currentTarget as HTMLElement).getAttribute('data-lb-index') || '0');
+          const targetPlayer = players[index];
+          if (targetPlayer) onPlayerClick(targetPlayer);
+        });
+      });
+    }
   },
 
   renderShop(onBuyOrSelect: (itemId: string) => void) {
