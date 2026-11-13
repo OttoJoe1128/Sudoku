@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SudokuMap</string>
+    <string name="title_activity_main">SudokuMap</string>
+    <string name="package_name">com.ottojoe.sudokumap</string>
+    <string name="custom_url_scheme">com.ottojoe.sudokumap</string>
+</resources>
