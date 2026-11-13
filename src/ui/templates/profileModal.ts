@@ -17,11 +17,13 @@ export const profileModalTemplate = `
                 🎮
             </div>
 
-            <p id="profile-player-title" class="text-[10px] font-black text-indigo-600 uppercase tracking-wider block mb-0.5">Çaylak Bulmacacı</p>
+            <p id="profile-player-title" class="text-[10px] font-black text-indigo-600 uppercase tracking-wider block mb-0.5">Çırak</p>
 
             <div class="flex items-center gap-1.5 mb-2">
                 <span id="profile-username" class="font-black text-slate-800 text-lg">Oyuncu</span>
-                <button id="btn-profile-edit-name" title="İsmi Değiştir" class="text-slate-400 hover:text-indigo-600 text-xs p-0.5">✏️</button>
+                <button id="btn-profile-edit-name" title="Kullanıcı Adını Düzenle" class="text-slate-400 hover:text-indigo-600 p-1 rounded-lg hover:bg-white/60 transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                </button>
             </div>
 
             <div class="flex items-center gap-2">

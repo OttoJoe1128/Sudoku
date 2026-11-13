@@ -1,22 +1,29 @@
 export const menuTemplate = `
 <div id="view-menu" class="flex-1 flex flex-col p-5 gap-3.5 pb-20 overflow-y-auto hidden-scrollbar">
-    <!-- Üst Floating Header (Profil & Altın Kapsülü) -->
-    <div id="btn-open-profile" class="w-full bg-white hover:bg-slate-50/80 p-3.5 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center cursor-pointer active:scale-[0.98] transition-all">
-        <div class="flex items-center gap-3">
-            <div id="menu-avatar-box" class="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 flex items-center justify-center text-2xl shadow-inner shrink-0">
+    <!-- Üst Floating Header (Profil, Bildirim Çanı & Altın Kapsülü) -->
+    <div class="w-full bg-white hover:bg-slate-50/80 p-3 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center transition-all">
+        <div id="btn-open-profile" class="flex items-center gap-2.5 cursor-pointer active:scale-95 transition-transform flex-1">
+            <div id="menu-avatar-box" class="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 flex items-center justify-center text-xl shadow-inner shrink-0">
                 🎮
             </div>
             <div>
                 <p id="menu-player-title" class="text-[10px] text-indigo-600 font-bold uppercase tracking-wider block">Çırak</p>
-                <div class="flex items-center gap-1.5">
-                    <p id="menu-player-name" class="font-black text-slate-800 text-sm tracking-wide">Misafir</p>
-                    <button id="btn-edit-username" title="Kullanıcı Adını Düzenle" class="text-slate-400 hover:text-indigo-600 text-xs p-1 rounded-lg hover:bg-slate-100 transition-colors">✏️</button>
-                </div>
+                <p id="menu-player-name" class="font-black text-slate-800 text-sm tracking-wide">Misafir</p>
             </div>
         </div>
-        <div class="bg-amber-100 text-amber-950 font-black px-3.5 py-2 rounded-2xl text-xs border border-amber-200 shadow-sm flex items-center gap-1.5 shrink-0">
-            <span class="text-sm">🪙</span>
-            <span id="menu-gold" class="font-mono font-black text-sm">100</span>
+
+        <div class="flex items-center gap-2">
+            <!-- Düello Gelen Kutusu (Inbox) Butonu -->
+            <button id="btn-open-inbox" title="Düello Gelen Kutusu" class="relative bg-slate-100 hover:bg-slate-200 text-slate-700 p-2.5 rounded-2xl active:scale-95 transition-transform border border-slate-200 flex items-center justify-center">
+                <svg class="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                <span id="inbox-badge-count" class="hidden absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center animate-bounce shadow">0</span>
+            </button>
+
+            <!-- Altın Kapsülü -->
+            <div class="bg-amber-100 text-amber-950 font-black px-3 py-2 rounded-2xl text-xs border border-amber-200 shadow-sm flex items-center gap-1 shrink-0">
+                <span class="text-xs">🪙</span>
+                <span id="menu-gold" class="font-mono font-black text-xs sm:text-sm">100</span>
+            </div>
         </div>
     </div>
 

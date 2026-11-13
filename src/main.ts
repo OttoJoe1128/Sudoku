@@ -595,6 +595,36 @@ const handleIncomingChallenge = (challenge: ChallengeRequest) => {
   );
 };
 
+// Gelen Kutusu (Inbox) Yükleme ve İşleme
+const loadInboxData = async () => {
+  const challenges = await MatchEngine.fetchPendingChallenges();
+  UIManager.renderInbox(
+    challenges,
+    async (challenge) => {
+      const match = await MatchEngine.respondToChallenge(challenge.challengeId, true, challenge);
+      if (match) {
+        UIManager.toggleModal('view-inbox', false);
+        UIManager.showToast(`⚔️ ${challenge.fromUsername} ile düello başladı!`, 'success');
+        startGame(1, challenge.difficulty, match);
+      }
+    },
+    async (challenge) => {
+      await MatchEngine.respondToChallenge(challenge.challengeId, false, challenge);
+      UIManager.showToast('Düello daveti reddedildi.', 'info');
+      loadInboxData();
+    }
+  );
+};
+
+document.getElementById('btn-open-inbox')?.addEventListener('click', () => {
+  UIManager.toggleModal('view-inbox', true);
+  loadInboxData();
+});
+
+document.getElementById('close-inbox')?.addEventListener('click', () => {
+  UIManager.toggleModal('view-inbox', false);
+});
+
 // Kullanıcı Profil Giriş Akışı
 const checkUser = async () => {
   const user = await UserManager.initUser();
@@ -606,13 +636,16 @@ const checkUser = async () => {
     const avatarBox = document.getElementById('menu-avatar-box');
 
     if (nameEl) nameEl.innerText = user.username;
-    if (titleEl) titleEl.innerText = user.title || 'Çaylak Bulmacacı';
+    if (titleEl) titleEl.innerText = user.title || 'Çırak';
     if (avatarBox) avatarBox.innerText = user.avatar || '🎮';
 
     updateGoldDisplay();
     updateContinueCardUI();
     UIManager.navigate('menu');
 
+    MatchEngine.listenPendingChallenges((list) => {
+      UIManager.updateInboxBadge(list.length);
+    });
     MatchEngine.listenIncomingChallenges((chal) => handleIncomingChallenge(chal));
   }
 };
@@ -633,15 +666,6 @@ document.getElementById('save-username')?.addEventListener('click', async () => 
   } else {
     UIManager.showToast("Lütfen en az 3 karakterden oluşan bir isim giriniz!", "error");
   }
-});
-
-document.getElementById('btn-edit-username')?.addEventListener('click', (e) => {
-  e.stopPropagation();
-  const input = document.getElementById('username-input') as HTMLInputElement;
-  const closeBtn = document.getElementById('close-username-modal');
-  if (input) input.value = UserManager.getUsername() || '';
-  if (closeBtn) closeBtn.classList.remove('hidden');
-  UIManager.toggleModal('username-modal', true);
 });
 
 document.getElementById('close-username-modal')?.addEventListener('click', () => {
@@ -726,7 +750,9 @@ document.getElementById('close-profile')?.addEventListener('click', () => {
 document.getElementById('btn-profile-edit-name')?.addEventListener('click', () => {
   UIManager.toggleModal('view-profile', false);
   const input = document.getElementById('username-input') as HTMLInputElement;
+  const closeBtn = document.getElementById('close-username-modal');
   if (input) input.value = UserManager.getUsername() || '';
+  if (closeBtn) closeBtn.classList.remove('hidden');
   UIManager.toggleModal('username-modal', true);
 });
 
@@ -760,40 +786,14 @@ document.getElementById('toggle-notifications')?.addEventListener('change', asyn
   }
 });
 
-// Başka Bir Oyuncuya Çift Taraflı Düello İsteği Gönder
+// Başka Bir Oyuncuya Çift Taraflı Düello İsteği Gönder (Gelen Kutusuna Düşer)
 document.getElementById('btn-challenge-player')?.addEventListener('click', async () => {
   if (!currentlyViewedTargetUid) return;
   try {
     const targetUsername = document.getElementById('profile-username')?.innerText || 'Oyuncu';
-    const { challengeId } = await MatchEngine.sendDirectChallenge(currentlyViewedTargetUid, targetUsername, 'basit');
-    UIManager.showToast(`⚔️ ${targetUsername} adlı oyuncuya düello daveti gönderildi!`, 'success');
+    await MatchEngine.sendDirectChallenge(currentlyViewedTargetUid, targetUsername, 'basit');
+    UIManager.showToast(`⚔️ Düello daveti ${targetUsername} adlı oyuncunun gelen kutusuna gönderildi!`, 'success');
     UIManager.toggleModal('view-profile', false);
-
-    // Çift taraflı dinleyici
-    const chalRef = doc(db, 'challenges', challengeId);
-    let chalTimeout = setTimeout(() => {
-      if (unsubChal) unsubChal();
-      UIManager.showToast(`${targetUsername} yanıt vermedi. Gölge Bot (Ghost AI) ile maç aranıyor...`, 'info');
-      MatchEngine.startMatchSearch('basit', (match) => {
-        startGame(1, 'basit', match);
-      });
-    }, 15000);
-
-    const unsubChal = onSnapshot(chalRef, (snap) => {
-      if (snap.exists()) {
-        const d = snap.data() as ChallengeRequest;
-        if (d.status === 'accepted' && d.matchData) {
-          clearTimeout(chalTimeout);
-          if (unsubChal) unsubChal();
-          UIManager.showToast(`⚔️ ${targetUsername} daveti kabul etti! Maç başlıyor...`, 'success');
-          startGame(1, 'basit', d.matchData);
-        } else if (d.status === 'declined') {
-          clearTimeout(chalTimeout);
-          if (unsubChal) unsubChal();
-          UIManager.showToast(`${targetUsername} daveti reddetti.`, 'info');
-        }
-      }
-    });
   } catch (e) {
     UIManager.showToast('Davet gönderilemedi.', 'error');
   }
@@ -1114,7 +1114,7 @@ checkUser();
 
 // Android Donanım Geri Tuşu Mantığı (Capacitor)
 App.addListener('backButton', async () => {
-    const modals = ['username-modal', 'view-profile', 'view-leaderboard', 'view-shop', 'view-achievements', 'placement-modal', 'placement-result-modal', 'match-search-modal', 'match-result-modal', 'duel-exit-modal'];
+    const modals = ['username-modal', 'view-profile', 'view-inbox', 'view-leaderboard', 'view-shop', 'view-achievements', 'placement-modal', 'placement-result-modal', 'match-search-modal', 'match-result-modal', 'duel-exit-modal'];
     const openModal = modals.find(id => {
         const el = document.getElementById(id);
         return el && !el.classList.contains('hidden');

@@ -56,6 +56,7 @@ export const MatchEngine = {
     const currentUsername = UserManager.getUsername() || 'Oyuncu';
     const currentUid = auth.currentUser ? auth.currentUser.uid : `user_${Date.now()}`;
     const challengeId = `chal_${Date.now()}`;
+    const generated = SudokuGen.generate(difficulty);
 
     const challengeData: ChallengeRequest = {
       challengeId,
@@ -64,7 +65,21 @@ export const MatchEngine = {
       targetUid,
       targetUsername,
       difficulty,
-      status: 'pending'
+      status: 'pending',
+      matchData: {
+        matchId: `match_${Date.now()}`,
+        difficulty,
+        puzzle: generated.puzzle,
+        solution: generated.solution,
+        status: 'in_progress',
+        player1: {
+          uid: currentUid,
+          username: currentUsername,
+          isBot: false,
+          progress: 0,
+          errors: 0
+        }
+      }
     };
 
     await setDoc(doc(db, 'challenges', challengeId), {
@@ -75,30 +90,57 @@ export const MatchEngine = {
     return { challengeId };
   },
 
-  listenIncomingChallenges(onChallengeReceived: (challenge: ChallengeRequest) => void) {
-    if (challengeSnapshotUnsubscribe) challengeSnapshotUnsubscribe();
+  async fetchPendingChallenges(): Promise<ChallengeRequest[]> {
+    if (!auth.currentUser) return [];
+    const currentUid = auth.currentUser.uid;
+    const currentUsername = UserManager.getUsername() || '';
 
-    if (!UserManager.getNotificationsEnabled()) return;
+    try {
+      const q = query(
+        collection(db, 'challenges'),
+        where('status', '==', 'pending'),
+        limit(20)
+      );
+      const snap = await getDocs(q);
+      const list: ChallengeRequest[] = [];
+      snap.docs.forEach((d) => {
+        const data = d.data() as ChallengeRequest;
+        if (data.targetUid === currentUid || (currentUsername && data.targetUsername === currentUsername)) {
+          list.push(data);
+        }
+      });
+      return list;
+    } catch (e) {
+      console.warn("Gelen davetler çekilemedi:", e);
+      return [];
+    }
+  },
+
+  listenPendingChallenges(onUpdate: (challenges: ChallengeRequest[]) => void) {
+    if (challengeSnapshotUnsubscribe) challengeSnapshotUnsubscribe();
     if (!auth.currentUser) return;
 
     const currentUid = auth.currentUser.uid;
+    const currentUsername = UserManager.getUsername() || '';
+
     const q = query(
       collection(db, 'challenges'),
-      where('targetUid', '==', currentUid),
       where('status', '==', 'pending')
     );
 
     try {
       challengeSnapshotUnsubscribe = onSnapshot(q, (snap) => {
-        snap.docChanges().forEach((change) => {
-          if (change.type === 'added') {
-            const data = change.doc.data() as ChallengeRequest;
-            onChallengeReceived(data);
+        const list: ChallengeRequest[] = [];
+        snap.docs.forEach((d) => {
+          const data = d.data() as ChallengeRequest;
+          if (data.targetUid === currentUid || (currentUsername && data.targetUsername === currentUsername)) {
+            list.push(data);
           }
         });
+        onUpdate(list);
       });
     } catch (e) {
-      console.warn("Gelen düello davetleri dinlenemedi:", e);
+      console.warn("Gelen davetler dinlenemedi:", e);
     }
   },
 
@@ -112,9 +154,9 @@ export const MatchEngine = {
 
       const currentUsername = UserManager.getUsername() || 'Oyuncu';
       const currentUid = auth.currentUser ? auth.currentUser.uid : `user_${Date.now()}`;
-      const matchId = `match_${Date.now()}`;
+      const matchId = challengeData?.matchData?.matchId || `match_${Date.now()}`;
       const difficulty = challengeData?.difficulty || 'basit';
-      const generated = SudokuGen.generate(difficulty);
+      const generated = challengeData?.matchData?.puzzle ? { puzzle: challengeData.matchData.puzzle, solution: challengeData.matchData.solution } : SudokuGen.generate(difficulty);
 
       const match: MatchState = {
         matchId,
@@ -126,8 +168,8 @@ export const MatchEngine = {
           uid: challengeData?.fromUid || 'challenger',
           username: challengeData?.fromUsername || 'Rakip',
           isBot: false,
-          progress: 0,
-          errors: 0
+          progress: challengeData?.matchData?.player1?.progress || 0,
+          errors: challengeData?.matchData?.player1?.errors || 0
         },
         player2: {
           uid: currentUid,

@@ -8,6 +8,7 @@ import { achievementsTemplate } from './templates/achievements';
 import { placementModalTemplate } from './templates/placementModal';
 import { profileModalTemplate } from './templates/profileModal';
 import { matchModalTemplate } from './templates/matchModal';
+import { inboxModalTemplate } from './templates/inboxModal';
 import { Player, SpeedRecord } from '../engine/leaderboard';
 import { ShopItems, ShopManager } from '../engine/shop';
 import { BadgeStatus } from '../engine/achievements';
@@ -30,6 +31,7 @@ export const UIManager = {
         ${placementModalTemplate}
         ${profileModalTemplate}
         ${matchModalTemplate}
+        ${inboxModalTemplate}
         ${usernameModalTemplate}
         <div id="game-view" class="hidden flex-col items-center p-6 w-full h-full">
             <!-- Düello Canlı İlerleme Çubuğu -->
@@ -133,6 +135,20 @@ export const UIManager = {
     }
   },
 
+  updateInboxBadge(count: number) {
+    const badge = document.getElementById('inbox-badge-count');
+    if (badge) {
+      if (count > 0) {
+        badge.innerText = count > 9 ? '9+' : count.toString();
+        badge.classList.remove('hidden');
+        badge.classList.add('flex');
+      } else {
+        badge.classList.add('hidden');
+        badge.classList.remove('flex');
+      }
+    }
+  },
+
   renderMatchProgress(userFilled: number, enemyFilled: number, enemyName: string, totalEmpty: number) {
     const barBox = document.getElementById('match-header-bar');
     const userBar = document.getElementById('match-user-bar');
@@ -164,6 +180,7 @@ export const UIManager = {
 
   renderProfileModal(stats: ProfileStats, badges: BadgeStatus[], isOwnProfile: boolean = true) {
     const nameEl = document.getElementById('profile-username');
+    const editNameBtn = document.getElementById('btn-profile-edit-name');
     const levelEl = document.getElementById('profile-level-badge');
     const goldEl = document.getElementById('profile-gold-badge');
     const avatarEl = document.getElementById('profile-avatar-display');
@@ -181,6 +198,10 @@ export const UIManager = {
     const notifyToggle = document.getElementById('toggle-notifications') as HTMLInputElement;
 
     if (nameEl) nameEl.innerText = stats.username;
+    if (editNameBtn) {
+      if (isOwnProfile) editNameBtn.classList.remove('hidden');
+      else editNameBtn.classList.add('hidden');
+    }
     if (levelEl) levelEl.innerText = `🏅 Seviye ${stats.level}`;
     if (goldEl) goldEl.innerText = `🪙 ${stats.gold} Altın`;
     if (avatarEl) avatarEl.innerText = stats.avatar || '🎮';
@@ -238,6 +259,67 @@ export const UIManager = {
         `).join('');
       }
     }
+  },
+
+  renderInbox(
+    challenges: ChallengeRequest[],
+    onAccept: (c: ChallengeRequest) => void,
+    onDecline: (c: ChallengeRequest) => void
+  ) {
+    const listEl = document.getElementById('inbox-list');
+    if (!listEl) return;
+
+    this.updateInboxBadge(challenges.length);
+
+    if (challenges.length === 0) {
+      listEl.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-10 text-center">
+          <svg class="w-10 h-10 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+          <p class="text-xs font-bold text-slate-500 mb-0.5">Bekleyen davetiniz yok</p>
+          <p class="text-[10px] text-slate-400">Diğer oyuncular size düello isteği gönderdiğinde burada görünecektir.</p>
+        </div>
+      `;
+      return;
+    }
+
+    listEl.innerHTML = challenges.map(c => `
+      <div class="p-3 border border-slate-200 rounded-2xl bg-white shadow-sm flex flex-col gap-2">
+        <div class="flex justify-between items-center">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">⚔️</span>
+            <div>
+              <p class="font-black text-slate-800 text-xs">${c.fromUsername}</p>
+              <p class="text-[10px] text-indigo-600 font-bold uppercase tracking-wider">${c.difficulty.toUpperCase()} DÜELLO</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-mono text-slate-400">Bekliyor</span>
+        </div>
+        <div class="flex gap-2 mt-1">
+          <button data-chal-id="${c.challengeId}" class="inbox-accept-btn flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black py-2 rounded-xl text-xs active:scale-95 transition-transform shadow-sm">
+            ⚔️ Kabul Et & Oyna
+          </button>
+          <button data-chal-id="${c.challengeId}" class="inbox-decline-btn bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-3 py-2 rounded-xl text-xs active:scale-95 transition-transform">
+            ✕ Reddet
+          </button>
+        </div>
+      </div>
+    `).join('');
+
+    listEl.querySelectorAll('.inbox-accept-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute('data-chal-id');
+        const target = challenges.find(c => c.challengeId === id);
+        if (target) onAccept(target);
+      });
+    });
+
+    listEl.querySelectorAll('.inbox-decline-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute('data-chal-id');
+        const target = challenges.find(c => c.challengeId === id);
+        if (target) onDecline(target);
+      });
+    });
   },
 
   renderIncomingChallengePopup(challenge: ChallengeRequest, onAccept: () => void, onDecline: () => void) {
