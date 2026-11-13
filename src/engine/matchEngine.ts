@@ -31,6 +31,8 @@ export interface ChallengeRequest {
   targetUsername: string;
   difficulty: 'basit' | 'orta' | 'zor';
   status: 'pending' | 'accepted' | 'declined' | 'expired';
+  matchId?: string;
+  matchData?: MatchState;
   createdAt?: any;
 }
 
@@ -100,7 +102,7 @@ export const MatchEngine = {
     }
   },
 
-  async respondToChallenge(challengeId: string, accept: boolean): Promise<MatchState | null> {
+  async respondToChallenge(challengeId: string, accept: boolean, challengeData?: ChallengeRequest): Promise<MatchState | null> {
     try {
       const chalRef = doc(db, 'challenges', challengeId);
       if (!accept) {
@@ -108,21 +110,26 @@ export const MatchEngine = {
         return null;
       }
 
-      await updateDoc(chalRef, { status: 'accepted' });
-
-      // Kabul edilirse maç oluştur
       const currentUsername = UserManager.getUsername() || 'Oyuncu';
       const currentUid = auth.currentUser ? auth.currentUser.uid : `user_${Date.now()}`;
       const matchId = `match_${Date.now()}`;
-      const generated = SudokuGen.generate('basit');
+      const difficulty = challengeData?.difficulty || 'basit';
+      const generated = SudokuGen.generate(difficulty);
 
       const match: MatchState = {
         matchId,
-        difficulty: 'basit',
+        difficulty,
         puzzle: generated.puzzle,
         solution: generated.solution,
         status: 'in_progress',
         player1: {
+          uid: challengeData?.fromUid || 'challenger',
+          username: challengeData?.fromUsername || 'Rakip',
+          isBot: false,
+          progress: 0,
+          errors: 0
+        },
+        player2: {
           uid: currentUid,
           username: currentUsername,
           isBot: false,
@@ -132,6 +139,7 @@ export const MatchEngine = {
       };
 
       await setDoc(doc(db, 'matches', matchId), match);
+      await updateDoc(chalRef, { status: 'accepted', matchId, matchData: match });
       return match;
     } catch (e) {
       console.warn("Davete yanıt verilemedi:", e);

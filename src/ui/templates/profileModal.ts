@@ -77,19 +77,38 @@ export const profileModalTemplate = `
             </button>
         </div>
 
-        <!-- Kendi Profilimiz İçin Bildirim Ayarı Kapsayıcısı -->
-        <div id="profile-own-controls" class="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 mb-1 flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <span class="text-lg">🔔</span>
-                <div class="text-left">
-                    <p class="text-xs font-black text-slate-800">Canlı Düello Bildirimleri</p>
-                    <p class="text-[10px] text-slate-400 font-medium">Anlık meydan okuma istekleri al</p>
+        <!-- Kendi Profilimiz İçin Kontroller (Avatar/Unvan Seçimi + Bildirimler) -->
+        <div id="profile-own-controls" class="flex flex-col gap-2.5 mb-1">
+            <!-- Avatar Seçici -->
+            <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 text-left">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Avatar Seç</p>
+                <div id="profile-avatar-selector" class="flex justify-between items-center gap-1">
+                    <!-- 8 Avatar Seçeneği -->
                 </div>
             </div>
-            <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" id="toggle-notifications" class="sr-only peer">
-                <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
-            </label>
+
+            <!-- Unvan Seçici -->
+            <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 text-left">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">Unvan Seç</p>
+                <select id="profile-title-select" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-600 shadow-sm">
+                    <!-- Unvan opsiyonları -->
+                </select>
+            </div>
+
+            <!-- Bildirim Toggle -->
+            <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <span class="text-lg">🔔</span>
+                    <div class="text-left">
+                        <p class="text-xs font-black text-slate-800">Canlı Düello Bildirimleri</p>
+                        <p class="text-[10px] text-slate-400 font-medium">Anlık meydan okuma istekleri al</p>
+                    </div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="toggle-notifications" class="sr-only peer">
+                    <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                </label>
+            </div>
         </div>
 
         <!-- Başka Bir Oyuncunun Profili İçin Düello İsteği Butonu -->

@@ -8,6 +8,8 @@ import { Rewards } from './engine/rewards';
 import { AchievementManager } from './engine/achievements';
 import { MatchEngine, MatchState, ChallengeRequest } from './engine/matchEngine';
 import { App } from '@capacitor/app';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { auth, db } from './api/firebase';
 
 UIManager.mountUI();
 
@@ -205,7 +207,7 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
       UIManager.hideMatchHeader();
     }
 
-    // Düello Modu İlerleme Hesaplama
+    // Düello Modu İlerleme Hesaplama & Canlı Dinleyici
     if (isMatchMode && activeMatch) {
       matchUserFilled = 0;
       matchEnemyFilled = 0;
@@ -231,6 +233,25 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
             UIManager.hideMatchHeader();
             await UserManager.recordDuelResult(false);
             showMatchResult(false, 0, enemyName);
+          }
+        });
+      } else {
+        // Gerçek Oyuncu Canlı Hamle Dinleyicisi
+        const isP1 = activeMatch.player1.uid === (auth.currentUser ? auth.currentUser.uid : '');
+        MatchEngine.listenMatchUpdates(activeMatch.matchId, async (updatedMatch) => {
+          const opp = isP1 ? updatedMatch.player2 : updatedMatch.player1;
+          if (opp) {
+            matchEnemyFilled = opp.progress;
+            UIManager.renderMatchProgress(matchUserFilled, matchEnemyFilled, opp.username || enemyName, matchTotalEmpty);
+
+            if (matchEnemyFilled >= matchTotalEmpty && isMatchMode) {
+              if (timerInterval) clearInterval(timerInterval);
+              isMatchMode = false;
+              MatchEngine.clearActiveMatch();
+              UIManager.hideMatchHeader();
+              await UserManager.recordDuelResult(false);
+              showMatchResult(false, 0, opp.username || enemyName);
+            }
           }
         });
       }
@@ -276,7 +297,7 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
 
       if (initialBoard[r][c] !== 0) return;
 
-      // Not Modu Açıkken Aday Ekleme/Çıkarma
+      // Not Modu
       if (isNotesMode) {
         if (num >= 1 && num <= 9) {
           if (notesBoard[r][c].has(num)) {
@@ -368,10 +389,8 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
       );
 
       if (success) {
-        // İlgili hücrenin notlarını temizle
         notesBoard[r][c].clear();
 
-        // Aynı satır, sütun ve 3x3 kutudaki aday notlarından num'u kaldır
         const boxR = Math.floor(r / 3) * 3;
         const boxC = Math.floor(c / 3) * 3;
         for (let i = 0; i < 9; i++) {
@@ -384,8 +403,10 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
           }
         }
 
-        if (isMatchMode) {
+        if (isMatchMode && activeMatch) {
           matchUserFilled++;
+          const isP1 = activeMatch.player1.uid === (auth.currentUser ? auth.currentUser.uid : '');
+          MatchEngine.updateProgress(activeMatch.matchId, isP1, matchUserFilled, errors);
           const enemyName = activeMatch?.player2?.username || 'Rakip';
           UIManager.renderMatchProgress(matchUserFilled, matchEnemyFilled, enemyName, matchTotalEmpty);
         }
@@ -447,8 +468,10 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
             notesBoard[r][c].clear();
             hintsUsed++;
 
-            if (isMatchMode) {
+            if (isMatchMode && activeMatch) {
               matchUserFilled++;
+              const isP1 = activeMatch.player1.uid === (auth.currentUser ? auth.currentUser.uid : '');
+              MatchEngine.updateProgress(activeMatch.matchId, isP1, matchUserFilled, errors);
               const enemyName = activeMatch?.player2?.username || 'Rakip';
               UIManager.renderMatchProgress(matchUserFilled, matchEnemyFilled, enemyName, matchTotalEmpty);
             }
@@ -552,14 +575,14 @@ const handleIncomingChallenge = (challenge: ChallengeRequest) => {
   UIManager.renderIncomingChallengePopup(
     challenge,
     async () => {
-      const match = await MatchEngine.respondToChallenge(challenge.challengeId, true);
+      const match = await MatchEngine.respondToChallenge(challenge.challengeId, true, challenge);
       if (match) {
         UIManager.showToast('⚔️ Düello başladı!', 'success');
         startGame(1, challenge.difficulty, match);
       }
     },
     async () => {
-      await MatchEngine.respondToChallenge(challenge.challengeId, false);
+      await MatchEngine.respondToChallenge(challenge.challengeId, false, challenge);
       UIManager.showToast('Düello daveti reddedildi.', 'info');
     }
   );
@@ -649,6 +672,35 @@ const openPlayerProfile = async (targetData?: any) => {
 
   const badges = AchievementManager.getAllBadgesWithStatus(stats.level, stats.gold, stats.totalCompleted);
   UIManager.renderProfileModal(stats, badges, isOwn);
+
+  if (isOwn) {
+    // Avatar Butonları Dinleyicisi
+    document.querySelectorAll('.avatar-option-btn').forEach(btn => {
+      btn.onclick = async (e) => {
+        const newAvatar = (e.currentTarget as HTMLElement).getAttribute('data-avatar');
+        if (newAvatar) {
+          await UserManager.updateProfileCustomization(newAvatar, UserManager.getTitle());
+          const avatarBox = document.getElementById('menu-avatar-box');
+          if (avatarBox) avatarBox.innerText = newAvatar;
+          UIManager.showToast("Avatar güncellendi!", "success");
+          openPlayerProfile();
+        }
+      };
+    });
+
+    // Unvan Select Dinleyicisi
+    const titleSelect = document.getElementById('profile-title-select') as HTMLSelectElement;
+    if (titleSelect) {
+      titleSelect.onchange = async () => {
+        const newTitle = titleSelect.value;
+        await UserManager.updateProfileCustomization(UserManager.getAvatar(), newTitle);
+        const menuTitleEl = document.getElementById('menu-player-title');
+        if (menuTitleEl) menuTitleEl.innerText = newTitle;
+        UIManager.showToast("Unvan güncellendi!", "success");
+        openPlayerProfile();
+      };
+    }
+  }
 };
 
 document.getElementById('btn-open-profile')?.addEventListener('click', async () => {
@@ -696,14 +748,40 @@ document.getElementById('toggle-notifications')?.addEventListener('change', asyn
   }
 });
 
-// Başka Bir Oyuncuya Düello İsteği Gönder
+// Başka Bir Oyuncuya Çift Taraflı Düello İsteği Gönder
 document.getElementById('btn-challenge-player')?.addEventListener('click', async () => {
   if (!currentlyViewedTargetUid) return;
   try {
     const targetUsername = document.getElementById('profile-username')?.innerText || 'Oyuncu';
-    await MatchEngine.sendDirectChallenge(currentlyViewedTargetUid, targetUsername, 'basit');
+    const { challengeId } = await MatchEngine.sendDirectChallenge(currentlyViewedTargetUid, targetUsername, 'basit');
     UIManager.showToast(`⚔️ ${targetUsername} adlı oyuncuya düello daveti gönderildi!`, 'success');
     UIManager.toggleModal('view-profile', false);
+
+    // Çift taraflı dinleyici
+    const chalRef = doc(db, 'challenges', challengeId);
+    let chalTimeout = setTimeout(() => {
+      if (unsubChal) unsubChal();
+      UIManager.showToast(`${targetUsername} yanıt vermedi. Gölge Bot (Ghost AI) ile maç aranıyor...`, 'info');
+      MatchEngine.startMatchSearch('basit', (match) => {
+        startGame(1, 'basit', match);
+      });
+    }, 15000);
+
+    const unsubChal = onSnapshot(chalRef, (snap) => {
+      if (snap.exists()) {
+        const d = snap.data() as ChallengeRequest;
+        if (d.status === 'accepted' && d.matchData) {
+          clearTimeout(chalTimeout);
+          if (unsubChal) unsubChal();
+          UIManager.showToast(`⚔️ ${targetUsername} daveti kabul etti! Maç başlıyor...`, 'success');
+          startGame(1, 'basit', d.matchData);
+        } else if (d.status === 'declined') {
+          clearTimeout(chalTimeout);
+          if (unsubChal) unsubChal();
+          UIManager.showToast(`${targetUsername} daveti reddetti.`, 'info');
+        }
+      }
+    });
   } catch (e) {
     UIManager.showToast('Davet gönderilemedi.', 'error');
   }
@@ -789,10 +867,8 @@ document.getElementById('btn-continue-game')?.addEventListener('click', () => {
 
 document.getElementById('btn-delete-saved-game')?.addEventListener('click', (e) => {
   e.stopPropagation();
-  if (confirm("Kayıtlı oyununuz silinecek. Emin misiniz?")) {
-    clearSavedGame();
-    UIManager.showToast("🗑️ Kayıtlı oyun silindi.", "info");
-  }
+  clearSavedGame();
+  UIManager.showToast("🗑️ Kayıtlı oyun sıfırlandı.", "info");
 });
 
 document.getElementById('btn-new-game')?.addEventListener('click', () => {

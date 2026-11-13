@@ -11,7 +11,7 @@ import { matchModalTemplate } from './templates/matchModal';
 import { Player, SpeedRecord } from '../engine/leaderboard';
 import { ShopItems, ShopManager } from '../engine/shop';
 import { BadgeStatus } from '../engine/achievements';
-import { ProfileStats } from '../store/userState';
+import { ProfileStats, UserManager } from '../store/userState';
 import { ChallengeRequest } from '../engine/matchEngine';
 
 export const UIManager = {
@@ -55,7 +55,7 @@ export const UIManager = {
             <div id="sudoku-grid" class="grid grid-cols-9 gap-[1px] bg-slate-800 p-[1.5px] rounded-2xl shadow-2xl mb-3 border-2 border-slate-800"></div>
 
             <!-- Oyun Kontrol Araç Çubuğu (İpucu, Kalem/Not Modu, Sil) -->
-            <div class="flex gap-2 mb-3 w-full max-w-[340px] justify-center">
+            <div class="flex gap-2 mb-3 w-full max-w-[380px] justify-center">
                 <button id="btn-hint" class="flex-1 bg-amber-400 hover:bg-amber-500 text-amber-950 py-2.5 px-2 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1">
                     <span>💡</span><span>İpucu (10🪙)</span>
                 </button>
@@ -67,8 +67,8 @@ export const UIManager = {
                 </button>
             </div>
 
-            <!-- Ergonomik 1-9 Numpad -->
-            <div id="numpad-grid" class="grid grid-cols-5 gap-2 w-full max-w-[340px]"></div>
+            <!-- Ergonomik Tek Satır 9'lu Numpad -->
+            <div id="numpad-grid" class="grid grid-cols-9 gap-1 w-full max-w-[380px]"></div>
         </div>
       </div>
     `;
@@ -191,6 +191,28 @@ export const UIManager = {
         ownControls.classList.remove('hidden');
         otherControls.classList.add('hidden');
         if (notifyToggle) notifyToggle.checked = stats.notificationsEnabled;
+
+        // Avatar Seçici Render
+        const avatarSelector = document.getElementById('profile-avatar-selector');
+        if (avatarSelector) {
+          const avatars = ['🎮', '🐯', '🦊', '🐼', '🤖', '👑', '🦁', '🦉'];
+          avatarSelector.innerHTML = avatars.map(a => `
+            <button data-avatar="${a}" class="avatar-option-btn w-7 h-7 sm:w-8 sm:h-8 rounded-xl border flex items-center justify-center text-sm sm:text-base active:scale-90 transition-transform ${a === stats.avatar ? 'bg-indigo-600 text-white border-indigo-600 shadow-md ring-2 ring-indigo-300' : 'bg-white text-slate-800 border-slate-200 hover:bg-slate-100'}">
+              ${a}
+            </button>
+          `).join('');
+        }
+
+        // Unvan Seçici Render
+        const titleSelect = document.getElementById('profile-title-select') as HTMLSelectElement;
+        if (titleSelect) {
+          const unlockedBadgeTitles = badges.filter(b => b.isUnlocked).map(b => b.title);
+          const allTitleOptions = Array.from(new Set(['Çaylak Bulmacacı', 'Sudoku Ustası', 'Efsanevi Çözücü', ...unlockedBadgeTitles]));
+
+          titleSelect.innerHTML = allTitleOptions.map(t => `
+            <option value="${t}" ${t === stats.title ? 'selected' : ''}>${t}</option>
+          `).join('');
+        }
       } else {
         ownControls.classList.add('hidden');
         otherControls.classList.remove('hidden');
@@ -490,7 +512,6 @@ export const UIManager = {
 
         cell.className = `w-9 h-9 sm:w-11 sm:h-11 aspect-square border border-slate-300 flex items-center justify-center text-lg select-none cursor-pointer active:scale-95 transition-all relative ${bgClass} ${textClass} ${borderRight} ${borderBottom}`;
 
-        // Aday Notları Gösterimi (Eğer değer boşsa ve not varsa)
         const cellNotes = notesBoard ? notesBoard[r][c] : undefined;
         if (val === 0 && cellNotes && cellNotes.size > 0) {
           cell.innerHTML = `
@@ -521,7 +542,7 @@ export const UIManager = {
         const isCompleted = remaining <= 0;
 
         const btn = document.createElement('button');
-        btn.className = `bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200 font-black text-xl hover:bg-indigo-50 text-slate-800 active:scale-95 transition-all flex flex-col items-center justify-center relative ${isCompleted ? 'opacity-40 pointer-events-none bg-slate-100' : ''}`;
+        btn.className = `bg-white p-1.5 sm:p-2 rounded-xl border border-slate-200 font-black text-sm sm:text-base hover:bg-indigo-50 text-slate-800 active:scale-95 transition-all flex flex-col items-center justify-center relative shadow-sm ${isCompleted ? 'opacity-40 pointer-events-none bg-slate-100' : ''}`;
 
         btn.innerHTML = `
           <span>${num}</span>
