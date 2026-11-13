@@ -43,8 +43,11 @@ export const profileModalTemplate = `
                 </div>
                 <div class="bg-purple-50 border border-purple-200/80 rounded-2xl p-2.5 text-center">
                     <p class="text-[9px] text-purple-600 font-bold uppercase">⚔️ Düello Karnesi</p>
-                    <p id="profile-stat-duel" class="text-base font-black text-purple-900">0 G / 0 M</p>
-                    <p id="profile-stat-mmr" class="text-[9px] text-purple-600 font-black">1000 MMR</p>
+                    <p id="profile-stat-duel" class="text-xs font-black text-purple-900">0 G / 0 M</p>
+                    <div class="flex justify-between items-center text-[9px] font-black text-purple-700 mt-1 px-0.5">
+                        <span id="profile-stat-pvp-mmr">⚔️ 1000 MMR</span>
+                        <span id="profile-stat-bot-mmr">🤖 1000 YZ</span>
+                    </div>
                 </div>
             </div>
 

@@ -15,12 +15,14 @@ export interface MatchPlayer {
 export interface MatchState {
   matchId: string;
   difficulty: 'basit' | 'orta' | 'zor';
+  durationSec?: number;
   puzzle: number[][];
   solution: number[][];
   status: 'waiting' | 'in_progress' | 'completed';
   player1: MatchPlayer;
   player2?: MatchPlayer;
   winnerUid?: string;
+  forfeitBy?: string;
 }
 
 export interface ChallengeRequest {
@@ -30,13 +32,55 @@ export interface ChallengeRequest {
   targetUid: string;
   targetUsername: string;
   difficulty: 'basit' | 'orta' | 'zor';
+  durationSec?: number;
   status: 'pending' | 'accepted' | 'declined' | 'expired';
   matchId?: string;
   matchData?: MatchState;
   createdAt?: any;
 }
 
-// 9x9 2D Matrisi Firestore uyumlu 1D 81 elemanlı diziye çevirir (Nested array hatasını engeller)
+// Chess ELO (MMR) Hesaplama Motoru
+export const calculateEloChange = (
+  ratingA: number,
+  ratingB: number,
+  isWinA: boolean,
+  difficulty: 'basit' | 'orta' | 'zor' = 'basit',
+  errorsA: number = 0,
+  timeDiffSec: number = 0
+): { newRatingA: number; mmrChangeA: number } => {
+  // 1. Beklenen Skor E_A
+  const expectedScoreA = 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
+  const actualScoreA = isWinA ? 1 : 0;
+
+  // 2. K-Faktörü (Hassasiyet)
+  let k = 32;
+  if (ratingA < 1200) k = 40;
+  else if (ratingA >= 1800) k = 24;
+
+  // 3. Zorluk Seviyesi Çarpanı (Basit: 1.0x, Orta: 1.2x, Zor: 1.5x)
+  const diffMultiplier = difficulty === 'basit' ? 1.0 : difficulty === 'orta' ? 1.2 : 1.5;
+  const effectiveK = k * diffMultiplier;
+
+  let mmrChange = Math.round(effectiveK * (actualScoreA - expectedScoreA));
+
+  if (isWinA && mmrChange < 5) mmrChange = 5;
+  if (!isWinA && mmrChange > -5) mmrChange = -5;
+
+  // Flawless (Hatasız Zafer) Bonusu +%15
+  if (isWinA && errorsA === 0) {
+    mmrChange = Math.round(mmrChange * 1.15);
+  }
+
+  // Hız Farkı Bonusu (60 sn veya daha hızlı bitirdiyse +3 MMR)
+  if (isWinA && timeDiffSec >= 60) {
+    mmrChange += 3;
+  }
+
+  const newRatingA = Math.max(100, ratingA + mmrChange);
+  return { newRatingA, mmrChangeA: mmrChange };
+};
+
+// 9x9 2D Matrisi Firestore uyumlu 1D 81 elemanlı diziye çevirir
 export const serializePuzzle = (grid: any): number[] => {
   if (!grid) return new Array(81).fill(0);
   if (Array.isArray(grid) && grid.length === 81 && typeof grid[0] === 'number') {
@@ -141,7 +185,12 @@ export const MatchEngine = {
     }
   },
 
-  async sendDirectChallenge(targetUid: string, targetUsername: string, difficulty: 'basit' | 'orta' | 'zor'): Promise<{ challengeId: string }> {
+  async sendDirectChallenge(
+    targetUid: string,
+    targetUsername: string,
+    difficulty: 'basit' | 'orta' | 'zor',
+    durationSec: number = 180
+  ): Promise<{ challengeId: string }> {
     const currentUsername = UserManager.getUsername() || 'Oyuncu';
     const currentUid = auth.currentUser ? auth.currentUser.uid : `user_${Date.now()}`;
     const challengeId = `chal_${Date.now()}`;
@@ -157,10 +206,12 @@ export const MatchEngine = {
       targetUid: safeTargetUid,
       targetUsername: safeTargetUsername,
       difficulty,
+      durationSec,
       status: 'pending',
       matchData: {
         matchId: `match_${Date.now()}`,
         difficulty,
+        durationSec,
         puzzle: generated.puzzle,
         solution: generated.solution,
         status: 'in_progress',
@@ -284,11 +335,13 @@ export const MatchEngine = {
       const currentUid = auth.currentUser ? auth.currentUser.uid : `user_${Date.now()}`;
       const matchId = challengeData?.matchData?.matchId || `match_${Date.now()}`;
       const difficulty = challengeData?.difficulty || 'basit';
+      const durationSec = challengeData?.durationSec || 180;
       const generated = challengeData?.matchData?.puzzle ? { puzzle: challengeData.matchData.puzzle, solution: challengeData.matchData.solution } : SudokuGen.generate(difficulty);
 
       const match: MatchState = {
         matchId,
         difficulty,
+        durationSec,
         puzzle: generated.puzzle,
         solution: generated.solution,
         status: 'in_progress',
@@ -315,6 +368,19 @@ export const MatchEngine = {
     } catch (e) {
       console.warn("Davete yanıt verilemedi:", e);
       return null;
+    }
+  },
+
+  async notifyMatchForfeit(matchId: string, forfeitByUid: string, winnerUid: string) {
+    try {
+      const matchRef = doc(db, 'matches', matchId);
+      await updateDoc(matchRef, {
+        status: 'completed',
+        forfeitBy: forfeitByUid,
+        winnerUid: winnerUid
+      });
+    } catch (e) {
+      console.warn("Düello terki bildirilemedi:", e);
     }
   },
 

@@ -206,6 +206,9 @@ export const UIManager = {
     const otherControls = document.getElementById('profile-other-controls');
     const notifyToggle = document.getElementById('toggle-notifications') as HTMLInputElement;
 
+    const pvpMmrEl = document.getElementById('profile-stat-pvp-mmr');
+    const botMmrEl = document.getElementById('profile-stat-bot-mmr');
+
     if (nameEl) nameEl.innerText = stats.username;
     if (editNameBtn) {
       if (isOwnProfile) editNameBtn.classList.remove('hidden');
@@ -217,7 +220,8 @@ export const UIManager = {
     if (titleEl) titleEl.innerText = stats.title || 'Çırak';
     if (completedEl) completedEl.innerText = stats.totalCompleted.toString();
     if (duelEl) duelEl.innerText = `${stats.duelWins} G / ${stats.duelLosses} M`;
-    if (mmrEl) mmrEl.innerText = `${stats.duelMmr} MMR`;
+    if (pvpMmrEl) pvpMmrEl.innerText = `⚔️ ${stats.duelMmr} MMR`;
+    if (botMmrEl) botMmrEl.innerText = `🤖 ${stats.botMmr || 1000} YZ`;
     if (basitEl) basitEl.innerText = stats.bestBasitFormatted;
     if (ortaEl) ortaEl.innerText = stats.bestOrtaFormatted;
     if (zorEl) zorEl.innerText = stats.bestZorFormatted;
@@ -405,6 +409,57 @@ export const UIManager = {
     document.getElementById('btn-cancel-bot-prompt')?.addEventListener('click', () => {
       modal.remove();
       onCancel();
+    });
+  },
+
+  renderChallengeDurationSelectModal(targetUsername: string, onSelectDuration: (durationSec: number) => void) {
+    const existing = document.getElementById('challenge-duration-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'challenge-duration-modal';
+    modal.className = "fixed inset-0 bg-slate-900/80 z-[95] flex items-center justify-center p-4 backdrop-blur-md";
+
+    modal.innerHTML = `
+      <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl relative border border-slate-100 animate-in fade-in zoom-in duration-200">
+        <button id="close-duration-modal" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 text-sm">✕</button>
+        <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-3 shadow-inner">
+          ⚔️
+        </div>
+        <h3 class="text-xl font-black text-slate-800 mb-1">Düello Daveti Gönder</h3>
+        <p class="text-xs text-slate-500 font-medium mb-4">
+          <strong class="text-slate-800 font-black">${targetUsername}</strong> adlı oyuncuya davet göndermeden önce <strong>Süre Modunu</strong> seçin:
+        </p>
+
+        <div class="flex flex-col gap-2.5 w-full mb-1">
+          <button data-sec="180" class="select-duration-btn w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-black py-3 rounded-2xl shadow-sm active:scale-95 transition-transform text-xs flex justify-between items-center px-4">
+            <span>⚡ 3 Dakika (Blitz)</span>
+            <span class="bg-white/20 px-2 py-0.5 rounded-lg text-[10px]">Hızlı</span>
+          </button>
+          <button data-sec="420" class="select-duration-btn w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 rounded-2xl active:scale-95 transition-transform text-xs flex justify-between items-center px-4">
+            <span>⏱️ 7 Dakika (Standard)</span>
+            <span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-lg text-[10px]">Dengeli</span>
+          </button>
+          <button data-sec="0" class="select-duration-btn w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 rounded-2xl active:scale-95 transition-transform text-xs flex justify-between items-center px-4">
+            <span>♾️ Süresiz (No Limit)</span>
+            <span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-lg text-[10px]">Serbest</span>
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    document.getElementById('close-duration-modal')?.addEventListener('click', () => {
+      modal.remove();
+    });
+
+    modal.querySelectorAll('.select-duration-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const sec = parseInt((e.currentTarget as HTMLElement).getAttribute('data-sec') || '180');
+        modal.remove();
+        onSelectDuration(sec);
+      });
     });
   },
 

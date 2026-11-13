@@ -6,7 +6,7 @@ import { Leaderboard, Player, SpeedRecord } from './engine/leaderboard';
 import { ShopManager } from './engine/shop';
 import { Rewards } from './engine/rewards';
 import { AchievementManager } from './engine/achievements';
-import { MatchEngine, MatchState, ChallengeRequest } from './engine/matchEngine';
+import { MatchEngine, MatchState, ChallengeRequest, calculateEloChange } from './engine/matchEngine';
 import { BotCharacters, BotCharacter } from './engine/botData';
 import { App } from '@capacitor/app';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -240,14 +240,34 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
             isMatchMode = false;
             MatchEngine.clearActiveMatch();
             UIManager.hideMatchHeader();
-            await UserManager.recordDuelResult(false);
+            await UserManager.recordDuelResult(false, true, -15, 0);
             showMatchResult(false, 0, enemyName);
           }
         });
       } else {
         // Gerçek Oyuncu Canlı Hamle Dinleyicisi
         const isP1 = activeMatch.player1.uid === (auth.currentUser ? auth.currentUser.uid : '');
+        const myUid = isP1 ? activeMatch.player1.uid : (activeMatch.player2?.uid || '');
+
         MatchEngine.listenMatchUpdates(activeMatch.matchId, async (updatedMatch) => {
+          // Rakip Çekildi / Terk Etti Kontrolü
+          if (updatedMatch.status === 'completed' && updatedMatch.forfeitBy && isMatchMode) {
+            if (updatedMatch.winnerUid === myUid) {
+              if (timerInterval) clearInterval(timerInterval);
+              isMatchMode = false;
+              MatchEngine.clearActiveMatch();
+              UIManager.hideMatchHeader();
+
+              const rewardGold = 50;
+              const gainedMmr = 30;
+              await UserManager.recordDuelResult(true, false, gainedMmr, rewardGold);
+              updateGoldDisplay();
+              UIManager.showToast(`🏆 Rakip oyunu terk etti! Zafer sizin! (+${rewardGold} 🪙 & +30 MMR)`, "success");
+              showMatchResult(true, rewardGold, updatedMatch.player1.uid === myUid ? (updatedMatch.player2?.username || 'Rakip') : updatedMatch.player1.username);
+              return;
+            }
+          }
+
           const opp = isP1 ? updatedMatch.player2 : updatedMatch.player1;
           if (opp) {
             matchEnemyFilled = opp.progress;
@@ -258,7 +278,7 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
               isMatchMode = false;
               MatchEngine.clearActiveMatch();
               UIManager.hideMatchHeader();
-              await UserManager.recordDuelResult(false);
+              await UserManager.recordDuelResult(false, false, -20, 0);
               showMatchResult(false, 0, opp.username || enemyName);
             }
           }
@@ -601,17 +621,23 @@ const handleExitGameRequest = async (): Promise<boolean> => {
         confirmBtn.onclick = async () => {
           cleanup();
           if (timerInterval) clearInterval(timerInterval);
-          const currentGold = UserManager.getGold();
-          const newGold = Math.max(0, currentGold - 50);
-          await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
-          await UserManager.recordDuelResult(false);
+
+          const myUid = auth.currentUser ? auth.currentUser.uid : '';
+          const isP1 = activeMatch?.player1.uid === myUid;
+          const enemyUid = isP1 ? (activeMatch?.player2?.uid || '') : (activeMatch?.player1.uid || '');
+
+          if (!activeMatch?.player2?.isBot && activeMatch?.matchId) {
+            await MatchEngine.notifyMatchForfeit(activeMatch.matchId, myUid, enemyUid);
+          }
+
+          await UserManager.recordDuelResult(false, !!activeMatch?.player2?.isBot, -30, -50);
           updateGoldDisplay();
 
           isMatchMode = false;
           MatchEngine.clearActiveMatch();
           UIManager.hideMatchHeader();
           UIManager.navigate('menu');
-          UIManager.showToast("Düellodan çekildiniz (-50 🪙)", "error");
+          UIManager.showToast("Düellodan çekildiniz (-50 🪙 & -30 MMR)", "error");
           resolve(true);
         };
       }
