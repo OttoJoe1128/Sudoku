@@ -7,7 +7,7 @@ export const menuTemplate = `
                 🎮
             </div>
             <div>
-                <p id="menu-player-title" class="text-[10px] text-indigo-600 font-bold uppercase tracking-wider block">Çırak</p>
+                <p id="menu-player-title" class="text-[10px] text-indigo-600 font-bold uppercase tracking-wider block">🥉 Çırak</p>
                 <p id="menu-player-name" class="font-black text-slate-800 text-sm tracking-wide">Misafir</p>
             </div>
         </div>
@@ -38,24 +38,19 @@ export const menuTemplate = `
 
     <!-- Bento Grid Ana Aksiyonlar -->
     <div class="flex flex-col gap-3 my-auto w-full">
-        <!-- Hero Kart: Devam Et / Oyuna Başla -->
-        <div class="relative w-full">
-            <button id="btn-continue-game" class="w-full text-left rounded-3xl p-5 shadow-lg active:scale-[0.98] transition-all border flex justify-between items-center group bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 text-white border-indigo-500 cursor-pointer relative overflow-hidden">
-                <div class="absolute -right-6 -bottom-6 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
-                <div class="pr-9 z-10">
-                    <div class="flex items-center gap-2 mb-1.5">
-                        <span id="continue-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
-                        <span class="text-[10px] font-black uppercase tracking-widest text-indigo-200" id="continue-tag">Aktif Oyun</span>
-                    </div>
-                    <span class="text-xl font-black block leading-tight text-white tracking-wide" id="continue-game-title">▶ Kaldığın Yerden Devam Et</span>
-                    <span class="text-indigo-200 text-xs mt-1 block font-medium" id="continue-game-subtitle">Seviye ilerlemeni sürdür</span>
+        <!-- Hero Kart: Aktif Oyunlarım Listesi -->
+        <button id="btn-open-saved-games" class="w-full text-left rounded-3xl p-5 shadow-lg active:scale-[0.98] transition-all border flex justify-between items-center group bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 text-white border-indigo-500 cursor-pointer relative overflow-hidden">
+            <div class="absolute -right-6 -bottom-6 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+            <div class="pr-9 z-10">
+                <div class="flex items-center gap-2 mb-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span class="text-[10px] font-black uppercase tracking-widest text-indigo-200" id="saved-games-tag">Kayıtlı Oyunlar</span>
                 </div>
-                <span id="continue-game-arrow" class="text-2xl group-hover:translate-x-1.5 transition-transform text-white/90 z-10">➔</span>
-            </button>
-            <button id="btn-delete-saved-game" title="Bu Yarım Kalan Oyunu Sil" class="hidden absolute top-4 right-4 bg-black/30 hover:bg-rose-600 text-white w-8 h-8 rounded-xl text-xs font-bold items-center justify-center backdrop-blur-md z-20 active:scale-90 transition-all shadow">
-                🗑️
-            </button>
-        </div>
+                <span class="text-xl font-black block leading-tight text-white tracking-wide" id="saved-games-title">🕹️ Aktif Oyunlarım</span>
+                <span class="text-indigo-200 text-xs mt-1 block font-medium" id="saved-games-count-label">0 Aktif Oyun</span>
+            </div>
+            <span class="text-2xl group-hover:translate-x-1.5 transition-transform text-white/90 z-10">➔</span>
+        </button>
 
         <!-- İkili Bento Satırı (PvP & Yeni Oyun) -->
         <div class="grid grid-cols-2 gap-3 w-full">
@@ -75,11 +70,11 @@ export const menuTemplate = `
             <button id="btn-new-game" class="bg-white hover:bg-slate-50/90 text-slate-800 rounded-3xl p-4 flex flex-col justify-between shadow-sm active:scale-[0.97] transition-all border border-slate-200/80 min-h-[120px] text-left group">
                 <div class="flex justify-between items-center w-full">
                     <span class="text-2xl group-hover:rotate-12 transition-transform">🧩</span>
-                    <span class="text-xs text-indigo-600 font-bold">Zorluk Seç</span>
+                    <span class="text-xs text-indigo-600 font-bold">Disiplin Seç</span>
                 </div>
                 <div>
                     <span class="text-[9px] font-black uppercase tracking-wider text-slate-400 block">SERBEST MOD</span>
-                    <span class="text-sm font-black block leading-snug">Klasik Sudoku</span>
+                    <span class="text-sm font-black block leading-snug">Klasik & Disiplinler</span>
                 </div>
             </button>
         </div>

@@ -1,4 +1,4 @@
-import { UIManager } from './ui/uiManager';
+import { UIManager, SavedGameRecord } from './ui/uiManager';
 import { GameEngine } from './engine/gameEngine';
 import { SudokuGen, SudokuVariant, GeneratedSudoku } from './engine/sudoku';
 import { UserManager } from './store/userState';
@@ -38,6 +38,14 @@ let matchTotalEmpty = 30;
 let selectedMatchTimeSec = 180;
 let matchTimeRemaining = 180;
 
+const RULE_DESCRIPTIONS: Record<SudokuVariant, string> = {
+  classic: "Her satır, sütun ve 3x3 karede 1-9 rakamları birer kez yer almalıdır.",
+  irregular: "Standart 3x3 kareler yerine kalın çizgilerle ayrılmış düzensiz şekilli bölgelerde 1-9 rakamları birer kez yer almalıdır.",
+  killer: "Kesikli çizgili kafeslerin içindeki rakamların toplamı, köşedeki küçük sayıya eşit olmalıdır.",
+  wordoku: "Rakamlar yerine A'dan I'ya kadar olan 9 harfi satır, sütun ve kutularda tekrar etmeyecek şekilde yerleştir.",
+  samurai: "Köşelerinden birbirine bağlı 5 adet Sudoku tablosunu ortak bölgelere dikkat ederek çöz."
+};
+
 const updateGoldDisplay = () => {
   const gold = UserManager.getGold();
   UIManager.updateHeaderGold(gold);
@@ -60,54 +68,67 @@ const calculateRemainingCounts = (board: number[][]): Map<number, number> => {
   return counts;
 };
 
-// Kayıtlı Oyunu Saklama ve Temizleme
-const saveActiveGame = () => {
+// Multi-Save Aktif Oyunlar Listesi Mimarisi
+const getSavedGamesList = (): SavedGameRecord[] => {
+  try {
+    const raw = localStorage.getItem('sudoku_saved_games_list');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {
+    // ignore
+  }
+  return [];
+};
+
+const saveActiveGameRecord = () => {
   if (isMatchMode || !userBoard || !initialBoard) return;
-  const saveData = {
+  const list = getSavedGamesList();
+  const gameId = `saved_${currentVariant}`;
+  const record: SavedGameRecord = {
+    id: gameId,
+    variant: currentVariant,
     level: currentLevelNumber,
     diff: currentDifficulty,
-    variant: currentVariant,
+    timeElapsed,
     userBoard,
     initialBoard,
     currentSolution,
     errors,
-    timeElapsed,
-    notesBoard: notesBoard ? notesBoard.map(row => row.map(s => Array.from(s))) : []
+    notesBoard: notesBoard ? notesBoard.map(row => row.map(s => Array.from(s))) : [],
+    regionMap: activeGeneratedSudoku?.regionMap,
+    cages: activeGeneratedSudoku?.cages,
+    updatedAtMs: Date.now()
   };
-  localStorage.setItem('sudoku_saved_game', JSON.stringify(saveData));
-  updateContinueCardUI();
-};
 
-const clearSavedGame = () => {
-  localStorage.removeItem('sudoku_saved_game');
-  updateContinueCardUI();
-};
-
-const updateContinueCardUI = () => {
-  const saved = localStorage.getItem('sudoku_saved_game');
-  const deleteBtn = document.getElementById('btn-delete-saved-game');
-  const titleEl = document.getElementById('continue-game-title');
-  const subtitleEl = document.getElementById('continue-game-subtitle');
-  const tagEl = document.getElementById('continue-tag');
-
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      const m = Math.floor(parsed.timeElapsed / 60).toString().padStart(2, '0');
-      const s = (parsed.timeElapsed % 60).toString().padStart(2, '0');
-
-      if (deleteBtn) deleteBtn.classList.remove('hidden');
-      if (titleEl) titleEl.innerText = `▶ Devam Et (Seviye ${parsed.level})`;
-      if (subtitleEl) subtitleEl.innerText = `Kaldığın yer: ${m}:${s} • ${parsed.diff.toUpperCase()}`;
-      if (tagEl) tagEl.innerText = 'Kayıtlı Oyun';
-    } catch {
-      if (deleteBtn) deleteBtn.classList.add('hidden');
-    }
+  const idx = list.findIndex(item => item.id === gameId);
+  if (idx >= 0) {
+    list[idx] = record;
   } else {
-    if (deleteBtn) deleteBtn.classList.add('hidden');
-    if (titleEl) titleEl.innerText = '▶ Oyuna Başla / Devam Et';
-    if (subtitleEl) subtitleEl.innerText = `Sıradaki Seviye: ${UserManager.getCurrentLevel()}`;
-    if (tagEl) tagEl.innerText = 'Aktif İlerleme';
+    list.push(record);
+  }
+
+  localStorage.setItem('sudoku_saved_games_list', JSON.stringify(list));
+  updateSavedGamesCountUI();
+};
+
+const deleteSavedGameRecord = (gameId: string) => {
+  let list = getSavedGamesList();
+  list = list.filter(item => item.id !== gameId);
+  localStorage.setItem('sudoku_saved_games_list', JSON.stringify(list));
+  updateSavedGamesCountUI();
+};
+
+const clearCurrentSavedGame = () => {
+  deleteSavedGameRecord(`saved_${currentVariant}`);
+};
+
+const updateSavedGamesCountUI = () => {
+  const list = getSavedGamesList();
+  const countLabel = document.getElementById('saved-games-count-label');
+  if (countLabel) {
+    countLabel.innerText = `${list.length} Aktif Oyun`;
   }
 };
 
@@ -142,7 +163,7 @@ const startTimer = (limitSeconds: number = 0) => {
 
         // Periyodik kaydet
         if (!isMatchMode && timeElapsed % 5 === 0) {
-          saveActiveGame();
+          saveActiveGameRecord();
         }
     }, 1000);
 };
@@ -215,13 +236,13 @@ const startGame = (
       currentSolution = restoredState.currentSolution;
       timeElapsed = typeof restoredState.timeElapsed === 'number' ? restoredState.timeElapsed : 0;
     } else if (matchData) {
-      if (restoredState) clearSavedGame();
+      if (restoredState) clearCurrentSavedGame();
       currentSolution = matchData.solution;
       userBoard = matchData.puzzle.map(row => [...row]);
       initialBoard = matchData.puzzle.map(row => [...row]);
       timeElapsed = 0;
     } else {
-      if (restoredState) clearSavedGame();
+      if (restoredState) clearCurrentSavedGame();
       activeGeneratedSudoku = SudokuGen.generateVariant(diff, currentVariant);
       currentSolution = activeGeneratedSudoku.solution;
       userBoard = activeGeneratedSudoku.puzzle.map(row => [...row]);
@@ -379,7 +400,7 @@ const startGame = (
           } else {
             notesBoard[r][c].add(num);
           }
-          saveActiveGame();
+          saveActiveGameRecord();
           refresh();
         }
         return;
@@ -395,7 +416,7 @@ const startGame = (
           initialBoard,
           async () => {
               if (timerInterval) clearInterval(timerInterval);
-              clearSavedGame();
+              clearCurrentSavedGame();
 
               if (isMatchMode) {
                 const isBot = !!activeMatch?.player2?.isBot;
@@ -420,7 +441,7 @@ const startGame = (
                 return;
               }
 
-              // Normal Bölüm Zaferi
+              // Normal Bölüm Zaferi (Bitmiş oyun kaydı otomatik silinir, seviye atlar)
               const reward = diff === 'basit' ? 10 : diff === 'orta' ? 20 : 35;
               const userLvl = UserManager.getVariantLevel(currentVariant);
               const nextLevel = level === userLvl ? userLvl + 1 : userLvl;
@@ -452,10 +473,10 @@ const startGame = (
           async (errCount) => {
               errors += errCount;
               updateErrorUI();
-              saveActiveGame();
+              saveActiveGameRecord();
               if (errors >= 3) {
                   if (timerInterval) clearInterval(timerInterval);
-                  clearSavedGame();
+                  clearCurrentSavedGame();
                   if (isMatchMode) {
                     isMatchMode = false;
                     MatchEngine.clearActiveMatch();
@@ -493,7 +514,7 @@ const startGame = (
           UIManager.renderMatchProgress(matchUserFilled, matchEnemyFilled, enemyName, matchTotalEmpty);
         }
 
-        saveActiveGame();
+        saveActiveGameRecord();
         refresh();
       }
     };
@@ -525,7 +546,7 @@ const startGame = (
           return;
         }
         notesBoard[r][c].clear();
-        saveActiveGame();
+        saveActiveGameRecord();
         refresh();
       };
     }
@@ -595,7 +616,7 @@ const startGame = (
               UIManager.renderMatchProgress(matchUserFilled, matchEnemyFilled, enemyName, matchTotalEmpty);
             }
 
-            saveActiveGame();
+            saveActiveGameRecord();
             refresh();
 
             // Zafer Kontrolü
@@ -605,7 +626,7 @@ const startGame = (
 
             if (isWin) {
               if (timerInterval) clearInterval(timerInterval);
-              clearSavedGame();
+              clearCurrentSavedGame();
 
               if (isMatchMode) {
                 const reward = currentDifficulty === 'basit' ? 50 : currentDifficulty === 'orta' ? 100 : 200;
@@ -807,6 +828,30 @@ document.getElementById('close-inbox')?.addEventListener('click', () => {
   UIManager.toggleModal('view-inbox', false);
 });
 
+// Aktif Oyunlarım Modalı Dinleyicisi
+document.getElementById('btn-open-saved-games')?.addEventListener('click', () => {
+  const list = getSavedGamesList();
+  UIManager.toggleModal('view-saved-games', true);
+  UIManager.renderSavedGamesList(
+    list,
+    (record) => {
+      UIManager.toggleModal('view-saved-games', false);
+      startGame(record.level, record.diff, undefined, record, record.variant);
+      UIManager.showToast(`▶ Kayıtlı ${record.variant.toUpperCase()} oyununa devam ediliyor!`, "success");
+    },
+    (record) => {
+      deleteSavedGameRecord(record.id);
+      const updated = getSavedGamesList();
+      UIManager.renderSavedGamesList(updated, (rec) => {}, (rec) => {});
+      UIManager.showToast("🗑️ Kayıtlı oyun silindi.", "info");
+    }
+  );
+});
+
+document.getElementById('close-saved-games')?.addEventListener('click', () => {
+  UIManager.toggleModal('view-saved-games', false);
+});
+
 // Kullanıcı Profil Giriş Akışı
 const checkUser = async () => {
   const user = await UserManager.initUser();
@@ -822,7 +867,7 @@ const checkUser = async () => {
     if (avatarBox) avatarBox.innerText = user.avatar || '🎮';
 
     updateGoldDisplay();
-    updateContinueCardUI();
+    updateSavedGamesCountUI();
     UIManager.navigate('menu');
 
     MatchEngine.listenPendingChallenges((list) => {
@@ -1015,8 +1060,10 @@ let selectedCustomVariant: SudokuVariant = 'classic';
     });
 
     const badge = document.getElementById('custom-variant-multiplier-badge');
+    const descEl = document.getElementById('custom-variant-rule-desc');
     const mults: Record<SudokuVariant, string> = { classic: '1.0x Puan', wordoku: '1.2x Puan', irregular: '1.5x Puan', killer: '1.8x Puan', samurai: '2.5x Puan' };
     if (badge) badge.innerText = mults[v] || '1.0x Puan';
+    if (descEl) descEl.innerText = RULE_DESCRIPTIONS[v] || RULE_DESCRIPTIONS.classic;
   });
 });
 
@@ -1036,6 +1083,9 @@ let selectedMapVariant: SudokuVariant = 'classic';
         }
       }
     });
+
+    const descEl = document.getElementById('map-variant-rule-desc');
+    if (descEl) descEl.innerText = RULE_DESCRIPTIONS[v] || RULE_DESCRIPTIONS.classic;
 
     const userLvl = UserManager.getVariantLevel(v);
     const diff = SudokuGen.getDifficulty(userLvl);
@@ -1062,8 +1112,10 @@ let selectedArenaVariant: SudokuVariant = 'classic';
     });
 
     const badge = document.getElementById('arena-variant-multiplier-badge');
+    const descEl = document.getElementById('arena-variant-rule-desc');
     const mults: Record<SudokuVariant, string> = { classic: '1.0x Puan', wordoku: '1.2x Puan', irregular: '1.5x Puan', killer: '1.8x Puan', samurai: '2.5x Puan' };
     if (badge) badge.innerText = mults[v] || '1.0x Puan';
+    if (descEl) descEl.innerText = RULE_DESCRIPTIONS[v] || RULE_DESCRIPTIONS.classic;
   });
 });
 
@@ -1289,7 +1341,7 @@ document.getElementById('btn-continue-game')?.addEventListener('click', () => {
         UIManager.showToast("▶ Kayıtlı oyuna devam ediliyor!", "success");
         return;
       } catch {
-        clearSavedGame();
+        clearCurrentSavedGame();
       }
     }
     const userLvl = UserManager.getCurrentLevel();
@@ -1299,7 +1351,7 @@ document.getElementById('btn-continue-game')?.addEventListener('click', () => {
 
 document.getElementById('btn-delete-saved-game')?.addEventListener('click', (e) => {
   e.stopPropagation();
-  clearSavedGame();
+  clearCurrentSavedGame();
   UIManager.showToast("🗑️ Kayıtlı oyun sıfırlandı.", "info");
 });
 
@@ -1548,7 +1600,7 @@ checkUser();
 
 // Android Donanım Geri Tuşu Mantığı (Capacitor)
 App.addListener('backButton', async () => {
-    const modals = ['username-modal', 'view-profile', 'view-inbox', 'view-leaderboard', 'view-shop', 'view-achievements', 'placement-modal', 'placement-result-modal', 'match-search-modal', 'match-result-modal', 'duel-exit-modal'];
+    const modals = ['username-modal', 'view-profile', 'view-inbox', 'view-saved-games', 'view-leaderboard', 'view-shop', 'view-achievements', 'placement-modal', 'placement-result-modal', 'match-search-modal', 'match-result-modal', 'duel-exit-modal'];
     const openModal = modals.find(id => {
         const el = document.getElementById(id);
         return el && !el.classList.contains('hidden');

@@ -16,7 +16,7 @@ export const matchModalTemplate = `
                 <span>Oyun Disiplini</span>
                 <span id="arena-variant-multiplier-badge" class="text-indigo-600 font-bold">1.0x Puan</span>
             </p>
-            <div class="grid grid-cols-5 gap-1.5 bg-slate-200/80 p-1.5 rounded-2xl">
+            <div class="grid grid-cols-5 gap-1.5 bg-slate-200/80 p-1.5 rounded-2xl mb-1.5">
                 <button id="arena-variant-classic" data-variant="classic" class="arena-variant-btn p-1.5 rounded-xl bg-white text-indigo-600 shadow-sm flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Klasik">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
                     <span class="text-[9px] font-black leading-none">Klasik</span>
@@ -37,6 +37,10 @@ export const matchModalTemplate = `
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="8" height="8" rx="1"/><rect x="2" y="2" width="6" height="6" rx="1"/><rect x="16" y="2" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="16" y="16" width="6" height="6" rx="1"/></svg>
                     <span class="text-[9px] font-bold leading-none">Samurai</span>
                 </button>
+            </div>
+            <!-- Sade Kural Açıklama Kutusu -->
+            <div id="arena-variant-rule-desc" class="bg-indigo-50/90 border border-indigo-100 rounded-xl p-2 text-left text-[10px] font-medium text-indigo-900 leading-snug">
+                Her satır, sütun ve 3x3 karede 1-9 rakamları birer kez yer almalıdır.
             </div>
         </div>
 

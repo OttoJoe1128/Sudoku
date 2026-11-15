@@ -9,6 +9,7 @@ import { placementModalTemplate } from './templates/placementModal';
 import { profileModalTemplate } from './templates/profileModal';
 import { matchModalTemplate } from './templates/matchModal';
 import { inboxModalTemplate } from './templates/inboxModal';
+import { savedGamesModalTemplate } from './templates/savedGamesModal';
 import { Player, SpeedRecord } from '../engine/leaderboard';
 import { ShopItems, ShopManager } from '../engine/shop';
 import { BadgeStatus } from '../engine/achievements';
@@ -16,6 +17,22 @@ import { ProfileStats, UserManager } from '../store/userState';
 import { ChallengeRequest } from '../engine/matchEngine';
 import { BotCharacter } from '../engine/botData';
 import { SudokuVariant, KillerCage } from '../engine/sudoku';
+
+export interface SavedGameRecord {
+  id: string;
+  variant: SudokuVariant;
+  level: number;
+  diff: 'basit' | 'orta' | 'zor';
+  timeElapsed: number;
+  userBoard: number[][];
+  initialBoard: number[][];
+  currentSolution: number[][];
+  errors: number;
+  notesBoard: number[][][];
+  regionMap?: number[][];
+  cages?: KillerCage[];
+  updatedAtMs: number;
+}
 
 export const UIManager = {
   getVariantEmblemSVG(variant: SudokuVariant = 'classic', size: number = 22): string {
@@ -83,6 +100,7 @@ export const UIManager = {
         ${profileModalTemplate}
         ${matchModalTemplate}
         ${inboxModalTemplate}
+        ${savedGamesModalTemplate}
         ${usernameModalTemplate}
         <div id="game-view" class="hidden flex-col items-center p-6 w-full h-full">
             <!-- Düello Canlı İlerleme Çubuğu -->
@@ -99,7 +117,7 @@ export const UIManager = {
             </div>
 
             <div class="w-full flex justify-between items-center mb-3">
-                <button id="btn-back-menu" class="bg-slate-200 hover:bg-slate-300 px-3 py-1.5 rounded-xl font-bold text-xs text-slate-800 transition-colors flex items-center gap-1">
+                <button id="btn-back-menu" class="bg-slate-200 hover:bg-slate-300 px-3.5 py-1.5 rounded-xl font-bold text-xs text-slate-800 transition-colors flex items-center gap-1">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
                     <span>Menü</span>
                 </button>
@@ -317,6 +335,78 @@ export const UIManager = {
         `).join('');
       }
     }
+  },
+
+  renderSavedGamesList(
+    records: SavedGameRecord[],
+    onPlay: (record: SavedGameRecord) => void,
+    onDelete: (record: SavedGameRecord) => void
+  ) {
+    const listEl = document.getElementById('saved-games-list');
+    if (!listEl) return;
+
+    if (records.length === 0) {
+      listEl.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-10 text-center">
+          <svg class="w-10 h-10 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <p class="text-xs font-bold text-slate-500 mb-0.5">Kayıtlı aktif oyununuz yok</p>
+          <p class="text-[10px] text-slate-400">Yeni bir oyuna başladığınızda yarım kalan ilerlemeniz otomatik buraya kaydedilir.</p>
+        </div>
+      `;
+      return;
+    }
+
+    const titleMap: Record<SudokuVariant, string> = {
+      classic: 'Klasik Sudoku',
+      irregular: 'Parçalı Sudoku',
+      killer: 'Hesap Sudoku',
+      wordoku: 'Harfli Sudoku',
+      samurai: 'Samurai Sudoku'
+    };
+
+    listEl.innerHTML = records.map(r => {
+      const emblem = this.getVariantEmblemSVG(r.variant, 20);
+      const m = Math.floor(r.timeElapsed / 60).toString().padStart(2, '0');
+      const s = (r.timeElapsed % 60).toString().padStart(2, '0');
+
+      return `
+        <div class="p-3 border border-slate-200 rounded-2xl bg-white shadow-sm flex items-center justify-between transition-all">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
+              ${emblem}
+            </div>
+            <div class="text-left">
+              <p class="font-black text-slate-800 text-xs">${titleMap[r.variant] || 'Sudoku'}</p>
+              <p class="text-[10px] text-slate-500 font-bold">Seviye ${r.level} • ${r.diff.toUpperCase()} • ${m}:${s}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button data-record-id="${r.id}" class="play-saved-game-btn bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs px-3 py-1.5 rounded-xl shadow-sm active:scale-95 transition-transform flex items-center gap-1">
+              <span>▶</span><span>Oyna</span>
+            </button>
+            <button data-record-id="${r.id}" class="delete-saved-game-btn bg-rose-100 hover:bg-rose-200 text-rose-700 font-black text-xs p-1.5 rounded-xl active:scale-90 transition-transform">
+              ✕
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    listEl.querySelectorAll('.play-saved-game-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute('data-record-id');
+        const target = records.find(r => r.id === id);
+        if (target) onPlay(target);
+      });
+    });
+
+    listEl.querySelectorAll('.delete-saved-game-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute('data-record-id');
+        const target = records.find(r => r.id === id);
+        if (target) onDelete(target);
+      });
+    });
   },
 
   renderLobbyPlayers(
@@ -885,21 +975,27 @@ export const UIManager = {
           stateClass = 'sudoku-cell-empty bg-white text-indigo-600 font-bold cursor-pointer';
         }
 
-        let borderRight = (c === 2 || c === 5) ? 'border-r-4 border-r-slate-800' : '';
-        let borderBottom = (r === 2 || r === 5) ? 'border-b-4 border-b-slate-800' : '';
+        let borderRight = '';
+        let borderBottom = '';
 
-        // Parçalı (Irregular) Sudoku kenarlıkları
+        // Parçalı (Irregular) Sudoku kenarlıkları: SADECE komşu bölge farklıysa 3px çizgi koy
         if (variant === 'irregular' && regionMap) {
           const currentRegion = regionMap[r][c];
           if (c < 8 && regionMap[r][c + 1] !== currentRegion) {
-            borderRight = 'border-r-4 border-r-emerald-700';
+            borderRight = 'border-r-[3px] border-r-slate-800';
           }
           if (r < 8 && regionMap[r + 1][c] !== currentRegion) {
-            borderBottom = 'border-b-4 border-b-emerald-700';
+            borderBottom = 'border-b-[3px] border-b-slate-800';
           }
+        } else {
+          if (c === 2 || c === 5) borderRight = 'border-r-4 border-r-slate-800';
+          if (r === 2 || r === 5) borderBottom = 'border-b-4 border-b-slate-800';
         }
 
-        cell.className = `w-9 h-9 sm:w-11 sm:h-11 aspect-square border border-slate-300/80 flex items-center justify-center text-lg select-none cursor-pointer active:scale-95 transition-all relative ${stateClass} ${borderRight} ${borderBottom}`;
+        const isKillerCell = variant === 'killer' && cageMap.has(`${r}_${c}`);
+        const killerBorder = variant === 'killer' ? 'border-dashed border-amber-500/60' : 'border-slate-300/80';
+
+        cell.className = `w-9 h-9 sm:w-11 sm:h-11 aspect-square border ${killerBorder} flex items-center justify-center text-lg select-none cursor-pointer active:scale-95 transition-all relative ${stateClass} ${borderRight} ${borderBottom}`;
 
         // Killer Sudoku kafes toplamı rozeti
         const cageSum = cageMap.get(`${r}_${c}`);
