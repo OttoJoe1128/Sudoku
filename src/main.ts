@@ -68,24 +68,63 @@ const calculateRemainingCounts = (board: number[][]): Map<number, number> => {
   return counts;
 };
 
-// Multi-Save Aktif Oyunlar Listesi Mimarisi
+// Multi-Save Aktif Oyunlar Listesi Mimarisi (Eski Tekil Kaydı Otomatik Aktarma)
 const getSavedGamesList = (): SavedGameRecord[] => {
+  let list: SavedGameRecord[] = [];
   try {
     const raw = localStorage.getItem('sudoku_saved_games_list');
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) list = parsed;
     }
   } catch {
     // ignore
   }
-  return [];
+
+  // 1. Eski tekil kaydı (sudoku_saved_game) otomatik yeni listeye aktarma
+  try {
+    const legacyRaw = localStorage.getItem('sudoku_saved_game');
+    if (legacyRaw) {
+      const parsed = JSON.parse(legacyRaw);
+      if (parsed && Array.isArray(parsed.userBoard) && parsed.userBoard.length === 9) {
+        const variant: SudokuVariant = parsed.variant || 'classic';
+        const gameId = `saved_${variant}_${parsed.level || 1}`;
+        const record: SavedGameRecord = {
+          id: gameId,
+          variant,
+          level: parsed.level || 1,
+          diff: parsed.diff || 'basit',
+          timeElapsed: typeof parsed.timeElapsed === 'number' ? parsed.timeElapsed : 0,
+          userBoard: parsed.userBoard,
+          initialBoard: parsed.initialBoard,
+          currentSolution: parsed.currentSolution,
+          errors: typeof parsed.errors === 'number' ? parsed.errors : 0,
+          notesBoard: parsed.notesBoard || [],
+          updatedAtMs: Date.now()
+        };
+
+        const idx = list.findIndex(item => item.id === gameId);
+        if (idx >= 0) {
+          list[idx] = record;
+        } else {
+          list.unshift(record);
+        }
+
+        localStorage.setItem('sudoku_saved_games_list', JSON.stringify(list));
+      }
+      localStorage.removeItem('sudoku_saved_game');
+    }
+  } catch {
+    // ignore
+  }
+
+  return list;
 };
 
 const saveActiveGameRecord = () => {
   if (isMatchMode || !userBoard || !initialBoard) return;
   const list = getSavedGamesList();
-  const gameId = `saved_${currentVariant}`;
+  const gameId = `saved_${currentVariant}_${currentLevelNumber}`;
   const record: SavedGameRecord = {
     id: gameId,
     variant: currentVariant,
@@ -106,7 +145,7 @@ const saveActiveGameRecord = () => {
   if (idx >= 0) {
     list[idx] = record;
   } else {
-    list.push(record);
+    list.unshift(record);
   }
 
   localStorage.setItem('sudoku_saved_games_list', JSON.stringify(list));
@@ -121,7 +160,7 @@ const deleteSavedGameRecord = (gameId: string) => {
 };
 
 const clearCurrentSavedGame = () => {
-  deleteSavedGameRecord(`saved_${currentVariant}`);
+  deleteSavedGameRecord(`saved_${currentVariant}_${currentLevelNumber}`);
 };
 
 const updateSavedGamesCountUI = () => {
@@ -249,6 +288,10 @@ const startGame = (
       initialBoard = activeGeneratedSudoku.puzzle.map(row => [...row]);
       timeElapsed = 0;
       UIManager.hideMatchHeader();
+    }
+
+    if (!isMatchMode) {
+      saveActiveGameRecord();
     }
 
     // Disiplin Rozeti ve Çarpan Bilgisi Güncelleme
@@ -724,6 +767,10 @@ const handleExitGameRequest = async (): Promise<boolean> => {
         };
       }
     });
+  }
+
+  if (!isMatchMode) {
+    saveActiveGameRecord();
   }
 
   if (timerInterval) clearInterval(timerInterval);
