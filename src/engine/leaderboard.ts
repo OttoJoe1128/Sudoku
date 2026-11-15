@@ -1,5 +1,6 @@
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../api/firebase';
+import { UserManager } from '../store/userState';
 
 export interface Player {
   uid?: string;
@@ -13,6 +14,9 @@ export interface Player {
   duel_wins?: number;
   duel_losses?: number;
   duel_mmr?: number;
+  bot_mmr?: number;
+  onlineStatus?: 'available' | 'in_game' | 'in_duel';
+  lastSeenMs?: number;
   best_basit?: number;
   best_orta?: number;
   best_zor?: number;
@@ -30,6 +34,17 @@ export interface SpeedRecord {
   hintsUsed?: number;
   monthYear?: string;
 }
+
+export const SIMULATED_LOBBY_PLAYERS: Player[] = [
+  { uid: 'sim_1', username: 'Bora_34', level: 750, gold: 1250, avatar: '🦅', duel_wins: 52, duel_losses: 12, duel_mmr: 1450, total_completed: 180, onlineStatus: 'available' },
+  { uid: 'sim_2', username: 'ZeynepK', level: 420, gold: 890, avatar: '🐼', duel_wins: 24, duel_losses: 8, duel_mmr: 1240, total_completed: 95, onlineStatus: 'in_game' },
+  { uid: 'sim_3', username: 'MertCan', level: 180, gold: 520, avatar: '🦁', duel_wins: 12, duel_losses: 5, duel_mmr: 1120, total_completed: 45, onlineStatus: 'available' },
+  { uid: 'sim_4', username: 'Ece_99', level: 45, gold: 240, avatar: '🦊', duel_wins: 4, duel_losses: 2, duel_mmr: 1040, total_completed: 15, onlineStatus: 'available' },
+  { uid: 'sim_5', username: 'Kaan_Sudoku', level: 310, gold: 750, avatar: '🐯', duel_wins: 21, duel_losses: 9, duel_mmr: 1210, total_completed: 80, onlineStatus: 'in_duel' },
+  { uid: 'sim_6', username: 'ElifSu', level: 115, gold: 410, avatar: '🧙‍♀️', duel_wins: 11, duel_losses: 3, duel_mmr: 1110, total_completed: 35, onlineStatus: 'available' },
+  { uid: 'sim_7', username: 'Emre_T', level: 30, gold: 180, avatar: '🐥', duel_wins: 3, duel_losses: 1, duel_mmr: 1020, total_completed: 10, onlineStatus: 'available' },
+  { uid: 'sim_8', username: 'Selin_X', level: 8, gold: 110, avatar: '🎮', duel_wins: 0, duel_losses: 1, duel_mmr: 980, total_completed: 3, onlineStatus: 'available' }
+];
 
 export const Leaderboard = {
   getCachedPlayers(sortBy: 'level' | 'gold' = 'level'): Player[] {
@@ -49,7 +64,7 @@ export const Leaderboard = {
     } catch {
       // ignore
     }
-    return [];
+    return SIMULATED_LOBBY_PLAYERS;
   },
 
   getCachedFastestRecords(diffFilter: 'all' | 'basit' | 'orta' | 'zor' = 'all'): SpeedRecord[] {
@@ -69,7 +84,6 @@ export const Leaderboard = {
       // ignore
     }
 
-    // Fallback: oyuncu önbelleğinden süresi olanları üret
     const cachedPlayers = this.getCachedPlayers('level');
     const fallbackList: SpeedRecord[] = [];
     cachedPlayers.forEach(p => {
@@ -104,8 +118,9 @@ export const Leaderboard = {
       const fetchPromise = (async () => {
         const colRef = collection(db, 'leaderboard');
         const snapshot = await getDocs(colRef);
+        const list: Player[] = [];
+
         if (!snapshot.empty) {
-          const list: Player[] = [];
           snapshot.docs.forEach((docSnap) => {
             const d = docSnap.data();
             const level = typeof d.level === 'number' ? d.level : parseInt(d.level) || 1;
@@ -132,21 +147,28 @@ export const Leaderboard = {
               best_zor: d.best_zor
             });
           });
-
-          if (sortBy === 'level') {
-            list.sort((a, b) => b.level !== a.level ? b.level - a.level : b.gold - a.gold);
-          } else if (sortBy === 'gold') {
-            list.sort((a, b) => b.gold !== a.gold ? b.gold - a.gold : b.level - a.level);
-          } else if (sortBy === 'pvp_mmr') {
-            list.sort((a, b) => (b.duel_mmr || 1000) !== (a.duel_mmr || 1000) ? (b.duel_mmr || 1000) - (a.duel_mmr || 1000) : b.level - a.level);
-          } else if (sortBy === 'bot_mmr') {
-            list.sort((a, b) => (b.bot_mmr || 1000) !== (a.bot_mmr || 1000) ? (b.bot_mmr || 1000) - (a.bot_mmr || 1000) : b.level - a.level);
-          }
-
-          localStorage.setItem('sudoku_cached_leaderboard', JSON.stringify(list));
-          return list;
         }
-        return this.getCachedPlayers(sortBy === 'pvp_mmr' || sortBy === 'bot_mmr' ? 'level' : sortBy);
+
+        // Simüle oyuncuları birleştir
+        SIMULATED_LOBBY_PLAYERS.forEach(sim => {
+          if (!list.some(p => p.username === sim.username)) {
+            const calcTitle = UserManager.calculatePlayerTitle(sim.level, sim.duel_wins || 0, sim.duel_mmr || 1000, sim.total_completed || 0);
+            list.push({ ...sim, title: calcTitle });
+          }
+        });
+
+        if (sortBy === 'level') {
+          list.sort((a, b) => b.level !== a.level ? b.level - a.level : b.gold - a.gold);
+        } else if (sortBy === 'gold') {
+          list.sort((a, b) => b.gold !== a.gold ? b.gold - a.gold : b.level - a.level);
+        } else if (sortBy === 'pvp_mmr') {
+          list.sort((a, b) => (b.duel_mmr || 1000) !== (a.duel_mmr || 1000) ? (b.duel_mmr || 1000) - (a.duel_mmr || 1000) : b.level - a.level);
+        } else if (sortBy === 'bot_mmr') {
+          list.sort((a, b) => (b.bot_mmr || 1000) !== (a.bot_mmr || 1000) ? (b.bot_mmr || 1000) - (a.bot_mmr || 1000) : b.level - a.level);
+        }
+
+        localStorage.setItem('sudoku_cached_leaderboard', JSON.stringify(list));
+        return list;
       })();
 
       const timeoutPromise = new Promise<Player[]>((resolve) =>
@@ -171,7 +193,6 @@ export const Leaderboard = {
           return `${m}:${s}`;
         };
 
-        // 1. Veri Kaynağı: leaderboard koleksiyonundaki best_basit, best_orta, best_zor alanları
         try {
           const lbSnap = await getDocs(collection(db, 'leaderboard'));
           if (!lbSnap.empty) {
@@ -202,39 +223,6 @@ export const Leaderboard = {
               checkAndAdd('basit', d.best_basit);
               checkAndAdd('orta', d.best_orta);
               checkAndAdd('zor', d.best_zor);
-            });
-          }
-        } catch {
-          // ignore
-        }
-
-        // 2. Veri Kaynağı: game_records koleksiyonundaki tamamlanmış oyun detayları
-        try {
-          const recSnap = await getDocs(collection(db, 'game_records'));
-          if (!recSnap.empty) {
-            recSnap.docs.forEach((docSnap) => {
-              const d = docSnap.data();
-              if (typeof d.timeElapsed === 'number' && d.timeElapsed > 0) {
-                const username = d.username || 'Oyuncu';
-                const diff: 'basit' | 'orta' | 'zor' = d.difficulty || 'basit';
-                const key = `${username}_${diff}`;
-                const existing = recordsMap.get(key);
-
-                if (!existing || d.timeElapsed < existing.timeElapsed) {
-                  recordsMap.set(key, {
-                    id: docSnap.id,
-                    uid: d.uid,
-                    username,
-                    level: typeof d.level === 'number' ? d.level : 1,
-                    difficulty: diff,
-                    timeElapsed: d.timeElapsed,
-                    timeFormatted: d.timeFormatted || formatTime(d.timeElapsed),
-                    errors: typeof d.errors === 'number' ? d.errors : 0,
-                    hintsUsed: typeof d.hintsUsed === 'number' ? d.hintsUsed : 0,
-                    monthYear: d.monthYear
-                  });
-                }
-              }
             });
           }
         } catch {

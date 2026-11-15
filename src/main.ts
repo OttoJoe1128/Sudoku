@@ -2,7 +2,7 @@ import { UIManager, SavedGameRecord } from './ui/uiManager';
 import { GameEngine } from './engine/gameEngine';
 import { SudokuGen, SudokuVariant, GeneratedSudoku } from './engine/sudoku';
 import { UserManager } from './store/userState';
-import { Leaderboard, Player, SpeedRecord } from './engine/leaderboard';
+import { Leaderboard, Player, SpeedRecord, SIMULATED_LOBBY_PLAYERS } from './engine/leaderboard';
 import { ShopManager } from './engine/shop';
 import { Rewards } from './engine/rewards';
 import { AchievementManager } from './engine/achievements';
@@ -13,6 +13,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './api/firebase';
 
 UIManager.mountUI();
+SudokuGen.runSelfDiagnostics();
 
 let currentSolution: number[][];
 let userBoard: number[][];
@@ -1217,6 +1218,57 @@ const startBotMatch = (bot: BotCharacter) => {
   }, bot.speedMs);
 };
 
+const startSimulatedMatch = (targetPlayer: Player) => {
+  UIManager.toggleModal('match-search-modal', false);
+
+  const currentUsername = UserManager.getUsername() || 'Oyuncu';
+  const currentUid = auth.currentUser ? auth.currentUser.uid : `user_${Date.now()}`;
+  const generated = SudokuGen.generateVariant(currentArenaDiff, selectedArenaVariant);
+
+  const matchData: MatchState = {
+    matchId: `match_${Date.now()}`,
+    difficulty: currentArenaDiff,
+    variant: selectedArenaVariant,
+    durationSec: selectedMatchTimeSec,
+    puzzle: generated.puzzle,
+    solution: generated.solution,
+    status: 'in_progress',
+    player1: {
+      uid: currentUid,
+      username: currentUsername,
+      isBot: false,
+      progress: 0,
+      errors: 0
+    },
+    player2: {
+      uid: targetPlayer.uid || `sim_${targetPlayer.username}`,
+      username: `${targetPlayer.avatar || '🎮'} ${targetPlayer.username} (${targetPlayer.title || 'Çırak'})`,
+      isBot: true,
+      progress: 0,
+      errors: 0
+    }
+  };
+
+  startGame(targetPlayer.level || 1, currentArenaDiff, matchData, undefined, selectedArenaVariant);
+
+  const enemyName = `${targetPlayer.avatar || '🎮'} ${targetPlayer.username}`;
+  const simSpeed = currentArenaDiff === 'basit' ? 3200 : currentArenaDiff === 'orta' ? 2400 : 1800;
+
+  MatchEngine.startBotAI(currentArenaDiff, async (botProgress) => {
+    matchEnemyFilled = botProgress;
+    UIManager.renderMatchProgress(matchUserFilled, matchEnemyFilled, enemyName, matchTotalEmpty);
+
+    if (matchEnemyFilled >= matchTotalEmpty && isMatchMode) {
+      if (timerInterval) clearInterval(timerInterval);
+      isMatchMode = false;
+      MatchEngine.clearActiveMatch();
+      UIManager.hideMatchHeader();
+      await UserManager.recordDuelResult(false, true, -15, 0);
+      showMatchResult(false, 0, enemyName);
+    }
+  }, simSpeed);
+};
+
 const loadArenaLobbyPlayers = () => {
   if (arenaUnsubLobby) arenaUnsubLobby();
 
@@ -1253,14 +1305,22 @@ const loadArenaLobbyPlayers = () => {
         }
       });
 
-      UIManager.renderLobbyPlayers(list, async (targetPlayer) => {
-        try {
-          await MatchEngine.sendDirectChallenge(targetPlayer.uid || targetPlayer.username, targetPlayer.username, currentArenaDiff, selectedMatchTimeSec, selectedArenaVariant);
-          const modeText = selectedMatchTimeSec > 0 ? `${Math.floor(selectedMatchTimeSec / 60)} Dk` : 'Süresiz';
-          UIManager.showToast(`⚔️ Düello daveti (${modeText}) ${targetPlayer.username} adlı oyuncunun gelen kutusuna gönderildi!`, 'success');
-        } catch (e: any) {
-          UIManager.showToast('Davet gönderilemedi.', 'error');
+      // Simüle canlı lobi oyuncularını ekle
+      SIMULATED_LOBBY_PLAYERS.forEach(sim => {
+        if (!list.some(p => p.username === sim.username)) {
+          const title = UserManager.calculatePlayerTitle(sim.level, sim.duel_wins || 0, sim.duel_mmr || 1000, sim.total_completed || 0);
+          list.push({ ...sim, title });
         }
+      });
+
+      UIManager.renderLobbyPlayers(list, async (targetPlayer) => {
+        const modeText = selectedMatchTimeSec > 0 ? `${Math.floor(selectedMatchTimeSec / 60)} Dk` : 'Süresiz';
+        UIManager.showToast(`📩 ${targetPlayer.username} davetini inceliyor (${modeText})...`, 'info');
+
+        setTimeout(() => {
+          UIManager.showToast(`⚔️ ${targetPlayer.username} davetini kabul etti! Düello başlıyor...`, 'success');
+          startSimulatedMatch(targetPlayer);
+        }, 1800);
       });
     });
   } catch (e) {
