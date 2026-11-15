@@ -7,8 +7,13 @@ export const matchModalTemplate = `
         <div class="w-12 h-12 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-2 shadow-inner">
             ⚔️
         </div>
-        <h3 class="text-xl font-black text-slate-800 mb-0.5">Düello Arenası</h3>
-        <p class="text-[11px] text-slate-500 mb-3 font-medium">Canlı oyuncularla yarış veya Seviyeli YZ Karakterlere meydan oku!</p>
+        <div class="flex items-center justify-center gap-1.5 mb-0.5">
+            <h3 class="text-xl font-black text-slate-800">Düello Arenası</h3>
+            <button id="btn-arena-info" title="Puan & Ödül Bilgisi" class="text-indigo-600 bg-indigo-50 hover:bg-indigo-100 p-1 rounded-xl border border-indigo-200 text-xs font-black transition-colors">
+                ℹ️
+            </button>
+        </div>
+        <p class="text-[11px] text-slate-500 mb-3 font-medium text-center">Canlı oyuncularla yarış veya Seviyeli YZ Karakterlere meydan oku!</p>
 
         <!-- Ortak Ayarlar: Disiplin Seçimi (5 Sembol) -->
         <div class="mb-2.5 w-full">
@@ -34,7 +39,7 @@ export const matchModalTemplate = `
                     <span class="text-[9px] font-bold leading-none">Harfli</span>
                 </button>
                 <button id="arena-variant-samurai" data-variant="samurai" class="arena-variant-btn p-1.5 rounded-xl bg-transparent text-slate-600 hover:bg-white/60 flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Samurai">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="8" height="8" rx="1"/><rect x="2" y="2" width="6" height="6" rx="1"/><rect x="16" y="2" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="16" y="16" width="6" height="6" rx="1"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="8" height="8" rx="1"/><rect x="2" y="2" width="6" height="6" rx="1"/><rect x="16" y="2" width="6" height="6" rx="1"/><rect x="16" y="16" width="6" height="6" rx="1"/><rect x="16" y="16" width="6" height="6" rx="1"/></svg>
                     <span class="text-[9px] font-bold leading-none">Samurai</span>
                 </button>
             </div>

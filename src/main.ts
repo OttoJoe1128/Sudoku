@@ -492,7 +492,32 @@ const startGame = (
                 return;
               }
 
-              // Normal Bölüm Zaferi (Bitmiş oyun kaydı otomatik silinir, seviye atlar)
+              // Serbest Mod veya Yolculuk Haritası Bölüm Zaferi
+              if (isCustomGameMode) {
+                let baseReward = diff === 'basit' ? 10 : diff === 'orta' ? 20 : 35;
+                if (selectedMatchTimeSec === 180) {
+                  baseReward = Math.round(baseReward * 1.5);
+                }
+                const newGold = UserManager.getGold() + baseReward;
+
+                await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
+                await UserManager.recordGameCompletion({
+                    level,
+                    difficulty: diff,
+                    variant: currentVariant,
+                    timeElapsed,
+                    timeFormatted: `${Math.floor(timeElapsed / 60).toString().padStart(2, '0')}:${(timeElapsed % 60).toString().padStart(2, '0')}`,
+                    errors,
+                    hintsUsed
+                });
+
+                updateGoldDisplay();
+                UIManager.showToast(`🎉 Tebrikler, SERBEST MOD (${currentVariant.toUpperCase()}) Tamamlandı! +${baseReward} 🪙`, "success");
+                UIManager.navigate('menu');
+                return;
+              }
+
+              // Yolculuk Haritası Zaferi (Seviye Atlama)
               const reward = diff === 'basit' ? 10 : diff === 'orta' ? 20 : 35;
               const userLvl = UserManager.getVariantLevel(currentVariant);
               const nextLevel = level === userLvl ? userLvl + 1 : userLvl;
@@ -1087,8 +1112,9 @@ document.getElementById('btn-challenge-player')?.addEventListener('click', () =>
   });
 });
 
-// Serbest Mod Disiplin Seçici Dinleyicileri
+// Serbest Mod Disiplin ve Süre Seçiciler & Başlat Butonları
 let selectedCustomVariant: SudokuVariant = 'classic';
+let selectedCustomTimeSec: number = 0;
 
 (['classic', 'irregular', 'killer', 'wordoku', 'samurai'] as SudokuVariant[]).forEach(v => {
   document.getElementById(`btn-variant-${v}`)?.addEventListener('click', () => {
@@ -1110,6 +1136,64 @@ let selectedCustomVariant: SudokuVariant = 'classic';
     if (badge) badge.innerText = mults[v] || '1.0x Puan';
     if (descEl) descEl.innerText = RULE_DESCRIPTIONS[v] || RULE_DESCRIPTIONS.classic;
   });
+});
+
+// Serbest Mod Süre Seçici Dinleyicileri
+const setupCustomTimeButtons = () => {
+  const btnNoLimit = document.getElementById('btn-custom-time-no-limit');
+  const btn7m = document.getElementById('btn-custom-time-7m');
+  const btn3m = document.getElementById('btn-custom-time-3m');
+
+  const updateBtns = (sec: number) => {
+    selectedCustomTimeSec = sec;
+    [btnNoLimit, btn7m, btn3m].forEach(b => {
+      if (!b) return;
+      const bSec = parseInt(b.getAttribute('data-time') || '0');
+      if (bSec === sec) {
+        b.className = "custom-time-btn flex-1 py-1.5 rounded-xl font-black text-[10px] transition-all bg-white text-indigo-700 shadow-sm";
+      } else {
+        b.className = "custom-time-btn flex-1 py-1.5 rounded-xl font-bold text-[10px] transition-all text-slate-600 hover:text-slate-900 bg-transparent";
+      }
+    });
+
+    const mult = sec === 180 ? 1.5 : 1.0;
+    const b1 = document.getElementById('badge-custom-basit-reward');
+    const b2 = document.getElementById('badge-custom-orta-reward');
+    const b3 = document.getElementById('badge-custom-zor-reward');
+    if (b1) b1.innerText = `+${Math.round(10 * mult)} Altın`;
+    if (b2) b2.innerText = `+${Math.round(20 * mult)} Altın`;
+    if (b3) b3.innerText = `+${Math.round(35 * mult)} Altın`;
+  };
+
+  btnNoLimit?.addEventListener('click', () => updateBtns(0));
+  btn7m?.addEventListener('click', () => updateBtns(420));
+  btn3m?.addEventListener('click', () => updateBtns(180));
+};
+setupCustomTimeButtons();
+
+// Serbest Mod Zorluk Kartları Tıklama Dinleyicileri (#btn-custom-basit, #btn-custom-orta, #btn-custom-zor)
+document.getElementById('btn-custom-basit')?.addEventListener('click', () => {
+  const userLvl = UserManager.getVariantLevel(selectedCustomVariant);
+  startGame(userLvl, 'basit', undefined, undefined, selectedCustomVariant, true, selectedCustomTimeSec);
+});
+
+document.getElementById('btn-custom-orta')?.addEventListener('click', () => {
+  const userLvl = Math.max(301, UserManager.getVariantLevel(selectedCustomVariant));
+  startGame(userLvl, 'orta', undefined, undefined, selectedCustomVariant, true, selectedCustomTimeSec);
+});
+
+document.getElementById('btn-custom-zor')?.addEventListener('click', () => {
+  const userLvl = Math.max(701, UserManager.getVariantLevel(selectedCustomVariant));
+  startGame(userLvl, 'zor', undefined, undefined, selectedCustomVariant, true, selectedCustomTimeSec);
+});
+
+// Bilgilendirme Modalı (ℹ️) Dinleyicileri
+document.getElementById('btn-custom-info')?.addEventListener('click', () => {
+  UIManager.showRulesAndScoringModal('custom');
+});
+
+document.getElementById('btn-arena-info')?.addEventListener('click', () => {
+  UIManager.showRulesAndScoringModal('arena');
 });
 
 // Harita Disiplin Seçici Dinleyicileri

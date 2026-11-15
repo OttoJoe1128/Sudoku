@@ -85,6 +85,87 @@ export const UIManager = {
     this.showToast(`💠 ${info.title}\n${info.desc} (${info.mult})`, "info");
   },
 
+  showRulesAndScoringModal(mode: 'arena' | 'custom') {
+    const existing = document.getElementById('rules-scoring-modal');
+    if (existing) existing.remove();
+
+    const isArena = mode === 'arena';
+    const title = isArena ? "⚔️ Düello Arenası Kuralları & Puanlama" : "🧩 Serbest Mod Kuralları & Puanlama";
+
+    const contentHTML = isArena ? `
+      <div class="text-left text-xs space-y-3 font-medium text-slate-600 leading-relaxed">
+        <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-3">
+          <p class="font-black text-indigo-900 text-sm mb-1">🪙 Altın Ödülleri</p>
+          <p>• 🟢 Basit Düello Zaferi: <strong class="text-indigo-700">+50 🪙 Altın</strong></p>
+          <p>• 🟡 Orta Düello Zaferi: <strong class="text-indigo-700">+100 🪙 Altın</strong></p>
+          <p>• 🔴 Zor Düello Zaferi: <strong class="text-indigo-700">+200 🪙 Altın</strong></p>
+        </div>
+
+        <div class="bg-purple-50 border border-purple-100 rounded-2xl p-3">
+          <p class="font-black text-purple-900 text-sm mb-1">⚔️ MMR & Rütbe Puanları</p>
+          <p>• Gerçek Oyuncu (PvP) Zaferi: <strong class="text-purple-700">+25 MMR</strong> (0 Hata Flawless: <strong class="text-purple-700">+30 MMR</strong>)</p>
+          <p>• PvP Mağlubiyeti: <strong class="text-rose-600">-20 MMR</strong></p>
+          <p>• YZ Bot Zaferi: <strong class="text-purple-700">+15 YZ MMR</strong> | Mağlubiyet: <strong class="text-rose-600">-15 YZ MMR</strong></p>
+        </div>
+
+        <div class="bg-amber-50 border border-amber-100 rounded-2xl p-3">
+          <p class="font-black text-amber-900 text-sm mb-1">💠 Disiplin Çarpanları</p>
+          <p>• Klasik: <strong>1.0x</strong> | Harfli: <strong>1.2x</strong> | Parçalı: <strong>1.5x</strong></p>
+          <p>• Hesap: <strong>1.8x</strong> | Samurai: <strong>2.5x</strong> Puan Çarpanı</p>
+        </div>
+
+        <div class="bg-rose-50 border border-rose-100 rounded-2xl p-3">
+          <p class="font-black text-rose-900 text-sm mb-1">⚠️ Terk & Ceza Kuralı</p>
+          <p>• Aktif maçtan çekilmek <strong class="text-rose-600">-50 🪙 Altın</strong> ve <strong class="text-rose-600">-30 MMR</strong> cezası düşer.</p>
+          <p>• Süreli maçlarda süre dolduğunda en çok doğru hücre çözen kazanır.</p>
+        </div>
+      </div>
+    ` : `
+      <div class="text-left text-xs space-y-3 font-medium text-slate-600 leading-relaxed">
+        <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-3">
+          <p class="font-black text-emerald-900 text-sm mb-1">🎯 Serbest Mod Amacı</p>
+          <p>Harita seviyesini ve Düello MMR puanını riske atmadan 5 disiplinde antrenman yapma ve süre rekoru kırma modudur.</p>
+        </div>
+
+        <div class="bg-amber-50 border border-amber-100 rounded-2xl p-3">
+          <p class="font-black text-amber-900 text-sm mb-1">🪙 Altın Kazanımı & Blitz Bonusu</p>
+          <p>• 🟢 Basit: <strong class="text-amber-700">+10 🪙</strong> | 🟡 Orta: <strong class="text-amber-700">+20 🪙</strong> | 🔴 Zor: <strong class="text-amber-700">+35 🪙</strong></p>
+          <p>• ⚡ <strong>3 Dakika Blitz Modu:</strong> Tüm altın ödüllerine <strong class="text-amber-700">+%50 Ekstra Altın</strong> kazandırır!</p>
+        </div>
+
+        <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-3">
+          <p class="font-black text-indigo-900 text-sm mb-1">💠 Ustalık & Rütbe Puanı</p>
+          <p>• Tamamlanan her bulmaca Ustalık Puanınızı (Disiplin Çarpanıyla) ve Rütbe Puanınızı (+15 RP) yükseltir.</p>
+          <p>• Serbest Modda harita seviyeniz değişmez ve düello MMR puanı etkilenmez.</p>
+        </div>
+      </div>
+    `;
+
+    const modal = document.createElement('div');
+    modal.id = 'rules-scoring-modal';
+    modal.className = "fixed inset-0 bg-slate-900/80 z-[96] flex items-center justify-center p-4 backdrop-blur-md";
+
+    modal.innerHTML = `
+      <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl relative border border-slate-100 max-h-[85vh] flex flex-col">
+        <button id="close-rules-scoring-modal" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 text-sm">✕</button>
+        <h3 class="text-lg font-black text-slate-800 mb-3 text-left border-b border-slate-100 pb-2.5 shrink-0 flex items-center gap-1.5">
+          ${title}
+        </h3>
+        <div class="flex-1 overflow-y-auto hidden-scrollbar pr-0.5">
+          ${contentHTML}
+        </div>
+        <button id="btn-confirm-rules-modal" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3 rounded-2xl shadow-md active:scale-95 transition-transform text-xs mt-3 shrink-0">
+          Anladım ➔
+        </button>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    document.getElementById('close-rules-scoring-modal')?.addEventListener('click', () => modal.remove());
+    document.getElementById('btn-confirm-rules-modal')?.addEventListener('click', () => modal.remove());
+  },
+
   mountUI() {
     const app = document.getElementById('app');
     if (!app) return;
