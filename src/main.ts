@@ -1427,11 +1427,13 @@ document.getElementById('btn-open-map')?.addEventListener('click', () => {
 
 // Özel Zorluk Seçim Ekranı Butonları
 document.getElementById('btn-back-custom')?.addEventListener('click', () => {
+    updateSavedGamesCountUI();
     UIManager.navigate('menu');
 });
 
 // Harita Ekranı Bağlantıları
 document.getElementById('btn-back-map')?.addEventListener('click', () => {
+    updateSavedGamesCountUI();
     UIManager.navigate('menu');
 });
 

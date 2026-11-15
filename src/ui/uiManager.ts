@@ -365,9 +365,13 @@ export const UIManager = {
     };
 
     listEl.innerHTML = records.map(r => {
-      const emblem = this.getVariantEmblemSVG(r.variant, 20);
-      const m = Math.floor(r.timeElapsed / 60).toString().padStart(2, '0');
-      const s = (r.timeElapsed % 60).toString().padStart(2, '0');
+      const variant = r.variant || 'classic';
+      const emblem = this.getVariantEmblemSVG(variant, 20);
+      const level = typeof r.level === 'number' ? r.level : 1;
+      const diffStr = r.diff ? r.diff.toUpperCase() : 'BASİT';
+      const timeSec = typeof r.timeElapsed === 'number' ? r.timeElapsed : 0;
+      const m = Math.floor(timeSec / 60).toString().padStart(2, '0');
+      const s = (timeSec % 60).toString().padStart(2, '0');
 
       return `
         <div class="p-3 border border-slate-200 rounded-2xl bg-white shadow-sm flex items-center justify-between transition-all">
@@ -376,8 +380,8 @@ export const UIManager = {
               ${emblem}
             </div>
             <div class="text-left">
-              <p class="font-black text-slate-800 text-xs">${titleMap[r.variant] || 'Sudoku'}</p>
-              <p class="text-[10px] text-slate-500 font-bold">Seviye ${r.level} • ${r.diff.toUpperCase()} • ${m}:${s}</p>
+              <p class="font-black text-slate-800 text-xs">${titleMap[variant] || 'Klasik Sudoku'}</p>
+              <p class="text-[10px] text-slate-500 font-bold">Seviye ${level} • ${diffStr} • ${m}:${s}</p>
             </div>
           </div>
           <div class="flex items-center gap-1.5 shrink-0">
