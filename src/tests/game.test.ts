@@ -19,6 +19,43 @@ describe('Sudoku Engine & 5 Variants', () => {
     expect(res.regionMap).toHaveLength(9);
   });
 
+  it('should verify Irregular Sudoku solution contains unique digits 1-9 in every row, col, AND irregular region', () => {
+    const res = SudokuGen.generateVariant('basit', 'irregular');
+    const solution = res.solution;
+    const regionMap = res.regionMap!;
+
+    // 1. Row uniqueness
+    for (let r = 0; r < 9; r++) {
+      const rowDigits = new Set(solution[r]);
+      expect(rowDigits.size).toBe(9);
+      expect(rowDigits.has(0)).toBe(false);
+    }
+
+    // 2. Col uniqueness
+    for (let c = 0; c < 9; c++) {
+      const colDigits = new Set();
+      for (let r = 0; r < 9; r++) colDigits.add(solution[r][c]);
+      expect(colDigits.size).toBe(9);
+      expect(colDigits.has(0)).toBe(false);
+    }
+
+    // 3. Irregular Region uniqueness
+    const regionBuckets: Map<number, Set<number>> = new Map();
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 9; c++) {
+        const regionId = regionMap[r][c];
+        if (!regionBuckets.has(regionId)) regionBuckets.set(regionId, new Set());
+        regionBuckets.get(regionId)!.add(solution[r][c]);
+      }
+    }
+
+    expect(regionBuckets.size).toBe(9);
+    regionBuckets.forEach((digitSet) => {
+      expect(digitSet.size).toBe(9);
+      expect(digitSet.has(0)).toBe(false);
+    });
+  });
+
   it('should generate Killer Sudoku with cages', () => {
     const res = SudokuGen.generateVariant('basit', 'killer');
     expect(res.variant).toBe('killer');
