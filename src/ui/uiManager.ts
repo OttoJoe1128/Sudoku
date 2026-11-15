@@ -398,6 +398,7 @@ export const UIManager = {
 
     listEl.querySelectorAll('.play-saved-game-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
+        e.stopPropagation();
         const id = (e.currentTarget as HTMLElement).getAttribute('data-record-id');
         const target = records.find(r => r.id === id);
         if (target) onPlay(target);
@@ -406,6 +407,7 @@ export const UIManager = {
 
     listEl.querySelectorAll('.delete-saved-game-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
+        e.stopPropagation();
         const id = (e.currentTarget as HTMLElement).getAttribute('data-record-id');
         const target = records.find(r => r.id === id);
         if (target) onDelete(target);

@@ -68,7 +68,7 @@ const calculateRemainingCounts = (board: number[][]): Map<number, number> => {
   return counts;
 };
 
-// Multi-Save Aktif Oyunlar Listesi Mimarisi (Eski Tekil Kaydı Otomatik Aktarma)
+// Multi-Save Aktif Oyunlar Listesi Mimarisi
 const getSavedGamesList = (): SavedGameRecord[] => {
   let list: SavedGameRecord[] = [];
   try {
@@ -113,47 +113,6 @@ const getSavedGamesList = (): SavedGameRecord[] => {
         localStorage.setItem('sudoku_saved_games_list', JSON.stringify(list));
       }
       localStorage.removeItem('sudoku_saved_game');
-    }
-  } catch {
-    // ignore
-  }
-
-  // 2. Aktif kullanıcının son ulaştığı seviye oyununu otomatik listeye senkronize etme
-  try {
-    const variants: SudokuVariant[] = ['classic', 'irregular', 'killer', 'wordoku', 'samurai'];
-    let listChanged = false;
-
-    variants.forEach(v => {
-      const hasActiveRecord = list.some(item => item.variant === v);
-      if (!hasActiveRecord) {
-        const userLvl = UserManager.getVariantLevel(v);
-        if (userLvl >= 1) {
-          const diff = SudokuGen.getDifficulty(userLvl);
-          const generated = SudokuGen.generateVariant(diff, v);
-          const gameId = `saved_${v}_${userLvl}`;
-          const autoRecord: SavedGameRecord = {
-            id: gameId,
-            variant: v,
-            level: userLvl,
-            diff,
-            timeElapsed: 0,
-            userBoard: generated.puzzle.map(row => [...row]),
-            initialBoard: generated.puzzle.map(row => [...row]),
-            currentSolution: generated.solution,
-            errors: 0,
-            notesBoard: Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => [])),
-            regionMap: generated.regionMap,
-            cages: generated.cages,
-            updatedAtMs: Date.now()
-          };
-          list.push(autoRecord);
-          listChanged = true;
-        }
-      }
-    });
-
-    if (listChanged) {
-      localStorage.setItem('sudoku_saved_games_list', JSON.stringify(list));
     }
   } catch {
     // ignore
