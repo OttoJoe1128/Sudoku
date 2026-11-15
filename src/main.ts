@@ -983,22 +983,9 @@ const openPlayerProfile = async (targetData?: any) => {
   } else {
     currentlyViewedTargetUid = targetData.uid || targetData.username || 'target';
     currentlyViewedTargetUsername = targetData.username || 'Oyuncu';
-    stats = {
-      uid: currentlyViewedTargetUid,
-      username: currentlyViewedTargetUsername,
-      level: targetData.level || 1,
-      gold: targetData.gold || 0,
-      avatar: targetData.avatar || '🎮',
-      title: targetData.title || 'Usta Oyuncu',
-      notificationsEnabled: false,
-      totalCompleted: targetData.total_completed || 0,
-      duelWins: targetData.duel_wins || 0,
-      duelLosses: targetData.duel_losses || 0,
-      duelMmr: targetData.duel_mmr || 1000,
-      bestBasitFormatted: UserManager.formatTime(targetData.best_basit),
-      bestOrtaFormatted: UserManager.formatTime(targetData.best_orta),
-      bestZorFormatted: UserManager.formatTime(targetData.best_zor)
-    };
+    stats = await UserManager.getUserProfileStats(currentlyViewedTargetUid);
+    stats.username = currentlyViewedTargetUsername;
+    stats.avatar = targetData.avatar || stats.avatar || '🎮';
   }
 
   const badges = AchievementManager.getAllBadgesWithStatus(stats.level, stats.gold, stats.totalCompleted);
@@ -1244,15 +1231,22 @@ const loadArenaLobbyPlayers = () => {
       snap.docs.forEach((docSnap) => {
         const d = docSnap.data();
         if (d.username !== myUsername) {
+          const level = typeof d.level === 'number' ? d.level : 1;
+          const wins = typeof d.duel_wins === 'number' ? d.duel_wins : 0;
+          const mmr = typeof d.duel_mmr === 'number' ? d.duel_mmr : 1000;
+          const completed = typeof d.total_completed === 'number' ? d.total_completed : 0;
+          const title = UserManager.calculatePlayerTitle(level, wins, mmr, completed);
+
           list.push({
             uid: d.uid || docSnap.id,
             username: d.username || 'Oyuncu',
             gold: d.gold || 100,
-            level: d.level || 1,
+            level,
             avatar: d.avatar || '🎮',
-            title: d.title || 'Çırak',
-            duel_wins: d.duel_wins || 0,
-            duel_mmr: d.duel_mmr || 1000,
+            title,
+            duel_wins: wins,
+            duel_mmr: mmr,
+            total_completed: completed,
             onlineStatus: d.onlineStatus || 'available',
             lastSeenMs: d.lastSeenMs
           } as any);

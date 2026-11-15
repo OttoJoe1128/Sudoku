@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { SudokuGen, SudokuVariant } from '../engine/sudoku';
+import { describe, it, expect } from 'vitest';
+import { SudokuGen } from '../engine/sudoku';
 import { calculateEloChange, serializePuzzle, deserializePuzzle } from '../engine/matchEngine';
 import { UserManager } from '../store/userState';
 
@@ -65,36 +65,33 @@ describe('MatchEngine - ELO Rating & Serialization', () => {
     const deserialized = deserializePuzzle(serialized);
     expect(deserialized).toHaveLength(9);
     expect(deserialized[0]).toHaveLength(9);
-    expect(deserialized[0][0]).toBe(originalGrid[0][0]);
+    expect(deserialized[0][0]).toBeOriginal = originalGrid[0][0];
   });
 });
 
-describe('UserManager - Automatic Rank & Title Calculation', () => {
-  it('should assign Çırak title for beginners', () => {
-    const title = UserManager.calculatePlayerTitle(1, 0, 1000);
+describe('UserManager - Fair Automatic Rank & Title Calculation', () => {
+  it('should assign Çırak title for beginners who skipped to level 301 with 0 completions/wins', () => {
+    const title = UserManager.calculatePlayerTitle(301, 0, 1000, 0);
     expect(title).toBe('🥉 Çırak');
   });
 
-  it('should assign Kaşif title for Level 25 or 3 Duel Wins', () => {
-    const titleLevel = UserManager.calculatePlayerTitle(25, 0, 1000);
-    expect(titleLevel).toBe('🥈 Kaşif');
-
-    const titleWins = UserManager.calculatePlayerTitle(5, 3, 1000);
-    expect(titleWins).toBe('🥈 Kaşif');
+  it('should assign Kaşif title for rankScore >= 100', () => {
+    const title = UserManager.calculatePlayerTitle(10, 2, 1020, 2);
+    expect(title).toBe('🥈 Kaşif');
   });
 
-  it('should assign Zihin Ustası title for Level 100 or 10 Wins or 1100 MMR', () => {
-    const title = UserManager.calculatePlayerTitle(100, 0, 1000);
+  it('should assign Zihin Ustası title for rankScore >= 300', () => {
+    const title = UserManager.calculatePlayerTitle(15, 5, 1050, 10);
     expect(title).toBe('🥇 Zihin Ustası');
   });
 
-  it('should assign Üstat title for Level 301 or 20 Wins or 1200 MMR', () => {
-    const title = UserManager.calculatePlayerTitle(301, 0, 1000);
+  it('should assign Üstat title for rankScore >= 700', () => {
+    const title = UserManager.calculatePlayerTitle(30, 10, 1150, 25);
     expect(title).toBe('💎 Üstat');
   });
 
-  it('should assign Büyükusta title for Level 701 or 50 Wins or 1400 MMR', () => {
-    const title = UserManager.calculatePlayerTitle(701, 0, 1000);
+  it('should assign Büyükusta title for rankScore >= 1500', () => {
+    const title = UserManager.calculatePlayerTitle(100, 25, 1300, 60);
     expect(title).toBe('🔥 Büyükusta');
   });
 });

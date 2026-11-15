@@ -108,18 +108,24 @@ export const Leaderboard = {
           const list: Player[] = [];
           snapshot.docs.forEach((docSnap) => {
             const d = docSnap.data();
+            const level = typeof d.level === 'number' ? d.level : parseInt(d.level) || 1;
+            const duelWins = typeof d.duel_wins === 'number' ? d.duel_wins : 0;
+            const duelMmr = typeof d.duel_mmr === 'number' ? d.duel_mmr : 1000;
+            const totalCompleted = typeof d.total_completed === 'number' ? d.total_completed : 0;
+            const calcTitle = UserManager.calculatePlayerTitle(level, duelWins, duelMmr, totalCompleted);
+
             list.push({
               uid: d.uid || docSnap.id || d.username,
               username: d.username || docSnap.id || 'Oyuncu',
               gold: typeof d.gold === 'number' ? d.gold : parseInt(d.gold) || 0,
-              level: typeof d.level === 'number' ? d.level : parseInt(d.level) || 1,
+              level,
               avatar: d.avatar || '🎮',
-              title: d.title || 'Çırak',
+              title: calcTitle,
               total_errors: d.total_errors,
-              total_completed: d.total_completed,
-              duel_wins: d.duel_wins,
+              total_completed: totalCompleted,
+              duel_wins: duelWins,
               duel_losses: d.duel_losses,
-              duel_mmr: typeof d.duel_mmr === 'number' ? d.duel_mmr : 1000,
+              duel_mmr: duelMmr,
               bot_mmr: typeof d.bot_mmr === 'number' ? d.bot_mmr : 1000,
               best_basit: d.best_basit,
               best_orta: d.best_orta,

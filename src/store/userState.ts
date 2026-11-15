@@ -65,11 +65,23 @@ export const VARIANT_MULTIPLIERS: Record<SudokuVariant, number> = {
 };
 
 export const UserManager = {
-  calculatePlayerTitle(level: number, duelWins: number = 0, duelMmr: number = 1000): string {
-    if (level >= 701 || duelWins >= 50 || duelMmr >= 1400) return '🔥 Büyükusta';
-    if (level >= 301 || duelWins >= 20 || duelMmr >= 1200) return '💎 Üstat';
-    if (level >= 100 || duelWins >= 10 || duelMmr >= 1100) return '🥇 Zihin Ustası';
-    if (level >= 25 || duelWins >= 3) return '🥈 Kaşif';
+  calculatePlayerTitle(
+    level: number = 1,
+    duelWins: number = 0,
+    duelMmr: number = 1000,
+    totalCompleted: number = 0
+  ): string {
+    const progressLevels = level >= 701 ? (level - 701) : (level >= 301 ? (level - 301) : (level - 1));
+    const effectiveCompleted = Math.max(totalCompleted, Math.max(0, progressLevels));
+    const mmrBonus = Math.max(0, duelMmr - 1000) * 2;
+    const tierBonus = level >= 701 ? 120 : (level >= 301 ? 50 : 0);
+
+    const rankScore = (effectiveCompleted * 15) + (duelWins * 45) + mmrBonus + tierBonus;
+
+    if (rankScore >= 1500) return '🔥 Büyükusta';
+    if (rankScore >= 700) return '💎 Üstat';
+    if (rankScore >= 300) return '🥇 Zihin Ustası';
+    if (rankScore >= 100) return '🥈 Kaşif';
     return '🥉 Çırak';
   },
 
@@ -135,7 +147,8 @@ export const UserManager = {
         const avatar = data.avatar || '🎮';
         const duelWins = typeof data.duel_wins === 'number' ? data.duel_wins : 0;
         const duelMmr = typeof data.duel_mmr === 'number' ? data.duel_mmr : 1000;
-        const title = this.calculatePlayerTitle(level, duelWins, duelMmr);
+        const totalCompleted = typeof data.total_completed === 'number' ? data.total_completed : 0;
+        const title = this.calculatePlayerTitle(level, duelWins, duelMmr, totalCompleted);
 
         localStorage.setItem('sudoku_username', username);
         localStorage.setItem('sudoku_gold', gold.toString());
@@ -154,7 +167,7 @@ export const UserManager = {
         if (found) {
           localStorage.setItem('sudoku_gold', found.gold.toString());
           localStorage.setItem('sudoku_level', found.level.toString());
-          const calcTitle = this.calculatePlayerTitle(found.level, found.duel_wins || 0, found.duel_mmr || 1000);
+          const calcTitle = this.calculatePlayerTitle(found.level, found.duel_wins || 0, found.duel_mmr || 1000, found.total_completed || 0);
           localStorage.setItem('sudoku_title', calcTitle);
 
           await setDoc(userDocRef, {
@@ -189,16 +202,17 @@ export const UserManager = {
         const level = typeof d.level === 'number' ? d.level : 1;
         const wins = typeof d.duel_wins === 'number' ? d.duel_wins : 0;
         const mmr = typeof d.duel_mmr === 'number' ? d.duel_mmr : 1000;
+        const completed = typeof d.total_completed === 'number' ? d.total_completed : 0;
         return {
           uid: d.uid || username,
           username: d.username || username,
           gold: typeof d.gold === 'number' ? d.gold : 100,
           level,
           avatar: d.avatar || '🎮',
-          title: this.calculatePlayerTitle(level, wins, mmr),
+          title: this.calculatePlayerTitle(level, wins, mmr, completed),
           duel_mmr: mmr,
           bot_mmr: typeof d.bot_mmr === 'number' ? d.bot_mmr : 1000,
-          total_completed: d.total_completed,
+          total_completed: completed,
           duel_wins: wins,
           duel_losses: d.duel_losses,
           onlineStatus: d.onlineStatus || 'available',
@@ -213,16 +227,17 @@ export const UserManager = {
         const level = typeof d.level === 'number' ? d.level : 1;
         const wins = typeof d.duel_wins === 'number' ? d.duel_wins : 0;
         const mmr = typeof d.duel_mmr === 'number' ? d.duel_mmr : 1000;
+        const completed = typeof d.total_completed === 'number' ? d.total_completed : 0;
         return {
           uid: d.uid || snap.docs[0].id,
           username: d.username,
           gold: typeof d.gold === 'number' ? d.gold : 100,
           level,
           avatar: d.avatar || '🎮',
-          title: this.calculatePlayerTitle(level, wins, mmr),
+          title: this.calculatePlayerTitle(level, wins, mmr, completed),
           duel_mmr: mmr,
           bot_mmr: typeof d.bot_mmr === 'number' ? d.bot_mmr : 1000,
-          total_completed: d.total_completed,
+          total_completed: completed,
           duel_wins: wins,
           duel_losses: d.duel_losses,
           onlineStatus: d.onlineStatus || 'available',
@@ -335,13 +350,14 @@ export const UserManager = {
         const level = typeof currentData.level === 'number' ? currentData.level : this.getCurrentLevel();
         const wins = (typeof currentData.duel_wins === 'number' ? currentData.duel_wins : 0) + (isWin ? 1 : 0);
         const losses = (typeof currentData.duel_losses === 'number' ? currentData.duel_losses : 0) + (isWin ? 0 : 1);
+        const completed = typeof currentData.total_completed === 'number' ? currentData.total_completed : 0;
 
         const currentPvpMmr = typeof currentData.duel_mmr === 'number' ? currentData.duel_mmr : 1000;
         const currentBotMmr = typeof currentData.bot_mmr === 'number' ? currentData.bot_mmr : 1000;
 
         const effectiveMmrChange = mmrChange !== 0 ? mmrChange : (isWin ? 25 : -20);
         const updatedMmr = isBot ? currentPvpMmr : Math.max(100, currentPvpMmr + effectiveMmrChange);
-        const newTitle = this.calculatePlayerTitle(level, wins, updatedMmr);
+        const newTitle = this.calculatePlayerTitle(level, wins, updatedMmr, completed);
 
         localStorage.setItem('sudoku_title', newTitle);
 
@@ -397,7 +413,8 @@ export const UserManager = {
       const level = typeof currentData.level === 'number' ? currentData.level : details.level;
       const wins = typeof currentData.duel_wins === 'number' ? currentData.duel_wins : 0;
       const mmr = typeof currentData.duel_mmr === 'number' ? currentData.duel_mmr : 1000;
-      const calcTitle = this.calculatePlayerTitle(level, wins, mmr);
+      const totalCompleted = (typeof currentData.total_completed === 'number' ? currentData.total_completed : 0) + 1;
+      const calcTitle = this.calculatePlayerTitle(level, wins, mmr, totalCompleted);
 
       localStorage.setItem('sudoku_title', calcTitle);
 
@@ -407,7 +424,7 @@ export const UserManager = {
         title: calcTitle,
         lastSeenMs: Date.now(),
         updatedAt: serverTimestamp(),
-        total_completed: (typeof currentData.total_completed === 'number' ? currentData.total_completed : 0) + 1
+        total_completed: totalCompleted
       };
 
       const diffKey = details.difficulty === 'basit' ? 'best_basit' : details.difficulty === 'orta' ? 'best_orta' : 'best_zor';
@@ -484,7 +501,7 @@ export const UserManager = {
       }
     }
 
-    const title = this.calculatePlayerTitle(level, duelWins, duelMmr);
+    const title = this.calculatePlayerTitle(level, duelWins, duelMmr, totalCompleted);
 
     // En baskın disiplin tespiti
     let maxScore = -1;
