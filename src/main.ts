@@ -179,6 +179,13 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
     activeMatch = matchData || null;
     isNotesMode = false;
 
+    // Presence takibi
+    if (isMatchMode) {
+      UserManager.setPresence('in_duel');
+    } else {
+      UserManager.setPresence('in_game');
+    }
+
     // Geçerli Kayıt Doğrulaması
     const isValidRestored = restoredState &&
       Array.isArray(restoredState.currentSolution) && restoredState.currentSolution.length === 9 &&
@@ -949,8 +956,9 @@ document.getElementById('btn-challenge-player')?.addEventListener('click', () =>
   });
 });
 
-// AI Bot Karakterleri & Eşleşme Mantığı
-let currentBotTabDiff: 'basit' | 'orta' | 'zor' = 'basit';
+// Düello Arenası & Canlı Oyuncu Lobisi & AI Bot Rakipleri
+let currentArenaDiff: 'basit' | 'orta' | 'zor' = 'basit';
+let arenaUnsubLobby: (() => void) | null = null;
 
 const startBotMatch = (bot: BotCharacter) => {
   UIManager.toggleModal('match-search-modal', false);
@@ -962,6 +970,7 @@ const startBotMatch = (bot: BotCharacter) => {
   const matchData: MatchState = {
     matchId: `match_${Date.now()}`,
     difficulty: bot.difficulty,
+    durationSec: selectedMatchTimeSec,
     puzzle: generated.puzzle,
     solution: generated.solution,
     status: 'in_progress',
@@ -974,7 +983,7 @@ const startBotMatch = (bot: BotCharacter) => {
     },
     player2: {
       uid: bot.id,
-      username: `${bot.avatar} ${bot.name} (Sev. ${bot.level})`,
+      username: `${bot.avatar} ${bot.name} (${bot.title})`,
       isBot: true,
       progress: 0,
       errors: 0
@@ -993,26 +1002,70 @@ const startBotMatch = (bot: BotCharacter) => {
       isMatchMode = false;
       MatchEngine.clearActiveMatch();
       UIManager.hideMatchHeader();
-      await UserManager.recordDuelResult(false);
+      await UserManager.recordDuelResult(false, true, -15, 0);
       showMatchResult(false, 0, enemyName);
     }
   }, bot.speedMs);
 };
 
+const loadArenaLobbyPlayers = () => {
+  if (arenaUnsubLobby) arenaUnsubLobby();
+
+  try {
+    const q = query(
+      collection(db, 'leaderboard'),
+      limit(30)
+    );
+    arenaUnsubLobby = onSnapshot(q, (snap) => {
+      const list: Player[] = [];
+      const myUsername = UserManager.getUsername();
+      snap.docs.forEach((docSnap) => {
+        const d = docSnap.data();
+        if (d.username !== myUsername) {
+          list.push({
+            uid: d.uid || docSnap.id,
+            username: d.username || 'Oyuncu',
+            gold: d.gold || 100,
+            level: d.level || 1,
+            avatar: d.avatar || '🎮',
+            title: d.title || 'Çırak',
+            duel_wins: d.duel_wins || 0,
+            duel_mmr: d.duel_mmr || 1000,
+            onlineStatus: d.onlineStatus || 'available',
+            lastSeenMs: d.lastSeenMs
+          } as any);
+        }
+      });
+
+      UIManager.renderLobbyPlayers(list, async (targetPlayer) => {
+        try {
+          await MatchEngine.sendDirectChallenge(targetPlayer.uid || targetPlayer.username, targetPlayer.username, currentArenaDiff, selectedMatchTimeSec);
+          const modeText = selectedMatchTimeSec > 0 ? `${Math.floor(selectedMatchTimeSec / 60)} Dk` : 'Süresiz';
+          UIManager.showToast(`⚔️ Düello daveti (${modeText}) ${targetPlayer.username} adlı oyuncunun gelen kutusuna gönderildi!`, 'success');
+        } catch (e: any) {
+          UIManager.showToast('Davet gönderilemedi.', 'error');
+        }
+      });
+    });
+  } catch (e) {
+    console.warn("Lobi oyuncuları dinlenemedi:", e);
+  }
+};
+
 const loadBotCharactersUI = (diff: 'basit' | 'orta' | 'zor') => {
-  currentBotTabDiff = diff;
+  currentArenaDiff = diff;
   const filtered = BotCharacters.filter(b => b.difficulty === diff);
 
-  const countLabel = document.getElementById('bot-count-label');
-  if (countLabel) countLabel.innerText = `${filtered.length} Karakter (${diff.toUpperCase()})`;
-
   ['basit', 'orta', 'zor'].forEach(d => {
-    const btn = document.getElementById(`btn-bot-tab-${d}`);
+    const btn = document.getElementById(`btn-diff-${d}`);
     if (btn) {
       if (d === diff) {
-        btn.className = "bot-tab-btn flex-1 py-1.5 rounded-lg font-black text-[10px] transition-all bg-indigo-600 text-white shadow-sm";
+        let bgClass = "bg-emerald-600";
+        if (d === 'orta') bgClass = "bg-amber-600";
+        if (d === 'zor') bgClass = "bg-rose-600";
+        btn.className = `arena-diff-btn flex-1 py-1 rounded-lg font-black text-[10px] transition-all ${bgClass} text-white shadow-sm`;
       } else {
-        btn.className = "bot-tab-btn flex-1 py-1.5 rounded-lg font-bold text-[10px] transition-all text-slate-600 hover:text-slate-900 bg-transparent";
+        btn.className = "arena-diff-btn flex-1 py-1 rounded-lg font-bold text-[10px] transition-all text-slate-600 hover:text-slate-900 bg-transparent";
       }
     }
   });
@@ -1020,17 +1073,45 @@ const loadBotCharactersUI = (diff: 'basit' | 'orta' | 'zor') => {
   UIManager.renderBotCharacters(filtered, (selectedBot) => startBotMatch(selectedBot));
 };
 
-document.getElementById('btn-bot-tab-basit')?.addEventListener('click', () => loadBotCharactersUI('basit'));
-document.getElementById('btn-bot-tab-orta')?.addEventListener('click', () => loadBotCharactersUI('orta'));
-document.getElementById('btn-bot-tab-zor')?.addEventListener('click', () => loadBotCharactersUI('zor'));
+// Arena Sekme Değişim Dinleyicileri
+document.getElementById('tab-arena-lobby')?.addEventListener('click', () => {
+  document.getElementById('section-arena-lobby')?.classList.remove('hidden');
+  document.getElementById('section-arena-lobby')?.classList.add('flex');
+  document.getElementById('section-arena-bots')?.classList.add('hidden');
+  document.getElementById('section-arena-bots')?.classList.remove('flex');
 
-// Modal: Düello / Maç
+  document.getElementById('tab-arena-lobby')?.classList.add('bg-white', 'text-indigo-700', 'shadow-sm');
+  document.getElementById('tab-arena-bots')?.classList.remove('bg-white', 'text-indigo-700', 'shadow-sm');
+  loadArenaLobbyPlayers();
+});
+
+document.getElementById('tab-arena-bots')?.addEventListener('click', () => {
+  document.getElementById('section-arena-bots')?.classList.remove('hidden');
+  document.getElementById('section-arena-bots')?.classList.add('flex');
+  document.getElementById('section-arena-lobby')?.classList.add('hidden');
+  document.getElementById('section-arena-lobby')?.classList.remove('flex');
+
+  document.getElementById('tab-arena-bots')?.classList.add('bg-white', 'text-indigo-700', 'shadow-sm');
+  document.getElementById('tab-arena-lobby')?.classList.remove('bg-white', 'text-indigo-700', 'shadow-sm');
+  loadBotCharactersUI(currentArenaDiff);
+});
+
+document.getElementById('btn-diff-basit')?.addEventListener('click', () => loadBotCharactersUI('basit'));
+document.getElementById('btn-diff-orta')?.addEventListener('click', () => loadBotCharactersUI('orta'));
+document.getElementById('btn-diff-zor')?.addEventListener('click', () => loadBotCharactersUI('zor'));
+
+// Modal: Düello / Maç Açılışı
 document.getElementById('btn-open-match')?.addEventListener('click', () => {
   UIManager.toggleModal('match-search-modal', true);
-  loadBotCharactersUI(currentBotTabDiff);
+  loadArenaLobbyPlayers();
+  loadBotCharactersUI(currentArenaDiff);
 });
 
 document.getElementById('close-match-search')?.addEventListener('click', () => {
+  if (arenaUnsubLobby) {
+    arenaUnsubLobby();
+    arenaUnsubLobby = null;
+  }
   MatchEngine.clearActiveMatch();
   const box = document.getElementById('match-search-status-box');
   if (box) box.classList.add('hidden');
@@ -1038,7 +1119,7 @@ document.getElementById('close-match-search')?.addEventListener('click', () => {
 });
 
 document.getElementById('btn-quick-online-match')?.addEventListener('click', () => {
-  startMatchWithDiff(currentBotTabDiff);
+  startMatchWithDiff(currentArenaDiff);
 });
 
 // Düello Süre Seçim Butonları

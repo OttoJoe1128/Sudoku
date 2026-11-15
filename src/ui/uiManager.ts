@@ -335,6 +335,74 @@ export const UIManager = {
     });
   },
 
+  renderLobbyPlayers(
+    players: Player[],
+    onInviteClick: (player: Player) => void
+  ) {
+    const listEl = document.getElementById('lobby-players-list');
+    if (!listEl) return;
+
+    if (players.length === 0) {
+      listEl.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-8 text-center">
+          <svg class="w-8 h-8 text-slate-300 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+          <p class="text-xs font-bold text-slate-500 mb-0.5">Çevrimiçi oyuncu bulunamadı</p>
+          <p class="text-[10px] text-slate-400">Rastgele rakip arayabilir veya YZ Botlarla kapışabilirsiniz.</p>
+        </div>
+      `;
+      return;
+    }
+
+    listEl.innerHTML = players.map(p => {
+      const status = p.onlineStatus || 'available';
+      let statusBadge = `<span class="text-[9px] font-black text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-md">🟢 Müsait</span>`;
+      let btnText = `⚔️ Düello Gönder`;
+      let btnClass = `bg-indigo-600 hover:bg-indigo-700 text-white`;
+      let isDisabled = false;
+
+      if (status === 'in_game') {
+        statusBadge = `<span class="text-[9px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md">🟡 Oyunda</span>`;
+        btnText = `📩 Davet Gönder`;
+        btnClass = `bg-purple-600 hover:bg-purple-700 text-white`;
+      } else if (status === 'in_duel') {
+        statusBadge = `<span class="text-[9px] font-black text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-md">🔴 Düelloda</span>`;
+        btnText = `Maçta`;
+        btnClass = `bg-slate-200 text-slate-400 opacity-60 cursor-not-allowed`;
+        isDisabled = true;
+      }
+
+      const calculatedTitle = UserManager.calculatePlayerTitle(p.level, p.duel_wins || 0, p.duel_mmr || 1000);
+
+      return `
+        <div class="p-2.5 border border-slate-200 hover:border-indigo-300 rounded-2xl bg-white shadow-sm flex items-center justify-between transition-all">
+          <div class="flex items-center gap-2">
+            <div class="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-lg shrink-0">
+              ${p.avatar || '🎮'}
+            </div>
+            <div class="text-left">
+              <div class="flex items-center gap-1.5">
+                <span class="font-black text-slate-800 text-xs">${p.username}</span>
+                <span class="text-[9px] font-black text-indigo-600">${calculatedTitle}</span>
+              </div>
+              <div class="mt-0.5">${statusBadge}</div>
+            </div>
+          </div>
+          <button data-player-uid="${p.uid || p.username}" class="lobby-invite-btn ${btnClass} font-black text-[11px] px-2.5 py-1.5 rounded-xl shadow-sm active:scale-95 transition-transform shrink-0 whitespace-nowrap ${isDisabled ? 'pointer-events-none' : ''}">
+            ${btnText}
+          </button>
+        </div>
+      `;
+    }).join('');
+
+    listEl.querySelectorAll('.lobby-invite-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const uid = (e.currentTarget as HTMLElement).getAttribute('data-player-uid');
+        const selected = players.find(p => (p.uid || p.username) === uid);
+        if (selected) onInviteClick(selected);
+      });
+    });
+  },
+
   renderBotCharacters(
     bots: BotCharacter[],
     onSelectBot: (bot: BotCharacter) => void
@@ -815,5 +883,9 @@ export const UIManager = {
       el.classList.toggle('hidden', id !== viewId);
       el.classList.toggle('flex', id === viewId);
     });
+
+    if (viewId === 'menu' || viewId === 'map' || viewId === 'custom') {
+      UserManager.setPresence('available');
+    }
   }
 };

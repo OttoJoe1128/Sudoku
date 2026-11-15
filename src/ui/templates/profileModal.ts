@@ -17,7 +17,7 @@ export const profileModalTemplate = `
                 🎮
             </div>
 
-            <p id="profile-player-title" class="text-[10px] font-black text-indigo-600 uppercase tracking-wider block mb-0.5">Çırak</p>
+            <p id="profile-player-title" class="text-[10px] font-black text-indigo-600 uppercase tracking-wider block mb-0.5">🥉 Çırak</p>
 
             <div class="flex items-center gap-1.5 mb-2">
                 <span id="profile-username" class="font-black text-slate-800 text-lg">Oyuncu</span>
@@ -82,7 +82,7 @@ export const profileModalTemplate = `
             </button>
         </div>
 
-        <!-- Kendi Profilimiz İçin Kontroller (Avatar/Unvan Seçimi + Bildirimler) -->
+        <!-- Kendi Profilimiz İçin Kontroller (Avatar Seçimi + Bildirimler) -->
         <div id="profile-own-controls" class="flex flex-col gap-2.5 mb-1">
             <!-- Avatar Seçici -->
             <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 text-left">
@@ -90,14 +90,6 @@ export const profileModalTemplate = `
                 <div id="profile-avatar-selector" class="flex justify-between items-center gap-1">
                     <!-- 8 Avatar Seçeneği -->
                 </div>
-            </div>
-
-            <!-- Unvan Seçici -->
-            <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 text-left">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">Unvan Seç</p>
-                <select id="profile-title-select" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-600 shadow-sm">
-                    <!-- Unvan opsiyonları -->
-                </select>
             </div>
 
             <!-- Bildirim Toggle -->
