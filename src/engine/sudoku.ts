@@ -14,30 +14,28 @@ export interface GeneratedSudoku {
   samuraiGrids?: { puzzle: number[][]; solution: number[][] }[];
 }
 
-// Tam 9 adet 9'ar hücreli düzensiz (Jigsaw) bölge haritaları
-export const VALID_IRREGULAR_REGIONS: number[][][] = [
-  [
-    [0,0,0,0,0,1,1,1,1],
-    [0,0,0,0,1,1,1,1,1],
-    [2,2,2,2,3,3,3,3,3],
-    [2,2,2,2,3,3,3,3,4],
-    [5,5,5,5,4,4,4,4,4],
-    [5,5,5,5,6,6,6,6,4],
-    [7,7,7,7,7,6,6,6,6],
-    [7,7,8,8,8,8,8,8,8],
-    [7,7,8,8,8,8,8,8,8]
-  ],
-  [
-    [0,0,0,1,1,1,2,2,2],
-    [0,0,0,1,1,1,2,2,2],
-    [0,0,0,1,1,1,2,2,2],
-    [3,3,3,4,4,4,5,5,5],
-    [3,3,3,4,4,4,5,5,5],
-    [3,3,3,4,4,4,5,5,5],
-    [6,6,6,7,7,7,8,8,8],
-    [6,6,6,7,7,7,8,8,8],
-    [6,6,6,7,7,7,8,8,8]
-  ]
+export const BASE_IRREGULAR_REGION_MAP: number[][] = [
+  [0, 0, 0, 0, 1, 1, 1, 2, 2],
+  [0, 0, 0, 1, 1, 1, 2, 2, 2],
+  [0, 0, 3, 1, 1, 1, 4, 2, 2],
+  [3, 3, 3, 3, 4, 4, 4, 2, 2],
+  [3, 3, 3, 4, 4, 4, 5, 5, 5],
+  [6, 6, 3, 4, 4, 5, 5, 5, 5],
+  [6, 6, 4, 7, 7, 7, 8, 5, 5],
+  [6, 6, 6, 7, 7, 7, 8, 8, 8],
+  [6, 6, 7, 7, 7, 8, 8, 8, 8]
+];
+
+export const BASE_IRREGULAR_SOLUTION: number[][] = [
+  [1, 2, 3, 4, 5, 6, 7, 8, 9],
+  [5, 6, 7, 1, 2, 3, 8, 9, 4],
+  [8, 9, 1, 4, 8, 9, 2, 3, 5],
+  [2, 3, 4, 5, 6, 7, 9, 1, 6],
+  [6, 7, 8, 1, 3, 8, 4, 5, 2],
+  [3, 4, 9, 7, 5, 1, 6, 7, 8],
+  [4, 5, 6, 2, 9, 4, 3, 1, 3],
+  [7, 8, 2, 3, 6, 5, 1, 4, 7],
+  [9, 1, 5, 8, 7, 2, 5, 6, 1]
 ];
 
 const BASE_SUDOKU_SOLUTION: number[][] = [
@@ -65,10 +63,10 @@ export class SudokuGen {
     return 'zor';
   }
 
-  // 0.01 Saniyede Anında Geçerli Çözüm Üretici (Rakam Permütasyonu)
-  static generateSolutionFast(): number[][] {
+  static generateSolutionFast(isIrregular: boolean = false): number[][] {
     const perm = [1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5);
-    return BASE_SUDOKU_SOLUTION.map(row => row.map(num => perm[num - 1]));
+    const source = isIrregular ? BASE_IRREGULAR_SOLUTION : BASE_SUDOKU_SOLUTION;
+    return source.map(row => row.map(num => perm[num - 1]));
   }
 
   static generateVariant(difficulty: string, variant: SudokuVariant = 'classic'): GeneratedSudoku {
@@ -79,7 +77,6 @@ export class SudokuGen {
       const bottomLeft = this.generate(difficulty);
       const bottomRight = this.generate(difficulty);
 
-      // Kesişen 3x3 köşeleri senkronize et
       for (let r = 0; r < 3; r++) {
         for (let c = 0; c < 3; c++) {
           center.solution[r][c] = topLeft.solution[r + 6][c + 6];
@@ -105,13 +102,13 @@ export class SudokuGen {
       };
     }
 
-    const gen = this.generate(difficulty);
+    const isIrregular = variant === 'irregular';
+    const gen = this.generate(difficulty, isIrregular);
     let regionMap: number[][] | undefined = undefined;
     let cages: KillerCage[] | undefined = undefined;
 
-    if (variant === 'irregular') {
-      const idx = Math.floor(Math.random() * VALID_IRREGULAR_REGIONS.length);
-      regionMap = VALID_IRREGULAR_REGIONS[idx];
+    if (isIrregular) {
+      regionMap = BASE_IRREGULAR_REGION_MAP;
     } else if (variant === 'killer') {
       cages = this.generateKillerCages(gen.solution);
     }
@@ -125,8 +122,8 @@ export class SudokuGen {
     };
   }
 
-  static generate(difficulty: string): { puzzle: number[][]; solution: number[][] } {
-    const solution = this.generateSolutionFast();
+  static generate(difficulty: string, isIrregular: boolean = false): { puzzle: number[][]; solution: number[][] } {
+    const solution = this.generateSolutionFast(isIrregular);
     const puzzle = solution.map(row => [...row]);
 
     const targetRemoves = difficulty === 'basit' ? 30 : difficulty === 'orta' ? 42 : 52;
@@ -153,7 +150,7 @@ export class SudokuGen {
     for (let r = 0; r < 9; r++) {
       for (let c = 0; c < 9; c++) {
         if (!visited[r][c]) {
-          const cageSize = Math.floor(Math.random() * 2) + 2; // 2 veya 3 hücreli kafes
+          const cageSize = Math.floor(Math.random() * 2) + 2;
           const cells: { r: number; c: number }[] = [{ r, c }];
           visited[r][c] = true;
 
@@ -182,7 +179,6 @@ export class SudokuGen {
     return cages;
   }
 
-  // 5 Disiplin Otomatik Doğrulama Teşhisi (Diagnostic Self-Test)
   static runSelfDiagnostics(): boolean {
     try {
       const variants: SudokuVariant[] = ['classic', 'irregular', 'killer', 'wordoku', 'samurai'];
@@ -196,14 +192,8 @@ export class SudokuGen {
         if (v === 'samurai' && (!res.samuraiGrids || res.samuraiGrids.length !== 5)) allPass = false;
       });
 
-      if (allPass) {
-        console.log("🟢 [SUDOKU DIAGNOSTICS] 5 Disiplinin Tamamı %100 PASS (0.01sn Üretim Başarılı)");
-      } else {
-        console.warn("⚠️ [SUDOKU DIAGNOSTICS] Bazı varyantlar doğrulanamadı.");
-      }
       return allPass;
-    } catch (e) {
-      console.error("❌ [SUDOKU DIAGNOSTICS] Teşhis hatası:", e);
+    } catch {
       return false;
     }
   }

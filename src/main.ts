@@ -69,70 +69,78 @@ const calculateRemainingCounts = (board: number[][]): Map<number, number> => {
   return counts;
 };
 
-// Multi-Save Aktif Oyunlar Listesi Mimarisi
+// Multi-Save Aktif Oyunlar Listesi Mimarisi (Sabit Harita İlerlemesi + Serbest Mod Kayıtları)
 const getSavedGamesList = (): SavedGameRecord[] => {
-  let list: SavedGameRecord[] = [];
+  let customList: SavedGameRecord[] = [];
   try {
     const raw = localStorage.getItem('sudoku_saved_games_list');
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) list = parsed;
+      if (Array.isArray(parsed)) customList = parsed.filter(item => item.isCustomMode);
     }
   } catch {
     // ignore
   }
 
-  // 1. Eski tekil kaydı (sudoku_saved_game) otomatik yeni listeye aktarma
-  try {
-    const legacyRaw = localStorage.getItem('sudoku_saved_game');
-    if (legacyRaw) {
-      const parsed = JSON.parse(legacyRaw);
-      if (parsed && Array.isArray(parsed.userBoard) && parsed.userBoard.length === 9) {
-        const variant: SudokuVariant = parsed.variant || 'classic';
-        const gameId = `saved_${variant}_${parsed.level || 1}`;
-        const record: SavedGameRecord = {
-          id: gameId,
-          variant,
-          level: parsed.level || 1,
-          diff: parsed.diff || 'basit',
-          timeElapsed: typeof parsed.timeElapsed === 'number' ? parsed.timeElapsed : 0,
-          userBoard: parsed.userBoard,
-          initialBoard: parsed.initialBoard,
-          currentSolution: parsed.currentSolution,
-          errors: typeof parsed.errors === 'number' ? parsed.errors : 0,
-          notesBoard: parsed.notesBoard || [],
-          updatedAtMs: Date.now()
-        };
+  // Harita Seviyeleri Sabit Kartları (Silinemez)
+  const mapList: SavedGameRecord[] = [];
+  const variants: SudokuVariant[] = ['classic', 'irregular', 'killer', 'wordoku', 'samurai'];
 
-        const idx = list.findIndex(item => item.id === gameId);
-        if (idx >= 0) {
-          list[idx] = record;
-        } else {
-          list.unshift(record);
-        }
+  variants.forEach(v => {
+    const userLvl = UserManager.getVariantLevel(v);
+    const diff = SudokuGen.getDifficulty(userLvl);
+    const gameId = `saved_map_${v}_${userLvl}`;
 
-        localStorage.setItem('sudoku_saved_games_list', JSON.stringify(list));
+    let savedTime = 0;
+    let savedUserBoard: number[][] | null = null;
+    let savedInitialBoard: number[][] | null = null;
+    let savedSolution: number[][] | null = null;
+    let savedErrors = 0;
+    let savedNotes: any = [];
+
+    try {
+      const rawMap = localStorage.getItem(`sudoku_map_save_${v}_${userLvl}`);
+      if (rawMap) {
+        const p = JSON.parse(rawMap);
+        savedTime = p.timeElapsed || 0;
+        savedUserBoard = p.userBoard;
+        savedInitialBoard = p.initialBoard;
+        savedSolution = p.currentSolution;
+        savedErrors = p.errors || 0;
+        savedNotes = p.notesBoard || [];
       }
-      localStorage.removeItem('sudoku_saved_game');
+    } catch {
+      // ignore
     }
-  } catch {
-    // ignore
-  }
 
-  return list;
+    mapList.push({
+      id: gameId,
+      variant: v,
+      level: userLvl,
+      diff,
+      timeElapsed: savedTime,
+      userBoard: savedUserBoard || [],
+      initialBoard: savedInitialBoard || [],
+      currentSolution: savedSolution || [],
+      errors: savedErrors,
+      notesBoard: savedNotes,
+      isCustomMode: false,
+      updatedAtMs: Date.now()
+    });
+  });
+
+  return [...mapList, ...customList];
 };
 
 const saveActiveGameRecord = () => {
   if (isMatchMode || !userBoard || !initialBoard) return;
   try {
-    const list = getSavedGamesList();
-    const gameId = `saved_${currentVariant}_${currentLevelNumber}`;
     const safeNotes = notesBoard ? notesBoard.map(row => (
       row ? row.map(s => (s && typeof s.values === 'function' ? Array.from(s) : Array.isArray(s) ? s : [])) : []
     )) : [];
 
-    const record: SavedGameRecord = {
-      id: gameId,
+    // Harita kaydıysa özel harita anahtarına kaydet
+    localStorage.setItem(`sudoku_map_save_${currentVariant}_${currentLevelNumber}`, JSON.stringify({
       variant: currentVariant,
       level: currentLevelNumber,
       diff: currentDifficulty,
@@ -142,19 +150,9 @@ const saveActiveGameRecord = () => {
       currentSolution,
       errors,
       notesBoard: safeNotes,
-      regionMap: activeGeneratedSudoku?.regionMap,
-      cages: activeGeneratedSudoku?.cages,
       updatedAtMs: Date.now()
-    };
+    }));
 
-    const idx = list.findIndex(item => item.id === gameId);
-    if (idx >= 0) {
-      list[idx] = record;
-    } else {
-      list.unshift(record);
-    }
-
-    localStorage.setItem('sudoku_saved_games_list', JSON.stringify(list));
     updateSavedGamesCountUI();
   } catch (e) {
     console.error("Aktif oyun kaydı saklanamadı:", e);
@@ -162,21 +160,22 @@ const saveActiveGameRecord = () => {
 };
 
 const deleteSavedGameRecord = (gameId: string) => {
-  let list = getSavedGamesList();
+  let list = getSavedGamesList().filter(i => i.isCustomMode);
   list = list.filter(item => item.id !== gameId);
   localStorage.setItem('sudoku_saved_games_list', JSON.stringify(list));
   updateSavedGamesCountUI();
 };
 
 const clearCurrentSavedGame = () => {
+  localStorage.removeItem(`sudoku_map_save_${currentVariant}_${currentLevelNumber}`);
   deleteSavedGameRecord(`saved_${currentVariant}_${currentLevelNumber}`);
 };
 
 const updateSavedGamesCountUI = () => {
-  const list = getSavedGamesList();
+  const currentLvl = UserManager.getVariantLevel(selectedMapVariant || 'classic');
   const countLabel = document.getElementById('saved-games-count-label');
   if (countLabel) {
-    countLabel.innerText = `${list.length} Aktif Oyun`;
+    countLabel.innerText = `Harita: Sev. ${currentLvl} • Aktif Oyunlar`;
   }
 };
 
@@ -1133,10 +1132,8 @@ let selectedMapVariant: SudokuVariant = 'classic';
     const descEl = document.getElementById('map-variant-rule-desc');
     if (descEl) descEl.innerText = RULE_DESCRIPTIONS[v] || RULE_DESCRIPTIONS.classic;
 
-    const userLvl = UserManager.getVariantLevel(v);
-    const diff = SudokuGen.getDifficulty(userLvl);
-    const startLvl = SudokuGen.getStartLevelForDifficulty(diff);
-    UIManager.renderMap(userLvl, startLvl);
+    mapWindowStartLevel = 1;
+    renderMapPathUI();
   });
 });
 
@@ -1471,12 +1468,44 @@ document.getElementById('btn-new-game')?.addEventListener('click', () => {
     UIManager.navigate('custom');
 });
 
+let mapWindowStartLevel = 1;
+
+const renderMapPathUI = () => {
+  const userLvl = UserManager.getVariantLevel(selectedMapVariant);
+  if (mapWindowStartLevel === 1) {
+    mapWindowStartLevel = Math.max(1, userLvl - 6);
+  }
+  UIManager.renderMap(
+    userLvl,
+    userLvl,
+    (lvl) => {
+      const diff = SudokuGen.getDifficulty(lvl);
+      startGame(lvl, diff, undefined, undefined, selectedMapVariant);
+    },
+    mapWindowStartLevel
+  );
+};
+
 document.getElementById('btn-open-map')?.addEventListener('click', () => {
+    mapWindowStartLevel = 1;
+    UIManager.navigate('map');
+    renderMapPathUI();
+});
+
+document.getElementById('btn-map-start-current')?.addEventListener('click', () => {
     const userLvl = UserManager.getVariantLevel(selectedMapVariant);
     const diff = SudokuGen.getDifficulty(userLvl);
-    const startLvl = SudokuGen.getStartLevelForDifficulty(diff);
-    UIManager.navigate('map');
-    UIManager.renderMap(userLvl, startLvl);
+    startGame(userLvl, diff, undefined, undefined, selectedMapVariant);
+});
+
+document.getElementById('btn-map-page-up')?.addEventListener('click', () => {
+    mapWindowStartLevel = Math.min(980, mapWindowStartLevel + 20);
+    renderMapPathUI();
+});
+
+document.getElementById('btn-map-page-down')?.addEventListener('click', () => {
+    mapWindowStartLevel = Math.max(1, mapWindowStartLevel - 20);
+    renderMapPathUI();
 });
 
 // Özel Zorluk Seçim Ekranı Butonları
@@ -1492,15 +1521,18 @@ document.getElementById('btn-back-map')?.addEventListener('click', () => {
 });
 
 document.getElementById('btn-map-jump-basit')?.addEventListener('click', () => {
-    UIManager.renderMap(UserManager.getVariantLevel(selectedMapVariant), 1);
+    mapWindowStartLevel = 1;
+    renderMapPathUI();
 });
 
 document.getElementById('btn-map-jump-orta')?.addEventListener('click', () => {
-    UIManager.renderMap(UserManager.getVariantLevel(selectedMapVariant), 301);
+    mapWindowStartLevel = 301;
+    renderMapPathUI();
 });
 
 document.getElementById('btn-map-jump-zor')?.addEventListener('click', () => {
-    UIManager.renderMap(UserManager.getVariantLevel(selectedMapVariant), 701);
+    mapWindowStartLevel = 701;
+    renderMapPathUI();
 });
 
 // Günlük Ödül

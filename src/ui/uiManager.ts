@@ -16,7 +16,7 @@ import { BadgeStatus } from '../engine/achievements';
 import { ProfileStats, UserManager } from '../store/userState';
 import { ChallengeRequest } from '../engine/matchEngine';
 import { BotCharacter } from '../engine/botData';
-import { SudokuVariant, KillerCage } from '../engine/sudoku';
+import { SudokuVariant, KillerCage, SudokuGen } from '../engine/sudoku';
 
 export interface SavedGameRecord {
   id: string;
@@ -31,6 +31,7 @@ export interface SavedGameRecord {
   notesBoard: number[][][];
   regionMap?: number[][];
   cages?: KillerCage[];
+  isCustomMode?: boolean;
   updatedAtMs: number;
 }
 
@@ -372,6 +373,13 @@ export const UIManager = {
       const timeSec = typeof r.timeElapsed === 'number' ? r.timeElapsed : 0;
       const m = Math.floor(timeSec / 60).toString().padStart(2, '0');
       const s = (timeSec % 60).toString().padStart(2, '0');
+      const isCustom = !!r.isCustomMode;
+
+      const deleteBtnHTML = isCustom ? `
+        <button data-record-id="${r.id}" class="delete-saved-game-btn bg-rose-100 hover:bg-rose-200 text-rose-700 font-black text-xs p-1.5 rounded-xl active:scale-90 transition-transform">
+          ✕
+        </button>
+      ` : '';
 
       return `
         <div class="p-3 border border-slate-200 rounded-2xl bg-white shadow-sm flex items-center justify-between transition-all">
@@ -380,17 +388,18 @@ export const UIManager = {
               ${emblem}
             </div>
             <div class="text-left">
-              <p class="font-black text-slate-800 text-xs">${titleMap[variant] || 'Klasik Sudoku'}</p>
-              <p class="text-[10px] text-slate-500 font-bold">Seviye ${level} • ${diffStr} • ${m}:${s}</p>
+              <div class="flex items-center gap-1">
+                <p class="font-black text-slate-800 text-xs">${titleMap[variant] || 'Klasik Sudoku'}</p>
+                ${!isCustom ? `<span class="bg-indigo-100 text-indigo-700 text-[8px] font-black px-1.5 py-0.5 rounded-md">🗺️ Harita</span>` : `<span class="bg-purple-100 text-purple-700 text-[8px] font-black px-1.5 py-0.5 rounded-md">Serbest</span>`}
+              </div>
+              <p class="text-[10px] text-slate-500 font-bold">Seviye ${level} • ${diffStr} • ${timeSec > 0 ? `${m}:${s}` : 'Hazır'}</p>
             </div>
           </div>
           <div class="flex items-center gap-1.5 shrink-0">
             <button data-record-id="${r.id}" class="play-saved-game-btn bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs px-3 py-1.5 rounded-xl shadow-sm active:scale-95 transition-transform flex items-center gap-1">
-              <span>▶</span><span>Oyna</span>
+              <span>▶</span><span>Devam Et</span>
             </button>
-            <button data-record-id="${r.id}" class="delete-saved-game-btn bg-rose-100 hover:bg-rose-200 text-rose-700 font-black text-xs p-1.5 rounded-xl active:scale-90 transition-transform">
-              ✕
-            </button>
+            ${deleteBtnHTML}
           </div>
         </div>
       `;
@@ -719,20 +728,86 @@ export const UIManager = {
     });
   },
 
-  renderMap(currentLevel: number, startFocusLevel: number) {
-    const container = document.getElementById('map-nodes');
+  renderMap(
+    currentLevel: number,
+    startFocusLevel: number,
+    onNodeClick: (level: number) => void,
+    windowStartLevel?: number
+  ) {
+    const container = document.getElementById('map-path-container');
+    const targetLabel = document.getElementById('map-target-label');
     if (!container) return;
     container.innerHTML = '';
-    Array.from({length: 1000}, (_, i) => i + 1).forEach(level => {
-        const isUnlocked = level <= currentLevel || level === 1 || level === 301 || level === 701;
-        const isFocus = level === startFocusLevel;
-        const btn = document.createElement('button');
-        btn.dataset.level = level.toString();
-        btn.innerText = level.toString();
-        btn.className = `w-12 h-12 rounded-full font-black transition-all ${isFocus ? 'bg-indigo-600 text-white animate-pulse ring-4 ring-indigo-200' : isUnlocked ? 'bg-emerald-500 text-white shadow-md' : 'bg-slate-300 text-slate-500 opacity-50'} ${isUnlocked ? 'cursor-pointer' : 'cursor-not-allowed'}`;
-        if (!isUnlocked) btn.disabled = true;
-        container.appendChild(btn);
-    });
+
+    const diff = SudokuGen.getDifficulty(currentLevel);
+    if (targetLabel) {
+      targetLabel.innerText = `Seviye ${currentLevel} • ${diff.toUpperCase()}`;
+    }
+
+    const focusLvl = startFocusLevel || currentLevel;
+    const startLvl = windowStartLevel || Math.max(1, focusLvl - 6);
+    const endLvl = Math.min(1000, startLvl + 20);
+
+    const avatar = UserManager.getAvatar() || '🎮';
+
+    for (let lvl = startLvl; lvl <= endLvl; lvl++) {
+      const isCompleted = lvl < currentLevel;
+      const isCurrent = lvl === currentLevel;
+
+      // S-Eğrisi Dikey Kıvrım Hesaplaması (Duolingo/Candy Crush Stili)
+      const offsetIndex = lvl % 6;
+      let translateXClass = "translate-x-0";
+      if (offsetIndex === 1) translateXClass = "translate-x-[-35px]";
+      if (offsetIndex === 2) translateXClass = "translate-x-[-55px]";
+      if (offsetIndex === 3) translateXClass = "translate-x-[0px]";
+      if (offsetIndex === 4) translateXClass = "translate-x-[35px]";
+      if (offsetIndex === 5) translateXClass = "translate-x-[55px]";
+
+      const wrapper = document.createElement('div');
+      wrapper.id = `map-node-${lvl}`;
+      wrapper.className = `flex flex-col items-center justify-center transition-transform ${translateXClass} relative group`;
+
+      if (isCurrent) {
+        wrapper.innerHTML = `
+          <div class="absolute -top-7 bg-amber-400 text-amber-950 font-black text-[10px] px-2 py-0.5 rounded-full shadow-md border border-amber-300 animate-bounce flex items-center gap-1 z-20">
+            <span>${avatar}</span>
+            <span>SEVİYE ${lvl}</span>
+          </div>
+          <button data-level="${lvl}" class="w-18 h-18 sm:w-20 sm:h-20 rounded-full ring-4 ring-indigo-400 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 text-white shadow-xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-all z-10">
+            <span class="text-lg font-black leading-none">${lvl}</span>
+            <span class="text-[9px] font-black text-amber-300 uppercase tracking-widest mt-0.5">BAŞLA</span>
+          </button>
+        `;
+      } else if (isCompleted) {
+        wrapper.innerHTML = `
+          <button data-level="${lvl}" class="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white font-black text-sm shadow-md flex items-center justify-center cursor-pointer active:scale-95 transition-all relative">
+            <span>${lvl}</span>
+            <span class="absolute -bottom-1 -right-1 bg-white text-emerald-700 w-4 h-4 rounded-full text-[9px] font-black flex items-center justify-center border border-emerald-300 shadow">✓</span>
+          </button>
+        `;
+      } else {
+        wrapper.innerHTML = `
+          <button disabled class="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-slate-300 text-slate-500 font-bold text-xs opacity-60 flex items-center justify-center cursor-not-allowed relative">
+            <span>${lvl}</span>
+            <span class="absolute -bottom-1 -right-1 bg-slate-200 text-slate-600 w-4 h-4 rounded-full text-[9px] flex items-center justify-center border border-slate-300">🔒</span>
+          </button>
+        `;
+      }
+
+      const btn = wrapper.querySelector('button[data-level]');
+      if (btn) {
+        btn.addEventListener('click', () => onNodeClick(lvl));
+      }
+
+      container.appendChild(wrapper);
+    }
+
+    setTimeout(() => {
+      const currentEl = document.getElementById(`map-node-${focusLvl}`);
+      if (currentEl) {
+        currentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
   },
 
   renderLeaderboard(
@@ -942,7 +1017,6 @@ export const UIManager = {
     const selectedBoxR = selectedR >= 0 ? Math.floor(selectedR / 3) : -1;
     const selectedBoxC = selectedC >= 0 ? Math.floor(selectedC / 3) : -1;
 
-    // Killer Sudoku kafes başlık haritası
     const cageMap = new Map<string, number>();
     if (variant === 'killer' && cages) {
       cages.forEach(cage => {
@@ -984,7 +1058,6 @@ export const UIManager = {
         let borderRight = '';
         let borderBottom = '';
 
-        // Parçalı (Irregular) Sudoku kenarlıkları: SADECE komşu bölge farklıysa 3px çizgi koy
         if (variant === 'irregular' && regionMap) {
           const currentRegion = regionMap[r][c];
           if (c < 8 && regionMap[r][c + 1] !== currentRegion) {
@@ -998,12 +1071,10 @@ export const UIManager = {
           if (r === 2 || r === 5) borderBottom = 'border-b-4 border-b-slate-800';
         }
 
-        const isKillerCell = variant === 'killer' && cageMap.has(`${r}_${c}`);
         const killerBorder = variant === 'killer' ? 'border-dashed border-amber-500/60' : 'border-slate-300/80';
 
         cell.className = `w-9 h-9 sm:w-11 sm:h-11 aspect-square border ${killerBorder} flex items-center justify-center text-lg select-none cursor-pointer active:scale-95 transition-all relative ${stateClass} ${borderRight} ${borderBottom}`;
 
-        // Killer Sudoku kafes toplamı rozeti
         const cageSum = cageMap.get(`${r}_${c}`);
         if (variant === 'killer' && cageSum !== undefined) {
           const cageBadge = document.createElement('span');
