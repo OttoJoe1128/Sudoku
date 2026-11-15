@@ -15,8 +15,58 @@ import { BadgeStatus } from '../engine/achievements';
 import { ProfileStats, UserManager } from '../store/userState';
 import { ChallengeRequest } from '../engine/matchEngine';
 import { BotCharacter } from '../engine/botData';
+import { SudokuVariant, KillerCage } from '../engine/sudoku';
 
 export const UIManager = {
+  getVariantEmblemSVG(variant: SudokuVariant = 'classic', size: number = 22): string {
+    if (variant === 'irregular') {
+      return `<svg class="inline-block" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6v6H4zM10 10h6v6h-6zM14 4h6v6h-6zM4 14h6v6H4z"/></svg>`;
+    }
+    if (variant === 'killer') {
+      return `<svg class="inline-block" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke-dasharray="2 2" d="M3 3h18v18H3z"/><path d="M7 7h10L10 12l7 5H7"/></svg>`;
+    }
+    if (variant === 'wordoku') {
+      return `<svg class="inline-block" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7l-4 10h8M9 13h6"/></svg>`;
+    }
+    if (variant === 'samurai') {
+      return `<svg class="inline-block" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="8" height="8" rx="1"/><rect x="2" y="2" width="6" height="6" rx="1"/><rect x="16" y="2" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="16" y="16" width="6" height="6" rx="1"/></svg>`;
+    }
+    return `<svg class="inline-block" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>`;
+  },
+
+  showVariantSymbolInfo(variant: SudokuVariant) {
+    const infoMap: Record<SudokuVariant, { title: string; desc: string; mult: string }> = {
+      classic: {
+        title: "Klasik Sudoku (3x3 Blok)",
+        desc: "Her satır, sütun ve 3x3 kutuda 1-9 arası rakamlar tekrarlanmadan yerleşir.",
+        mult: "1.0x Puan Çarpanı"
+      },
+      irregular: {
+        title: "Parçalı (Jigsaw) Sudoku",
+        desc: "3x3 kareler yerine asimetrik düzensiz yapboz bölgeleri bulunur. Her bölgede 1-9 tek bir kez yer alır.",
+        mult: "1.5x Puan Çarpanı"
+      },
+      killer: {
+        title: "Hesap (Killer) Sudoku",
+        desc: "Kafes köşesindeki hedef toplamı veren kombinasyonlar bulunur. Aynı kafeste rakam tekrar etmez.",
+        mult: "1.8x Puan Çarpanı"
+      },
+      wordoku: {
+        title: "Harfli (Wordoku) Sudoku",
+        desc: "Rakamlar yerine 'A-B-C-D-E-F-G-H-I' harfleri kullanılır. Harf matrisleri çözülür.",
+        mult: "1.2x Puan Çarpanı"
+      },
+      samurai: {
+        title: "Samurai (5-Grid) Sudoku",
+        desc: "5 adet birbiriyle kenetlenmiş 9x9 matris aynı anda çözülür. Kesişen köşeler ortak kullanılır.",
+        mult: "2.5x Puan Çarpanı"
+      }
+    };
+
+    const info = infoMap[variant] || infoMap.classic;
+    this.showToast(`💠 ${info.title}\n${info.desc} (${info.mult})`, "info");
+  },
+
   mountUI() {
     const app = document.getElementById('app');
     if (!app) return;
@@ -48,8 +98,8 @@ export const UIManager = {
                 </div>
             </div>
 
-            <div class="w-full flex justify-between items-center mb-4">
-                <button id="btn-back-menu" class="bg-slate-200 hover:bg-slate-300 px-3.5 py-1.5 rounded-xl font-bold text-xs text-slate-800 transition-colors flex items-center gap-1">
+            <div class="w-full flex justify-between items-center mb-3">
+                <button id="btn-back-menu" class="bg-slate-200 hover:bg-slate-300 px-3 py-1.5 rounded-xl font-bold text-xs text-slate-800 transition-colors flex items-center gap-1">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
                     <span>Menü</span>
                 </button>
@@ -61,10 +111,16 @@ export const UIManager = {
                 <div id="game-timer" class="font-mono font-bold text-base sm:text-lg text-slate-800">00:00</div>
             </div>
 
-            <!-- Sudoku Grid -->
-            <div id="sudoku-grid" class="grid grid-cols-9 gap-[1px] bg-slate-800 p-[1.5px] rounded-2xl shadow-2xl mb-3 border-2 border-slate-800"></div>
+            <!-- Disiplin Vektör Amblem Rozeti -->
+            <div id="game-variant-badge-box" class="w-full mb-2 flex justify-between items-center bg-slate-100/80 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-black text-slate-700">
+                <span id="game-variant-title" class="flex items-center gap-1.5">Klasik Sudoku</span>
+                <span id="game-variant-multiplier" class="text-[10px] font-extrabold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">1.0x Puan</span>
+            </div>
 
-            <!-- Oyun Kontrol Araç Çubuğu (İpucu, Kalem/Not Modu, Sil) -->
+            <!-- Sudoku Grid -->
+            <div id="sudoku-grid" class="grid grid-cols-9 gap-[1px] bg-slate-800 p-[1.5px] rounded-2xl shadow-2xl mb-3 border-2 border-slate-800 relative"></div>
+
+            <!-- Oyun Kontrol Araç Çubuğu -->
             <div class="flex gap-2 mb-3 w-full max-w-[380px] justify-center">
                 <button id="btn-hint" class="flex-1 bg-amber-400 hover:bg-amber-500 text-amber-950 py-2.5 px-2 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1">
                     <svg class="w-4 h-4 text-amber-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
@@ -80,7 +136,7 @@ export const UIManager = {
                 </button>
             </div>
 
-            <!-- Ergonomik Tek Satır 9'lu Numpad -->
+            <!-- Ergonomik Numpad -->
             <div id="numpad-grid" class="grid grid-cols-9 gap-1 w-full max-w-[380px]"></div>
         </div>
       </div>
@@ -196,7 +252,6 @@ export const UIManager = {
     const titleEl = document.getElementById('profile-player-title');
     const completedEl = document.getElementById('profile-stat-completed');
     const duelEl = document.getElementById('profile-stat-duel');
-    const mmrEl = document.getElementById('profile-stat-mmr');
     const basitEl = document.getElementById('profile-best-basit');
     const ortaEl = document.getElementById('profile-best-orta');
     const zorEl = document.getElementById('profile-best-zor');
@@ -217,7 +272,7 @@ export const UIManager = {
     if (levelEl) levelEl.innerText = `🏅 Seviye ${stats.level}`;
     if (goldEl) goldEl.innerText = `🪙 ${stats.gold} Altın`;
     if (avatarEl) avatarEl.innerText = stats.avatar || '🎮';
-    if (titleEl) titleEl.innerText = stats.title || 'Çırak';
+    if (titleEl) titleEl.innerText = stats.title || '🥉 Çırak';
     if (completedEl) completedEl.innerText = stats.totalCompleted.toString();
     if (duelEl) duelEl.innerText = `${stats.duelWins} G / ${stats.duelLosses} M`;
     if (pvpMmrEl) pvpMmrEl.innerText = `⚔️ ${stats.duelMmr} MMR`;
@@ -241,16 +296,6 @@ export const UIManager = {
             </button>
           `).join('');
         }
-
-        const titleSelect = document.getElementById('profile-title-select') as HTMLSelectElement;
-        if (titleSelect) {
-          const unlockedBadgeTitles = badges.filter(b => b.isUnlocked).map(b => b.title);
-          const allTitleOptions = Array.from(new Set(['Çırak', 'Sudoku Ustası', 'Efsanevi Çözücü', ...unlockedBadgeTitles]));
-
-          titleSelect.innerHTML = allTitleOptions.map(t => `
-            <option value="${t}" ${t === stats.title ? 'selected' : ''}>${t}</option>
-          `).join('');
-        }
       } else {
         ownControls.classList.add('hidden');
         otherControls.classList.remove('hidden');
@@ -272,67 +317,6 @@ export const UIManager = {
         `).join('');
       }
     }
-  },
-
-  renderInbox(
-    challenges: ChallengeRequest[],
-    onAccept: (c: ChallengeRequest) => void,
-    onDecline: (c: ChallengeRequest) => void
-  ) {
-    const listEl = document.getElementById('inbox-list');
-    if (!listEl) return;
-
-    this.updateInboxBadge(challenges.length);
-
-    if (challenges.length === 0) {
-      listEl.innerHTML = `
-        <div class="flex flex-col items-center justify-center py-10 text-center">
-          <svg class="w-10 h-10 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
-          <p class="text-xs font-bold text-slate-500 mb-0.5">Bekleyen davetiniz yok</p>
-          <p class="text-[10px] text-slate-400">Diğer oyuncular size düello isteği gönderdiğinde burada görünecektir.</p>
-        </div>
-      `;
-      return;
-    }
-
-    listEl.innerHTML = challenges.map(c => `
-      <div class="p-3 border border-slate-200 rounded-2xl bg-white shadow-sm flex flex-col gap-2">
-        <div class="flex justify-between items-center">
-          <div class="flex items-center gap-2">
-            <span class="text-lg">⚔️</span>
-            <div>
-              <p class="font-black text-slate-800 text-xs">${c.fromUsername}</p>
-              <p class="text-[10px] text-indigo-600 font-bold uppercase tracking-wider">${c.difficulty.toUpperCase()} DÜELLO</p>
-            </div>
-          </div>
-          <span class="text-[10px] font-mono text-slate-400">Bekliyor</span>
-        </div>
-        <div class="flex gap-2 mt-1">
-          <button data-chal-id="${c.challengeId}" class="inbox-accept-btn flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black py-2 rounded-xl text-xs active:scale-95 transition-transform shadow-sm">
-            ⚔️ Kabul Et & Oyna
-          </button>
-          <button data-chal-id="${c.challengeId}" class="inbox-decline-btn bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-3 py-2 rounded-xl text-xs active:scale-95 transition-transform">
-            ✕ Reddet
-          </button>
-        </div>
-      </div>
-    `).join('');
-
-    listEl.querySelectorAll('.inbox-accept-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const id = (e.currentTarget as HTMLElement).getAttribute('data-chal-id');
-        const target = challenges.find(c => c.challengeId === id);
-        if (target) onAccept(target);
-      });
-    });
-
-    listEl.querySelectorAll('.inbox-decline-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const id = (e.currentTarget as HTMLElement).getAttribute('data-chal-id');
-        const target = challenges.find(c => c.challengeId === id);
-        if (target) onDecline(target);
-      });
-    });
   },
 
   renderLobbyPlayers(
@@ -531,6 +515,67 @@ export const UIManager = {
     });
   },
 
+  renderInbox(
+    challenges: ChallengeRequest[],
+    onAccept: (c: ChallengeRequest) => void,
+    onDecline: (c: ChallengeRequest) => void
+  ) {
+    const listEl = document.getElementById('inbox-list');
+    if (!listEl) return;
+
+    this.updateInboxBadge(challenges.length);
+
+    if (challenges.length === 0) {
+      listEl.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-10 text-center">
+          <svg class="w-10 h-10 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+          <p class="text-xs font-bold text-slate-500 mb-0.5">Bekleyen davetiniz yok</p>
+          <p class="text-[10px] text-slate-400">Diğer oyuncular size düello isteği gönderdiğinde burada görünecektir.</p>
+        </div>
+      `;
+      return;
+    }
+
+    listEl.innerHTML = challenges.map(c => `
+      <div class="p-3 border border-slate-200 rounded-2xl bg-white shadow-sm flex flex-col gap-2">
+        <div class="flex justify-between items-center">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">⚔️</span>
+            <div>
+              <p class="font-black text-slate-800 text-xs">${c.fromUsername}</p>
+              <p class="text-[10px] text-indigo-600 font-bold uppercase tracking-wider">${c.difficulty.toUpperCase()} DÜELLO</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-mono text-slate-400">Bekliyor</span>
+        </div>
+        <div class="flex gap-2 mt-1">
+          <button data-chal-id="${c.challengeId}" class="inbox-accept-btn flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black py-2 rounded-xl text-xs active:scale-95 transition-transform shadow-sm">
+            ⚔️ Kabul Et & Oyna
+          </button>
+          <button data-chal-id="${c.challengeId}" class="inbox-decline-btn bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-3 py-2 rounded-xl text-xs active:scale-95 transition-transform">
+            ✕ Reddet
+          </button>
+        </div>
+      </div>
+    `).join('');
+
+    listEl.querySelectorAll('.inbox-accept-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute('data-chal-id');
+        const target = challenges.find(c => c.challengeId === id);
+        if (target) onAccept(target);
+      });
+    });
+
+    listEl.querySelectorAll('.inbox-decline-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute('data-chal-id');
+        const target = challenges.find(c => c.challengeId === id);
+        if (target) onDecline(target);
+      });
+    });
+  },
+
   renderIncomingChallengePopup(challenge: ChallengeRequest, onAccept: () => void, onDecline: () => void) {
     const existing = document.getElementById('challenge-popup');
     if (existing) existing.remove();
@@ -596,8 +641,9 @@ export const UIManager = {
 
   renderLeaderboard(
     players: (Player | SpeedRecord)[],
-    type: 'level' | 'gold' | 'speed' | 'pvp_mmr' | 'bot_mmr',
-    onPlayerClick?: (playerData: Player | SpeedRecord) => void
+    type: 'level' | 'gold' | 'speed' | 'pvp_mmr' | 'bot_mmr' | 'discipline',
+    onPlayerClick?: (playerData: Player | SpeedRecord) => void,
+    filterVariant: SudokuVariant = 'classic'
   ) {
     const listEl = document.getElementById('leaderboard-list');
     const headerRight = document.getElementById('lb-header-right');
@@ -607,6 +653,7 @@ export const UIManager = {
       else if (type === 'gold') headerRight.innerText = '🪙 Altın';
       else if (type === 'pvp_mmr') headerRight.innerText = '⚔️ PvP MMR';
       else if (type === 'bot_mmr') headerRight.innerText = '🤖 YZ MMR';
+      else if (type === 'discipline') headerRight.innerText = '💠 Disiplin';
       else headerRight.innerText = '⚡ Rekor Süre';
     }
 
@@ -631,24 +678,34 @@ export const UIManager = {
       let isSpeed = 'difficulty' in p;
       const playerObj = p as Player;
 
+      const emblem = this.getVariantEmblemSVG(playerObj.dominantVariant || filterVariant, 18);
+
       if (type === 'level') {
-        rightVal = `🏅 Sev. ${playerObj.level || 1}`;
+        rightVal = `<span class="flex items-center gap-1">${emblem} 🏅 Sev. ${playerObj.level || 1}</span>`;
       } else if (type === 'gold') {
-        rightVal = `🪙 ${playerObj.gold || 0}`;
+        rightVal = `<span class="flex items-center gap-1">${emblem} 🪙 ${playerObj.gold || 0}</span>`;
       } else if (type === 'pvp_mmr') {
         rightVal = `⚔️ ${playerObj.duel_mmr || 1000} MMR`;
       } else if (type === 'bot_mmr') {
         rightVal = `🤖 ${playerObj.bot_mmr || 1000} YZ`;
+      } else if (type === 'discipline') {
+        const score = playerObj.variantScores ? playerObj.variantScores[filterVariant] || 0 : 0;
+        rightVal = `<span class="flex items-center gap-1">${this.getVariantEmblemSVG(filterVariant, 18)} ${score} Puan</span>`;
       } else if (isSpeed) {
         const speed = p as SpeedRecord;
         rightVal = `⚡ ${speed.timeFormatted} (${speed.difficulty.toUpperCase()})`;
       }
 
+      const calculatedTitle = playerObj.title || UserManager.calculatePlayerTitle(playerObj.level || 1, playerObj.duel_wins || 0, playerObj.duel_mmr || 1000);
+
       return `
         <div data-lb-index="${i}" class="leaderboard-row-item flex justify-between items-center p-3 bg-white border border-slate-200 hover:border-indigo-300 rounded-xl shadow-sm cursor-pointer active:scale-[0.98] transition-all">
           <div class="flex items-center gap-2">
             <span class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center font-black text-xs text-slate-600">${i + 1}</span>
-            <span class="font-bold text-slate-800 text-sm">${p.username}</span>
+            <div>
+              <p class="font-bold text-slate-800 text-sm leading-tight">${p.username}</p>
+              <p class="text-[9px] font-black text-indigo-600">${calculatedTitle}</p>
+            </div>
           </div>
           <span class="font-black text-indigo-600 text-xs">${rightVal}</span>
         </div>
@@ -775,15 +832,30 @@ export const UIManager = {
     selectedR: number,
     selectedC: number,
     initialBoard?: number[][],
-    notesBoard?: Set<number>[][]
+    notesBoard?: Set<number>[][],
+    variant: SudokuVariant = 'classic',
+    regionMap?: number[][],
+    cages?: KillerCage[]
   ) {
     const boardEl = document.getElementById('sudoku-grid');
     if (!boardEl) return;
     boardEl.innerHTML = '';
 
+    const wordokuLetters = ['A','B','C','D','E','F','G','H','I'];
     const selectedVal = (selectedR >= 0 && selectedC >= 0) ? board[selectedR][selectedC] : 0;
     const selectedBoxR = selectedR >= 0 ? Math.floor(selectedR / 3) : -1;
     const selectedBoxC = selectedC >= 0 ? Math.floor(selectedC / 3) : -1;
+
+    // Killer Sudoku kafes başlık haritası
+    const cageMap = new Map<string, number>();
+    if (variant === 'killer' && cages) {
+      cages.forEach(cage => {
+        if (cage.cells.length > 0) {
+          const first = cage.cells[0];
+          cageMap.set(`${first.r}_${first.c}`, cage.sum);
+        }
+      });
+    }
 
     board.forEach((row, r) => {
       row.forEach((val, c) => {
@@ -813,20 +885,41 @@ export const UIManager = {
           stateClass = 'sudoku-cell-empty bg-white text-indigo-600 font-bold cursor-pointer';
         }
 
-        const borderRight = (c === 2 || c === 5) ? 'border-r-4 border-r-slate-800' : '';
-        const borderBottom = (r === 2 || r === 5) ? 'border-b-4 border-b-slate-800' : '';
+        let borderRight = (c === 2 || c === 5) ? 'border-r-4 border-r-slate-800' : '';
+        let borderBottom = (r === 2 || r === 5) ? 'border-b-4 border-b-slate-800' : '';
+
+        // Parçalı (Irregular) Sudoku kenarlıkları
+        if (variant === 'irregular' && regionMap) {
+          const currentRegion = regionMap[r][c];
+          if (c < 8 && regionMap[r][c + 1] !== currentRegion) {
+            borderRight = 'border-r-4 border-r-emerald-700';
+          }
+          if (r < 8 && regionMap[r + 1][c] !== currentRegion) {
+            borderBottom = 'border-b-4 border-b-emerald-700';
+          }
+        }
 
         cell.className = `w-9 h-9 sm:w-11 sm:h-11 aspect-square border border-slate-300/80 flex items-center justify-center text-lg select-none cursor-pointer active:scale-95 transition-all relative ${stateClass} ${borderRight} ${borderBottom}`;
 
+        // Killer Sudoku kafes toplamı rozeti
+        const cageSum = cageMap.get(`${r}_${c}`);
+        if (variant === 'killer' && cageSum !== undefined) {
+          const cageBadge = document.createElement('span');
+          cageBadge.className = "absolute top-0.5 left-1 text-[8px] font-mono font-black text-amber-600 leading-none pointer-events-none";
+          cageBadge.innerText = cageSum.toString();
+          cell.appendChild(cageBadge);
+        }
+
         const cellNotes = notesBoard ? notesBoard[r][c] : undefined;
         if (val === 0 && cellNotes && cellNotes.size > 0) {
-          cell.innerHTML = `
-            <div class="grid grid-cols-3 gap-0 w-full h-full p-0.5 pointer-events-none text-[8px] font-mono leading-none text-slate-500 font-bold items-center justify-center text-center">
-              ${[1,2,3,4,5,6,7,8,9].map(n => `<div>${cellNotes.has(n) ? n : ''}</div>`).join('')}
-            </div>
-          `;
-        } else {
-          cell.innerText = val !== 0 ? val.toString() : '';
+          const notesDiv = document.createElement('div');
+          notesDiv.className = "grid grid-cols-3 gap-0 w-full h-full p-0.5 pointer-events-none text-[8px] font-mono leading-none text-slate-500 font-bold items-center justify-center text-center";
+          notesDiv.innerHTML = [1,2,3,4,5,6,7,8,9].map(n => `<div>${cellNotes.has(n) ? (variant === 'wordoku' ? wordokuLetters[n - 1] : n) : ''}</div>`).join('');
+          cell.appendChild(notesDiv);
+        } else if (val !== 0) {
+          const textSpan = document.createElement('span');
+          textSpan.innerText = variant === 'wordoku' ? wordokuLetters[val - 1] : val.toString();
+          cell.appendChild(textSpan);
         }
 
         cell.onclick = () => onCellClick(r, c);
@@ -837,13 +930,17 @@ export const UIManager = {
 
   renderNumpad(
     onNumberClick: (num: number) => void,
-    remainingCounts?: Map<number, number>
+    remainingCounts?: Map<number, number>,
+    isWordoku: boolean = false
   ) {
     const grid = document.getElementById('numpad-grid');
     if (!grid) return;
     grid.innerHTML = '';
 
+    const wordokuLetters = ['A','B','C','D','E','F','G','H','I'];
+
     [1, 2, 3, 4, 5, 6, 7, 8, 9].forEach(num => {
+        const label = isWordoku ? wordokuLetters[num - 1] : num.toString();
         const remaining = remainingCounts ? remainingCounts.get(num) ?? 9 : 9;
         const isCompleted = remaining <= 0;
 
@@ -852,7 +949,7 @@ export const UIManager = {
         btn.className = `bg-white p-1.5 sm:p-2 rounded-xl border border-slate-200 font-black text-sm sm:text-base hover:bg-indigo-50 text-slate-800 active:scale-95 transition-all flex flex-col items-center justify-center relative shadow-sm ${isCompleted ? 'opacity-40 pointer-events-none bg-slate-100' : ''}`;
 
         btn.innerHTML = `
-          <span class="pointer-events-none">${num}</span>
+          <span class="pointer-events-none">${label}</span>
           <span class="text-[9px] font-bold text-indigo-600 pointer-events-none">${isCompleted ? '✓' : remaining}</span>
         `;
         btn.onclick = (e) => {

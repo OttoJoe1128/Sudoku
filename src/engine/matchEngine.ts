@@ -1,6 +1,6 @@
 import { collection, doc, setDoc, updateDoc, onSnapshot, getDocs, query, where, limit, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../api/firebase';
-import { SudokuGen } from './sudoku';
+import { SudokuGen, SudokuVariant } from './sudoku';
 import { UserManager } from '../store/userState';
 
 export interface MatchPlayer {
@@ -15,6 +15,7 @@ export interface MatchPlayer {
 export interface MatchState {
   matchId: string;
   difficulty: 'basit' | 'orta' | 'zor';
+  variant?: SudokuVariant;
   durationSec?: number;
   puzzle: number[][];
   solution: number[][];
@@ -32,6 +33,7 @@ export interface ChallengeRequest {
   targetUid: string;
   targetUsername: string;
   difficulty: 'basit' | 'orta' | 'zor';
+  variant?: SudokuVariant;
   durationSec?: number;
   status: 'pending' | 'accepted' | 'declined' | 'expired';
   matchId?: string;
@@ -48,16 +50,13 @@ export const calculateEloChange = (
   errorsA: number = 0,
   timeDiffSec: number = 0
 ): { newRatingA: number; mmrChangeA: number } => {
-  // 1. Beklenen Skor E_A
   const expectedScoreA = 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
   const actualScoreA = isWinA ? 1 : 0;
 
-  // 2. K-Faktörü (Hassasiyet)
   let k = 32;
   if (ratingA < 1200) k = 40;
   else if (ratingA >= 1800) k = 24;
 
-  // 3. Zorluk Seviyesi Çarpanı (Basit: 1.0x, Orta: 1.2x, Zor: 1.5x)
   const diffMultiplier = difficulty === 'basit' ? 1.0 : difficulty === 'orta' ? 1.2 : 1.5;
   const effectiveK = k * diffMultiplier;
 
@@ -66,12 +65,10 @@ export const calculateEloChange = (
   if (isWinA && mmrChange < 5) mmrChange = 5;
   if (!isWinA && mmrChange > -5) mmrChange = -5;
 
-  // Flawless (Hatasız Zafer) Bonusu +%15
   if (isWinA && errorsA === 0) {
     mmrChange = Math.round(mmrChange * 1.15);
   }
 
-  // Hız Farkı Bonusu (60 sn veya daha hızlı bitirdiyse +3 MMR)
   if (isWinA && timeDiffSec >= 60) {
     mmrChange += 3;
   }
@@ -189,12 +186,13 @@ export const MatchEngine = {
     targetUid: string,
     targetUsername: string,
     difficulty: 'basit' | 'orta' | 'zor',
-    durationSec: number = 180
+    durationSec: number = 180,
+    variant: SudokuVariant = 'classic'
   ): Promise<{ challengeId: string }> {
     const currentUsername = UserManager.getUsername() || 'Oyuncu';
     const currentUid = auth.currentUser ? auth.currentUser.uid : `user_${Date.now()}`;
     const challengeId = `chal_${Date.now()}`;
-    const generated = SudokuGen.generate(difficulty);
+    const generated = SudokuGen.generateVariant(difficulty, variant);
 
     const safeTargetUid = targetUid || targetUsername || 'target_player';
     const safeTargetUsername = targetUsername || 'Oyuncu';
@@ -207,11 +205,13 @@ export const MatchEngine = {
       targetUsername: safeTargetUsername,
       difficulty,
       durationSec,
+      variant,
       status: 'pending',
       matchData: {
         matchId: `match_${Date.now()}`,
         difficulty,
         durationSec,
+        variant,
         puzzle: generated.puzzle,
         solution: generated.solution,
         status: 'in_progress',
@@ -336,12 +336,14 @@ export const MatchEngine = {
       const matchId = challengeData?.matchData?.matchId || `match_${Date.now()}`;
       const difficulty = challengeData?.difficulty || 'basit';
       const durationSec = challengeData?.durationSec || 180;
-      const generated = challengeData?.matchData?.puzzle ? { puzzle: challengeData.matchData.puzzle, solution: challengeData.matchData.solution } : SudokuGen.generate(difficulty);
+      const variant = challengeData?.variant || 'classic';
+      const generated = challengeData?.matchData?.puzzle ? { puzzle: challengeData.matchData.puzzle, solution: challengeData.matchData.solution } : SudokuGen.generateVariant(difficulty, variant);
 
       const match: MatchState = {
         matchId,
         difficulty,
         durationSec,
+        variant,
         puzzle: generated.puzzle,
         solution: generated.solution,
         status: 'in_progress',
@@ -387,7 +389,8 @@ export const MatchEngine = {
   async startMatchSearch(
     difficulty: 'basit' | 'orta' | 'zor',
     onMatchFound: (match: MatchState) => void,
-    onStatusUpdate?: (statusText: string) => void
+    onStatusUpdate?: (statusText: string) => void,
+    variant: SudokuVariant = 'classic'
   ) {
     this.clearActiveMatch();
     const currentUsername = UserManager.getUsername() || 'Oyuncu';
@@ -437,11 +440,12 @@ export const MatchEngine = {
 
     if (onStatusUpdate) onStatusUpdate("Oda oluşturuluyor, rakip bekleniyor...");
     const matchId = `match_${Date.now()}`;
-    const generated = SudokuGen.generate(difficulty);
+    const generated = SudokuGen.generateVariant(difficulty, variant);
 
     const initialMatch: MatchState = {
       matchId,
       difficulty,
+      variant,
       puzzle: generated.puzzle,
       solution: generated.solution,
       status: 'waiting',

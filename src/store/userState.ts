@@ -1,10 +1,12 @@
 import { signInAnonymously } from 'firebase/auth';
 import { doc, getDoc, setDoc, addDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../api/firebase';
+import { SudokuVariant } from '../engine/sudoku';
 
 export interface GameCompletionDetails {
   level: number;
   difficulty: 'basit' | 'orta' | 'zor';
+  variant?: SudokuVariant;
   timeElapsed: number;
   timeFormatted: string;
   errors: number;
@@ -29,6 +31,8 @@ export interface UserData {
   best_orta?: number;
   best_zor?: number;
   total_completed?: number;
+  variantScores?: Record<SudokuVariant, number>;
+  variantLevels?: Record<SudokuVariant, number>;
 }
 
 export interface ProfileStats {
@@ -47,7 +51,18 @@ export interface ProfileStats {
   bestBasitFormatted: string;
   bestOrtaFormatted: string;
   bestZorFormatted: string;
+  variantScores: Record<SudokuVariant, number>;
+  variantLevels: Record<SudokuVariant, number>;
+  dominantVariant: SudokuVariant;
 }
+
+export const VARIANT_MULTIPLIERS: Record<SudokuVariant, number> = {
+  classic: 1.0,
+  wordoku: 1.2,
+  irregular: 1.5,
+  killer: 1.8,
+  samurai: 2.5
+};
 
 export const UserManager = {
   calculatePlayerTitle(level: number, duelWins: number = 0, duelMmr: number = 1000): string {
@@ -65,6 +80,37 @@ export const UserManager = {
         await setDoc(doc(db, 'leaderboard', uid), {
           onlineStatus: status,
           lastSeenMs: Date.now(),
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      }
+    } catch {
+      // ignore
+    }
+  },
+
+  getVariantLevel(variant: SudokuVariant = 'classic'): number {
+    const raw = localStorage.getItem(`sudoku_level_${variant}`);
+    return raw ? parseInt(raw) : (variant === 'classic' ? this.getCurrentLevel() : 1);
+  },
+
+  getVariantScore(variant: SudokuVariant = 'classic'): number {
+    const raw = localStorage.getItem(`sudoku_score_${variant}`);
+    return raw ? parseInt(raw) : 0;
+  },
+
+  async updateVariantProgress(variant: SudokuVariant, level: number, pointsGained: number) {
+    localStorage.setItem(`sudoku_level_${variant}`, level.toString());
+    const mult = VARIANT_MULTIPLIERS[variant] || 1.0;
+    const currentScore = this.getVariantScore(variant);
+    const newScore = currentScore + Math.round(pointsGained * mult);
+    localStorage.setItem(`sudoku_score_${variant}`, newScore.toString());
+
+    try {
+      if (auth.currentUser) {
+        const uid = auth.currentUser.uid;
+        await setDoc(doc(db, 'leaderboard', uid), {
+          [`level_${variant}`]: level,
+          [`score_${variant}`]: newScore,
           updatedAt: serverTimestamp()
         }, { merge: true });
       }
@@ -335,6 +381,7 @@ export const UserManager = {
         username,
         level: details.level,
         difficulty: details.difficulty,
+        variant: details.variant || 'classic',
         timeElapsed: details.timeElapsed,
         timeFormatted: details.timeFormatted,
         errors: details.errors,
@@ -371,6 +418,10 @@ export const UserManager = {
       }
 
       await setDoc(userDocRef, updates, { merge: true });
+
+      // Disiplin puanı kazanımı
+      const basePoints = details.difficulty === 'basit' ? 50 : details.difficulty === 'orta' ? 100 : 200;
+      await this.updateVariantProgress(details.variant || 'classic', details.level, basePoints);
     } catch (e) {
       console.warn("Oyun süresi ve kaydı Firebase'e yazılamadı:", e);
     }
@@ -393,6 +444,22 @@ export const UserManager = {
     let bestOrta: number | undefined;
     let bestZor: number | undefined;
 
+    const variantScores: Record<SudokuVariant, number> = {
+      classic: this.getVariantScore('classic'),
+      irregular: this.getVariantScore('irregular'),
+      killer: this.getVariantScore('killer'),
+      wordoku: this.getVariantScore('wordoku'),
+      samurai: this.getVariantScore('samurai')
+    };
+
+    const variantLevels: Record<SudokuVariant, number> = {
+      classic: this.getVariantLevel('classic'),
+      irregular: this.getVariantLevel('irregular'),
+      killer: this.getVariantLevel('killer'),
+      wordoku: this.getVariantLevel('wordoku'),
+      samurai: this.getVariantLevel('samurai')
+    };
+
     if (uid) {
       try {
         const snap = await getDoc(doc(db, 'leaderboard', uid));
@@ -406,6 +473,11 @@ export const UserManager = {
           bestBasit = d.best_basit;
           bestOrta = d.best_orta;
           bestZor = d.best_zor;
+
+          (['classic', 'irregular', 'killer', 'wordoku', 'samurai'] as SudokuVariant[]).forEach(v => {
+            if (typeof d[`score_${v}`] === 'number') variantScores[v] = d[`score_${v}`];
+            if (typeof d[`level_${v}`] === 'number') variantLevels[v] = d[`level_${v}`];
+          });
         }
       } catch (e) {
         console.warn("Profil istatistikleri çekilemedi:", e);
@@ -413,6 +485,16 @@ export const UserManager = {
     }
 
     const title = this.calculatePlayerTitle(level, duelWins, duelMmr);
+
+    // En baskın disiplin tespiti
+    let maxScore = -1;
+    let dominantVariant: SudokuVariant = 'classic';
+    (Object.keys(variantScores) as SudokuVariant[]).forEach(v => {
+      if (variantScores[v] > maxScore) {
+        maxScore = variantScores[v];
+        dominantVariant = v;
+      }
+    });
 
     return {
       uid,
@@ -429,7 +511,10 @@ export const UserManager = {
       botMmr,
       bestBasitFormatted: this.formatTime(bestBasit),
       bestOrtaFormatted: this.formatTime(bestOrta),
-      bestZorFormatted: this.formatTime(bestZor)
+      bestZorFormatted: this.formatTime(bestZor),
+      variantScores,
+      variantLevels,
+      dominantVariant
     };
   },
 

@@ -10,6 +10,36 @@ export const matchModalTemplate = `
         <h3 class="text-xl font-black text-slate-800 mb-0.5">Düello Arenası</h3>
         <p class="text-[11px] text-slate-500 mb-3 font-medium">Canlı oyuncularla yarış veya Seviyeli YZ Karakterlere meydan oku!</p>
 
+        <!-- Ortak Ayarlar: Disiplin Seçimi (5 Sembol) -->
+        <div class="mb-2.5 w-full">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider text-left mb-1 flex justify-between items-center">
+                <span>Oyun Disiplini</span>
+                <span id="arena-variant-multiplier-badge" class="text-indigo-600 font-bold">1.0x Puan</span>
+            </p>
+            <div class="grid grid-cols-5 gap-1.5 bg-slate-200/80 p-1.5 rounded-2xl">
+                <button id="arena-variant-classic" data-variant="classic" class="arena-variant-btn p-1.5 rounded-xl bg-white text-indigo-600 shadow-sm flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Klasik">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+                    <span class="text-[9px] font-black leading-none">Klasik</span>
+                </button>
+                <button id="arena-variant-irregular" data-variant="irregular" class="arena-variant-btn p-1.5 rounded-xl bg-transparent text-slate-600 hover:bg-white/60 flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Parçalı">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6v6H4zM10 10h6v6h-6zM14 4h6v6H4z"/></svg>
+                    <span class="text-[9px] font-bold leading-none">Parçalı</span>
+                </button>
+                <button id="arena-variant-killer" data-variant="killer" class="arena-variant-btn p-1.5 rounded-xl bg-transparent text-slate-600 hover:bg-white/60 flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Hesap">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke-dasharray="2 2" d="M3 3h18v18H3z"/><path d="M7 7h10L10 12l7 5H7"/></svg>
+                    <span class="text-[9px] font-bold leading-none">Hesap</span>
+                </button>
+                <button id="arena-variant-wordoku" data-variant="wordoku" class="arena-variant-btn p-1.5 rounded-xl bg-transparent text-slate-600 hover:bg-white/60 flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Harfli">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7l-4 10h8M9 13h6"/></svg>
+                    <span class="text-[9px] font-bold leading-none">Harfli</span>
+                </button>
+                <button id="arena-variant-samurai" data-variant="samurai" class="arena-variant-btn p-1.5 rounded-xl bg-transparent text-slate-600 hover:bg-white/60 flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Samurai">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="8" height="8" rx="1"/><rect x="2" y="2" width="6" height="6" rx="1"/><rect x="16" y="2" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="16" y="16" width="6" height="6" rx="1"/></svg>
+                    <span class="text-[9px] font-bold leading-none">Samurai</span>
+                </button>
+            </div>
+        </div>
+
         <!-- Ortak Ayarlar: Süre Modu -->
         <div class="mb-2.5 w-full">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider text-left mb-1">Süre Modu</p>

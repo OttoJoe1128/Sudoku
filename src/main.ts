@@ -1,6 +1,6 @@
 import { UIManager } from './ui/uiManager';
 import { GameEngine } from './engine/gameEngine';
-import { SudokuGen } from './engine/sudoku';
+import { SudokuGen, SudokuVariant, GeneratedSudoku } from './engine/sudoku';
 import { UserManager } from './store/userState';
 import { Leaderboard, Player, SpeedRecord } from './engine/leaderboard';
 import { ShopManager } from './engine/shop';
@@ -24,6 +24,8 @@ let hintsUsed = 0;
 let timeElapsed = 0;
 let timerInterval: any = null;
 let currentDifficulty: 'basit' | 'orta' | 'zor' = 'basit';
+let currentVariant: SudokuVariant = 'classic';
+let activeGeneratedSudoku: GeneratedSudoku | null = null;
 let isNotesMode = false;
 let currentLevelNumber = 1;
 
@@ -64,6 +66,7 @@ const saveActiveGame = () => {
   const saveData = {
     level: currentLevelNumber,
     diff: currentDifficulty,
+    variant: currentVariant,
     userBoard,
     initialBoard,
     currentSolution,
@@ -169,12 +172,19 @@ const handleMatchTimeExpired = async () => {
   }
 };
 
-const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: MatchState, restoredState?: any) => {
+const startGame = (
+  level: number,
+  diff: 'basit' | 'orta' | 'zor',
+  matchData?: MatchState,
+  restoredState?: any,
+  variant: SudokuVariant = 'classic'
+) => {
     errors = restoredState && typeof restoredState.errors === 'number' ? restoredState.errors : 0;
     hintsUsed = 0;
     selectedCell = null;
     currentDifficulty = diff;
     currentLevelNumber = level;
+    currentVariant = restoredState?.variant || matchData?.variant || variant;
     isMatchMode = !!matchData;
     activeMatch = matchData || null;
     isNotesMode = false;
@@ -199,28 +209,50 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
       notesBoard = Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => new Set<number>()));
     }
 
-    let data;
     if (isValidRestored) {
-      data = { puzzle: restoredState.initialBoard, solution: restoredState.currentSolution };
       userBoard = restoredState.userBoard.map((row: any) => [...row]);
       initialBoard = restoredState.initialBoard.map((row: any) => [...row]);
       currentSolution = restoredState.currentSolution;
       timeElapsed = typeof restoredState.timeElapsed === 'number' ? restoredState.timeElapsed : 0;
     } else if (matchData) {
       if (restoredState) clearSavedGame();
-      data = { puzzle: matchData.puzzle, solution: matchData.solution };
-      currentSolution = data.solution;
-      userBoard = data.puzzle.map(row => [...row]);
-      initialBoard = data.puzzle.map(row => [...row]);
+      currentSolution = matchData.solution;
+      userBoard = matchData.puzzle.map(row => [...row]);
+      initialBoard = matchData.puzzle.map(row => [...row]);
       timeElapsed = 0;
     } else {
       if (restoredState) clearSavedGame();
-      data = SudokuGen.generate(diff);
-      currentSolution = data.solution;
-      userBoard = data.puzzle.map(row => [...row]);
-      initialBoard = data.puzzle.map(row => [...row]);
+      activeGeneratedSudoku = SudokuGen.generateVariant(diff, currentVariant);
+      currentSolution = activeGeneratedSudoku.solution;
+      userBoard = activeGeneratedSudoku.puzzle.map(row => [...row]);
+      initialBoard = activeGeneratedSudoku.puzzle.map(row => [...row]);
       timeElapsed = 0;
       UIManager.hideMatchHeader();
+    }
+
+    // Disiplin Rozeti ve Çarpan Bilgisi Güncelleme
+    const variantTitleEl = document.getElementById('game-variant-title');
+    const variantMultEl = document.getElementById('game-variant-multiplier');
+    if (variantTitleEl) {
+      const emblemSVG = UIManager.getVariantEmblemSVG(currentVariant, 18);
+      const titleMap: Record<SudokuVariant, string> = {
+        classic: 'Klasik Sudoku',
+        irregular: 'Parçalı Sudoku',
+        killer: 'Hesap Sudoku',
+        wordoku: 'Harfli Sudoku',
+        samurai: 'Samurai Sudoku'
+      };
+      variantTitleEl.innerHTML = `${emblemSVG} <span>${titleMap[currentVariant] || 'Klasik Sudoku'}</span>`;
+    }
+    if (variantMultEl) {
+      const mults: Record<SudokuVariant, string> = {
+        classic: '1.0x Puan',
+        wordoku: '1.2x Puan',
+        irregular: '1.5x Puan',
+        killer: '1.8x Puan',
+        samurai: '2.5x Puan'
+      };
+      variantMultEl.innerText = mults[currentVariant] || '1.0x Puan';
     }
 
     // Düello Modu İlerleme Hesaplama & Canlı Dinleyici
@@ -317,10 +349,17 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
             selectedCell?.r ?? -1,
             selectedCell?.c ?? -1,
             initialBoard,
-            notesBoard
+            notesBoard,
+            currentVariant,
+            activeGeneratedSudoku?.regionMap,
+            activeGeneratedSudoku?.cages
         );
 
-        UIManager.renderNumpad((num) => handleNumpadInput(num), calculateRemainingCounts(userBoard));
+        UIManager.renderNumpad(
+          (num) => handleNumpadInput(num),
+          calculateRemainingCounts(userBoard),
+          currentVariant === 'wordoku'
+        );
     };
 
     const handleNumpadInput = (num: number) => {
@@ -359,10 +398,19 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
               clearSavedGame();
 
               if (isMatchMode) {
-                const reward = diff === 'basit' ? 50 : diff === 'orta' ? 100 : 200;
-                const newGold = UserManager.getGold() + reward;
-                await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
-                await UserManager.recordDuelResult(true);
+                const isBot = !!activeMatch?.player2?.isBot;
+                let reward = diff === 'basit' ? 50 : diff === 'orta' ? 100 : 200;
+                let gainedMmr = 25;
+
+                if (!isBot && activeMatch?.player2) {
+                  const eloRes = calculateEloChange(1000, 1000, true, diff, errors, timeElapsed);
+                  gainedMmr = eloRes.mmrChangeA;
+                } else {
+                  reward = diff === 'basit' ? 25 : diff === 'orta' ? 50 : 100;
+                  gainedMmr = diff === 'basit' ? 15 : diff === 'orta' ? 25 : 35;
+                }
+
+                await UserManager.recordDuelResult(true, isBot, gainedMmr, reward);
                 updateGoldDisplay();
 
                 isMatchMode = false;
@@ -374,23 +422,22 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
 
               // Normal Bölüm Zaferi
               const reward = diff === 'basit' ? 10 : diff === 'orta' ? 20 : 35;
-              const userLvl = UserManager.getCurrentLevel();
+              const userLvl = UserManager.getVariantLevel(currentVariant);
               const nextLevel = level === userLvl ? userLvl + 1 : userLvl;
               const newGold = UserManager.getGold() + reward;
 
               await UserManager.updateProgress(nextLevel, newGold);
-              updateGoldDisplay();
-
-              const minutes = Math.floor(timeElapsed / 60).toString().padStart(2, '0');
-              const seconds = (timeElapsed % 60).toString().padStart(2, '0');
               await UserManager.recordGameCompletion({
                   level,
                   difficulty: diff,
+                  variant: currentVariant,
                   timeElapsed,
-                  timeFormatted: `${minutes}:${seconds}`,
+                  timeFormatted: `${Math.floor(timeElapsed / 60).toString().padStart(2, '0')}:${(timeElapsed % 60).toString().padStart(2, '0')}`,
                   errors,
                   hintsUsed
               });
+
+              updateGoldDisplay();
 
               AchievementManager.checkAndUnlockBadges({
                   level: nextLevel,
@@ -399,7 +446,7 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
                   lastErrors: errors
               });
 
-              UIManager.showToast(`🎉 Tebrikler, Seviye ${level} Tamamlandı! +${reward} 🪙`, "success");
+              UIManager.showToast(`🎉 Tebrikler, ${currentVariant.toUpperCase()} Seviye ${level} Tamamlandı! +${reward} 🪙`, "success");
               UIManager.navigate('menu');
           },
           async (errCount) => {
@@ -495,7 +542,6 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
                 return UIManager.showToast("İpucu sınırı doldu (Max 5/oyun)!", "error");
             }
 
-            // Boş hücre bul (Seçili hücre boşsa onu kullan, değilse tahtadaki ilk boş hücreyi bul)
             let targetR = -1;
             let targetC = -1;
 
@@ -552,7 +598,7 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
             saveActiveGame();
             refresh();
 
-            // Zafer Kontrolü (İpucu ile son hücre doldurulduysa)
+            // Zafer Kontrolü
             const isWin = userBoard.every((row, ri) =>
               row.every((val, ci) => val === currentSolution[ri][ci])
             );
@@ -574,7 +620,7 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
                 showMatchResult(true, reward, activeMatch?.player2?.username || 'Rakip');
               } else {
                 const reward = currentDifficulty === 'basit' ? 10 : currentDifficulty === 'orta' ? 20 : 35;
-                const userLvl = UserManager.getCurrentLevel();
+                const userLvl = UserManager.getVariantLevel(currentVariant);
                 const nextLevel = currentLevelNumber === userLvl ? userLvl + 1 : userLvl;
                 const finalGold = UserManager.getGold() + reward;
 
@@ -586,6 +632,7 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
                 await UserManager.recordGameCompletion({
                     level: currentLevelNumber,
                     difficulty: currentDifficulty,
+                    variant: currentVariant,
                     timeElapsed,
                     timeFormatted: `${minutes}:${seconds}`,
                     errors,
@@ -613,7 +660,7 @@ const startGame = (level: number, diff: 'basit' | 'orta' | 'zor', matchData?: Ma
 
 // Düello Çıkış Cezası Modalı Mantığı
 const handleExitGameRequest = async (): Promise<boolean> => {
-  if (isMatchMode) {
+  if (isMatchMode && activeMatch) {
     return new Promise((resolve) => {
       UIManager.toggleModal('duel-exit-modal', true);
 
@@ -699,8 +746,17 @@ document.addEventListener('click', (e) => {
     if (target) {
         const level = parseInt(target.getAttribute('data-level')!);
         const diff = SudokuGen.getDifficulty(level);
-        startGame(level, diff);
+        startGame(level, diff, undefined, undefined, selectedMapVariant);
     }
+});
+
+// Etkileşimli Sembol Bilgi Popover Dinleyicisi
+document.addEventListener('click', (e) => {
+  const target = (e.target as HTMLElement).closest('[data-variant-info]');
+  if (target) {
+    const v = target.getAttribute('data-variant-info') as SudokuVariant;
+    if (v) UIManager.showVariantSymbolInfo(v);
+  }
 });
 
 // Canlı Düello Davet Dinleyicisi
@@ -762,7 +818,7 @@ const checkUser = async () => {
     const avatarBox = document.getElementById('menu-avatar-box');
 
     if (nameEl) nameEl.innerText = user.username;
-    if (titleEl) titleEl.innerText = user.title || 'Çırak';
+    if (titleEl) titleEl.innerText = user.title || '🥉 Çırak';
     if (avatarBox) avatarBox.innerText = user.avatar || '🎮';
 
     updateGoldDisplay();
@@ -806,7 +862,7 @@ document.getElementById('close-username-modal')?.addEventListener('click', () =>
   }
 });
 
-// Modal: Profil & Avatar/Unvan Seçimi
+// Modal: Profil & Avatar Seçimi
 let currentlyViewedTargetUid: string | undefined = undefined;
 let currentlyViewedTargetUsername: string | undefined = undefined;
 
@@ -859,19 +915,6 @@ const openPlayerProfile = async (targetData?: any) => {
         }
       };
     });
-
-    // Unvan Select Dinleyicisi
-    const titleSelect = document.getElementById('profile-title-select') as HTMLSelectElement;
-    if (titleSelect) {
-      titleSelect.onchange = async () => {
-        const newTitle = titleSelect.value;
-        await UserManager.updateProfileCustomization(UserManager.getAvatar(), newTitle);
-        const menuTitleEl = document.getElementById('menu-player-title');
-        if (menuTitleEl) menuTitleEl.innerText = newTitle;
-        UIManager.showToast("Unvan güncellendi!", "success");
-        openPlayerProfile();
-      };
-    }
   }
 };
 
@@ -931,11 +974,9 @@ document.getElementById('btn-challenge-player')?.addEventListener('click', () =>
     return UIManager.showToast("Kendi profilinize davet gönderemezsiniz.", "info");
   }
 
-  // 1. Önce Süre Modu Seçim Arayüzünü Aç
   UIManager.renderChallengeDurationSelectModal(targetUsername, async (durationSec) => {
     try {
-      // 2. Kullanıcı Süre Modunu Seçtikten Sonra Daveti Gönder
-      await MatchEngine.sendDirectChallenge(targetUid, targetUsername, 'basit', durationSec);
+      await MatchEngine.sendDirectChallenge(targetUid, targetUsername, 'basit', durationSec, selectedArenaVariant);
       const modeText = durationSec > 0 ? `${Math.floor(durationSec / 60)} Dk` : 'Süresiz';
       UIManager.showToast(`⚔️ Düello daveti (${modeText}) ${targetUsername} adlı oyuncunun gelen kutusuna gönderildi!`, 'success');
       UIManager.toggleModal('view-profile', false);
@@ -956,7 +997,77 @@ document.getElementById('btn-challenge-player')?.addEventListener('click', () =>
   });
 });
 
-// Düello Arenası & Canlı Oyuncu Lobisi & AI Bot Rakipleri
+// Serbest Mod Disiplin Seçici Dinleyicileri
+let selectedCustomVariant: SudokuVariant = 'classic';
+
+(['classic', 'irregular', 'killer', 'wordoku', 'samurai'] as SudokuVariant[]).forEach(v => {
+  document.getElementById(`btn-variant-${v}`)?.addEventListener('click', () => {
+    selectedCustomVariant = v;
+    (['classic', 'irregular', 'killer', 'wordoku', 'samurai'] as SudokuVariant[]).forEach(other => {
+      const btn = document.getElementById(`btn-variant-${other}`);
+      if (btn) {
+        if (other === v) {
+          btn.className = "custom-variant-btn p-2 rounded-xl bg-white text-indigo-600 shadow-sm flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform";
+        } else {
+          btn.className = "custom-variant-btn p-2 rounded-xl bg-transparent text-slate-600 hover:bg-white/60 flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform";
+        }
+      }
+    });
+
+    const badge = document.getElementById('custom-variant-multiplier-badge');
+    const mults: Record<SudokuVariant, string> = { classic: '1.0x Puan', wordoku: '1.2x Puan', irregular: '1.5x Puan', killer: '1.8x Puan', samurai: '2.5x Puan' };
+    if (badge) badge.innerText = mults[v] || '1.0x Puan';
+  });
+});
+
+// Harita Disiplin Seçici Dinleyicileri
+let selectedMapVariant: SudokuVariant = 'classic';
+
+(['classic', 'irregular', 'killer', 'wordoku', 'samurai'] as SudokuVariant[]).forEach(v => {
+  document.getElementById(`map-variant-${v}`)?.addEventListener('click', () => {
+    selectedMapVariant = v;
+    (['classic', 'irregular', 'killer', 'wordoku', 'samurai'] as SudokuVariant[]).forEach(other => {
+      const btn = document.getElementById(`map-variant-${other}`);
+      if (btn) {
+        if (other === v) {
+          btn.className = "map-variant-btn p-2 rounded-xl bg-white text-indigo-600 shadow-sm flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform";
+        } else {
+          btn.className = "map-variant-btn p-2 rounded-xl bg-transparent text-slate-600 hover:bg-white/60 flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform";
+        }
+      }
+    });
+
+    const userLvl = UserManager.getVariantLevel(v);
+    const diff = SudokuGen.getDifficulty(userLvl);
+    const startLvl = SudokuGen.getStartLevelForDifficulty(diff);
+    UIManager.renderMap(userLvl, startLvl);
+  });
+});
+
+// Düello Arenası Disiplin Seçici Dinleyicileri
+let selectedArenaVariant: SudokuVariant = 'classic';
+
+(['classic', 'irregular', 'killer', 'wordoku', 'samurai'] as SudokuVariant[]).forEach(v => {
+  document.getElementById(`arena-variant-${v}`)?.addEventListener('click', () => {
+    selectedArenaVariant = v;
+    (['classic', 'irregular', 'killer', 'wordoku', 'samurai'] as SudokuVariant[]).forEach(other => {
+      const btn = document.getElementById(`arena-variant-${other}`);
+      if (btn) {
+        if (other === v) {
+          btn.className = "arena-variant-btn p-1.5 rounded-xl bg-white text-indigo-600 shadow-sm flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform";
+        } else {
+          btn.className = "arena-variant-btn p-1.5 rounded-xl bg-transparent text-slate-600 hover:bg-white/60 flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform";
+        }
+      }
+    });
+
+    const badge = document.getElementById('arena-variant-multiplier-badge');
+    const mults: Record<SudokuVariant, string> = { classic: '1.0x Puan', wordoku: '1.2x Puan', irregular: '1.5x Puan', killer: '1.8x Puan', samurai: '2.5x Puan' };
+    if (badge) badge.innerText = mults[v] || '1.0x Puan';
+  });
+});
+
+// AI Bot Karakterleri & Eşleşme Mantığı
 let currentArenaDiff: 'basit' | 'orta' | 'zor' = 'basit';
 let arenaUnsubLobby: (() => void) | null = null;
 
@@ -965,11 +1076,12 @@ const startBotMatch = (bot: BotCharacter) => {
 
   const currentUsername = UserManager.getUsername() || 'Oyuncu';
   const currentUid = auth.currentUser ? auth.currentUser.uid : `user_${Date.now()}`;
-  const generated = SudokuGen.generate(bot.difficulty);
+  const generated = SudokuGen.generateVariant(bot.difficulty, selectedArenaVariant);
 
   const matchData: MatchState = {
     matchId: `match_${Date.now()}`,
     difficulty: bot.difficulty,
+    variant: selectedArenaVariant,
     durationSec: selectedMatchTimeSec,
     puzzle: generated.puzzle,
     solution: generated.solution,
@@ -990,7 +1102,7 @@ const startBotMatch = (bot: BotCharacter) => {
     }
   };
 
-  startGame(bot.level, bot.difficulty, matchData);
+  startGame(bot.level, bot.difficulty, matchData, undefined, selectedArenaVariant);
 
   const enemyName = `${bot.avatar} ${bot.name}`;
   MatchEngine.startBotAI(bot.difficulty, async (botProgress) => {
@@ -1039,7 +1151,7 @@ const loadArenaLobbyPlayers = () => {
 
       UIManager.renderLobbyPlayers(list, async (targetPlayer) => {
         try {
-          await MatchEngine.sendDirectChallenge(targetPlayer.uid || targetPlayer.username, targetPlayer.username, currentArenaDiff, selectedMatchTimeSec);
+          await MatchEngine.sendDirectChallenge(targetPlayer.uid || targetPlayer.username, targetPlayer.username, currentArenaDiff, selectedMatchTimeSec, selectedArenaVariant);
           const modeText = selectedMatchTimeSec > 0 ? `${Math.floor(selectedMatchTimeSec / 60)} Dk` : 'Süresiz';
           UIManager.showToast(`⚔️ Düello daveti (${modeText}) ${targetPlayer.username} adlı oyuncunun gelen kutusuna gönderildi!`, 'success');
         } catch (e: any) {
@@ -1158,11 +1270,12 @@ const startMatchWithDiff = (diff: 'basit' | 'orta' | 'zor') => {
     (match) => {
       UIManager.toggleModal('match-search-modal', false);
       if (box) box.classList.add('hidden');
-      startGame(1, diff, match);
+      startGame(1, diff, match, undefined, selectedArenaVariant);
     },
     (statusText) => {
       if (textEl) textEl.innerText = statusText;
-    }
+    },
+    selectedArenaVariant
   );
 };
 
@@ -1172,7 +1285,7 @@ document.getElementById('btn-continue-game')?.addEventListener('click', () => {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        startGame(parsed.level, parsed.diff, undefined, parsed);
+        startGame(parsed.level, parsed.diff, undefined, parsed, parsed.variant || 'classic');
         UIManager.showToast("▶ Kayıtlı oyuna devam ediliyor!", "success");
         return;
       } catch {
@@ -1181,7 +1294,7 @@ document.getElementById('btn-continue-game')?.addEventListener('click', () => {
     }
     const userLvl = UserManager.getCurrentLevel();
     const diff = SudokuGen.getDifficulty(userLvl);
-    startGame(userLvl, diff);
+    startGame(userLvl, diff, undefined, undefined, 'classic');
 });
 
 document.getElementById('btn-delete-saved-game')?.addEventListener('click', (e) => {
@@ -1195,7 +1308,7 @@ document.getElementById('btn-new-game')?.addEventListener('click', () => {
 });
 
 document.getElementById('btn-open-map')?.addEventListener('click', () => {
-    const userLvl = UserManager.getCurrentLevel();
+    const userLvl = UserManager.getVariantLevel(selectedMapVariant);
     const diff = SudokuGen.getDifficulty(userLvl);
     const startLvl = SudokuGen.getStartLevelForDifficulty(diff);
     UIManager.navigate('map');
@@ -1207,36 +1320,21 @@ document.getElementById('btn-back-custom')?.addEventListener('click', () => {
     UIManager.navigate('menu');
 });
 
-document.getElementById('btn-start-basit')?.addEventListener('click', () => {
-    const userLvl = UserManager.getCurrentLevel();
-    startGame(userLvl, 'basit');
-});
-
-document.getElementById('btn-start-orta')?.addEventListener('click', () => {
-    const userLvl = Math.max(301, UserManager.getCurrentLevel());
-    startGame(userLvl, 'orta');
-});
-
-document.getElementById('btn-start-zor')?.addEventListener('click', () => {
-    const userLvl = Math.max(701, UserManager.getCurrentLevel());
-    startGame(userLvl, 'zor');
-});
-
 // Harita Ekranı Bağlantıları
 document.getElementById('btn-back-map')?.addEventListener('click', () => {
     UIManager.navigate('menu');
 });
 
 document.getElementById('btn-map-jump-basit')?.addEventListener('click', () => {
-    UIManager.renderMap(UserManager.getCurrentLevel(), 1);
+    UIManager.renderMap(UserManager.getVariantLevel(selectedMapVariant), 1);
 });
 
 document.getElementById('btn-map-jump-orta')?.addEventListener('click', () => {
-    UIManager.renderMap(UserManager.getCurrentLevel(), 301);
+    UIManager.renderMap(UserManager.getVariantLevel(selectedMapVariant), 301);
 });
 
 document.getElementById('btn-map-jump-zor')?.addEventListener('click', () => {
-    UIManager.renderMap(UserManager.getCurrentLevel(), 701);
+    UIManager.renderMap(UserManager.getVariantLevel(selectedMapVariant), 701);
 });
 
 // Günlük Ödül
@@ -1254,15 +1352,24 @@ document.getElementById('btn-daily-reward')?.addEventListener('click', async () 
 });
 
 // Modallar: Liderlik Tablosu & Filtreleme & Oyuncu Profili Açma
-let currentLeaderboardType: 'level' | 'gold' | 'pvp_mmr' | 'bot_mmr' | 'speed' = 'level';
+let currentLeaderboardType: 'level' | 'gold' | 'pvp_mmr' | 'bot_mmr' | 'speed' | 'discipline' = 'level';
+let currentLeaderboardVariant: SudokuVariant = 'classic';
 
 const loadLeaderboardData = async () => {
   if (currentLeaderboardType === 'speed') {
     const records = await Leaderboard.fetchFastestRecords('all');
-    UIManager.renderLeaderboard(records, 'speed', (p) => openPlayerProfile(p));
+    UIManager.renderLeaderboard(records, 'speed', (p) => openPlayerProfile(p), currentLeaderboardVariant);
+  } else if (currentLeaderboardType === 'discipline') {
+    const players = await Leaderboard.fetchTopPlayers('level');
+    players.sort((a, b) => {
+      const scoreA = a.variantScores ? a.variantScores[currentLeaderboardVariant] || 0 : 0;
+      const scoreB = b.variantScores ? b.variantScores[currentLeaderboardVariant] || 0 : 0;
+      return scoreB - scoreA;
+    });
+    UIManager.renderLeaderboard(players, 'discipline', (p) => openPlayerProfile(p), currentLeaderboardVariant);
   } else {
     const players = await Leaderboard.fetchTopPlayers(currentLeaderboardType);
-    UIManager.renderLeaderboard(players, currentLeaderboardType, (p) => openPlayerProfile(p));
+    UIManager.renderLeaderboard(players, currentLeaderboardType, (p) => openPlayerProfile(p), currentLeaderboardVariant);
   }
 };
 
@@ -1334,7 +1441,7 @@ document.querySelectorAll('.speed-filter-btn').forEach(btn => {
   btn.addEventListener('click', async (e) => {
     const diff = (e.currentTarget as HTMLElement).getAttribute('data-diff') as any;
     const records = await Leaderboard.fetchFastestRecords(diff || 'all');
-    UIManager.renderLeaderboard(records, 'speed', (p) => openPlayerProfile(p));
+    UIManager.renderLeaderboard(records, 'speed', (p) => openPlayerProfile(p), currentLeaderboardVariant);
   });
 });
 
@@ -1346,7 +1453,7 @@ const openAndRenderShop = () => {
     if (result.success) {
       updateGoldDisplay();
       UIManager.applyTheme(ShopManager.getActiveTheme());
-      openAndRenderShop(); // Sınırsız art arda satın alma ve tema değiştirme düzeltmesi
+      openAndRenderShop();
     }
   });
 };
@@ -1385,7 +1492,7 @@ const openAndRenderAchievements = () => {
       const newGold = UserManager.getGold() + claimResult.goldAdded;
       await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
       updateGoldDisplay();
-      openAndRenderAchievements(); // Sınırsız art arda ödül alma düzeltmesi
+      openAndRenderAchievements();
     }
   });
 };
@@ -1427,6 +1534,14 @@ document.getElementById('btn-placement-zor')?.addEventListener('click', () => {
   UIManager.toggleModal('placement-modal', false);
   startGame(701, 'zor');
 });
+
+// Heartbeat Presence Zamanlayıcısı (Her 30 saniyede bir)
+setInterval(() => {
+  if (UserManager.getUsername()) {
+    const isGameVisible = !document.getElementById('game-view')?.classList.contains('hidden');
+    UserManager.setPresence(isGameVisible ? (isMatchMode ? 'in_duel' : 'in_game') : 'available');
+  }
+}, 30000);
 
 // Başlangıç Kontrolü
 checkUser();
