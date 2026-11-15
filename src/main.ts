@@ -123,33 +123,41 @@ const getSavedGamesList = (): SavedGameRecord[] => {
 
 const saveActiveGameRecord = () => {
   if (isMatchMode || !userBoard || !initialBoard) return;
-  const list = getSavedGamesList();
-  const gameId = `saved_${currentVariant}_${currentLevelNumber}`;
-  const record: SavedGameRecord = {
-    id: gameId,
-    variant: currentVariant,
-    level: currentLevelNumber,
-    diff: currentDifficulty,
-    timeElapsed,
-    userBoard,
-    initialBoard,
-    currentSolution,
-    errors,
-    notesBoard: notesBoard ? notesBoard.map(row => row.map(s => Array.from(s))) : [],
-    regionMap: activeGeneratedSudoku?.regionMap,
-    cages: activeGeneratedSudoku?.cages,
-    updatedAtMs: Date.now()
-  };
+  try {
+    const list = getSavedGamesList();
+    const gameId = `saved_${currentVariant}_${currentLevelNumber}`;
+    const safeNotes = notesBoard ? notesBoard.map(row => (
+      row ? row.map(s => (s && typeof s.values === 'function' ? Array.from(s) : Array.isArray(s) ? s : [])) : []
+    )) : [];
 
-  const idx = list.findIndex(item => item.id === gameId);
-  if (idx >= 0) {
-    list[idx] = record;
-  } else {
-    list.unshift(record);
+    const record: SavedGameRecord = {
+      id: gameId,
+      variant: currentVariant,
+      level: currentLevelNumber,
+      diff: currentDifficulty,
+      timeElapsed,
+      userBoard,
+      initialBoard,
+      currentSolution,
+      errors,
+      notesBoard: safeNotes,
+      regionMap: activeGeneratedSudoku?.regionMap,
+      cages: activeGeneratedSudoku?.cages,
+      updatedAtMs: Date.now()
+    };
+
+    const idx = list.findIndex(item => item.id === gameId);
+    if (idx >= 0) {
+      list[idx] = record;
+    } else {
+      list.unshift(record);
+    }
+
+    localStorage.setItem('sudoku_saved_games_list', JSON.stringify(list));
+    updateSavedGamesCountUI();
+  } catch (e) {
+    console.error("Aktif oyun kaydı saklanamadı:", e);
   }
-
-  localStorage.setItem('sudoku_saved_games_list', JSON.stringify(list));
-  updateSavedGamesCountUI();
 };
 
 const deleteSavedGameRecord = (gameId: string) => {
@@ -876,7 +884,7 @@ document.getElementById('close-inbox')?.addEventListener('click', () => {
 });
 
 // Aktif Oyunlarım Modalı Dinleyicisi
-document.getElementById('btn-open-saved-games')?.addEventListener('click', () => {
+const openSavedGamesModal = () => {
   const list = getSavedGamesList();
   UIManager.toggleModal('view-saved-games', true);
   UIManager.renderSavedGamesList(
@@ -888,11 +896,14 @@ document.getElementById('btn-open-saved-games')?.addEventListener('click', () =>
     },
     (record) => {
       deleteSavedGameRecord(record.id);
-      const updated = getSavedGamesList();
-      UIManager.renderSavedGamesList(updated, (rec) => {}, (rec) => {});
+      openSavedGamesModal();
       UIManager.showToast("🗑️ Kayıtlı oyun silindi.", "info");
     }
   );
+};
+
+document.getElementById('btn-open-saved-games')?.addEventListener('click', () => {
+  openSavedGamesModal();
 });
 
 document.getElementById('close-saved-games')?.addEventListener('click', () => {
