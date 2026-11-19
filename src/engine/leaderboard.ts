@@ -10,6 +10,7 @@ export interface Player {
   level: number;
   avatar?: string;
   title?: string;
+  isSimulated?: boolean;
   total_errors?: number;
   total_completed?: number;
   duel_wins?: number;
@@ -39,14 +40,14 @@ export interface SpeedRecord {
 }
 
 export const SIMULATED_LOBBY_PLAYERS: Player[] = [
-  { uid: 'sim_1', username: 'Bora_34', level: 750, gold: 1250, avatar: '🦅', duel_wins: 52, duel_losses: 12, duel_mmr: 1450, total_completed: 180, onlineStatus: 'available' },
-  { uid: 'sim_2', username: 'ZeynepK', level: 420, gold: 890, avatar: '🐼', duel_wins: 24, duel_losses: 8, duel_mmr: 1240, total_completed: 95, onlineStatus: 'in_game' },
-  { uid: 'sim_3', username: 'MertCan', level: 180, gold: 520, avatar: '🦁', duel_wins: 12, duel_losses: 5, duel_mmr: 1120, total_completed: 45, onlineStatus: 'available' },
-  { uid: 'sim_4', username: 'Ece_99', level: 45, gold: 240, avatar: '🦊', duel_wins: 4, duel_losses: 2, duel_mmr: 1040, total_completed: 15, onlineStatus: 'available' },
-  { uid: 'sim_5', username: 'Kaan_Sudoku', level: 310, gold: 750, avatar: '🐯', duel_wins: 21, duel_losses: 9, duel_mmr: 1210, total_completed: 80, onlineStatus: 'in_duel' },
-  { uid: 'sim_6', username: 'ElifSu', level: 115, gold: 410, avatar: '🧙‍♀️', duel_wins: 11, duel_losses: 3, duel_mmr: 1110, total_completed: 35, onlineStatus: 'available' },
-  { uid: 'sim_7', username: 'Emre_T', level: 30, gold: 180, avatar: '🐥', duel_wins: 3, duel_losses: 1, duel_mmr: 1020, total_completed: 10, onlineStatus: 'available' },
-  { uid: 'sim_8', username: 'Selin_X', level: 8, gold: 110, avatar: '🎮', duel_wins: 0, duel_losses: 1, duel_mmr: 980, total_completed: 3, onlineStatus: 'available' }
+  { uid: 'sim_1', username: 'Bora_34', level: 750, gold: 1250, avatar: '🦅', duel_wins: 52, duel_losses: 12, duel_mmr: 1450, total_completed: 180, onlineStatus: 'available', isSimulated: true },
+  { uid: 'sim_2', username: 'ZeynepK', level: 420, gold: 890, avatar: '🐼', duel_wins: 24, duel_losses: 8, duel_mmr: 1240, total_completed: 95, onlineStatus: 'in_game', isSimulated: true },
+  { uid: 'sim_3', username: 'MertCan', level: 180, gold: 520, avatar: '🦁', duel_wins: 12, duel_losses: 5, duel_mmr: 1120, total_completed: 45, onlineStatus: 'available', isSimulated: true },
+  { uid: 'sim_4', username: 'Ece_99', level: 45, gold: 240, avatar: '🦊', duel_wins: 4, duel_losses: 2, duel_mmr: 1040, total_completed: 15, onlineStatus: 'available', isSimulated: true },
+  { uid: 'sim_5', username: 'Kaan_Sudoku', level: 310, gold: 750, avatar: '🐯', duel_wins: 21, duel_losses: 9, duel_mmr: 1210, total_completed: 80, onlineStatus: 'in_duel', isSimulated: true },
+  { uid: 'sim_6', username: 'ElifSu', level: 115, gold: 410, avatar: '🧙‍♀️', duel_wins: 11, duel_losses: 3, duel_mmr: 1110, total_completed: 35, onlineStatus: 'available', isSimulated: true },
+  { uid: 'sim_7', username: 'Emre_T', level: 30, gold: 180, avatar: '🐥', duel_wins: 3, duel_losses: 1, duel_mmr: 1020, total_completed: 10, onlineStatus: 'available', isSimulated: true },
+  { uid: 'sim_8', username: 'Selin_X', level: 8, gold: 110, avatar: '🎮', duel_wins: 0, duel_losses: 1, duel_mmr: 980, total_completed: 3, onlineStatus: 'available', isSimulated: true }
 ];
 
 export const Leaderboard = {

@@ -179,6 +179,27 @@ document.addEventListener('click', (e) => {
   }
 });
 
+// Canlı Düello Dinleyicilerini Başlatma
+let challengeListenersBound = false;
+
+const startChallengeListeners = () => {
+  if (challengeListenersBound) return;
+  challengeListenersBound = true;
+
+  MatchEngine.listenPendingChallenges((list) => {
+    UIManager.updateInboxBadge(list.length);
+  });
+
+  MatchEngine.listenOutgoingChallenges((acceptedChal) => {
+    if (acceptedChal.matchData) {
+      UIManager.showToast(`⚔️ ${acceptedChal.targetUsername || 'Rakip'} davetinizi kabul etti! Maç başlıyor...`, 'success');
+      startGame(1, acceptedChal.difficulty, acceptedChal.matchData);
+    }
+  });
+
+  MatchEngine.listenIncomingChallenges((chal) => handleIncomingChallenge(chal, (level, diff, matchData, variant) => startGame(level, diff, matchData, undefined, variant)));
+};
+
 // Kullanıcı Profil Giriş Akışı
 const checkUser = async () => {
   const user = await UserManager.initUser();
@@ -198,16 +219,7 @@ const checkUser = async () => {
     updateSavedGamesCountUI();
     UIManager.navigate('menu');
 
-    MatchEngine.listenPendingChallenges((list) => {
-      UIManager.updateInboxBadge(list.length);
-    });
-    MatchEngine.listenOutgoingChallenges((acceptedChal) => {
-      if (acceptedChal.matchData) {
-        UIManager.showToast(`⚔️ ${acceptedChal.targetUsername || 'Rakip'} davetinizi kabul etti! Maç başlıyor...`, 'success');
-        startGame(1, acceptedChal.difficulty, acceptedChal.matchData);
-      }
-    });
-    MatchEngine.listenIncomingChallenges((chal) => handleIncomingChallenge(chal, (level, diff, matchData, variant) => startGame(level, diff, matchData, undefined, variant)));
+    startChallengeListeners();
   }
 };
 
@@ -218,10 +230,19 @@ document.getElementById('save-username')?.addEventListener('click', async () => 
     const user = await UserManager.saveUser(newName);
     const nameEl = document.getElementById('menu-player-name');
     const profileNameEl = document.getElementById('profile-username');
+    const titleEl = document.getElementById('menu-player-title');
+    const avatarBox = document.getElementById('menu-avatar-box');
+
     if (nameEl) nameEl.innerText = user.username;
     if (profileNameEl) profileNameEl.innerText = user.username;
+    if (titleEl) titleEl.innerHTML = renderRankBadgeSVG(user.title || 'Çırak');
+    if (avatarBox) avatarBox.innerHTML = renderAvatarSVG(user.avatar || 'av_prism', 28);
 
+    updateLanguageUI();
     updateGoldDisplay();
+    updateSavedGamesCountUI();
+    startChallengeListeners();
+
     UIManager.toggleModal('username-modal', false);
     UIManager.showToast(`Kullanıcı adı güncellendi: ${user.username}`, 'success');
   } else {

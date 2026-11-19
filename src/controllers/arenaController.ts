@@ -137,7 +137,7 @@ export function loadArenaLobbyPlayers(
       const myUsername = UserManager.getUsername();
       snap.docs.forEach((docSnap) => {
         const d = docSnap.data();
-        if (d.username !== myUsername) {
+        if (d.username && d.username.trim() !== '' && d.username !== myUsername) {
           const level = typeof d.level === 'number' ? d.level : 1;
           const wins = typeof d.duel_wins === 'number' ? d.duel_wins : 0;
           const mmr = typeof d.duel_mmr === 'number' ? d.duel_mmr : 1000;
@@ -146,16 +146,17 @@ export function loadArenaLobbyPlayers(
 
           list.push({
             uid: d.uid || docSnap.id,
-            username: d.username || 'Oyuncu',
+            username: d.username,
             gold: d.gold || 100,
             level,
-            avatar: d.avatar || '🎮',
+            avatar: d.avatar || 'av_prism',
             title,
             duel_wins: wins,
             duel_mmr: mmr,
             total_completed: completed,
             onlineStatus: d.onlineStatus || 'available',
-            lastSeenMs: d.lastSeenMs
+            lastSeenMs: d.lastSeenMs,
+            isSimulated: false
           } as any);
         }
       });
@@ -163,18 +164,35 @@ export function loadArenaLobbyPlayers(
       SIMULATED_LOBBY_PLAYERS.forEach(sim => {
         if (!list.some(p => p.username === sim.username)) {
           const title = UserManager.calculatePlayerTitle(sim.level, sim.duel_wins || 0, sim.duel_mmr || 1000, sim.total_completed || 0);
-          list.push({ ...sim, title });
+          list.push({ ...sim, title, isSimulated: true });
         }
       });
 
       UIManager.renderLobbyPlayers(list, async (targetPlayer) => {
-        const modeText = selectedMatchTimeSec > 0 ? `${Math.floor(selectedMatchTimeSec / 60)} Dk` : 'Süresiz';
-        UIManager.showToast(`📩 ${targetPlayer.username} davetini inceliyor (${modeText})...`, 'info');
+        if (targetPlayer.isSimulated) {
+          const modeText = selectedMatchTimeSec > 0 ? `${Math.floor(selectedMatchTimeSec / 60)} Dk` : 'Süresiz';
+          UIManager.showToast(`📩 ${targetPlayer.username} davetini inceliyor (${modeText})...`, 'info');
 
-        setTimeout(() => {
-          UIManager.showToast(`⚔️ ${targetPlayer.username} davetini kabul etti! Düello başlıyor...`, 'success');
-          startSimulatedMatch(targetPlayer, onStartMatchGame, onBotMatchProgress);
-        }, 1800);
+          setTimeout(() => {
+            UIManager.showToast(`⚔️ ${targetPlayer.username} davetini kabul etti! Düello başlıyor...`, 'success');
+            startSimulatedMatch(targetPlayer, onStartMatchGame, onBotMatchProgress);
+          }, 1800);
+        } else {
+          try {
+            await MatchEngine.sendDirectChallenge(
+              targetPlayer.uid || targetPlayer.username,
+              targetPlayer.username,
+              currentArenaDiff,
+              selectedMatchTimeSec,
+              selectedArenaVariant
+            );
+            const modeText = selectedMatchTimeSec > 0 ? `${Math.floor(selectedMatchTimeSec / 60)} Dk` : 'Süresiz';
+            UIManager.showToast(`📩 ${targetPlayer.username} adlı oyuncuya gerçek düello daveti gönderildi (${modeText})! Kabul etmesi bekleniyor...`, 'success');
+          } catch (err) {
+            console.warn('Düello daveti gönderilemedi:', err);
+            UIManager.showToast('Düello daveti gönderilemedi. Bağlantınızı kontrol edin.', 'error');
+          }
+        }
       });
     });
   } catch (e) {
