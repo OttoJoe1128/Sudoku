@@ -189,57 +189,57 @@ export const UIManager = {
         ${inboxModalTemplate}
         ${savedGamesModalTemplate}
         ${usernameModalTemplate}
-        <div id="game-view" class="hidden flex-col items-center p-6 w-full h-full">
+        <div id="game-view" class="hidden flex-col items-center p-6 w-full h-full relative z-10">
             <!-- Düello Canlı İlerleme Çubuğu -->
-            <div id="match-header-bar" class="hidden w-full bg-slate-900 text-white p-3 rounded-2xl mb-3 shadow-lg flex-col gap-2">
+            <div id="match-header-bar" class="hidden w-full bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-strong)] p-3 rounded-2xl mb-3 shadow-lg flex-col gap-2">
                 <div class="flex justify-between items-center text-xs font-black">
                     <span id="match-user-name">Siz (%0)</span>
-                    <span class="text-amber-400 font-extrabold text-sm">VS</span>
+                    <span class="text-[var(--accent-gold)] font-extrabold text-sm">VS</span>
                     <span id="match-enemy-name">Rakip (%0)</span>
                 </div>
-                <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden flex">
-                    <div id="match-user-bar" class="bg-indigo-500 h-full transition-all duration-300" style="width: 0%"></div>
+                <div class="w-full bg-[var(--bg-elevated)] h-2.5 rounded-full overflow-hidden flex border border-[var(--border-subtle)]">
+                    <div id="match-user-bar" class="bg-[var(--accent-cyan)] h-full transition-all duration-300" style="width: 0%"></div>
                     <div id="match-enemy-bar" class="bg-rose-500 h-full transition-all duration-300" style="width: 0%"></div>
                 </div>
             </div>
 
             <div class="w-full flex justify-between items-center mb-3">
-                <button id="btn-back-menu" class="bg-slate-200 hover:bg-slate-300 px-3.5 py-1.5 rounded-xl font-bold text-xs text-slate-800 transition-colors flex items-center gap-1">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+                <button id="btn-back-menu" class="bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] px-3.5 py-1.5 rounded-xl font-bold text-xs text-[var(--text-primary)] transition-colors flex items-center gap-1">
+                    <svg class="w-4 h-4 text-[var(--accent-gold)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
                     <span>Menü</span>
                 </button>
-                <div class="bg-amber-100 text-amber-950 px-3 py-1 rounded-xl font-black text-xs border border-amber-200 shadow-sm flex items-center gap-1">
-                    <span>🪙</span>
-                    <span id="game-gold" class="font-mono font-black">100</span>
+                <div class="bg-[var(--bg-card)] text-[var(--accent-gold)] px-3 py-1 rounded-xl font-black text-xs border border-[var(--border-strong)] shadow-sm flex items-center gap-1.5">
+                    ${Icons.coin}
+                    <span id="game-gold" class="font-mono font-black text-[var(--text-primary)]">100</span>
                 </div>
-                <div id="game-errors" class="text-rose-600 font-bold text-xs sm:text-sm">Hata: 0/3</div>
-                <div id="game-timer" class="font-mono font-bold text-base sm:text-lg text-slate-800">00:00</div>
+                <div id="game-errors" class="text-rose-400 font-bold text-xs sm:text-sm">Hata: 0/3</div>
+                <div id="game-timer" class="font-mono font-bold text-base sm:text-lg text-[var(--text-primary)]">00:00</div>
             </div>
 
             <!-- Disiplin Vektör Amblem Rozeti -->
-            <div id="game-variant-badge-box" class="w-full mb-2 flex justify-between items-center bg-slate-100/80 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-black text-slate-700">
+            <div id="game-variant-badge-box" class="w-full mb-2 flex justify-between items-center bg-[var(--bg-card)] px-3 py-1.5 rounded-xl border border-[var(--border-subtle)] text-xs font-black text-[var(--text-primary)]">
                 <span id="game-variant-title" class="flex items-center gap-1.5">Klasik Sudoku</span>
-                <span id="game-variant-multiplier" class="text-[10px] font-extrabold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">1.0x Puan</span>
+                <span id="game-variant-multiplier" class="text-[10px] font-extrabold text-[var(--accent-gold)] bg-[var(--bg-elevated)] px-2 py-0.5 rounded-md border border-[var(--border-strong)]">1.0x Puan</span>
             </div>
 
             <!-- Samurai 5-Grid Mini-Radar Seçici Bar -->
             <div id="samurai-radar-bar" class="hidden w-full grid-cols-5 gap-1 mb-2"></div>
 
             <!-- Sudoku Grid -->
-            <div id="sudoku-grid" class="grid grid-cols-9 gap-[1px] bg-slate-800 p-[1.5px] rounded-2xl shadow-2xl mb-3 border-2 border-slate-800 relative"></div>
+            <div id="sudoku-grid" class="grid grid-cols-9 gap-[1px] bg-[var(--board-bg)] p-[2px] rounded-2xl shadow-2xl mb-3 border-2 border-[var(--border-strong)] relative"></div>
 
             <!-- Oyun Kontrol Araç Çubuğu -->
             <div class="flex gap-2 mb-3 w-full max-w-[380px] justify-center">
-                <button id="btn-hint" class="flex-1 bg-amber-400 hover:bg-amber-500 text-amber-950 py-2.5 px-2 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1">
-                    <svg class="w-4 h-4 text-amber-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
-                    <span>İpucu (10🪙)</span>
+                <button id="btn-hint" class="flex-1 bg-[var(--accent-gold)] text-[var(--text-on-gold)] hover:brightness-110 py-2.5 px-2 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1.5">
+                    ${Icons.hint}
+                    <span>İpucu (10 🪙)</span>
                 </button>
-                <button id="btn-toggle-notes" class="bg-slate-200 hover:bg-slate-300 text-slate-800 py-2.5 px-3 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                <button id="btn-toggle-notes" class="bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] text-[var(--text-primary)] py-2.5 px-3 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1.5">
+                    ${Icons.pen}
                     <span id="notes-status-text">Not: Kapalı</span>
                 </button>
-                <button id="btn-erase" class="bg-rose-100 hover:bg-rose-200 text-rose-800 py-2.5 px-3 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                <button id="btn-erase" class="bg-rose-950/60 border border-rose-500/40 text-rose-300 py-2.5 px-3 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1.5">
+                    ${Icons.trash}
                     <span>Sil</span>
                 </button>
             </div>
@@ -458,27 +458,27 @@ export const UIManager = {
       const isCustom = !!r.isCustomMode;
 
       const deleteBtnHTML = isCustom ? `
-        <button data-record-id="${r.id}" class="delete-saved-game-btn bg-rose-100 hover:bg-rose-200 text-rose-700 font-black text-xs p-1.5 rounded-xl active:scale-90 transition-transform">
+        <button data-record-id="${r.id}" class="delete-saved-game-btn bg-rose-950/60 border border-rose-500/40 text-rose-300 font-black text-xs p-1.5 rounded-xl active:scale-90 transition-transform">
           ✕
         </button>
       ` : '';
 
       return `
-        <div class="p-3 border border-slate-200 rounded-2xl bg-white shadow-sm flex items-center justify-between transition-all">
+        <div class="p-3 border border-[var(--border-subtle)] rounded-2xl bg-[var(--bg-card)] shadow-sm flex items-center justify-between transition-all">
           <div class="flex items-center gap-2.5">
-            <div class="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
+            <div class="w-9 h-9 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center shrink-0">
               ${emblem}
             </div>
             <div class="text-left">
               <div class="flex items-center gap-1">
-                <p class="font-black text-slate-800 text-xs">${titleMap[variant] || 'Klasik Sudoku'}</p>
-                ${!isCustom ? `<span class="bg-indigo-100 text-indigo-700 text-[8px] font-black px-1.5 py-0.5 rounded-md">🗺️ Harita</span>` : `<span class="bg-purple-100 text-purple-700 text-[8px] font-black px-1.5 py-0.5 rounded-md">Serbest</span>`}
+                <p class="font-black text-[var(--text-primary)] text-xs">${titleMap[variant] || 'Klasik Sudoku'}</p>
+                ${!isCustom ? `<span class="bg-[var(--accent-gold)] text-[var(--text-on-gold)] text-[8px] font-black px-1.5 py-0.5 rounded-md">Harita</span>` : `<span class="bg-[var(--accent-cyan)] text-[var(--text-on-gold)] text-[8px] font-black px-1.5 py-0.5 rounded-md">Serbest</span>`}
               </div>
-              <p class="text-[10px] text-slate-500 font-bold">Seviye ${level} • ${diffStr} • ${timeSec > 0 ? `${m}:${s}` : 'Hazır'}</p>
+              <p class="text-[10px] text-[var(--text-secondary)] font-bold">Seviye ${level} • ${diffStr} • ${timeSec > 0 ? `${m}:${s}` : 'Hazır'}</p>
             </div>
           </div>
           <div class="flex items-center gap-1.5 shrink-0">
-            <button data-record-id="${r.id}" class="play-saved-game-btn bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs px-3 py-1.5 rounded-xl shadow-sm active:scale-95 transition-transform flex items-center gap-1">
+            <button data-record-id="${r.id}" class="play-saved-game-btn bg-[var(--accent-gold)] text-[var(--text-on-gold)] font-black text-xs px-3 py-1.5 rounded-xl shadow-sm active:scale-95 transition-transform flex items-center gap-1 hover:brightness-110">
               <span>▶</span><span>Devam Et</span>
             </button>
             ${deleteBtnHTML}
@@ -1279,17 +1279,17 @@ export const UIManager = {
         let stateClass = '';
 
         if (isSelected) {
-          stateClass = 'sudoku-cell-selected bg-indigo-600 text-white font-black shadow-lg ring-2 ring-indigo-500 z-10';
+          stateClass = 'sudoku-cell-selected bg-[var(--cell-selected-bg)] text-[var(--text-on-gold)] font-black shadow-lg ring-2 ring-[var(--accent-gold-bright)] z-10';
         } else if (isMatchingValue) {
-          stateClass = 'sudoku-cell-matching bg-indigo-200 text-indigo-950 font-black ring-2 ring-indigo-400 z-1';
+          stateClass = 'sudoku-cell-matching bg-[var(--cell-match-bg)] text-[var(--accent-gold-bright)] font-black ring-1 ring-[var(--accent-gold)]/50 z-1';
         } else if (isRelatedGroup) {
-          stateClass = 'sudoku-cell-related bg-indigo-50/90 text-indigo-900 font-bold';
+          stateClass = 'sudoku-cell-related bg-[var(--cell-related-bg)] text-[var(--text-primary)] font-bold';
         } else if (isSamuraiCorner) {
-          stateClass = 'sudoku-cell-samurai bg-rose-50/80 text-rose-950 font-bold ring-1 ring-inset ring-rose-300/80';
+          stateClass = 'sudoku-cell-samurai bg-[var(--cell-initial-bg)] text-[var(--text-primary)] font-bold ring-1 ring-inset ring-rose-500/50';
         } else if (isInitial) {
-          stateClass = 'sudoku-cell-initial bg-slate-200 text-slate-900 font-black cursor-pointer';
+          stateClass = 'sudoku-cell-initial bg-[var(--cell-initial-bg)] text-[var(--text-primary)] font-black cursor-pointer';
         } else {
-          stateClass = 'sudoku-cell-empty bg-white text-indigo-600 font-bold cursor-pointer';
+          stateClass = 'sudoku-cell-empty bg-[var(--cell-bg)] text-[var(--accent-cyan)] font-black cursor-pointer';
         }
 
         let borderRight = '';
@@ -1298,17 +1298,17 @@ export const UIManager = {
         if (variant === 'irregular' && regionMap) {
           const currentRegion = regionMap[r][c];
           if (c < 8 && regionMap[r][c + 1] !== currentRegion) {
-            borderRight = 'border-r-[3px] border-r-slate-900 dark:border-r-slate-200';
+            borderRight = 'border-r-[3px] border-r-[var(--accent-gold)]';
           }
           if (r < 8 && regionMap[r + 1][c] !== currentRegion) {
-            borderBottom = 'border-b-[3px] border-b-slate-900 dark:border-b-slate-200';
+            borderBottom = 'border-b-[3px] border-b-[var(--accent-gold)]';
           }
         } else {
-          if (c === 2 || c === 5) borderRight = 'border-r-4 border-r-slate-800';
-          if (r === 2 || r === 5) borderBottom = 'border-b-4 border-b-slate-800';
+          if (c === 2 || c === 5) borderRight = 'border-r-4 border-r-[var(--accent-gold)]';
+          if (r === 2 || r === 5) borderBottom = 'border-b-4 border-b-[var(--accent-gold)]';
         }
 
-        cell.className = `w-9 h-9 sm:w-11 sm:h-11 aspect-square border border-slate-300/80 flex items-center justify-center text-lg select-none cursor-pointer active:scale-95 transition-all relative ${stateClass} ${borderRight} ${borderBottom}`;
+        cell.className = `w-9 h-9 sm:w-11 sm:h-11 aspect-square border border-[var(--border-subtle)] flex items-center justify-center text-lg select-none cursor-pointer active:scale-95 transition-all relative ${stateClass} ${borderRight} ${borderBottom}`;
 
         // Killer Sudoku Dış Sınır Kafes Çerçevesi
         if (variant === 'killer' && cages) {
@@ -1322,10 +1322,10 @@ export const UIManager = {
             const cageFrame = document.createElement('div');
             let frameBorders = 'pointer-events-none absolute inset-[2px] z-5 ';
 
-            if (topCageIdx !== myCageIdx) frameBorders += 'border-t border-dashed border-amber-600/90 dark:border-amber-400/90 ';
-            if (bottomCageIdx !== myCageIdx) frameBorders += 'border-b border-dashed border-amber-600/90 dark:border-amber-400/90 ';
-            if (leftCageIdx !== myCageIdx) frameBorders += 'border-l border-dashed border-amber-600/90 dark:border-amber-400/90 ';
-            if (rightCageIdx !== myCageIdx) frameBorders += 'border-r border-dashed border-amber-600/90 dark:border-amber-400/90 ';
+            if (topCageIdx !== myCageIdx) frameBorders += 'border-t border-dashed border-[var(--accent-gold)] ';
+            if (bottomCageIdx !== myCageIdx) frameBorders += 'border-b border-dashed border-[var(--accent-gold)] ';
+            if (leftCageIdx !== myCageIdx) frameBorders += 'border-l border-dashed border-[var(--accent-gold)] ';
+            if (rightCageIdx !== myCageIdx) frameBorders += 'border-r border-dashed border-[var(--accent-gold)] ';
 
             cageFrame.className = frameBorders;
             cell.appendChild(cageFrame);
@@ -1336,7 +1336,7 @@ export const UIManager = {
         const cageSum = cageMap.get(`${r}_${c}`);
         if (variant === 'killer' && cageSum !== undefined) {
           const cageBadge = document.createElement('span');
-          cageBadge.className = "absolute top-[2px] left-[3px] text-[8px] font-mono font-black text-amber-700 dark:text-amber-300 leading-none pointer-events-none z-10";
+          cageBadge.className = "absolute top-[2px] left-[3px] text-[8px] font-mono font-black text-[var(--accent-gold)] leading-none pointer-events-none z-10";
           cageBadge.innerText = cageSum.toString();
           cell.appendChild(cageBadge);
         }
@@ -1344,7 +1344,7 @@ export const UIManager = {
         const cellNotes = notesBoard ? notesBoard[r][c] : undefined;
         if (val === 0 && cellNotes && cellNotes.size > 0) {
           const notesDiv = document.createElement('div');
-          notesDiv.className = "grid grid-cols-3 gap-0 w-full h-full p-0.5 pointer-events-none text-[8px] font-mono leading-none text-slate-500 font-bold items-center justify-center text-center";
+          notesDiv.className = "grid grid-cols-3 gap-0 w-full h-full p-0.5 pointer-events-none text-[8px] font-mono leading-none text-[var(--text-secondary)] font-bold items-center justify-center text-center";
           notesDiv.innerHTML = [1,2,3,4,5,6,7,8,9].map(n => `<div>${cellNotes.has(n) ? (variant === 'wordoku' ? wordokuLetters[n - 1] : n) : ''}</div>`).join('');
           cell.appendChild(notesDiv);
         } else if (val !== 0) {
@@ -1380,11 +1380,11 @@ export const UIManager = {
 
         const btn = document.createElement('button');
         btn.type = "button";
-        btn.className = `bg-white p-1.5 sm:p-2 rounded-xl border border-slate-200 font-black text-sm sm:text-base hover:bg-indigo-50 text-slate-800 active:scale-95 transition-all flex flex-col items-center justify-center relative shadow-sm ${isCompleted ? 'opacity-40 pointer-events-none bg-slate-100' : ''}`;
+        btn.className = `bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] p-1.5 sm:p-2 rounded-xl border border-[var(--border-subtle)] font-black text-sm sm:text-base text-[var(--text-primary)] active:scale-95 transition-all flex flex-col items-center justify-center relative shadow-sm ${isCompleted ? 'opacity-40 pointer-events-none bg-[var(--bg-elevated)]' : ''}`;
 
         btn.innerHTML = `
           <span class="pointer-events-none">${label}</span>
-          <span class="text-[9px] font-bold text-indigo-600 pointer-events-none">${isCompleted ? '✓' : remaining}</span>
+          <span class="text-[9px] font-bold text-[var(--accent-gold)] pointer-events-none">${isCompleted ? '✓' : remaining}</span>
         `;
         btn.onclick = (e) => {
           e.preventDefault();

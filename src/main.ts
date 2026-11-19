@@ -870,10 +870,10 @@ const startGame = (
         isNotesMode = !isNotesMode;
         if (notesTextEl) notesTextEl.innerText = isNotesMode ? 'Not: Açık' : 'Not: Kapalı';
         if (isNotesMode) {
-          toggleNotesBtn.className = "bg-indigo-600 text-white py-2.5 px-3 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1";
-          UIManager.showToast("✏️ Kalem / Not modu aktif!", "info");
+          toggleNotesBtn.className = "bg-[var(--accent-gold)] text-[var(--text-on-gold)] border border-[var(--accent-gold-bright)] py-2.5 px-3 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1.5";
+          UIManager.showToast("Kalem / Not modu aktif!", "info");
         } else {
-          toggleNotesBtn.className = "bg-slate-200 hover:bg-slate-300 text-slate-800 py-2.5 px-3 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1";
+          toggleNotesBtn.className = "bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] text-[var(--text-primary)] py-2.5 px-3 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1.5";
         }
       };
     }
@@ -1409,9 +1409,9 @@ let selectedCustomTimeSec: number = 0;
       const btn = document.getElementById(`btn-variant-${other}`);
       if (btn) {
         if (other === v) {
-          btn.className = "custom-variant-btn p-2 rounded-xl bg-white text-indigo-600 shadow-sm flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform";
+          btn.className = "custom-variant-btn p-2 rounded-xl bg-[var(--bg-card)] text-[var(--accent-gold)] border border-[var(--border-strong)] shadow-sm flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform";
         } else {
-          btn.className = "custom-variant-btn p-2 rounded-xl bg-transparent text-slate-600 hover:bg-white/60 flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform";
+          btn.className = "custom-variant-btn p-2 rounded-xl bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-card)] flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform";
         }
       }
     });
@@ -1436,9 +1436,9 @@ const setupCustomTimeButtons = () => {
       if (!b) return;
       const bSec = parseInt(b.getAttribute('data-time') || '0');
       if (bSec === sec) {
-        b.className = "custom-time-btn flex-1 py-1.5 rounded-xl font-black text-[10px] transition-all bg-white text-indigo-700 shadow-sm";
+        b.className = "custom-time-btn flex-1 py-1.5 rounded-xl font-black text-[10px] transition-all bg-[var(--bg-card)] text-[var(--accent-gold)] border border-[var(--border-strong)] shadow-sm flex items-center justify-center gap-1";
       } else {
-        b.className = "custom-time-btn flex-1 py-1.5 rounded-xl font-bold text-[10px] transition-all text-slate-600 hover:text-slate-900 bg-transparent";
+        b.className = "custom-time-btn flex-1 py-1.5 rounded-xl font-bold text-[10px] transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-transparent flex items-center justify-center gap-1";
       }
     });
 
@@ -1492,9 +1492,9 @@ let selectedMapVariant: SudokuVariant = 'classic';
       const btn = document.getElementById(`map-variant-${other}`);
       if (btn) {
         if (other === v) {
-          btn.className = "map-variant-btn p-2 rounded-xl bg-white text-indigo-600 shadow-sm flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform";
+          btn.className = "map-variant-btn p-1.5 rounded-xl bg-[var(--bg-card)] text-[var(--accent-gold)] border border-[var(--border-strong)] shadow-sm flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform";
         } else {
-          btn.className = "map-variant-btn p-2 rounded-xl bg-transparent text-slate-600 hover:bg-white/60 flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform";
+          btn.className = "map-variant-btn p-1.5 rounded-xl bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-card)] flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform";
         }
       }
     });
@@ -1519,9 +1519,9 @@ let selectedArenaVariant: SudokuVariant = 'classic';
       const btn = document.getElementById(`arena-variant-${other}`);
       if (btn) {
         if (other === v) {
-          btn.className = "arena-variant-btn p-1.5 rounded-xl bg-white text-indigo-600 shadow-sm flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform";
+          btn.className = "arena-variant-btn p-1.5 rounded-xl bg-[var(--bg-card)] text-[var(--accent-gold)] border border-[var(--border-strong)] shadow-sm flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform";
         } else {
-          btn.className = "arena-variant-btn p-1.5 rounded-xl bg-transparent text-slate-600 hover:bg-white/60 flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform";
+          btn.className = "arena-variant-btn p-1.5 rounded-xl bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-card)] flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform";
         }
       }
     });
