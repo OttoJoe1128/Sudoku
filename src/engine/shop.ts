@@ -10,10 +10,11 @@ export interface ShopItem {
 }
 
 export const ShopItems: ShopItem[] = [
-  { id: 'theme-default', name: 'Klasik Açık', price: 0, type: 'theme', previewColor: '#F3F4F8', accentColor: '#4F46E5' },
-  { id: 'theme-dark', name: 'Karanlık Gece', price: 200, type: 'theme', previewColor: '#0B0F19', accentColor: '#6366F1' },
-  { id: 'theme-neon', name: 'Neon Siber', price: 500, type: 'theme', previewColor: '#0D061A', accentColor: '#D946EF' },
-  { id: 'theme-emerald', name: 'Zümrüt Orman', price: 300, type: 'theme', previewColor: '#041F1A', accentColor: '#10B981' }
+  { id: 'theme-obsidian', name: 'Obsidyen & Altın', price: 0, type: 'theme', previewColor: '#070D19', accentColor: '#C89B3C' },
+  { id: 'theme-ivory', name: 'Fildişi & Mermer (Gündüz)', price: 150, type: 'theme', previewColor: '#F7F3EA', accentColor: '#A67C2E' },
+  { id: 'theme-shogun', name: 'Kızıl Shogun', price: 250, type: 'theme', previewColor: '#0F090C', accentColor: '#D4A853' },
+  { id: 'theme-cyber', name: 'Siber Akşam', price: 300, type: 'theme', previewColor: '#0B0718', accentColor: '#22D3EE' },
+  { id: 'theme-jade', name: 'Antik Yeşim', price: 350, type: 'theme', previewColor: '#051613', accentColor: '#D4B475' }
 ];
 
 export const ShopManager = {
@@ -27,16 +28,20 @@ export const ShopManager = {
     } catch {
       // ignore
     }
-    return ['theme-default'];
+    return ['theme-obsidian'];
   },
 
   getActiveTheme(): string {
-    return localStorage.getItem('sudoku_active_theme') || 'theme-default';
+    const raw = localStorage.getItem('sudoku_active_theme');
+    if (!raw || raw === 'theme-default' || raw === 'theme-light' || raw === 'theme-dark') {
+      return 'theme-obsidian';
+    }
+    return raw;
   },
 
   setActiveTheme(themeId: string): boolean {
     const purchased = this.getPurchasedThemes();
-    if (!purchased.includes(themeId)) {
+    if (!purchased.includes(themeId) && themeId !== 'theme-obsidian') {
       return false;
     }
     localStorage.setItem('sudoku_active_theme', themeId);

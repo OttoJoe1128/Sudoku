@@ -10,6 +10,8 @@ import { profileModalTemplate } from './templates/profileModal';
 import { matchModalTemplate } from './templates/matchModal';
 import { inboxModalTemplate } from './templates/inboxModal';
 import { savedGamesModalTemplate } from './templates/savedGamesModal';
+import { getAmbientBackgroundHTML } from '../design/backgrounds';
+import { Icons, renderAvatarSVG, renderRankBadgeSVG, AVATAR_LIST } from '../design/icons';
 import { Player, SpeedRecord } from '../engine/leaderboard';
 import { ShopItems, ShopManager } from '../engine/shop';
 import { BadgeStatus } from '../engine/achievements';
@@ -173,7 +175,8 @@ export const UIManager = {
     if (!app) return;
 
     app.innerHTML = `
-      <div id="container" class="w-full max-w-[480px] h-[100dvh] bg-slate-50 flex flex-col relative overflow-hidden transition-colors duration-300 font-sans">
+      <div id="container" class="w-full max-w-[480px] h-[100dvh] bg-[var(--bg-app)] text-[var(--text-primary)] flex flex-col relative overflow-hidden transition-colors duration-300 font-sans">
+        ${getAmbientBackgroundHTML()}
         ${menuTemplate}
         ${mapTemplate}
         ${customModeTemplate}
@@ -279,19 +282,12 @@ export const UIManager = {
     const container = document.getElementById('container');
     if (!container) return;
 
-    container.classList.remove('theme-dark', 'theme-neon', 'theme-emerald');
-    if (themeId === 'theme-dark') {
-      container.classList.add('theme-dark');
-      container.style.backgroundColor = '#0b0f19';
-    } else if (themeId === 'theme-neon') {
-      container.classList.add('theme-neon');
-      container.style.backgroundColor = '#0d061a';
-    } else if (themeId === 'theme-emerald') {
-      container.classList.add('theme-emerald');
-      container.style.backgroundColor = '#041f1a';
-    } else {
-      container.style.backgroundColor = '#f3f4f8';
-    }
+    container.classList.remove('theme-obsidian', 'theme-ivory', 'theme-shogun', 'theme-cyber', 'theme-jade', 'theme-dark', 'theme-neon', 'theme-emerald');
+
+    const validThemes = ['theme-obsidian', 'theme-ivory', 'theme-shogun', 'theme-cyber', 'theme-jade'];
+    const resolvedTheme = validThemes.includes(themeId) ? themeId : 'theme-obsidian';
+
+    container.classList.add(resolvedTheme);
   },
 
   updateHeaderGold(gold: number) {
@@ -374,14 +370,14 @@ export const UIManager = {
       if (isOwnProfile) editNameBtn.classList.remove('hidden');
       else editNameBtn.classList.add('hidden');
     }
-    if (levelEl) levelEl.innerText = `🏅 Seviye ${stats.level}`;
-    if (goldEl) goldEl.innerText = `🪙 ${stats.gold} Altın`;
-    if (avatarEl) avatarEl.innerText = stats.avatar || '🎮';
-    if (titleEl) titleEl.innerText = stats.title || '🥉 Çırak';
+    if (levelEl) levelEl.innerText = `Seviye ${stats.level}`;
+    if (goldEl) goldEl.innerText = `${stats.gold} Altın`;
+    if (avatarEl) avatarEl.innerHTML = renderAvatarSVG(stats.avatar || 'av_prism', 36);
+    if (titleEl) titleEl.innerHTML = renderRankBadgeSVG(stats.title || 'Çırak');
     if (completedEl) completedEl.innerText = stats.totalCompleted.toString();
     if (duelEl) duelEl.innerText = `${stats.duelWins} G / ${stats.duelLosses} M`;
-    if (pvpMmrEl) pvpMmrEl.innerText = `⚔️ ${stats.duelMmr} MMR`;
-    if (botMmrEl) botMmrEl.innerText = `🤖 ${stats.botMmr || 1000} YZ`;
+    if (pvpMmrEl) pvpMmrEl.innerText = `${stats.duelMmr} MMR`;
+    if (botMmrEl) botMmrEl.innerText = `${stats.botMmr || 1000} YZ`;
     if (basitEl) basitEl.innerText = stats.bestBasitFormatted;
     if (ortaEl) ortaEl.innerText = stats.bestOrtaFormatted;
     if (zorEl) zorEl.innerText = stats.bestZorFormatted;
@@ -394,10 +390,10 @@ export const UIManager = {
 
         const avatarSelector = document.getElementById('profile-avatar-selector');
         if (avatarSelector) {
-          const avatars = ['🎮', '🐯', '🦊', '🐼', '🤖', '👑', '🦁', '🦉'];
-          avatarSelector.innerHTML = avatars.map(a => `
-            <button data-avatar="${a}" class="avatar-option-btn w-7 h-7 sm:w-8 sm:h-8 rounded-xl border flex items-center justify-center text-sm sm:text-base active:scale-90 transition-transform ${a === stats.avatar ? 'bg-indigo-600 text-white border-indigo-600 shadow-md ring-2 ring-indigo-300' : 'bg-white text-slate-800 border-slate-200 hover:bg-slate-100'}">
-              ${a}
+          avatarSelector.innerHTML = AVATAR_LIST.map(a => `
+            <button data-avatar="${a.key}" class="avatar-option-btn p-2 rounded-xl border flex flex-col items-center justify-center active:scale-90 transition-transform ${a.key === stats.avatar ? 'bg-[var(--accent-gold)] text-[var(--text-on-gold)] border-[var(--accent-gold)] shadow-md ring-2 ring-[var(--accent-gold-bright)]' : 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border-subtle)] hover:bg-[var(--bg-card-hover)]'}">
+              ${renderAvatarSVG(a.key, 24)}
+              <span class="text-[8px] font-black mt-1">${a.name}</span>
             </button>
           `).join('');
         }
@@ -1039,28 +1035,28 @@ export const UIManager = {
       const isActive = active === item.id;
 
       let btnText = `${item.price} 🪙`;
-      let btnClass = "bg-indigo-600 hover:bg-indigo-700 text-white";
+      let btnClass = "bg-[var(--accent-gold)] text-[var(--text-on-gold)] hover:brightness-110";
 
       if (isActive) {
-        btnText = "Aktif";
-        btnClass = "bg-emerald-600 text-white cursor-default";
+        btnText = "Aktif ✓";
+        btnClass = "bg-[var(--accent-cyan)] text-[var(--text-on-gold)] cursor-default";
       } else if (isPurchased) {
         btnText = "Kullan";
-        btnClass = "bg-slate-800 hover:bg-slate-700 text-white";
+        btnClass = "bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-strong)] hover:bg-[var(--bg-card-hover)]";
       }
 
       return `
-        <div class="p-3.5 border border-slate-200 rounded-2xl flex justify-between items-center bg-white shadow-sm">
+        <div class="p-3.5 border border-[var(--border-subtle)] rounded-2xl flex justify-between items-center bg-[var(--bg-card)] shadow-sm">
           <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-xl border flex items-center justify-center p-1 shadow-inner" style="background-color: ${item.previewColor}">
+            <div class="w-8 h-8 rounded-xl border border-[var(--border-strong)] flex items-center justify-center p-1 shadow-inner" style="background-color: ${item.previewColor}">
               <div class="w-3.5 h-3.5 rounded-full" style="background-color: ${item.accentColor}"></div>
             </div>
             <div>
-              <p class="font-black text-slate-800 text-sm">${item.name}</p>
-              <p class="text-[10px] text-slate-400 font-bold">${isPurchased ? 'Satın Alındı' : 'Mağaza Ürünü'}</p>
+              <p class="font-black text-[var(--text-primary)] text-sm">${item.name}</p>
+              <p class="text-[10px] text-[var(--text-secondary)] font-bold">${isPurchased ? 'Satın Alındı' : 'Mağaza Ürünü'}</p>
             </div>
           </div>
-          <button data-shop-id="${item.id}" class="shop-action-btn ${btnClass} px-4 py-2 rounded-xl font-bold text-xs shadow-sm transition-all active:scale-95 shrink-0 whitespace-nowrap">
+          <button data-shop-id="${item.id}" class="shop-action-btn ${btnClass} px-4 py-2 rounded-xl font-black text-xs shadow-sm transition-all active:scale-95 shrink-0 whitespace-nowrap">
             ${btnText}
           </button>
         </div>

@@ -1,4 +1,6 @@
+import './design/tokens.css';
 import { UIManager, SavedGameRecord } from './ui/uiManager';
+import { renderAvatarSVG, renderRankBadgeSVG } from './design/icons';
 import { validateSavedGameRecord } from './engine/saveValidator';
 import { GameEngine } from './engine/gameEngine';
 import { SudokuGen, SudokuVariant, GeneratedSudoku, IRREGULAR_TEMPLATES, KillerCage } from './engine/sudoku';
@@ -357,10 +359,11 @@ const clearCurrentSavedGame = () => {
 };
 
 const updateSavedGamesCountUI = () => {
-  const currentLvl = UserManager.getVariantLevel(selectedMapVariant || 'classic');
+  const classicLvl = UserManager.getVariantLevel('classic');
+  const totalCount = getSavedGamesList().length;
   const countLabel = document.getElementById('saved-games-count-label');
   if (countLabel) {
-    countLabel.innerText = `Harita: Sev. ${currentLvl} • Aktif Oyunlar`;
+    countLabel.innerText = `Seviye ${classicLvl} • ${totalCount} Aktif Oyun`;
   }
 };
 
@@ -678,6 +681,7 @@ const startGame = (
           currentVariant === 'wordoku'
         );
     };
+    activeRefreshFn = refresh;
 
     const handleNumpadInput = (num: number) => {
       if (!selectedCell) return;
@@ -1228,8 +1232,8 @@ const checkUser = async () => {
     const avatarBox = document.getElementById('menu-avatar-box');
 
     if (nameEl) nameEl.innerText = user.username;
-    if (titleEl) titleEl.innerText = user.title || '🥉 Çırak';
-    if (avatarBox) avatarBox.innerText = user.avatar || '🎮';
+    if (titleEl) titleEl.innerHTML = renderRankBadgeSVG(user.title || 'Çırak');
+    if (avatarBox) avatarBox.innerHTML = renderAvatarSVG(user.avatar || 'av_prism', 28);
 
     updateGoldDisplay();
     updateSavedGamesCountUI();
@@ -1306,7 +1310,7 @@ const openPlayerProfile = async (targetData?: any) => {
         if (newAvatar) {
           await UserManager.updateProfileCustomization(newAvatar, UserManager.getTitle());
           const avatarBox = document.getElementById('menu-avatar-box');
-          if (avatarBox) avatarBox.innerText = newAvatar;
+          if (avatarBox) avatarBox.innerHTML = renderAvatarSVG(newAvatar, 28);
           UIManager.showToast("Avatar güncellendi!", "success");
           openPlayerProfile();
         }
