@@ -1152,14 +1152,35 @@ export const UIManager = {
           if (r === 2 || r === 5) borderBottom = 'border-b-4 border-b-slate-800';
         }
 
-        const killerBorder = variant === 'killer' ? 'border-dashed border-amber-500/60' : 'border-slate-300/80';
+        cell.className = `w-9 h-9 sm:w-11 sm:h-11 aspect-square border border-slate-300/80 flex items-center justify-center text-lg select-none cursor-pointer active:scale-95 transition-all relative ${stateClass} ${borderRight} ${borderBottom}`;
 
-        cell.className = `w-9 h-9 sm:w-11 sm:h-11 aspect-square border ${killerBorder} flex items-center justify-center text-lg select-none cursor-pointer active:scale-95 transition-all relative ${stateClass} ${borderRight} ${borderBottom}`;
+        // Killer Sudoku Dış Sınır Kafes Çerçevesi
+        if (variant === 'killer' && cages) {
+          const myCageIdx = cages.findIndex(cg => cg.cells.some(cell => cell.r === r && cell.c === c));
+          if (myCageIdx >= 0) {
+            const topCageIdx = r > 0 ? cages.findIndex(cg => cg.cells.some(cell => cell.r === r - 1 && cell.c === c)) : -1;
+            const bottomCageIdx = r < 8 ? cages.findIndex(cg => cg.cells.some(cell => cell.r === r + 1 && cell.c === c)) : -1;
+            const leftCageIdx = c > 0 ? cages.findIndex(cg => cg.cells.some(cell => cell.r === r && cell.c === c - 1)) : -1;
+            const rightCageIdx = c < 8 ? cages.findIndex(cg => cg.cells.some(cell => cell.r === r && cell.c === c + 1)) : -1;
 
+            const cageFrame = document.createElement('div');
+            let frameBorders = 'pointer-events-none absolute inset-[2px] z-5 ';
+
+            if (topCageIdx !== myCageIdx) frameBorders += 'border-t border-dashed border-amber-600/90 dark:border-amber-400/90 ';
+            if (bottomCageIdx !== myCageIdx) frameBorders += 'border-b border-dashed border-amber-600/90 dark:border-amber-400/90 ';
+            if (leftCageIdx !== myCageIdx) frameBorders += 'border-l border-dashed border-amber-600/90 dark:border-amber-400/90 ';
+            if (rightCageIdx !== myCageIdx) frameBorders += 'border-r border-dashed border-amber-600/90 dark:border-amber-400/90 ';
+
+            cageFrame.className = frameBorders;
+            cell.appendChild(cageFrame);
+          }
+        }
+
+        // Killer Sudoku kafes toplamı rozeti (Sol Üst Hücre)
         const cageSum = cageMap.get(`${r}_${c}`);
         if (variant === 'killer' && cageSum !== undefined) {
           const cageBadge = document.createElement('span');
-          cageBadge.className = "absolute top-0.5 left-1 text-[8px] font-mono font-black text-amber-600 leading-none pointer-events-none";
+          cageBadge.className = "absolute top-[2px] left-[3px] text-[8px] font-mono font-black text-amber-700 dark:text-amber-300 leading-none pointer-events-none z-10";
           cageBadge.innerText = cageSum.toString();
           cell.appendChild(cageBadge);
         }
@@ -1172,6 +1193,9 @@ export const UIManager = {
           cell.appendChild(notesDiv);
         } else if (val !== 0) {
           const textSpan = document.createElement('span');
+          if (variant === 'killer' && cageSum !== undefined) {
+            textSpan.className = "mt-1.5 text-base";
+          }
           textSpan.innerText = variant === 'wordoku' ? wordokuLetters[val - 1] : val.toString();
           cell.appendChild(textSpan);
         }

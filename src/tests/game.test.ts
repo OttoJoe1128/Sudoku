@@ -60,12 +60,34 @@ describe('Sudoku Engine & 5 Variants', () => {
     });
   });
 
-  it('should generate Killer Sudoku with cages', () => {
+  it('should generate Killer Sudoku with cages and verify sums and no duplicate digits in cages', () => {
     const res = SudokuGen.generateVariant('basit', 'killer');
-    expect(res.variant).toBe('killer');
-    expect(res.cages).toBeDefined();
-    expect(res.cages!.length).toBeGreaterThan(0);
-    expect(res.cages![0].sum).toBeGreaterThan(0);
+    const solution = res.solution;
+    const cages = res.cages!;
+
+    expect(cages.length).toBeGreaterThan(0);
+
+    const coveredCells = new Set<string>();
+    cages.forEach(cage => {
+      expect(cage.cells.length).toBeGreaterThanOrEqual(1);
+
+      // Check sum accuracy
+      const actualSum = cage.cells.reduce((acc, cell) => acc + solution[cell.r][cell.c], 0);
+      expect(actualSum).toBe(cage.sum);
+
+      // Check no duplicate digits in cage
+      const cageDigits = cage.cells.map(cell => solution[cell.r][cell.c]);
+      expect(new Set(cageDigits).size).toBe(cageDigits.length);
+
+      // Track cell coverage
+      cage.cells.forEach(cell => {
+        const key = `${cell.r}_${cell.c}`;
+        expect(coveredCells.has(key)).toBe(false);
+        coveredCells.add(key);
+      });
+    });
+
+    expect(coveredCells.size).toBe(81);
   });
 
   it('should generate Wordoku Sudoku', () => {

@@ -1,6 +1,6 @@
 import { UIManager, SavedGameRecord } from './ui/uiManager';
 import { GameEngine } from './engine/gameEngine';
-import { SudokuGen, SudokuVariant, GeneratedSudoku, IRREGULAR_TEMPLATES } from './engine/sudoku';
+import { SudokuGen, SudokuVariant, GeneratedSudoku, IRREGULAR_TEMPLATES, KillerCage } from './engine/sudoku';
 import { UserManager } from './store/userState';
 import { Leaderboard, Player, SpeedRecord, SIMULATED_LOBBY_PLAYERS } from './engine/leaderboard';
 import { ShopManager } from './engine/shop';
@@ -32,6 +32,7 @@ let currentLevelNumber = 1;
 let isCustomGameMode = false;
 let currentTimeLimitSec = 0;
 let currentRegionMap: number[][] | undefined = undefined;
+let currentCages: KillerCage[] | undefined = undefined;
 
 // Maç / Düello Modu Değişkenleri
 let activeMatch: MatchState | null = null;
@@ -100,6 +101,8 @@ const getSavedGamesList = (): SavedGameRecord[] => {
     let savedSolution: number[][] | null = null;
     let savedErrors = 0;
     let savedNotes: any = [];
+    let savedRegionMap: number[][] | undefined = undefined;
+    let savedCages: KillerCage[] | undefined = undefined;
 
     try {
       const rawMap = localStorage.getItem(`sudoku_map_save_${v}_${userLvl}`);
@@ -111,6 +114,8 @@ const getSavedGamesList = (): SavedGameRecord[] => {
         savedSolution = p.currentSolution;
         savedErrors = p.errors || 0;
         savedNotes = p.notesBoard || [];
+        savedRegionMap = p.regionMap;
+        savedCages = p.cages;
       }
     } catch {
       // ignore
@@ -127,6 +132,8 @@ const getSavedGamesList = (): SavedGameRecord[] => {
       currentSolution: savedSolution || [],
       errors: savedErrors,
       notesBoard: savedNotes,
+      regionMap: savedRegionMap,
+      cages: savedCages,
       isCustomMode: false,
       updatedAtMs: Date.now()
     });
@@ -142,20 +149,51 @@ const saveActiveGameRecord = () => {
       row ? row.map(s => (s && typeof s.values === 'function' ? Array.from(s) : Array.isArray(s) ? s : [])) : []
     )) : [];
 
-    // Harita kaydıysa özel harita anahtarına kaydet
-    localStorage.setItem(`sudoku_map_save_${currentVariant}_${currentLevelNumber}`, JSON.stringify({
-      variant: currentVariant,
-      level: currentLevelNumber,
-      diff: currentDifficulty,
-      timeElapsed,
-      userBoard,
-      initialBoard,
-      currentSolution,
-      errors,
-      notesBoard: safeNotes,
-      regionMap: currentRegionMap,
-      updatedAtMs: Date.now()
-    }));
+    if (!isCustomGameMode) {
+      // Harita kaydıysa özel harita anahtarına kaydet
+      localStorage.setItem(`sudoku_map_save_${currentVariant}_${currentLevelNumber}`, JSON.stringify({
+        variant: currentVariant,
+        level: currentLevelNumber,
+        diff: currentDifficulty,
+        timeElapsed,
+        userBoard,
+        initialBoard,
+        currentSolution,
+        errors,
+        notesBoard: safeNotes,
+        regionMap: currentRegionMap,
+        cages: currentCages,
+        updatedAtMs: Date.now()
+      }));
+    } else {
+      const list = getSavedGamesList().filter(item => item.isCustomMode);
+      const gameId = `saved_custom_${currentVariant}_${currentLevelNumber}`;
+      const record: SavedGameRecord = {
+        id: gameId,
+        variant: currentVariant,
+        level: currentLevelNumber,
+        diff: currentDifficulty,
+        timeElapsed,
+        userBoard,
+        initialBoard,
+        currentSolution,
+        errors,
+        notesBoard: safeNotes,
+        regionMap: currentRegionMap,
+        cages: currentCages,
+        isCustomMode: true,
+        updatedAtMs: Date.now()
+      };
+
+      const idx = list.findIndex(item => item.id === gameId);
+      if (idx >= 0) {
+        list[idx] = record;
+      } else {
+        list.unshift(record);
+      }
+
+      localStorage.setItem('sudoku_saved_games_list', JSON.stringify(list));
+    }
 
     updateSavedGamesCountUI();
   } catch (e) {
@@ -297,6 +335,7 @@ const startGame = (
       currentSolution = restoredState.currentSolution;
       timeElapsed = typeof restoredState.timeElapsed === 'number' ? restoredState.timeElapsed : 0;
       currentRegionMap = restoredState.regionMap;
+      currentCages = restoredState.cages;
     } else if (matchData) {
       if (restoredState) clearCurrentSavedGame();
       currentSolution = matchData.solution;
@@ -304,6 +343,7 @@ const startGame = (
       initialBoard = matchData.puzzle.map(row => [...row]);
       timeElapsed = 0;
       currentRegionMap = matchData.regionMap || IRREGULAR_TEMPLATES[0].regionMap;
+      currentCages = matchData.cages;
     } else {
       if (restoredState) clearCurrentSavedGame();
       activeGeneratedSudoku = SudokuGen.generateVariant(diff, currentVariant);
@@ -312,11 +352,15 @@ const startGame = (
       initialBoard = activeGeneratedSudoku.puzzle.map(row => [...row]);
       timeElapsed = 0;
       currentRegionMap = activeGeneratedSudoku.regionMap;
+      currentCages = activeGeneratedSudoku.cages;
       UIManager.hideMatchHeader();
     }
 
     if (currentVariant !== 'irregular') {
       currentRegionMap = undefined;
+    }
+    if (currentVariant !== 'killer') {
+      currentCages = undefined;
     }
 
     if (!isMatchMode) {
@@ -444,8 +488,8 @@ const startGame = (
             initialBoard,
             notesBoard,
             currentVariant,
-            activeGeneratedSudoku?.regionMap,
-            activeGeneratedSudoku?.cages
+            currentRegionMap,
+            currentCages
         );
 
         UIManager.renderNumpad(

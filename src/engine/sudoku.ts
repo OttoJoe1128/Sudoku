@@ -245,28 +245,78 @@ export class SudokuGen {
     for (let r = 0; r < 9; r++) {
       for (let c = 0; c < 9; c++) {
         if (!visited[r][c]) {
-          const cageSize = Math.floor(Math.random() * 2) + 2;
+          const targetCageSize = Math.floor(Math.random() * 3) + 2;
           const cells: { r: number; c: number }[] = [{ r, c }];
+          const usedDigits = new Set<number>([solution[r][c]]);
           visited[r][c] = true;
 
-          const neighbors = [
-            { r: r + 1, c },
-            { r, c: c + 1 },
-            { r: r - 1, c },
-            { r, c: c - 1 }
-          ].filter(n => n.r >= 0 && n.r < 9 && n.c >= 0 && n.c < 9 && !visited[n.r][n.c]);
+          const getNeighbors = (cellList: { r: number; c: number }[]) => {
+            const neighbors: { r: number; c: number }[] = [];
+            cellList.forEach(cell => {
+              const candidates = [
+                { r: cell.r + 1, c: cell.c },
+                { r: cell.r, c: cell.c + 1 },
+                { r: cell.r - 1, c: cell.c },
+                { r: cell.r, c: cell.c - 1 }
+              ];
+              candidates.forEach(cand => {
+                if (
+                  cand.r >= 0 && cand.r < 9 &&
+                  cand.c >= 0 && cand.c < 9 &&
+                  !visited[cand.r][cand.c] &&
+                  !usedDigits.has(solution[cand.r][cand.c]) &&
+                  !neighbors.some(n => n.r === cand.r && n.c === cand.c)
+                ) {
+                  neighbors.push(cand);
+                }
+              });
+            });
+            return neighbors;
+          };
 
-          while (cells.length < cageSize && neighbors.length > 0) {
-            const nextIdx = Math.floor(Math.random() * neighbors.length);
-            const next = neighbors.splice(nextIdx, 1)[0];
-            if (!visited[next.r][next.c]) {
-              visited[next.r][next.c] = true;
-              cells.push(next);
-            }
+          while (cells.length < targetCageSize) {
+            const availableNeighbors = getNeighbors(cells);
+            if (availableNeighbors.length === 0) break;
+            const nextIdx = Math.floor(Math.random() * availableNeighbors.length);
+            const next = availableNeighbors[nextIdx];
+            visited[next.r][next.c] = true;
+            cells.push(next);
+            usedDigits.add(solution[next.r][next.c]);
           }
 
+          cells.sort((a, b) => a.r !== b.r ? a.r - b.r : a.c - b.c);
           const sum = cells.reduce((acc, curr) => acc + solution[curr.r][curr.c], 0);
           cages.push({ sum, cells });
+        }
+      }
+    }
+
+    for (let i = 0; i < cages.length; i++) {
+      if (cages[i].cells.length === 1) {
+        const cell = cages[i].cells[0];
+        const val = solution[cell.r][cell.c];
+        const adjacentCandidates = [
+          { r: cell.r + 1, c: cell.c },
+          { r: cell.r, c: cell.c + 1 },
+          { r: cell.r - 1, c: cell.c },
+          { r: cell.r, c: cell.c - 1 }
+        ];
+
+        for (const adj of adjacentCandidates) {
+          if (adj.r >= 0 && adj.r < 9 && adj.c >= 0 && adj.c < 9) {
+            const targetCage = cages.find(c => c !== cages[i] && c.cells.some(tc => tc.r === adj.r && tc.c === adj.c));
+            if (targetCage && targetCage.cells.length < 5) {
+              const digits = targetCage.cells.map(tc => solution[tc.r][tc.c]);
+              if (!digits.includes(val)) {
+                targetCage.cells.push(cell);
+                targetCage.cells.sort((a, b) => a.r !== b.r ? a.r - b.r : a.c - b.c);
+                targetCage.sum += val;
+                cages.splice(i, 1);
+                i--;
+                break;
+              }
+            }
+          }
         }
       }
     }
