@@ -8,6 +8,7 @@ try {
 let audioCtx: AudioContext | null = null;
 let bgmAudio: HTMLAudioElement | null = null;
 let isBgmPlaying = false;
+let isInGame = false;
 
 function getAudioContext(): AudioContext | null {
   if (typeof window === 'undefined') return null;
@@ -38,7 +39,7 @@ export const SoundManager = {
 
     if (!soundEnabled) {
       this.stopBgm();
-    } else {
+    } else if (!isInGame) {
       this.startBgm();
     }
 
@@ -152,7 +153,7 @@ export const SoundManager = {
   },
 
   startBgm(): void {
-    if (!soundEnabled || isBgmPlaying) return;
+    if (!soundEnabled || isBgmPlaying || isInGame) return;
     if (typeof window === 'undefined') return;
 
     try {
@@ -177,6 +178,17 @@ export const SoundManager = {
     }
   },
 
+  pauseBgm(): void {
+    if (bgmAudio) {
+      try {
+        bgmAudio.pause();
+      } catch {
+        // ignore
+      }
+    }
+    isBgmPlaying = false;
+  },
+
   stopBgm(): void {
     if (bgmAudio) {
       try {
@@ -187,5 +199,14 @@ export const SoundManager = {
       }
     }
     isBgmPlaying = false;
+  },
+
+  setInGame(inGame: boolean): void {
+    isInGame = inGame;
+    if (inGame) {
+      this.pauseBgm();
+    } else if (soundEnabled) {
+      this.startBgm();
+    }
   }
 };

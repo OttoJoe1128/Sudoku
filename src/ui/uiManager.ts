@@ -21,6 +21,7 @@ import { ChallengeRequest } from '../engine/matchEngine';
 import { BotCharacter } from '../engine/botData';
 import { SudokuVariant, KillerCage, SudokuGen } from '../engine/sudoku';
 import { SamuraiViewport, renderSamuraiBoard, SamuraiBoardData } from './samuraiViewport';
+import { SoundManager } from '../engine/soundManager';
 
 export interface SavedGameRecord {
   id: string;
@@ -1623,6 +1624,7 @@ export const UIManager = {
   },
 
   navigate(viewId: 'menu' | 'map' | 'custom' | 'game') {
+    SoundManager.setInGame(viewId === 'game');
     const views = {
       menu: document.getElementById('view-menu'),
       map: document.getElementById('view-map'),
