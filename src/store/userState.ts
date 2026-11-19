@@ -240,14 +240,15 @@ export const UserManager = {
         }
       }
       return null;
-    })();
+    })().catch(() => null);
 
-    const timeoutPromise = new Promise<UserData | null>((resolve) =>
-      setTimeout(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    const timeoutPromise = new Promise<UserData | null>((resolve) => {
+      timeoutId = setTimeout(() => {
         console.warn("initUser zaman aşımına uğradı (3.5s), yerel veri kullanılıyor.");
         resolve(this.getOfflineFallbackUser());
-      }, 3500)
-    );
+      }, 3500);
+    });
 
     try {
       const res = await Promise.race([fetchPromise, timeoutPromise]);
@@ -255,6 +256,8 @@ export const UserManager = {
     } catch (e) {
       console.warn("initUser Firebase hatası, yerel veri kullanılıyor:", e);
       return this.getOfflineFallbackUser();
+    } finally {
+      clearTimeout(timeoutId!);
     }
   },
 

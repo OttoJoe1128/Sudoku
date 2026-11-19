@@ -21,11 +21,19 @@ export function getSelectedMatchTimeSec(): number {
   return selectedMatchTimeSec;
 }
 
+export function cleanupArenaLobby(): void {
+  if (arenaUnsubLobby) {
+    arenaUnsubLobby();
+    arenaUnsubLobby = null;
+  }
+}
+
 export function startBotMatch(
   bot: BotCharacter,
   onStartMatchGame: (level: number, diff: 'basit' | 'orta' | 'zor', matchData: MatchState, variant: SudokuVariant) => void,
   onBotMatchProgress: (botProgress: number, enemyName: string) => Promise<void>
 ) {
+  cleanupArenaLobby();
   UIManager.toggleModal('match-search-modal', false);
 
   const currentUsername = UserManager.getUsername() || 'Oyuncu';
@@ -79,6 +87,7 @@ export function startSimulatedMatch(
   onStartMatchGame: (level: number, diff: 'basit' | 'orta' | 'zor', matchData: MatchState, variant: SudokuVariant) => void,
   onBotMatchProgress: (botProgress: number, enemyName: string) => Promise<void>
 ) {
+  cleanupArenaLobby();
   UIManager.toggleModal('match-search-modal', false);
 
   const currentUsername = UserManager.getUsername() || 'Oyuncu';
@@ -125,7 +134,7 @@ export function loadArenaLobbyPlayers(
   onStartMatchGame: (level: number, diff: 'basit' | 'orta' | 'zor', matchData: MatchState, variant: SudokuVariant) => void,
   onBotMatchProgress: (botProgress: number, enemyName: string) => Promise<void>
 ) {
-  if (arenaUnsubLobby) arenaUnsubLobby();
+  cleanupArenaLobby();
 
   try {
     const q = query(
@@ -188,19 +197,24 @@ export function loadArenaLobbyPlayers(
           }
 
           try {
+            let timeoutId: ReturnType<typeof setTimeout>;
             const sendPromise = MatchEngine.sendDirectChallenge(
               targetPlayer.uid || targetPlayer.username,
               targetPlayer.username,
               currentArenaDiff,
               selectedMatchTimeSec,
               selectedArenaVariant
-            );
+            ).catch((e) => { throw e; });
 
-            const timeoutPromise = new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('TIMEOUT')), 5000)
-            );
+            const timeoutPromise = new Promise((_, reject) => {
+              timeoutId = setTimeout(() => reject(new Error('TIMEOUT')), 5000);
+            });
 
-            await Promise.race([sendPromise, timeoutPromise]);
+            try {
+              await Promise.race([sendPromise, timeoutPromise]);
+            } finally {
+              clearTimeout(timeoutId!);
+            }
 
             const modeText = selectedMatchTimeSec > 0 ? `${Math.floor(selectedMatchTimeSec / 60)} Dk` : 'Süresiz';
             UIManager.showToast(`📩 ${targetPlayer.username} adlı oyuncuya gerçek düello daveti gönderildi (${modeText})! Kabul etmesi bekleniyor...`, 'success');
@@ -379,6 +393,7 @@ export function initArenaController(callbacks: {
   });
 
   document.getElementById('tab-arena-bots')?.addEventListener('click', () => {
+    cleanupArenaLobby();
     document.getElementById('section-arena-bots')?.classList.remove('hidden');
     document.getElementById('section-arena-bots')?.classList.add('flex');
     document.getElementById('section-arena-lobby')?.classList.add('hidden');
@@ -402,10 +417,7 @@ export function initArenaController(callbacks: {
   });
 
   document.getElementById('close-match-search')?.addEventListener('click', () => {
-    if (arenaUnsubLobby) {
-      arenaUnsubLobby();
-      arenaUnsubLobby = null;
-    }
+    cleanupArenaLobby();
     MatchEngine.clearActiveMatch();
     const box = document.getElementById('match-search-status-box');
     if (box) box.classList.add('hidden');

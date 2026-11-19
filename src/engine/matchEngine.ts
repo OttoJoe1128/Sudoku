@@ -171,6 +171,7 @@ export const deserializeChallengeFromFirestore = (data: any): ChallengeRequest =
 
 let activeMatchSnapshotUnsubscribe: (() => void) | null = null;
 let challengeSnapshotUnsubscribe: (() => void) | null = null;
+let outgoingChallengesUnsub: (() => void) | null = null;
 let botTimerInterval: any = null;
 
 export const MatchEngine = {
@@ -178,6 +179,14 @@ export const MatchEngine = {
     if (activeMatchSnapshotUnsubscribe) {
       activeMatchSnapshotUnsubscribe();
       activeMatchSnapshotUnsubscribe = null;
+    }
+    if (challengeSnapshotUnsubscribe) {
+      challengeSnapshotUnsubscribe();
+      challengeSnapshotUnsubscribe = null;
+    }
+    if (outgoingChallengesUnsub) {
+      outgoingChallengesUnsub();
+      outgoingChallengesUnsub = null;
     }
     if (botTimerInterval) {
       clearInterval(botTimerInterval);
@@ -295,7 +304,10 @@ export const MatchEngine = {
   },
 
   listenPendingChallenges(onUpdate: (challenges: ChallengeRequest[]) => void) {
-    if (challengeSnapshotUnsubscribe) challengeSnapshotUnsubscribe();
+    if (challengeSnapshotUnsubscribe) {
+      challengeSnapshotUnsubscribe();
+      challengeSnapshotUnsubscribe = null;
+    }
     if (!auth.currentUser) return;
 
     const currentUid = auth.currentUser.uid;
@@ -307,26 +319,34 @@ export const MatchEngine = {
     );
 
     try {
-      challengeSnapshotUnsubscribe = onSnapshot(q, (snap) => {
-        const list: ChallengeRequest[] = [];
-        snap.docs.forEach((d) => {
-          const data = deserializeChallengeFromFirestore(d.data());
-          if (
-            data.targetUid === currentUid ||
-            (currentUsername && data.targetUsername === currentUsername) ||
-            (data.targetUid && data.targetUid === currentUsername)
-          ) {
-            list.push(data);
-          }
-        });
-        onUpdate(list);
-      });
+      challengeSnapshotUnsubscribe = onSnapshot(
+        q,
+        (snap) => {
+          const list: ChallengeRequest[] = [];
+          snap.docs.forEach((d) => {
+            const data = deserializeChallengeFromFirestore(d.data());
+            if (
+              data.targetUid === currentUid ||
+              (currentUsername && data.targetUsername === currentUsername) ||
+              (data.targetUid && data.targetUid === currentUsername)
+            ) {
+              list.push(data);
+            }
+          });
+          onUpdate(list);
+        },
+        (err) => console.warn('Gelen davetler dinlenirken hata:', err)
+      );
     } catch (e) {
       console.warn("Gelen davetler dinlenemedi:", e);
     }
   },
 
   listenOutgoingChallenges(onChallengeAccepted: (challenge: ChallengeRequest) => void) {
+    if (outgoingChallengesUnsub) {
+      outgoingChallengesUnsub();
+      outgoingChallengesUnsub = null;
+    }
     if (!auth.currentUser) return;
     const currentUid = auth.currentUser.uid;
     const now = Date.now();
@@ -338,17 +358,20 @@ export const MatchEngine = {
     );
 
     try {
-      onSnapshot(q, (snap) => {
-        snap.docChanges().forEach((change) => {
-          if (change.type === 'added' || change.type === 'modified') {
-            const data = deserializeChallengeFromFirestore(change.doc.data());
-            // Sadece bu oturum başlatıldıktan SONRA oluşturulmuş/güncellenmiş davetleri yakala
-            if (data.status === 'accepted' && data.matchData && data.createdAtMs && data.createdAtMs > now - 10000) {
-              onChallengeAccepted(data);
+      outgoingChallengesUnsub = onSnapshot(
+        q,
+        (snap) => {
+          snap.docChanges().forEach((change) => {
+            if (change.type === 'added' || change.type === 'modified') {
+              const data = deserializeChallengeFromFirestore(change.doc.data());
+              if (data.status === 'accepted' && data.matchData && data.createdAtMs && data.createdAtMs > now - 10000) {
+                onChallengeAccepted(data);
+              }
             }
-          }
-        });
-      });
+          });
+        },
+        (err) => console.warn('Gönderilen davetler dinlenirken hata:', err)
+      );
     } catch (e) {
       console.warn("Gönderilen davetler dinlenemedi:", e);
     }
@@ -530,15 +553,23 @@ export const MatchEngine = {
 
     try {
       const matchRef = doc(db, 'matches', matchId);
-      activeMatchSnapshotUnsubscribe = onSnapshot(matchRef, (docSnap) => {
-        if (docSnap.exists()) {
-          const data = deserializeMatchFromFirestore(docSnap.data());
-          if (data.status === 'in_progress' && data.player2 && !data.player2.isBot) {
-            clearTimeout(botTimeout);
-            onMatchFound(data);
+      if (activeMatchSnapshotUnsubscribe) {
+        activeMatchSnapshotUnsubscribe();
+        activeMatchSnapshotUnsubscribe = null;
+      }
+      activeMatchSnapshotUnsubscribe = onSnapshot(
+        matchRef,
+        (docSnap) => {
+          if (docSnap.exists()) {
+            const data = deserializeMatchFromFirestore(docSnap.data());
+            if (data.status === 'in_progress' && data.player2 && !data.player2.isBot) {
+              clearTimeout(botTimeout);
+              onMatchFound(data);
+            }
           }
-        }
-      });
+        },
+        (err) => console.warn('Eşleşme araması dinlenirken hata:', err)
+      );
     } catch (e) {
       // ignore
     }
@@ -560,13 +591,21 @@ export const MatchEngine = {
   },
 
   listenMatchUpdates(matchId: string, onUpdate: (match: MatchState) => void) {
+    if (activeMatchSnapshotUnsubscribe) {
+      activeMatchSnapshotUnsubscribe();
+      activeMatchSnapshotUnsubscribe = null;
+    }
     try {
       const matchRef = doc(db, 'matches', matchId);
-      activeMatchSnapshotUnsubscribe = onSnapshot(matchRef, (docSnap) => {
-        if (docSnap.exists()) {
-          onUpdate(deserializeMatchFromFirestore(docSnap.data()));
-        }
-      });
+      activeMatchSnapshotUnsubscribe = onSnapshot(
+        matchRef,
+        (docSnap) => {
+          if (docSnap.exists()) {
+            onUpdate(deserializeMatchFromFirestore(docSnap.data()));
+          }
+        },
+        (err) => console.warn('Maç dinleme hatası:', err)
+      );
     } catch (e) {
       console.warn("Maç dinleme hatası:", e);
     }
