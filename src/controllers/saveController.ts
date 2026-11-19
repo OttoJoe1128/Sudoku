@@ -85,82 +85,48 @@ export function getSavedGamesList(): SavedGameRecord[] {
   }
 
   const mapList: SavedGameRecord[] = [];
-
-  const classicLvl = UserManager.getVariantLevel('classic');
-  const classicDiff = SudokuGen.getDifficulty(classicLvl);
-  const classicGameId = `saved_map_classic_${classicLvl}`;
-  let classicRecord: SavedGameRecord = {
-    id: classicGameId,
-    variant: 'classic',
-    level: classicLvl,
-    diff: classicDiff,
-    timeElapsed: 0,
-    userBoard: [],
-    initialBoard: [],
-    currentSolution: [],
-    errors: 0,
-    notesBoard: [],
-    isCustomMode: false,
-    updatedAtMs: Date.now()
-  };
-
   try {
-    const rawClassicMap = localStorage.getItem(`sudoku_map_save_classic_${classicLvl}`);
-    if (rawClassicMap) {
-      const p = JSON.parse(rawClassicMap);
-      if (validateSavedGameRecord(p)) {
-        classicRecord.timeElapsed = p.timeElapsed || 0;
-        classicRecord.userBoard = p.userBoard;
-        classicRecord.initialBoard = p.initialBoard;
-        classicRecord.currentSolution = p.currentSolution;
-        classicRecord.errors = p.errors || 0;
-        classicRecord.notesBoard = p.notesBoard || [];
-      } else {
-        localStorage.removeItem(`sudoku_map_save_classic_${classicLvl}`);
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('sudoku_map_save_')) {
+        const rawMap = localStorage.getItem(key);
+        if (rawMap) {
+          try {
+            const p = JSON.parse(rawMap);
+            if (validateSavedGameRecord(p)) {
+              const variant: SudokuVariant = p.variant || 'classic';
+              const level = p.level || 1;
+              const diff = p.diff || SudokuGen.getDifficulty(level);
+              mapList.push({
+                id: `saved_map_${variant}_${level}`,
+                variant,
+                level,
+                diff,
+                timeElapsed: p.timeElapsed || 0,
+                userBoard: p.userBoard,
+                initialBoard: p.initialBoard,
+                currentSolution: p.currentSolution,
+                errors: p.errors || 0,
+                notesBoard: p.notesBoard || [],
+                regionMap: p.regionMap,
+                cages: p.cages,
+                samuraiBoards: p.samuraiBoards,
+                activeSamuraiIndex: p.activeSamuraiIndex,
+                isCustomMode: false,
+                updatedAtMs: p.updatedAtMs || Date.now()
+              });
+            } else {
+              localStorage.removeItem(key);
+            }
+          } catch {
+            localStorage.removeItem(key);
+          }
+        }
       }
     }
   } catch {
-    localStorage.removeItem(`sudoku_map_save_classic_${classicLvl}`);
+    // ignore
   }
-  mapList.push(classicRecord);
-
-  const otherVariants: SudokuVariant[] = ['irregular', 'killer', 'wordoku', 'samurai'];
-  otherVariants.forEach(v => {
-    const userLvl = UserManager.getVariantLevel(v);
-    const diff = SudokuGen.getDifficulty(userLvl);
-    const gameId = `saved_map_${v}_${userLvl}`;
-
-    try {
-      const rawMap = localStorage.getItem(`sudoku_map_save_${v}_${userLvl}`);
-      if (rawMap) {
-        const p = JSON.parse(rawMap);
-        if (validateSavedGameRecord(p)) {
-          mapList.push({
-            id: gameId,
-            variant: v,
-            level: userLvl,
-            diff,
-            timeElapsed: p.timeElapsed || 0,
-            userBoard: p.userBoard,
-            initialBoard: p.initialBoard,
-            currentSolution: p.currentSolution,
-            errors: p.errors || 0,
-            notesBoard: p.notesBoard || [],
-            regionMap: p.regionMap,
-            cages: p.cages,
-            samuraiBoards: p.samuraiBoards,
-            activeSamuraiIndex: p.activeSamuraiIndex,
-            isCustomMode: false,
-            updatedAtMs: Date.now()
-          });
-        } else {
-          localStorage.removeItem(`sudoku_map_save_${v}_${userLvl}`);
-        }
-      }
-    } catch {
-      localStorage.removeItem(`sudoku_map_save_${v}_${userLvl}`);
-    }
-  });
 
   return [...mapList, ...customList, ...duelList];
 }

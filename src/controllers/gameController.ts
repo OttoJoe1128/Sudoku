@@ -5,6 +5,7 @@ import { UserManager } from '../store/userState';
 import { MatchEngine, MatchState, calculateEloChange } from '../engine/matchEngine';
 import { AchievementManager } from '../engine/achievements';
 import { saveActiveGameRecord, clearSavedGame, updateSavedGamesCountUI } from './saveController';
+import { validateSavedGameRecord } from '../engine/saveValidator';
 import { t, getLang } from '../i18n/translations';
 import { auth } from '../api/firebase';
 import { ExamTier, PlacementExamConfig, getPlacementExamConfig, evaluatePlacementExam, calculateExamProgress } from '../engine/placementEngine';
@@ -443,51 +444,69 @@ export function startGame(
   isMatchMode = !!matchData;
   activeMatch = matchData || null;
 
-  if (restoredState && restoredState.isMatchMode && restoredState.matchData) {
+  let resolvedRestoredState = restoredState;
+  if (!resolvedRestoredState && !matchData && !isCustom) {
+    try {
+      const saveKey = `sudoku_map_save_${variant}_${level}`;
+      const rawSave = localStorage.getItem(saveKey);
+      if (rawSave) {
+        const parsed = JSON.parse(rawSave);
+        if (validateSavedGameRecord(parsed)) {
+          resolvedRestoredState = parsed;
+        } else {
+          localStorage.removeItem(saveKey);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  if (resolvedRestoredState && resolvedRestoredState.isMatchMode && resolvedRestoredState.matchData) {
     isMatchMode = true;
-    activeMatch = restoredState.matchData;
+    activeMatch = resolvedRestoredState.matchData;
   }
 
   currentDifficulty = diff;
   currentVariant = variant;
   currentLevelNumber = level;
   isCustomGameMode = isCustom;
-  currentTimeLimitSec = restoredState?.timeLimitSec ?? (matchData ? (matchData.durationSec || 0) : customTimeLimitSec);
+  currentTimeLimitSec = resolvedRestoredState?.timeLimitSec ?? (matchData ? (matchData.durationSec || 0) : customTimeLimitSec);
 
   UserManager.setPresence(isMatchMode ? 'in_duel' : 'in_game');
 
   const isValidRestored = !!(
-    restoredState &&
-    Array.isArray(restoredState.userBoard) && restoredState.userBoard.length === 9 &&
-    Array.isArray(restoredState.initialBoard) && restoredState.initialBoard.length === 9 &&
-    Array.isArray(restoredState.currentSolution) && restoredState.currentSolution.length === 9
+    resolvedRestoredState &&
+    Array.isArray(resolvedRestoredState.userBoard) && resolvedRestoredState.userBoard.length === 9 &&
+    Array.isArray(resolvedRestoredState.initialBoard) && resolvedRestoredState.initialBoard.length === 9 &&
+    Array.isArray(resolvedRestoredState.currentSolution) && resolvedRestoredState.currentSolution.length === 9
   );
 
   if (isValidRestored) {
-    currentVariant = restoredState.variant || variant;
-    currentLevelNumber = restoredState.level || level;
-    currentDifficulty = restoredState.diff || diff;
-    userBoard = restoredState.userBoard.map((row: number[]) => [...row]);
-    initialBoard = restoredState.initialBoard.map((row: number[]) => [...row]);
-    currentSolution = restoredState.currentSolution.map((row: number[]) => [...row]);
-    errors = typeof restoredState.errors === 'number' ? restoredState.errors : 0;
-    timeElapsed = typeof restoredState.timeElapsed === 'number' ? restoredState.timeElapsed : 0;
+    currentVariant = resolvedRestoredState.variant || variant;
+    currentLevelNumber = resolvedRestoredState.level || level;
+    currentDifficulty = resolvedRestoredState.diff || diff;
+    userBoard = resolvedRestoredState.userBoard.map((row: number[]) => [...row]);
+    initialBoard = resolvedRestoredState.initialBoard.map((row: number[]) => [...row]);
+    currentSolution = resolvedRestoredState.currentSolution.map((row: number[]) => [...row]);
+    errors = typeof resolvedRestoredState.errors === 'number' ? resolvedRestoredState.errors : 0;
+    timeElapsed = typeof resolvedRestoredState.timeElapsed === 'number' ? resolvedRestoredState.timeElapsed : 0;
     hintsUsed = 0;
     selectedCell = null;
     isNotesMode = false;
-    currentRegionMap = restoredState.regionMap;
-    currentCages = restoredState.cages;
+    currentRegionMap = resolvedRestoredState.regionMap;
+    currentCages = resolvedRestoredState.cages;
 
     notesBoard = Array.from({ length: 9 }, (_, r) =>
       Array.from({ length: 9 }, (_, c) => {
-        const raw = restoredState.notesBoard && restoredState.notesBoard[r] && restoredState.notesBoard[r][c];
+        const raw = resolvedRestoredState.notesBoard && resolvedRestoredState.notesBoard[r] && resolvedRestoredState.notesBoard[r][c];
         return new Set<number>(Array.isArray(raw) ? raw : []);
       })
     );
 
-    if (currentVariant === 'samurai' && restoredState.samuraiBoards) {
-      activeSamuraiIndex = restoredState.activeSamuraiIndex || 0;
-      samuraiBoards = restoredState.samuraiBoards.map((b: any) => ({
+    if (currentVariant === 'samurai' && resolvedRestoredState.samuraiBoards) {
+      activeSamuraiIndex = resolvedRestoredState.activeSamuraiIndex || 0;
+      samuraiBoards = resolvedRestoredState.samuraiBoards.map((b: any) => ({
         userBoard: b.userBoard,
         initialBoard: b.initialBoard,
         solution: b.solution,
