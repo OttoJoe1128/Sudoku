@@ -166,8 +166,25 @@ export const UserManager = {
     }
   },
 
+  getOfflineFallbackUser(): UserData | null {
+    const localUsername = this.getUsername();
+    if (!localUsername) return null;
+    const level = this.getCurrentLevel();
+    return {
+      username: localUsername,
+      gold: this.getGold(),
+      level,
+      avatar: this.getAvatar(),
+      title: this.getTitle()
+    };
+  },
+
   async initUser(): Promise<UserData | null> {
-    try {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      return this.getOfflineFallbackUser();
+    }
+
+    const fetchPromise = (async () => {
       const cred = auth.currentUser ? { user: auth.currentUser } : await signInAnonymously(auth);
       const uid = cred.user.uid;
 
@@ -222,10 +239,23 @@ export const UserManager = {
           return { ...found, title: calcTitle };
         }
       }
+      return null;
+    })();
+
+    const timeoutPromise = new Promise<UserData | null>((resolve) =>
+      setTimeout(() => {
+        console.warn("initUser zaman aşımına uğradı (3.5s), yerel veri kullanılıyor.");
+        resolve(this.getOfflineFallbackUser());
+      }, 3500)
+    );
+
+    try {
+      const res = await Promise.race([fetchPromise, timeoutPromise]);
+      return res || this.getOfflineFallbackUser();
     } catch (e) {
-      console.warn("Kullanıcı Firebase ile senkronize edilemedi, yerel veri kullanılıyor:", e);
+      console.warn("initUser Firebase hatası, yerel veri kullanılıyor:", e);
+      return this.getOfflineFallbackUser();
     }
-    return null;
   },
 
   async findUserByName(username: string): Promise<UserData | null> {

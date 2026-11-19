@@ -178,24 +178,38 @@ export function loadArenaLobbyPlayers(
             startSimulatedMatch(targetPlayer, onStartMatchGame, onBotMatchProgress);
           }, 1800);
         } else {
+          if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            UIManager.showToast('📡 İnternet bağlantınız yok. Canlı düello daveti için çevrimiçi olmalısınız.', 'error');
+            return;
+          }
+
           if (!UserManager.getNotificationsEnabled()) {
             await UIManager.promptNotificationPermission('duel');
           }
 
           try {
-            await MatchEngine.sendDirectChallenge(
+            const sendPromise = MatchEngine.sendDirectChallenge(
               targetPlayer.uid || targetPlayer.username,
               targetPlayer.username,
               currentArenaDiff,
               selectedMatchTimeSec,
               selectedArenaVariant
             );
+
+            const timeoutPromise = new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('TIMEOUT')), 5000)
+            );
+
+            await Promise.race([sendPromise, timeoutPromise]);
+
             const modeText = selectedMatchTimeSec > 0 ? `${Math.floor(selectedMatchTimeSec / 60)} Dk` : 'Süresiz';
             UIManager.showToast(`📩 ${targetPlayer.username} adlı oyuncuya gerçek düello daveti gönderildi (${modeText})! Kabul etmesi bekleniyor...`, 'success');
           } catch (err: any) {
             console.warn('Düello daveti gönderilemedi:', err);
             if (err.message === 'PENDING_EXISTS') {
               UIManager.showToast('Bu oyuncuya zaten bekleyen bir davetiniz var.', 'info');
+            } else if (err.message === 'TIMEOUT') {
+              UIManager.showToast('Zaman aşımı: Bağlantı yavaş veya koptu. Tekrar deneyin.', 'error');
             } else {
               UIManager.showToast('Düello daveti gönderilemedi. Bağlantınızı kontrol edin.', 'error');
             }
