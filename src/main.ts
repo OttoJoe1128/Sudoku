@@ -4,6 +4,7 @@ import { renderAvatarSVG, renderRankBadgeSVG } from './design/icons';
 import { getLang, setLang, t, applyStaticTranslations } from './i18n/translations';
 import { SudokuGen, SudokuVariant } from './engine/sudoku';
 import { UserManager } from './store/userState';
+import { ShopManager } from './engine/shop';
 import { MatchEngine } from './engine/matchEngine';
 import { App } from '@capacitor/app';
 
@@ -155,6 +156,18 @@ document.getElementById('btn-lang-toggle')?.addEventListener('click', () => {
   setLang(nextLang);
   updateLanguageUI();
   UIManager.showToast(nextLang === 'en' ? 'Language switched to English' : 'Dil Türkçe olarak ayarlandı', 'info');
+});
+
+document.getElementById('btn-theme-toggle')?.addEventListener('click', () => {
+  const active = ShopManager.getActiveTheme();
+  const nextTheme = active === 'theme-ivory' ? 'theme-obsidian' : 'theme-ivory';
+  ShopManager.setActiveTheme(nextTheme);
+  UIManager.applyTheme(nextTheme);
+  const isEn = getLang() === 'en';
+  const msg = nextTheme === 'theme-ivory'
+    ? (isEn ? 'Daylight Theme (Ivory & Marble)' : 'Gündüz Teması (Fildişi & Mermer)')
+    : (isEn ? 'Night Theme (Obsidian & Gold)' : 'Gece Teması (Obsidyen & Altın)');
+  UIManager.showToast(msg, 'info');
 });
 
 // Etkileşimli Sembol Bilgi Popover Dinleyicisi

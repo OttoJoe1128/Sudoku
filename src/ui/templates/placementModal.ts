@@ -15,48 +15,48 @@ export const placementModalTemplate = `
 
         <div class="flex flex-col gap-3 w-full mb-4">
             <!-- 1. Hedef: Basit -->
-            <button id="btn-placement-basit" class="w-full bg-emerald-950/40 border border-emerald-500/40 rounded-2xl p-3.5 text-left active:scale-[0.98] transition-all">
+            <button id="btn-placement-basit" class="w-full bg-[var(--diff-easy-bg)] border border-[var(--diff-easy-border)] rounded-2xl p-3.5 text-left active:scale-[0.98] transition-all">
                 <div class="flex justify-between items-center mb-1">
-                    <span class="text-sm font-black text-emerald-300 flex items-center gap-1.5">
+                    <span class="text-sm font-black text-[var(--diff-easy-text)] flex items-center gap-1.5">
                         <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block shadow-sm"></span>
                         Hedef: Basit (Seviye 1)
                     </span>
-                    <span class="bg-emerald-900/60 text-emerald-200 text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-500/50">
+                    <span class="bg-[var(--bg-card)] text-[var(--diff-easy-text)] border border-[var(--diff-easy-border)] text-[10px] font-black px-2 py-0.5 rounded-full">
                         +50 🪙
                     </span>
                 </div>
-                <p class="text-[11px] text-emerald-400 mb-0.5" data-i18n="diff_basit_desc">Sudokuya yeni başlayanlar için rahat başlangıç.</p>
-                <span class="text-[10px] font-bold text-emerald-300 block" data-i18n="placement_kriter_basit">Kriter: Max 3 hatayla bitir</span>
+                <p class="text-[11px] text-[var(--diff-easy-sub)] mb-0.5" data-i18n="diff_basit_desc">Sudokuya yeni başlayanlar için rahat başlangıç.</p>
+                <span class="text-[10px] font-bold text-[var(--diff-easy-text)] block" data-i18n="placement_kriter_basit">Kriter: Max 3 hatayla bitir</span>
             </button>
 
             <!-- 2. Hedef: Orta -->
-            <button id="btn-placement-orta" class="w-full bg-amber-950/40 border border-amber-500/40 rounded-2xl p-3.5 text-left active:scale-[0.98] transition-all">
+            <button id="btn-placement-orta" class="w-full bg-[var(--diff-med-bg)] border border-[var(--diff-med-border)] rounded-2xl p-3.5 text-left active:scale-[0.98] transition-all">
                 <div class="flex justify-between items-center mb-1">
-                    <span class="text-sm font-black text-amber-300 flex items-center gap-1.5">
+                    <span class="text-sm font-black text-[var(--diff-med-text)] flex items-center gap-1.5">
                         <span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block shadow-sm"></span>
                         Hedef: Orta (Seviye 301)
                     </span>
-                    <span class="bg-amber-900/60 text-amber-200 text-[10px] font-black px-2 py-0.5 rounded-full border border-amber-500/50">
+                    <span class="bg-[var(--bg-card)] text-[var(--diff-med-text)] border border-[var(--diff-med-border)] text-[10px] font-black px-2 py-0.5 rounded-full">
                         +150 🪙
                     </span>
                 </div>
-                <p class="text-[11px] text-amber-400 mb-0.5" data-i18n="diff_orta_desc">Kuralları bilenler için doğrudan 301. Seviyeye geçiş!</p>
-                <span class="text-[10px] font-bold text-amber-300 block" data-i18n="placement_kriter_orta">Kriter: Max 3 hata & 7 dk altı süre</span>
+                <p class="text-[11px] text-[var(--diff-med-sub)] mb-0.5" data-i18n="diff_orta_desc">Kuralları bilenler için doğrudan 301. Seviyeye geçiş!</p>
+                <span class="text-[10px] font-bold text-[var(--diff-med-text)] block" data-i18n="placement_kriter_orta">Kriter: Max 3 hata & 7 dk altı süre</span>
             </button>
 
             <!-- 3. Hedef: Zor -->
-            <button id="btn-placement-zor" class="w-full bg-rose-950/40 border border-rose-500/40 rounded-2xl p-3.5 text-left active:scale-[0.98] transition-all">
+            <button id="btn-placement-zor" class="w-full bg-[var(--diff-hard-bg)] border border-[var(--diff-hard-border)] rounded-2xl p-3.5 text-left active:scale-[0.98] transition-all">
                 <div class="flex justify-between items-center mb-1">
-                    <span class="text-sm font-black text-rose-300 flex items-center gap-1.5">
+                    <span class="text-sm font-black text-[var(--diff-hard-text)] flex items-center gap-1.5">
                         <span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block shadow-sm"></span>
                         Hedef: Zor (Seviye 701)
                     </span>
-                    <span class="bg-rose-900/60 text-rose-200 text-[10px] font-black px-2 py-0.5 rounded-full border border-rose-500/50">
+                    <span class="bg-[var(--bg-card)] text-[var(--diff-hard-text)] border border-[var(--diff-hard-border)] text-[10px] font-black px-2 py-0.5 rounded-full">
                         +300 🪙
                     </span>
                 </div>
-                <p class="text-[11px] text-rose-400 mb-0.5" data-i18n="diff_zor_desc">Deneyimli ustalar için doğrudan 701. Seviyeye geçiş!</p>
-                <span class="text-[10px] font-bold text-rose-300 block" data-i18n="placement_kriter_zor">Kriter: Max 3 hata & 10 dk altı süre</span>
+                <p class="text-[11px] text-[var(--diff-hard-sub)] mb-0.5" data-i18n="diff_zor_desc">Deneyimli ustalar için doğrudan 701. Seviyeye geçiş!</p>
+                <span class="text-[10px] font-bold text-[var(--diff-hard-text)] block" data-i18n="placement_kriter_zor">Kriter: Max 3 hata & 10 dk altı süre</span>
             </button>
         </div>
 

@@ -2,7 +2,7 @@ import { Icons, renderAvatarSVG, renderBrandLogoHTML } from '../../design/icons'
 
 export const menuTemplate = `
 <div id="view-menu" class="flex-1 flex flex-col p-5 gap-3.5 pb-24 overflow-y-auto hidden-scrollbar relative">
-    <!-- Üst Floating Header (Profil, Bildirim Çanı & Altın Kapsülü & Dil Seçici) -->
+    <!-- Üst Floating Header (Profil, Bildirim Çanı & Altın Kapsülü & Dil / Tema Seçici) -->
     <div class="w-full bg-[var(--bg-card)] p-3 rounded-2xl shadow-md border border-[var(--border-subtle)] flex justify-between items-center transition-all">
         <div id="btn-open-profile" class="flex items-center gap-2.5 cursor-pointer active:scale-95 transition-transform flex-1 min-w-0 pr-2">
             <div id="menu-avatar-box" class="w-10 h-10 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-xl shadow-inner shrink-0">
@@ -15,12 +15,19 @@ export const menuTemplate = `
         </div>
 
         <div class="flex items-center gap-1.5 shrink-0">
-            <!-- Dil Seçici (TR | EN) Butonu -->
-            <button id="btn-lang-toggle" title="Dil / Language" class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] px-2 py-1.5 rounded-xl text-[10px] font-mono font-black tracking-wider flex items-center gap-1 active:scale-95 transition-all shrink-0">
-                <span id="lang-opt-tr" class="text-[var(--accent-gold)]">TR</span>
-                <span class="text-[var(--text-secondary)] opacity-50">|</span>
-                <span id="lang-opt-en" class="text-[var(--text-secondary)]">EN</span>
-            </button>
+            <!-- Dil Seçici (TR | EN) & Tema Seçici (Güneş | Ay) Dikey Kapsülü -->
+            <div class="flex flex-col gap-1 shrink-0">
+                <button id="btn-lang-toggle" title="Dil / Language" class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] px-2 py-1 rounded-lg text-[10px] font-mono font-black tracking-wider flex items-center justify-center gap-1 active:scale-95 transition-all">
+                    <span id="lang-opt-tr" class="text-[var(--accent-gold)]">TR</span>
+                    <span class="text-[var(--text-secondary)] opacity-50">|</span>
+                    <span id="lang-opt-en" class="text-[var(--text-secondary)]">EN</span>
+                </button>
+                <button id="btn-theme-toggle" title="Gündüz / Gece Teması" class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] px-2 py-1 rounded-lg flex items-center justify-center gap-1.5 active:scale-95 transition-all">
+                    <span id="theme-opt-day" class="text-[var(--accent-gold)] flex items-center">${Icons.sun}</span>
+                    <span class="text-[var(--text-secondary)] opacity-40 text-[9px]">|</span>
+                    <span id="theme-opt-night" class="text-[var(--text-secondary)] opacity-50 flex items-center">${Icons.moon}</span>
+                </button>
+            </div>
 
             <!-- Düello Gelen Kutusu (Inbox) Butonu -->
             <button id="btn-open-inbox" title="Düello Gelen Kutusu" class="relative bg-[var(--bg-elevated)] text-[var(--text-primary)] p-2.5 rounded-2xl active:scale-95 transition-transform border border-[var(--border-subtle)] flex items-center justify-center">
@@ -51,15 +58,18 @@ export const menuTemplate = `
     <!-- Bento Grid Ana Aksiyonlar -->
     <div class="flex flex-col gap-3 my-auto w-full">
         <!-- Hero Kart: Aktif Oyunlarım Listesi -->
-        <button id="btn-open-saved-games" class="w-full text-left rounded-3xl p-5 shadow-xl active:scale-[0.98] transition-all border border-[var(--border-strong)] flex justify-between items-center group bg-gradient-to-br from-[#1E3A5F] via-[#0F2442] to-[#091428] text-white cursor-pointer relative overflow-hidden">
+        <button id="btn-open-saved-games" style="background: var(--hero-bg);" class="w-full text-left rounded-3xl p-5 border border-[var(--border-strong)] border-t-2 border-t-[var(--accent-gold)]/70 shadow-lg active:scale-[0.98] transition-all flex justify-between items-center group cursor-pointer relative overflow-hidden">
             <div class="absolute -right-6 -bottom-6 w-28 h-28 bg-[var(--accent-gold)]/10 rounded-full blur-xl pointer-events-none"></div>
             <div class="pr-9 z-10">
                 <div class="flex items-center gap-2 mb-1.5">
-                    <span class="w-2.5 h-2.5 rounded-full bg-[var(--accent-cyan)] animate-ping"></span>
+                    <span class="relative flex h-2.5 w-2.5 shrink-0">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent-cyan)] opacity-60"></span>
+                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--accent-cyan)]"></span>
+                    </span>
                     <span class="text-[10px] font-black uppercase tracking-widest text-[var(--accent-gold)]" id="saved-games-tag" data-i18n="menu_active_games_tag">Devam Et</span>
                 </div>
-                <span class="text-xl font-black block leading-tight text-[var(--text-primary)] tracking-wide" id="saved-games-title" data-i18n="menu_active_games_title">Aktif Oyunlarım</span>
-                <span class="text-[var(--text-secondary)] text-xs mt-1 block font-medium" id="saved-games-count-label">Seviye 1 • 0 Aktif Oyun</span>
+                <span class="text-xl font-black block leading-tight text-[var(--hero-text)] tracking-wide" id="saved-games-title" data-i18n="menu_active_games_title">Aktif Oyunlarım</span>
+                <span class="text-[var(--hero-subtext)] text-xs mt-1 block font-medium" id="saved-games-count-label">Seviye 1 • 0 Aktif Oyun</span>
             </div>
             <span class="text-2xl group-hover:translate-x-1.5 transition-transform text-[var(--accent-gold)] z-10">➔</span>
         </button>

@@ -283,9 +283,21 @@ export const UIManager = {
     container.classList.remove('theme-obsidian', 'theme-ivory', 'theme-shogun', 'theme-cyber', 'theme-jade', 'theme-dark', 'theme-neon', 'theme-emerald');
 
     const validThemes = ['theme-obsidian', 'theme-ivory', 'theme-shogun', 'theme-cyber', 'theme-jade'];
-    const resolvedTheme = validThemes.includes(themeId) ? themeId : 'theme-obsidian';
+    const resolvedTheme = validThemes.includes(themeId) ? themeId : 'theme-ivory';
 
     container.classList.add(resolvedTheme);
+
+    const dayOpt = document.getElementById('theme-opt-day');
+    const nightOpt = document.getElementById('theme-opt-night');
+    if (dayOpt && nightOpt) {
+      if (resolvedTheme === 'theme-ivory') {
+        dayOpt.className = 'text-[var(--accent-gold)] flex items-center';
+        nightOpt.className = 'text-[var(--text-secondary)] opacity-45 flex items-center';
+      } else {
+        dayOpt.className = 'text-[var(--text-secondary)] opacity-45 flex items-center';
+        nightOpt.className = 'text-[var(--accent-gold)] flex items-center';
+      }
+    }
   },
 
   updateHeaderGold(gold: number) {

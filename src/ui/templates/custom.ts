@@ -73,45 +73,45 @@ export const customModeTemplate = `
     <!-- Zorluk Kartları -->
     <div class="flex flex-col gap-3 w-full">
         <!-- Basit -->
-        <button id="btn-custom-basit" class="w-full bg-emerald-950/40 border border-emerald-500/40 rounded-3xl p-4 text-left active:scale-[0.98] transition-all shadow-sm group">
+        <button id="btn-custom-basit" class="w-full bg-[var(--diff-easy-bg)] border border-[var(--diff-easy-border)] rounded-3xl p-4 text-left active:scale-[0.98] transition-all shadow-sm group">
             <div class="flex justify-between items-center mb-1">
-                <span class="text-base font-black text-emerald-300 flex items-center gap-2">
+                <span class="text-base font-black text-[var(--diff-easy-text)] flex items-center gap-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm inline-block"></span>
                     <span data-i18n="diff_basit">Basit</span>
                 </span>
-                <span id="badge-custom-basit-reward" class="bg-emerald-900/60 text-emerald-200 text-xs font-black px-2.5 py-0.5 rounded-full border border-emerald-500/50">
+                <span id="badge-custom-basit-reward" class="bg-[var(--bg-card)] text-[var(--diff-easy-text)] border border-[var(--diff-easy-border)] text-xs font-black px-2.5 py-0.5 rounded-full">
                     +10 Altın
                 </span>
             </div>
-            <p class="text-xs text-emerald-400 font-medium mb-1" data-i18n="diff_basit_desc">Yeni başlayanlar için rahat ve dinlendirici bir bulmaca.</p>
+            <p class="text-xs text-[var(--diff-easy-sub)] font-medium mb-1" data-i18n="diff_basit_desc">Yeni başlayanlar için rahat ve dinlendirici bir bulmaca.</p>
         </button>
 
         <!-- Orta -->
-        <button id="btn-custom-orta" class="w-full bg-amber-950/40 border border-amber-500/40 rounded-3xl p-4 text-left active:scale-[0.98] transition-all shadow-sm group">
+        <button id="btn-custom-orta" class="w-full bg-[var(--diff-med-bg)] border border-[var(--diff-med-border)] rounded-3xl p-4 text-left active:scale-[0.98] transition-all shadow-sm group">
             <div class="flex justify-between items-center mb-1">
-                <span class="text-base font-black text-amber-300 flex items-center gap-2">
+                <span class="text-base font-black text-[var(--diff-med-text)] flex items-center gap-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm inline-block"></span>
                     <span data-i18n="diff_orta">Orta</span>
                 </span>
-                <span id="badge-custom-orta-reward" class="bg-amber-900/60 text-amber-200 text-xs font-black px-2.5 py-0.5 rounded-full border border-amber-500/50">
+                <span id="badge-custom-orta-reward" class="bg-[var(--bg-card)] text-[var(--diff-med-text)] border border-[var(--diff-med-border)] text-xs font-black px-2.5 py-0.5 rounded-full">
                     +20 Altın
                 </span>
             </div>
-            <p class="text-xs text-amber-400 font-medium mb-1" data-i18n="diff_orta_desc">Biraz dikkat ve mantık yürütme gerektiren dengeli bir zorluk.</p>
+            <p class="text-xs text-[var(--diff-med-sub)] font-medium mb-1" data-i18n="diff_orta_desc">Biraz dikkat ve mantık yürütme gerektiren dengeli bir zorluk.</p>
         </button>
 
         <!-- Zor -->
-        <button id="btn-custom-zor" class="w-full bg-rose-950/40 border border-rose-500/40 rounded-3xl p-4 text-left active:scale-[0.98] transition-all shadow-sm group">
+        <button id="btn-custom-zor" class="w-full bg-[var(--diff-hard-bg)] border border-[var(--diff-hard-border)] rounded-3xl p-4 text-left active:scale-[0.98] transition-all shadow-sm group">
             <div class="flex justify-between items-center mb-1">
-                <span class="text-base font-black text-rose-300 flex items-center gap-2">
+                <span class="text-base font-black text-[var(--diff-hard-text)] flex items-center gap-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm inline-block"></span>
                     <span data-i18n="diff_zor">Zor</span>
                 </span>
-                <span id="badge-custom-zor-reward" class="bg-rose-900/60 text-rose-200 text-xs font-black px-2.5 py-0.5 rounded-full border border-rose-500/50">
+                <span id="badge-custom-zor-reward" class="bg-[var(--bg-card)] text-[var(--diff-hard-text)] border border-[var(--diff-hard-border)] text-xs font-black px-2.5 py-0.5 rounded-full">
                     +35 Altın
                 </span>
             </div>
-            <p class="text-xs text-rose-400 font-medium mb-1" data-i18n="diff_zor_desc">Sudoku ustaları için derin eleme ve kombinasyon mücadelesi.</p>
+            <p class="text-xs text-[var(--diff-hard-sub)] font-medium mb-1" data-i18n="diff_zor_desc">Sudoku ustaları için derin eleme ve kombinasyon mücadelesi.</p>
         </button>
 
         <!-- Seviye Atlama Sınavı Banner'ı -->

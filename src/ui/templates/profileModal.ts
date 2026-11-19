@@ -56,17 +56,17 @@ export const profileModalTemplate = `
 
             <!-- Rekor Süreler Grid -->
             <div class="grid grid-cols-3 gap-1.5">
-                <div class="bg-emerald-950/40 border border-emerald-500/40 rounded-xl p-2 text-center">
-                    <p class="text-[9px] text-emerald-400 font-bold" data-i18n="diff_basit">Basit</p>
-                    <p id="profile-best-basit" class="text-xs font-black text-emerald-200">--:--</p>
+                <div class="bg-[var(--diff-easy-bg)] border border-[var(--diff-easy-border)] rounded-xl p-2 text-center">
+                    <p class="text-[9px] font-bold text-[var(--diff-easy-text)]" data-i18n="diff_basit">Basit</p>
+                    <p id="profile-best-basit" class="text-xs font-black text-[var(--diff-easy-text)]">--:--</p>
                 </div>
-                <div class="bg-amber-950/40 border border-amber-500/40 rounded-xl p-2 text-center">
-                    <p class="text-[9px] text-amber-400 font-bold" data-i18n="diff_orta">Orta</p>
-                    <p id="profile-best-orta" class="text-xs font-black text-amber-200">--:--</p>
+                <div class="bg-[var(--diff-med-bg)] border border-[var(--diff-med-border)] rounded-xl p-2 text-center">
+                    <p class="text-[9px] font-bold text-[var(--diff-med-text)]" data-i18n="diff_orta">Orta</p>
+                    <p id="profile-best-orta" class="text-xs font-black text-[var(--diff-med-text)]">--:--</p>
                 </div>
-                <div class="bg-rose-950/40 border border-rose-500/40 rounded-xl p-2 text-center">
-                    <p class="text-[9px] text-rose-400 font-bold" data-i18n="diff_zor">Zor</p>
-                    <p id="profile-best-zor" class="text-xs font-black text-rose-200">--:--</p>
+                <div class="bg-[var(--diff-hard-bg)] border border-[var(--diff-hard-border)] rounded-xl p-2 text-center">
+                    <p class="text-[9px] font-bold text-[var(--diff-hard-text)]" data-i18n="diff_zor">Zor</p>
+                    <p id="profile-best-zor" class="text-xs font-black text-[var(--diff-hard-text)]">--:--</p>
                 </div>
             </div>
         </div>
