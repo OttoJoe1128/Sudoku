@@ -69,7 +69,12 @@ let scale = 0.5;
 let tx = 0;
 let ty = 0;
 let initialized = false;
-let listenersBound = false;
+
+let cachedCanvas: HTMLElement | null = null;
+let cachedRect = { width: 360, height: 400 };
+let rafId: number | null = null;
+let pendingSmooth = false;
+
 let isPointerDown = false;
 let isPinching = false;
 let isDragging = false;
@@ -78,10 +83,21 @@ let pointerDownY = 0;
 let dragStartX = 0;
 let dragStartY = 0;
 let lastPinchDist = 0;
+let lastPinchMidX = 0;
+let lastPinchMidY = 0;
 
-function clampCamera(viewportEl: HTMLElement) {
-  const vWidth = viewportEl.clientWidth || 360;
-  const vHeight = viewportEl.clientHeight || 400;
+let activeCellClickHandler: ((gridIdx: number, r: number, c: number) => void) | null = null;
+let activeGridIdxRef = 0;
+
+function updateCachedRect(viewportEl: HTMLElement) {
+  if (!viewportEl) return;
+  cachedRect.width = viewportEl.clientWidth || 360;
+  cachedRect.height = viewportEl.clientHeight || 400;
+}
+
+function clampCameraCached() {
+  const vWidth = cachedRect.width || 360;
+  const vHeight = cachedRect.height || 400;
 
   const scaledSize = CANVAS_SIZE * scale;
 
@@ -94,19 +110,26 @@ function clampCamera(viewportEl: HTMLElement) {
   ty = Math.max(minTy, Math.min(maxTy, ty));
 }
 
-function applyCamera(viewportEl: HTMLElement, smooth: boolean = false) {
-  clampCamera(viewportEl);
-  const canvas = viewportEl.querySelector('#samurai-canvas') as HTMLElement;
-  if (canvas) {
-    canvas.style.transition = smooth ? 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)' : 'none';
-    canvas.style.transform = `translate3d(${tx}px, ${ty}px, 0) scale(${scale})`;
+function flushCamera() {
+  rafId = null;
+  if (!cachedCanvas) return;
+  clampCameraCached();
+  cachedCanvas.style.transition = pendingSmooth ? 'transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1)' : 'none';
+  cachedCanvas.style.transform = `translate3d(${tx.toFixed(1)}px, ${ty.toFixed(1)}px, 0) scale(${scale.toFixed(4)})`;
+  pendingSmooth = false;
+}
+
+function scheduleCamera(smooth: boolean = false) {
+  if (smooth) pendingSmooth = true;
+  if (rafId === null) {
+    rafId = requestAnimationFrame(flushCamera);
   }
 }
 
 export const SamuraiViewport = {
   resetCamera() {
     initialized = false;
-    listenersBound = false;
+    cachedCanvas = null;
   },
 
   focusGrid(gridIdx: number, viewportEl: HTMLElement, smooth: boolean = true) {
@@ -116,10 +139,11 @@ export const SamuraiViewport = {
       return;
     }
 
+    updateCachedRect(viewportEl);
     const offset = SAMURAI_GRID_OFFSETS.find(o => o.gridIdx === gridIdx) || SAMURAI_GRID_OFFSETS[0];
 
-    const vWidth = viewportEl.clientWidth || 360;
-    const vHeight = viewportEl.clientHeight || 400;
+    const vWidth = cachedRect.width;
+    const vHeight = cachedRect.height;
 
     scale = Math.min(1.12, Math.max(MIN_SCALE, (vWidth - 16) / 345));
 
@@ -132,12 +156,13 @@ export const SamuraiViewport = {
     tx = (vWidth / 2) - (gridCenterPxX * scale);
     ty = (vHeight / 2) - (gridCenterPxY * scale);
 
-    applyCamera(viewportEl, smooth);
+    scheduleCamera(smooth);
   },
 
   fitOverview(viewportEl: HTMLElement, smooth: boolean = true) {
-    const vWidth = viewportEl.clientWidth || 360;
-    const vHeight = viewportEl.clientHeight || 400;
+    updateCachedRect(viewportEl);
+    const vWidth = cachedRect.width;
+    const vHeight = cachedRect.height;
 
     const scaleX = (vWidth - 16) / CANVAS_SIZE;
     const scaleY = (vHeight - 16) / CANVAS_SIZE;
@@ -147,12 +172,13 @@ export const SamuraiViewport = {
     tx = (vWidth - scaledSize) / 2;
     ty = (vHeight - scaledSize) / 2;
 
-    applyCamera(viewportEl, smooth);
+    scheduleCamera(smooth);
   },
 
   zoomBy(factor: number, viewportEl: HTMLElement) {
-    const vWidth = viewportEl.clientWidth || 360;
-    const vHeight = viewportEl.clientHeight || 400;
+    updateCachedRect(viewportEl);
+    const vWidth = cachedRect.width;
+    const vHeight = cachedRect.height;
 
     const oldScale = scale;
     const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * factor));
@@ -165,19 +191,21 @@ export const SamuraiViewport = {
     ty = centerY - ((centerY - ty) / oldScale) * newScale;
     scale = newScale;
 
-    applyCamera(viewportEl, true);
+    scheduleCamera(true);
   },
 
   setupGestureListeners(viewportEl: HTMLElement) {
-    if (listenersBound) return;
-    listenersBound = true;
+    if (viewportEl.dataset.gesturesBound === '1') return;
+    viewportEl.dataset.gesturesBound = '1';
 
     viewportEl.classList.add('touch-none', 'select-none');
     viewportEl.style.backgroundImage = 'radial-gradient(var(--border-subtle) 1px, transparent 1px)';
     viewportEl.style.backgroundSize = '20px 20px';
 
+    // Mouse Dragging (Desktop)
     viewportEl.addEventListener('pointerdown', (e) => {
-      if (isPinching) return;
+      if (e.pointerType !== 'mouse' || isPinching) return;
+      updateCachedRect(viewportEl);
       isPointerDown = true;
       isDragging = false;
       pointerDownX = e.clientX;
@@ -187,7 +215,7 @@ export const SamuraiViewport = {
     });
 
     viewportEl.addEventListener('pointermove', (e) => {
-      if (!isPointerDown || isPinching) return;
+      if (e.pointerType !== 'mouse' || !isPointerDown || isPinching) return;
 
       const dx = e.clientX - pointerDownX;
       const dy = e.clientY - pointerDownY;
@@ -199,21 +227,24 @@ export const SamuraiViewport = {
       if (isDragging) {
         tx = dragStartX + dx;
         ty = dragStartY + dy;
-        applyCamera(viewportEl, false);
+        scheduleCamera(false);
       }
     });
 
-    const handlePointerUp = () => {
+    const handleRelease = () => {
       isPointerDown = false;
       setTimeout(() => {
         isDragging = false;
       }, 40);
     };
 
-    window.addEventListener('pointerup', handlePointerUp);
-    window.addEventListener('pointercancel', handlePointerUp);
+    window.addEventListener('pointerup', handleRelease);
+    window.addEventListener('pointercancel', handleRelease);
+    window.addEventListener('touchend', handleRelease, { passive: true });
 
+    // Single & Multi-Touch Gestures (Mobile)
     viewportEl.addEventListener('touchstart', (e) => {
+      updateCachedRect(viewportEl);
       if (e.touches.length >= 2) {
         isPinching = true;
         isPointerDown = false;
@@ -222,24 +253,34 @@ export const SamuraiViewport = {
           e.touches[0].clientX - e.touches[1].clientX,
           e.touches[0].clientY - e.touches[1].clientY
         );
+        lastPinchMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        lastPinchMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      } else if (e.touches.length === 1) {
+        isPointerDown = true;
+        isDragging = false;
+        pointerDownX = e.touches[0].clientX;
+        pointerDownY = e.touches[0].clientY;
+        dragStartX = tx;
+        dragStartY = ty;
       }
     }, { passive: true });
 
     viewportEl.addEventListener('touchmove', (e) => {
       if (e.touches.length >= 2) {
+        if (e.cancelable) e.preventDefault();
+
         const currentDist = Math.hypot(
           e.touches[0].clientX - e.touches[1].clientX,
           e.touches[0].clientY - e.touches[1].clientY
         );
+        const currentMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        const currentMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
 
         if (lastPinchDist > 0) {
           const ratio = currentDist / lastPinchDist;
-          const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-          const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-
           const rect = viewportEl.getBoundingClientRect();
-          const relX = midX - rect.left;
-          const relY = midY - rect.top;
+          const relX = currentMidX - rect.left;
+          const relY = currentMidY - rect.top;
 
           const oldScale = scale;
           const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * ratio));
@@ -248,12 +289,32 @@ export const SamuraiViewport = {
             tx = relX - ((relX - tx) / oldScale) * newScale;
             ty = relY - ((relY - ty) / oldScale) * newScale;
             scale = newScale;
-            applyCamera(viewportEl, false);
           }
+
+          tx += (currentMidX - lastPinchMidX);
+          ty += (currentMidY - lastPinchMidY);
+
+          scheduleCamera(false);
         }
+
         lastPinchDist = currentDist;
+        lastPinchMidX = currentMidX;
+        lastPinchMidY = currentMidY;
+      } else if (e.touches.length === 1 && isPointerDown && !isPinching) {
+        const dx = e.touches[0].clientX - pointerDownX;
+        const dy = e.touches[0].clientY - pointerDownY;
+
+        if (Math.hypot(dx, dy) > 8) {
+          isDragging = true;
+        }
+
+        if (isDragging) {
+          tx = dragStartX + dx;
+          ty = dragStartY + dy;
+          scheduleCamera(false);
+        }
       }
-    }, { passive: true });
+    }, { passive: false });
 
     viewportEl.addEventListener('touchend', (e) => {
       if (e.touches.length < 2) {
@@ -280,15 +341,18 @@ export function renderSamuraiBoard(
 ): void {
   if (!viewportEl) return;
 
+  activeCellClickHandler = onCellClick;
+  activeGridIdxRef = activeGridIdx;
+
   let canvas = viewportEl.querySelector('#samurai-canvas') as HTMLElement;
 
   if (!canvas || !initialized) {
     viewportEl.innerHTML = `
       <!-- 21x21 Canvas -->
-      <div id="samurai-canvas" class="absolute top-0 left-0 grid" style="width:${CANVAS_SIZE}px;height:${CANVAS_SIZE}px;transform-origin:0 0;grid-template-columns:repeat(21,36px);grid-template-rows:repeat(21,36px);"></div>
+      <div id="samurai-canvas" class="absolute top-0 left-0 grid" style="width:${CANVAS_SIZE}px;height:${CANVAS_SIZE}px;transform-origin:0 0;grid-template-columns:repeat(21,36px);grid-template-rows:repeat(21,36px);will-change:transform;backface-visibility:hidden;contain:layout style;"></div>
 
       <!-- Yüzen Kamera Kontrol Hapı -->
-      <div class="absolute bottom-3 right-3 z-30 flex items-center gap-1 bg-[var(--bg-card)]/90 backdrop-blur-md border border-[var(--border-strong)] p-1 rounded-2xl shadow-xl">
+      <div class="absolute bottom-3 right-3 z-30 flex items-center gap-1 bg-[var(--bg-card)] border border-[var(--border-strong)] p-1 rounded-2xl shadow-xl">
         <button id="btn-samurai-zoom-out" title="Uzaklaş" class="w-8 h-8 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] hover:text-[var(--accent-gold)] font-black text-sm flex items-center justify-center active:scale-90 transition-transform">
           −
         </button>
@@ -302,9 +366,27 @@ export function renderSamuraiBoard(
     `;
 
     canvas = viewportEl.querySelector('#samurai-canvas') as HTMLElement;
+    cachedCanvas = canvas;
+    updateCachedRect(viewportEl);
+
     SamuraiViewport.setupGestureListeners(viewportEl);
     SamuraiViewport.focusGrid(activeGridIdx, viewportEl, false);
     initialized = true;
+
+    // Single Delegated Cell Click Listener
+    canvas.addEventListener('click', (e) => {
+      if (isDragging) return;
+      const cellEl = (e.target as HTMLElement).closest('.samurai-cell-btn');
+      if (!cellEl) return;
+
+      const gr = parseInt(cellEl.getAttribute('data-samurai-gr') || '0');
+      const gc = parseInt(cellEl.getAttribute('data-samurai-gc') || '0');
+
+      const ref = mapGlobalToSamuraiCell(gr, gc, activeGridIdxRef);
+      if (ref && activeCellClickHandler) {
+        activeCellClickHandler(ref.gridIdx, ref.r, ref.c);
+      }
+    });
 
     viewportEl.querySelector('#btn-samurai-zoom-out')?.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -320,6 +402,8 @@ export function renderSamuraiBoard(
       e.stopPropagation();
       SamuraiViewport.zoomBy(1.18, viewportEl);
     });
+  } else {
+    cachedCanvas = canvas;
   }
 
   if (!canvas) return;
@@ -351,7 +435,6 @@ export function renderSamuraiBoard(
       const isInitial = initialVal > 0;
 
       const isSelected = selGlobalR === gr && selGlobalC === gc;
-
       const isMatchingValue = selectedValue > 0 && val === selectedValue;
 
       const isRelatedGroup = gridIdx === activeGridIdx && selectedR >= 0 && selectedC >= 0 && (
@@ -368,7 +451,7 @@ export function renderSamuraiBoard(
       if (c === 0) borderClass += ' border-l-[2px] border-l-[var(--accent-gold)]';
 
       if (isOverlap) {
-        borderClass += ' ring-1 ring-inset ring-[var(--accent-gold)]/45';
+        borderClass += ' outline outline-1 outline-[var(--accent-gold)]/35 -outline-offset-1';
       }
 
       let bgClass = 'bg-[var(--cell-bg)] text-[var(--accent-cyan)]';
@@ -396,7 +479,7 @@ export function renderSamuraiBoard(
       }
 
       html += `
-        <div data-samurai-gr="${gr}" data-samurai-gc="${gc}" class="samurai-cell-btn w-[36px] h-[36px] flex items-center justify-center cursor-pointer select-none transition-colors relative ${borderClass} ${bgClass}">
+        <div data-samurai-gr="${gr}" data-samurai-gc="${gc}" class="samurai-cell-btn w-[36px] h-[36px] flex items-center justify-center cursor-pointer select-none relative ${borderClass} ${bgClass}">
           ${contentHTML}
         </div>
       `;
@@ -404,19 +487,4 @@ export function renderSamuraiBoard(
   }
 
   canvas.innerHTML = html;
-
-  canvas.querySelectorAll('.samurai-cell-btn').forEach(cellEl => {
-    cellEl.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (isDragging) return;
-
-      const gr = parseInt((e.currentTarget as HTMLElement).getAttribute('data-samurai-gr') || '0');
-      const gc = parseInt((e.currentTarget as HTMLElement).getAttribute('data-samurai-gc') || '0');
-
-      const ref = mapGlobalToSamuraiCell(gr, gc, activeGridIdx);
-      if (ref) {
-        onCellClick(ref.gridIdx, ref.r, ref.c);
-      }
-    });
-  });
 }
