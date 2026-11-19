@@ -27,6 +27,7 @@ export function getSelectedCustomTimeSec(): number {
 }
 
 export async function openPlayerProfile(targetData?: any): Promise<void> {
+  UIManager.toggleModal('view-profile', true);
   const currentUsername = UserManager.getUsername();
 
   let isOwn = true;

@@ -39,6 +39,8 @@ export function startBotMatch(
     durationSec: selectedMatchTimeSec,
     puzzle: generated.puzzle,
     solution: generated.solution,
+    regionMap: generated.regionMap,
+    cages: generated.cages,
     status: 'in_progress',
     player1: {
       uid: currentUid,
@@ -90,6 +92,8 @@ export function startSimulatedMatch(
     durationSec: selectedMatchTimeSec,
     puzzle: generated.puzzle,
     solution: generated.solution,
+    regionMap: generated.regionMap,
+    cages: generated.cages,
     status: 'in_progress',
     player1: {
       uid: currentUid,
