@@ -101,9 +101,9 @@ export const UIManager = {
       <div class="text-left text-xs space-y-3 font-medium text-[var(--text-secondary)] leading-relaxed">
         <div class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl p-3">
           <p class="font-black text-[var(--accent-gold)] text-sm mb-1">${t('gold_rewards')}</p>
-          <p>• 🟢 ${t('diff_basit')}: <strong class="text-[var(--text-primary)]">+50 🪙</strong></p>
-          <p>• 🟡 ${t('diff_orta')}: <strong class="text-[var(--text-primary)]">+100 🪙</strong></p>
-          <p>• 🔴 ${t('diff_zor')}: <strong class="text-[var(--text-primary)]">+200 🪙</strong></p>
+          <p>• <span class="w-2 h-2 rounded-full inline-block bg-emerald-500 mr-1"></span>${t('diff_basit')}: <strong class="text-[var(--text-primary)]">+50 ${t('label_gold')}</strong></p>
+          <p>• <span class="w-2 h-2 rounded-full inline-block bg-amber-500 mr-1"></span>${t('diff_orta')}: <strong class="text-[var(--text-primary)]">+100 ${t('label_gold')}</strong></p>
+          <p>• <span class="w-2 h-2 rounded-full inline-block bg-rose-500 mr-1"></span>${t('diff_zor')}: <strong class="text-[var(--text-primary)]">+200 ${t('label_gold')}</strong></p>
         </div>
 
         <div class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl p-3">
@@ -120,7 +120,7 @@ export const UIManager = {
 
         <div class="bg-[var(--bg-elevated)] border border-rose-500/40 rounded-2xl p-3">
           <p class="font-black text-rose-400 text-sm mb-1">${t('forfeit_rule_title')}</p>
-          <p>• <strong class="text-rose-300">-50 🪙 & -30 MMR</strong></p>
+          <p>• <strong class="text-rose-300">-50 ${t('label_gold')} & -30 MMR</strong></p>
         </div>
       </div>
     ` : `
@@ -132,8 +132,8 @@ export const UIManager = {
 
         <div class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl p-3">
           <p class="font-black text-[var(--accent-gold)] text-sm mb-1">${t('gold_and_blitz')}</p>
-          <p>• 🟢 ${t('diff_basit')}: +10 🪙 | 🟡 ${t('diff_orta')}: +20 🪙 | 🔴 ${t('diff_zor')}: +35 🪙</p>
-          <p>• ⚡ 3 Dk Blitz: <strong class="text-[var(--accent-cyan)]">+%50 🪙</strong></p>
+          <p>• <span class="w-2 h-2 rounded-full inline-block bg-emerald-500 mr-1"></span>${t('diff_basit')}: +10 ${t('label_gold')} | <span class="w-2 h-2 rounded-full inline-block bg-amber-500 mr-1"></span>${t('diff_orta')}: +20 ${t('label_gold')} | <span class="w-2 h-2 rounded-full inline-block bg-rose-500 mr-1"></span>${t('diff_zor')}: +35 ${t('label_gold')}</p>
+          <p>• <span class="mr-1">${Icons.zap}</span>3 Dk Blitz: <strong class="text-[var(--accent-cyan)]">+%50 ${t('label_gold')}</strong></p>
         </div>
 
         <div class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl p-3">
@@ -368,8 +368,8 @@ export const UIManager = {
       if (isOwnProfile) editNameBtn.classList.remove('hidden');
       else editNameBtn.classList.add('hidden');
     }
-    if (levelEl) levelEl.innerText = `Seviye ${stats.level}`;
-    if (goldEl) goldEl.innerText = `${stats.gold} Altın`;
+    if (levelEl) levelEl.innerText = `${t('label_level')} ${stats.level}`;
+    if (goldEl) goldEl.innerText = `${stats.gold} ${t('label_gold')}`;
     if (avatarEl) avatarEl.innerHTML = renderAvatarSVG(stats.avatar || 'av_prism', 36);
     if (titleEl) titleEl.innerHTML = renderRankBadgeSVG(stats.title || 'Çırak');
     if (completedEl) completedEl.innerText = stats.totalCompleted.toString();
@@ -402,7 +402,7 @@ export const UIManager = {
     }
 
     const unlockedBadges = badges.filter(b => b.isUnlocked);
-    if (badgesCountEl) badgesCountEl.innerText = `${unlockedBadges.length} / ${badges.length} Rozet`;
+    if (badgesCountEl) badgesCountEl.innerText = `${unlockedBadges.length} / ${badges.length} ${t('menu_badges')}`;
 
     if (badgesPreviewEl) {
       if (unlockedBadges.length === 0) {
@@ -706,32 +706,33 @@ export const UIManager = {
     if (challenges.length === 0) {
       listEl.innerHTML = `
         <div class="flex flex-col items-center justify-center py-10 text-center">
-          <svg class="w-10 h-10 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
-          <p class="text-xs font-bold text-slate-500 mb-0.5">Bekleyen davetiniz yok</p>
-          <p class="text-[10px] text-slate-400">Diğer oyuncular size düello isteği gönderdiğinde burada görünecektir.</p>
+          <svg class="w-10 h-10 text-[var(--text-secondary)] opacity-50 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+          <p class="text-xs font-bold text-[var(--text-primary)] mb-0.5">${t('inbox_empty')}</p>
+          <p class="text-[10px] text-[var(--text-secondary)]">${t('inbox_empty_desc')}</p>
         </div>
       `;
       return;
     }
 
     listEl.innerHTML = challenges.map(c => `
-      <div class="p-3 border border-slate-200 rounded-2xl bg-white shadow-sm flex flex-col gap-2">
+      <div class="p-3 border border-[var(--border-subtle)] rounded-2xl bg-[var(--bg-card)] shadow-sm flex flex-col gap-2">
         <div class="flex justify-between items-center">
           <div class="flex items-center gap-2">
-            <span class="text-lg">⚔️</span>
-            <div>
-              <p class="font-black text-slate-800 text-xs">${c.fromUsername}</p>
-              <p class="text-[10px] text-indigo-600 font-bold uppercase tracking-wider">${c.difficulty.toUpperCase()} DÜELLO</p>
+            <span class="text-base text-[var(--accent-gold)]">${Icons.sword}</span>
+            <div class="text-left">
+              <p class="font-black text-[var(--text-primary)] text-xs">${c.fromUsername}</p>
+              <p class="text-[10px] text-[var(--accent-gold)] font-bold uppercase tracking-wider">${t('diff_' + c.difficulty).toUpperCase()} DÜELLO</p>
             </div>
           </div>
-          <span class="text-[10px] font-mono text-slate-400">Bekliyor</span>
+          <span class="text-[10px] font-mono text-[var(--text-secondary)]">Bekliyor</span>
         </div>
         <div class="flex gap-2 mt-1">
-          <button data-chal-id="${c.challengeId}" class="inbox-accept-btn flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black py-2 rounded-xl text-xs active:scale-95 transition-transform shadow-sm">
-            ⚔️ Kabul Et & Oyna
+          <button data-chal-id="${c.challengeId}" class="inbox-accept-btn flex-1 bg-[var(--accent-gold)] text-[var(--text-on-gold)] font-black py-2 rounded-xl text-xs active:scale-95 transition-transform shadow-sm hover:brightness-110 flex items-center justify-center gap-1.5">
+            <span>${Icons.sword}</span>
+            <span>${t('btn_accept_play')}</span>
           </button>
-          <button data-chal-id="${c.challengeId}" class="inbox-decline-btn bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-3 py-2 rounded-xl text-xs active:scale-95 transition-transform">
-            ✕ Reddet
+          <button data-chal-id="${c.challengeId}" class="inbox-decline-btn bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-bold px-3 py-2 rounded-xl text-xs active:scale-95 transition-transform">
+            ✕ ${t('btn_decline')}
           </button>
         </div>
       </div>
@@ -817,13 +818,13 @@ export const UIManager = {
 
     const diff = SudokuGen.getDifficulty(currentLevel);
     if (targetLabel) {
-      targetLabel.innerText = `Seviye ${currentLevel} • ${diff.toUpperCase()}`;
+      targetLabel.innerText = `${t('label_level')} ${currentLevel} • ${t('diff_' + diff).toUpperCase()}`;
     }
 
     if (biomeTitle) {
-      if (currentLevel <= 300) biomeTitle.innerText = "ZÜMRÜT VADİ";
-      else if (currentLevel <= 700) biomeTitle.innerText = "HEXTECH KALESİ";
-      else biomeTitle.innerText = "KIZIL ZİRVE";
+      if (currentLevel <= 300) biomeTitle.innerText = t('biome_emerald');
+      else if (currentLevel <= 700) biomeTitle.innerText = t('biome_hextech');
+      else biomeTitle.innerText = t('biome_crimson');
     }
 
     if (tierProgress) {
@@ -883,11 +884,11 @@ export const UIManager = {
           ${milestoneBadge}
           <div class="absolute -top-7 bg-[var(--accent-gold)] text-[var(--text-on-gold)] font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-md border border-[var(--accent-gold-bright)] flex items-center gap-1 z-30">
             <span>${renderAvatarSVG(avatar, 14)}</span>
-            <span>SEVİYE ${lvl}</span>
+            <span>${t('label_level').toUpperCase()} ${lvl}</span>
           </div>
           <button data-level="${lvl}" class="w-24 h-24 rounded-3xl bg-[var(--bg-card)] border-2 border-[var(--border-strong)] ring-4 ring-[var(--accent-cyan)]/60 text-[var(--text-primary)] shadow-2xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-transform">
             <span class="text-xl font-mono font-black leading-none text-[var(--accent-gold)]">${lvl}</span>
-            <span class="text-[9px] font-black text-[var(--accent-gold-bright)] tracking-widest mt-1">OYNA</span>
+            <span class="text-[9px] font-black text-[var(--accent-gold-bright)] tracking-widest mt-1">${t('btn_play')}</span>
           </button>
         `;
       } else if (isCompleted) {
@@ -1066,7 +1067,7 @@ export const UIManager = {
       const isPurchased = purchased.includes(item.id);
       const isActive = active === item.id;
 
-      let btnText = `${item.price} 🪙`;
+      let btnText = `${item.price} ${t('label_gold')}`;
       let btnClass = "bg-[var(--accent-gold)] text-[var(--text-on-gold)] hover:brightness-110";
 
       if (isActive) {

@@ -360,7 +360,7 @@ const updateSavedGamesCountUI = () => {
   const totalCount = getSavedGamesList().length;
   const countLabel = document.getElementById('saved-games-count-label');
   if (countLabel) {
-    countLabel.innerText = `Seviye ${classicLvl} • ${totalCount} Aktif Oyun`;
+    countLabel.innerText = t('menu_active_games_count', { level: classicLvl, count: totalCount });
   }
 };
 
@@ -426,7 +426,7 @@ const handleMatchTimeExpired = async () => {
   } else if (isCustomGameMode) {
     if (timerInterval) clearInterval(timerInterval);
     clearCurrentSavedGame();
-    UIManager.showToast("⏱️ Süre Doldu! Serbest Mod oyunu sonlandırıldı.", "error");
+    UIManager.showToast(t('time_expired_custom_toast'), "error");
     UIManager.navigate('menu');
   }
 };
@@ -858,10 +858,10 @@ const startGame = (
     if (toggleNotesBtn) {
       toggleNotesBtn.onclick = () => {
         isNotesMode = !isNotesMode;
-        if (notesTextEl) notesTextEl.innerText = isNotesMode ? 'Not: Açık' : 'Not: Kapalı';
+        if (notesTextEl) notesTextEl.innerText = isNotesMode ? t('btn_notes_on') : t('btn_notes_off');
         if (isNotesMode) {
           toggleNotesBtn.className = "bg-[var(--accent-gold)] text-[var(--text-on-gold)] border border-[var(--accent-gold-bright)] py-2.5 px-3 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1.5";
-          UIManager.showToast("Kalem / Not modu aktif!", "info");
+          UIManager.showToast(t('notes_active_toast'), "info");
         } else {
           toggleNotesBtn.className = "bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] text-[var(--text-primary)] py-2.5 px-3 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1.5";
         }
