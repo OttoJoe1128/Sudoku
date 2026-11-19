@@ -7,7 +7,8 @@ import { Leaderboard } from '../engine/leaderboard';
 import { Rewards } from '../engine/rewards';
 import { MatchEngine, ChallengeRequest } from '../engine/matchEngine';
 import { renderAvatarSVG } from '../design/icons';
-import { t } from '../i18n/translations';
+import { t, getLang } from '../i18n/translations';
+import { getPlacementExamConfig } from '../engine/placementEngine';
 
 let selectedCustomVariant: SudokuVariant = 'classic';
 let selectedCustomTimeSec: number = 0;
@@ -123,12 +124,13 @@ export function setupCustomTimeButtons(): void {
 
 export function initModalsController(callbacks: {
   onStartCustomGame: (level: number, diff: 'basit' | 'orta' | 'zor', variant: SudokuVariant, timeLimitSec: number) => void;
-  onStartPlacementExam: (diff: 'basit' | 'orta' | 'zor') => void;
+  onStartPlacementExam: (variant: SudokuVariant, tier: 'basit' | 'orta' | 'zor') => void;
   onStartLevelDirect: (level: number, diff: 'basit' | 'orta' | 'zor') => void;
   onUpdateGoldDisplay: () => void;
   onUpdateSavedGamesUI: () => void;
   onTriggerExpertBotMatch: () => void;
   getSelectedArenaVariant: () => SudokuVariant;
+  getSelectedMapVariant: () => SudokuVariant;
   getRuleDescription: (variant: SudokuVariant) => string;
   onHandleIncomingChallenge: (chal: ChallengeRequest) => void;
 }): void {
@@ -140,6 +142,7 @@ export function initModalsController(callbacks: {
     onUpdateSavedGamesUI,
     onTriggerExpertBotMatch,
     getSelectedArenaVariant,
+    getSelectedMapVariant,
     getRuleDescription,
     onHandleIncomingChallenge
   } = callbacks;
@@ -432,9 +435,37 @@ export function initModalsController(callbacks: {
     }
   });
 
-  // 7. Seviye Atlama Sınavı
-  document.getElementById('btn-open-placement-test')?.addEventListener('click', () => {
+  // 7. Seviye Atlama Sınavı (5 Disipline Özel)
+  const openPlacementModalForVariant = (variant: SudokuVariant) => {
+    const badgeEl = document.getElementById('placement-variant-badge');
+    if (badgeEl) badgeEl.innerText = t('var_' + variant + '_full');
+
+    const basitCfg = getPlacementExamConfig(variant, 'basit');
+    const ortaCfg = getPlacementExamConfig(variant, 'orta');
+    const zorCfg = getPlacementExamConfig(variant, 'zor');
+
+    const isEn = getLang() === 'en';
+
+    const t1 = document.getElementById('placement-basit-title');
+    const k1 = document.getElementById('placement-basit-kriter');
+    if (t1) t1.innerText = `${isEn ? 'Target' : 'Hedef'}: ${t('diff_basit')} (${t('label_level')} ${basitCfg.targetLevel})`;
+    if (k1) k1.innerText = `${isEn ? 'Criteria' : 'Kriter'}: ${t('placement_kriter_basit')}`;
+
+    const t2 = document.getElementById('placement-orta-title');
+    const k2 = document.getElementById('placement-orta-kriter');
+    if (t2) t2.innerText = `${isEn ? 'Target' : 'Hedef'}: ${t('diff_orta')} (${t('label_level')} ${ortaCfg.targetLevel})`;
+    if (k2) k2.innerText = `${isEn ? 'Criteria' : 'Kriter'}: Max 3 ${t('label_errors').toLowerCase()} & <${Math.round(ortaCfg.timeLimitSec / 60)} ${isEn ? 'min' : 'dk'}`;
+
+    const t3 = document.getElementById('placement-zor-title');
+    const k3 = document.getElementById('placement-zor-kriter');
+    if (t3) t3.innerText = `${isEn ? 'Target' : 'Hedef'}: ${t('diff_zor')} (${t('label_level')} ${zorCfg.targetLevel})`;
+    if (k3) k3.innerText = `${isEn ? 'Criteria' : 'Kriter'}: Max 3 ${t('label_errors').toLowerCase()} & <${Math.round(zorCfg.timeLimitSec / 60)} ${isEn ? 'min' : 'dk'}`;
+
     UIManager.toggleModal('placement-modal', true);
+  };
+
+  document.getElementById('btn-map-open-placement')?.addEventListener('click', () => {
+    openPlacementModalForVariant(getSelectedMapVariant());
   });
 
   document.getElementById('close-placement-modal')?.addEventListener('click', () => {
@@ -448,16 +479,16 @@ export function initModalsController(callbacks: {
 
   document.getElementById('btn-placement-basit')?.addEventListener('click', () => {
     UIManager.toggleModal('placement-modal', false);
-    onStartPlacementExam('basit');
+    onStartPlacementExam(getSelectedMapVariant(), 'basit');
   });
 
   document.getElementById('btn-placement-orta')?.addEventListener('click', () => {
     UIManager.toggleModal('placement-modal', false);
-    onStartPlacementExam('orta');
+    onStartPlacementExam(getSelectedMapVariant(), 'orta');
   });
 
   document.getElementById('btn-placement-zor')?.addEventListener('click', () => {
     UIManager.toggleModal('placement-modal', false);
-    onStartPlacementExam('zor');
+    onStartPlacementExam(getSelectedMapVariant(), 'zor');
   });
 }

@@ -57,6 +57,15 @@ export const mapTemplate = `
                 <span data-i18n="btn_play">OYNA</span>
             </button>
         </div>
+
+        <!-- Seviye Atlama Sınavı Şerit Butonu -->
+        <button id="btn-map-open-placement" class="w-full bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] rounded-xl px-3 py-2 flex justify-between items-center shadow-sm active:scale-[0.98] transition-all mt-1.5 mb-1">
+            <div class="flex items-center gap-2">
+                <span class="text-[var(--accent-gold)]">${Icons.target}</span>
+                <span class="text-[11px] font-black text-[var(--text-primary)]" data-i18n="placement_exam_title">Seviye Atlama Sınavı</span>
+            </div>
+            <span class="text-[10px] font-bold text-[var(--accent-gold)]">➔</span>
+        </button>
     </div>
 
     <!-- Kaydırılabilir Sonsuz Patika Alanı & Yumuşak Perde Maskeleri -->

@@ -113,20 +113,6 @@ export const customModeTemplate = `
             </div>
             <p class="text-xs text-[var(--diff-hard-sub)] font-medium mb-1" data-i18n="diff_zor_desc">Sudoku ustaları için derin eleme ve kombinasyon mücadelesi.</p>
         </button>
-
-        <!-- Seviye Atlama Sınavı Banner'ı -->
-        <button id="btn-open-placement-test" class="w-full bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-strong)] rounded-3xl p-3.5 text-left active:scale-[0.98] transition-all shadow-sm flex items-center justify-between group mt-1">
-            <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--accent-gold)] flex items-center justify-center text-base shrink-0">
-                    ${Icons.target}
-                </div>
-                <div>
-                    <span class="text-xs font-black text-[var(--text-primary)] block leading-tight" data-i18n="placement_exam_title">Seviye Atlama Sınavı</span>
-                    <span class="text-[10px] font-bold text-[var(--accent-gold)] block mt-0.5" data-i18n="placement_exam_desc">Üst bölümlerin kilidini doğrudan aç</span>
-                </div>
-            </div>
-            <span class="text-base text-[var(--accent-gold)] group-hover:translate-x-1 transition-transform">➔</span>
-        </button>
     </div>
 </div>
 `;

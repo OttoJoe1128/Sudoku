@@ -5,8 +5,9 @@ import { UserManager } from '../store/userState';
 import { MatchEngine, MatchState, calculateEloChange } from '../engine/matchEngine';
 import { AchievementManager } from '../engine/achievements';
 import { saveActiveGameRecord, clearSavedGame, updateSavedGamesCountUI } from './saveController';
-import { t } from '../i18n/translations';
+import { t, getLang } from '../i18n/translations';
 import { auth } from '../api/firebase';
+import { ExamTier, PlacementExamConfig, getPlacementExamConfig, evaluatePlacementExam, calculateExamProgress } from '../engine/placementEngine';
 
 let currentSolution: number[][];
 let userBoard: number[][];
@@ -130,7 +131,90 @@ const calculateRemainingCounts = (board: number[][]): Map<number, number> => {
   return counts;
 };
 
+let activePlacementExam: PlacementExamConfig | null = null;
+
+export function startPlacementExam(variant: SudokuVariant, tier: ExamTier): void {
+  const config = getPlacementExamConfig(variant, tier);
+  activePlacementExam = config;
+  startGame(config.targetLevel, tier, undefined, undefined, variant, true, config.timeLimitSec);
+}
+
+async function finishPlacementExam(completedAll: boolean): Promise<void> {
+  if (!activePlacementExam) return;
+
+  const config = activePlacementExam;
+  activePlacementExam = null;
+
+  if (timerInterval) clearInterval(timerInterval);
+
+  const { filledByUser, totalInitialEmpty } = calculateExamProgress(config.variant, userBoard, initialBoard, samuraiBoards);
+  const currentLvl = UserManager.getVariantLevel(config.variant);
+
+  const res = evaluatePlacementExam({
+    variant: config.variant,
+    tier: config.tier,
+    currentVariantLevel: currentLvl,
+    filledByUser,
+    totalInitialEmpty,
+    errors,
+    completedAll,
+    timeElapsedSec: timeElapsed,
+    timeLimitSec: config.timeLimitSec
+  });
+
+  if (res.levelsGained > 0 || res.rewardGold > 0) {
+    await UserManager.updateVariantLevel(config.variant, res.assignedLevel, res.rewardGold);
+    if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();
+  }
+
+  const iconEl = document.getElementById('placement-result-icon');
+  const titleEl = document.getElementById('placement-result-title');
+  const subtitleEl = document.getElementById('placement-result-subtitle');
+  const timeEl = document.getElementById('placement-result-time');
+  const errorsEl = document.getElementById('placement-result-errors');
+  const rewardEl = document.getElementById('placement-result-reward');
+
+  const isEn = getLang() === 'en';
+  let titleText = isEn ? 'Exam Finished' : 'Sınav Tamamlandı';
+  if (res.passedFull) titleText = isEn ? 'Exam Passed!' : 'Sınav Başarılı!';
+  else if (res.partialAssigned) titleText = isEn ? 'Partial Level Assigned!' : 'Kısmi Seviye Atandı!';
+
+  let subText = isEn
+    ? `Completed ${res.completionPercent}% • Level ${res.assignedLevel}`
+    : `Tamamlanma: %${res.completionPercent} • Seviye ${res.assignedLevel}`;
+
+  const m = Math.floor(timeElapsed / 60).toString().padStart(2, '0');
+  const s = (timeElapsed % 60).toString().padStart(2, '0');
+
+  if (iconEl) iconEl.innerText = res.passedFull ? "🏆" : (res.partialAssigned ? "⭐" : "📊");
+  if (titleEl) titleEl.innerText = titleText;
+  if (subtitleEl) subtitleEl.innerText = subText;
+  if (timeEl) timeEl.innerText = `%${res.completionPercent} (${m}:${s})`;
+  if (errorsEl) errorsEl.innerText = `${errors} / 3`;
+  if (rewardEl) rewardEl.innerText = `+${res.rewardGold} ${t('label_gold')}`;
+
+  UIManager.toggleModal('placement-result-modal', true);
+
+  const primaryBtn = document.getElementById('btn-placement-action-primary');
+  const secondaryBtn = document.getElementById('btn-placement-action-secondary');
+
+  if (primaryBtn) {
+    primaryBtn.onclick = () => {
+      UIManager.toggleModal('placement-result-modal', false);
+      UIManager.navigate('map');
+    };
+  }
+
+  if (secondaryBtn) {
+    secondaryBtn.onclick = () => {
+      UIManager.toggleModal('placement-result-modal', false);
+      UIManager.navigate('menu');
+    };
+  }
+}
+
 const persistCurrentGame = () => {
+  if (activePlacementExam) return;
   saveActiveGameRecord({
     isMatchMode,
     isCustomGameMode,
@@ -211,6 +295,11 @@ const showMatchResult = (isWin: boolean, rewardGold: number, enemyName: string) 
 };
 
 const handleMatchTimeExpired = async () => {
+  if (activePlacementExam) {
+    await finishPlacementExam(false);
+    return;
+  }
+
   if (isMatchMode) {
     isMatchMode = false;
     MatchEngine.clearActiveMatch();
@@ -255,6 +344,13 @@ export async function handleBotMatchProgress(botProgress: number, enemyName: str
 }
 
 export async function handleExitGameRequest(): Promise<boolean> {
+  if (activePlacementExam) {
+    await finishPlacementExam(false);
+    UIManager.hideSamuraiSpace();
+    activeRefreshFn = null;
+    return true;
+  }
+
   if (isMatchMode && activeMatch) {
     return new Promise((resolve) => {
       UIManager.toggleModal('duel-exit-modal', true);
@@ -508,6 +604,15 @@ export function startGame(
     UIManager.hideMatchHeader();
   }
 
+  const hintBtnEl = document.getElementById('btn-hint');
+  if (hintBtnEl) {
+    if (activePlacementExam) {
+      hintBtnEl.classList.add('hidden');
+    } else {
+      hintBtnEl.classList.remove('hidden');
+    }
+  }
+
   const title = document.getElementById('game-title');
   if (title) title.innerText = isMatchMode ? `⚔️ Düello (${diff.toUpperCase()})` : `Seviye ${level}`;
 
@@ -594,6 +699,11 @@ export function startGame(
       currentSolution,
       initialBoard,
       async () => {
+        if (activePlacementExam) {
+          await finishPlacementExam(true);
+          return;
+        }
+
         if (currentVariant === 'samurai') {
           const currentDone = userBoard.every((row, ri) => row.every((val, ci) => val === currentSolution[ri][ci]));
           const allDone = samuraiBoards.every(b => b.userBoard.every((row, ri) => row.every((val, ci) => val === b.solution[ri][ci])));
@@ -691,6 +801,10 @@ export function startGame(
         updateErrorUI();
         persistCurrentGame();
         if (errors >= 3) {
+          if (activePlacementExam) {
+            await finishPlacementExam(false);
+            return;
+          }
           if (timerInterval) clearInterval(timerInterval);
           clearCurrentSavedGame();
           if (isMatchMode) {

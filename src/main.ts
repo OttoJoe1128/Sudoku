@@ -12,7 +12,7 @@ import { initSaveController, updateSavedGamesCountUI } from './controllers/saveC
 import { initMapController, getSelectedMapVariant } from './controllers/mapController';
 import { initArenaController, getSelectedArenaVariant, handleIncomingChallenge, triggerExpertBotMatch } from './controllers/arenaController';
 import { initModalsController, getSelectedCustomVariant, getSelectedCustomTimeSec, openPlayerProfile } from './controllers/modalsController';
-import { initGameController, startGame, handleBotMatchProgress, handleExitGameRequest, getGameRuntimeState } from './controllers/gameController';
+import { initGameController, startGame, startPlacementExam, handleBotMatchProgress, handleExitGameRequest, getGameRuntimeState } from './controllers/gameController';
 
 // UI Binişi & Öz-Teşhis
 UIManager.mountUI();
@@ -127,12 +127,11 @@ initModalsController({
   onStartCustomGame: (level, diff, variant, timeLimitSec) => {
     startGame(level, diff, undefined, undefined, variant, true, timeLimitSec);
   },
-  onStartPlacementExam: (diff) => {
-    const targetLevel = diff === 'basit' ? 1 : diff === 'orta' ? 301 : 701;
-    startGame(targetLevel, diff, undefined, undefined, 'classic', false);
+  onStartPlacementExam: (variant, tier) => {
+    startPlacementExam(variant, tier);
   },
   onStartLevelDirect: (level, diff) => {
-    startGame(level, diff, undefined, undefined, 'classic', false);
+    startGame(level, diff, undefined, undefined, getSelectedMapVariant(), false);
   },
   onUpdateGoldDisplay: updateGoldDisplay,
   onUpdateSavedGamesUI: updateSavedGamesCountUI,
@@ -143,6 +142,7 @@ initModalsController({
     );
   },
   getSelectedArenaVariant,
+  getSelectedMapVariant,
   getRuleDescription,
   onHandleIncomingChallenge: (chal) => handleIncomingChallenge(chal, (level, diff, matchData, variant) => startGame(level, diff, matchData, undefined, variant))
 });
