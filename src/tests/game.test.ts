@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SudokuGen } from '../engine/sudoku';
 import { calculateEloChange, serializePuzzle, deserializePuzzle } from '../engine/matchEngine';
 import { UserManager } from '../store/userState';
+import { validateSavedGameRecord } from '../engine/saveValidator';
 
 describe('Sudoku Engine & 5 Variants', () => {
   it('should generate valid Classic 9x9 Sudoku puzzle and solution', () => {
@@ -24,18 +25,15 @@ describe('Sudoku Engine & 5 Variants', () => {
     const solution = res.solution;
     const regionMap = res.regionMap!;
 
-    // 0. Verify regionMap is NOT a standard 3x3 layout
     const isStandard3x3 = regionMap.every((row, r) => row.every((val, c) => val === Math.floor(r / 3) * 3 + Math.floor(c / 3)));
     expect(isStandard3x3).toBe(false);
 
-    // 1. Row uniqueness
     for (let r = 0; r < 9; r++) {
       const rowDigits = new Set(solution[r]);
       expect(rowDigits.size).toBe(9);
       expect(rowDigits.has(0)).toBe(false);
     }
 
-    // 2. Col uniqueness
     for (let c = 0; c < 9; c++) {
       const colDigits = new Set();
       for (let r = 0; r < 9; r++) colDigits.add(solution[r][c]);
@@ -43,7 +41,6 @@ describe('Sudoku Engine & 5 Variants', () => {
       expect(colDigits.has(0)).toBe(false);
     }
 
-    // 3. Irregular Region uniqueness
     const regionBuckets: Map<number, Set<number>> = new Map();
     for (let r = 0; r < 9; r++) {
       for (let c = 0; c < 9; c++) {
@@ -71,15 +68,12 @@ describe('Sudoku Engine & 5 Variants', () => {
     cages.forEach(cage => {
       expect(cage.cells.length).toBeGreaterThanOrEqual(1);
 
-      // Check sum accuracy
       const actualSum = cage.cells.reduce((acc, cell) => acc + solution[cell.r][cell.c], 0);
       expect(actualSum).toBe(cage.sum);
 
-      // Check no duplicate digits in cage
       const cageDigits = cage.cells.map(cell => solution[cell.r][cell.c]);
       expect(new Set(cageDigits).size).toBe(cageDigits.length);
 
-      // Track cell coverage
       cage.cells.forEach(cell => {
         const key = `${cell.r}_${cell.c}`;
         expect(coveredCells.has(key)).toBe(false);
@@ -102,7 +96,6 @@ describe('Sudoku Engine & 5 Variants', () => {
     expect(res.samuraiGrids).toBeDefined();
     expect(res.samuraiGrids).toHaveLength(5);
 
-    // 1. Verify all 5 grids are valid 9x9 Sudoku solutions
     res.samuraiGrids!.forEach(gridObj => {
       const solution = gridObj.solution;
       for (let r = 0; r < 9; r++) {
@@ -115,7 +108,6 @@ describe('Sudoku Engine & 5 Variants', () => {
       }
     });
 
-    // 2. Verify overlapping 3x3 corners match between Center (0) and 4 outer grids
     const center = res.samuraiGrids![0];
     const topLeft = res.samuraiGrids![1];
     const topRight = res.samuraiGrids![2];
@@ -124,19 +116,15 @@ describe('Sudoku Engine & 5 Variants', () => {
 
     for (let r = 0; r < 3; r++) {
       for (let c = 0; c < 3; c++) {
-        // Top-Left corner
         expect(center.solution[r][c]).toBe(topLeft.solution[r + 6][c + 6]);
         expect(center.puzzle[r][c]).toBe(topLeft.puzzle[r + 6][c + 6]);
 
-        // Top-Right corner
         expect(center.solution[r][c + 6]).toBe(topRight.solution[r + 6][c]);
         expect(center.puzzle[r][c + 6]).toBe(topRight.puzzle[r + 6][c]);
 
-        // Bottom-Left corner
         expect(center.solution[r + 6][c]).toBe(bottomLeft.solution[r][c + 6]);
         expect(center.puzzle[r + 6][c]).toBe(bottomLeft.puzzle[r][c + 6]);
 
-        // Bottom-Right corner
         expect(center.solution[r + 6][c + 6]).toBe(bottomRight.solution[r][c]);
         expect(center.puzzle[r + 6][c + 6]).toBe(bottomRight.puzzle[r][c]);
       }
@@ -196,5 +184,113 @@ describe('UserManager - Fair Automatic Rank & Title Calculation', () => {
   it('should assign Büyükusta title for rankScore >= 1500', () => {
     const title = UserManager.calculatePlayerTitle(100, 25, 1300, 60);
     expect(title).toBe('🔥 Büyükusta');
+  });
+});
+
+describe('saveValidator - Pure Save Record Validation', () => {
+  it('should approve valid Classic, Irregular, Killer, and Samurai generated records', () => {
+    const classicGen = SudokuGen.generateVariant('basit', 'classic');
+    const classicRecord = {
+      variant: 'classic',
+      level: 1,
+      diff: 'basit',
+      userBoard: classicGen.puzzle,
+      initialBoard: classicGen.puzzle,
+      currentSolution: classicGen.solution
+    };
+    expect(validateSavedGameRecord(classicRecord)).toBe(true);
+
+    const irregularGen = SudokuGen.generateVariant('basit', 'irregular');
+    const irregularRecord = {
+      variant: 'irregular',
+      level: 1,
+      diff: 'basit',
+      userBoard: irregularGen.puzzle,
+      initialBoard: irregularGen.puzzle,
+      currentSolution: irregularGen.solution,
+      regionMap: irregularGen.regionMap
+    };
+    expect(validateSavedGameRecord(irregularRecord)).toBe(true);
+
+    const killerGen = SudokuGen.generateVariant('basit', 'killer');
+    const killerRecord = {
+      variant: 'killer',
+      level: 1,
+      diff: 'basit',
+      userBoard: killerGen.puzzle,
+      initialBoard: killerGen.puzzle,
+      currentSolution: killerGen.solution,
+      cages: killerGen.cages
+    };
+    expect(validateSavedGameRecord(killerRecord)).toBe(true);
+
+    const samuraiGen = SudokuGen.generateVariant('basit', 'samurai');
+    const samuraiRecord = {
+      variant: 'samurai',
+      level: 1,
+      diff: 'basit',
+      userBoard: samuraiGen.puzzle,
+      initialBoard: samuraiGen.puzzle,
+      currentSolution: samuraiGen.solution,
+      samuraiBoards: samuraiGen.samuraiGrids!.map(g => ({
+        userBoard: g.puzzle,
+        initialBoard: g.puzzle,
+        solution: g.solution
+      }))
+    };
+    expect(validateSavedGameRecord(samuraiRecord)).toBe(true);
+  });
+
+  it('should reject corrupt Irregular record with standard 3x3 regionMap', () => {
+    const irregularGen = SudokuGen.generateVariant('basit', 'irregular');
+    const standard3x3RegionMap = [
+      [0, 0, 0, 1, 1, 1, 2, 2, 2],
+      [0, 0, 0, 1, 1, 1, 2, 2, 2],
+      [0, 0, 0, 1, 1, 1, 2, 2, 2],
+      [3, 3, 3, 4, 4, 4, 5, 5, 5],
+      [3, 3, 3, 4, 4, 4, 5, 5, 5],
+      [3, 3, 3, 4, 4, 4, 5, 5, 5],
+      [6, 6, 6, 7, 7, 7, 8, 8, 8],
+      [6, 6, 6, 7, 7, 7, 8, 8, 8],
+      [6, 6, 6, 7, 7, 7, 8, 8, 8]
+    ];
+    const corruptRecord = {
+      variant: 'irregular',
+      level: 1,
+      diff: 'basit',
+      userBoard: irregularGen.puzzle,
+      initialBoard: irregularGen.puzzle,
+      currentSolution: irregularGen.solution,
+      regionMap: standard3x3RegionMap
+    };
+    expect(validateSavedGameRecord(corruptRecord)).toBe(false);
+  });
+
+  it('should reject completed game record (0 empty cells)', () => {
+    const classicGen = SudokuGen.generateVariant('basit', 'classic');
+    const completedRecord = {
+      variant: 'classic',
+      level: 1,
+      diff: 'basit',
+      userBoard: classicGen.solution,
+      initialBoard: classicGen.puzzle,
+      currentSolution: classicGen.solution
+    };
+    expect(validateSavedGameRecord(completedRecord)).toBe(false);
+  });
+
+  it('should reject Killer record with inaccurate or missing cage sums', () => {
+    const killerGen = SudokuGen.generateVariant('basit', 'killer');
+    const corruptCages = killerGen.cages!.map(c => ({ ...c, sum: c.sum + 10 }));
+    const corruptRecord = {
+      variant: 'killer',
+      level: 1,
+      diff: 'basit',
+      userBoard: killerGen.puzzle,
+      initialBoard: killerGen.puzzle,
+      currentSolution: killerGen.solution,
+      cages: corruptCages
+    };
+    expect(validateSavedGameRecord(corruptRecord)).toBe(false);
   });
 });

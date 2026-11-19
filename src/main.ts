@@ -1,4 +1,5 @@
 import { UIManager, SavedGameRecord } from './ui/uiManager';
+import { validateSavedGameRecord } from './engine/saveValidator';
 import { GameEngine } from './engine/gameEngine';
 import { SudokuGen, SudokuVariant, GeneratedSudoku, IRREGULAR_TEMPLATES, KillerCage } from './engine/sudoku';
 import { UserManager } from './store/userState';
@@ -141,76 +142,133 @@ const calculateRemainingCounts = (board: number[][]): Map<number, number> => {
   return counts;
 };
 
-// Multi-Save Aktif Oyunlar Listesi Mimarisi (Sabit Harita İlerlemesi + Serbest Mod Kayıtları)
+// Multi-Save Aktif Oyunlar Listesi Mimarisi (Sabit Klasik Harita + İsteğe Bağlı Geçerli Kayıtlar)
 const getSavedGamesList = (): SavedGameRecord[] => {
   let customList: SavedGameRecord[] = [];
+
+  // 1. Serbest Mod Kayıtları Doğrulaması
   try {
     const raw = localStorage.getItem('sudoku_saved_games_list');
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) customList = parsed.filter(item => item.isCustomMode);
+      if (Array.isArray(parsed)) {
+        customList = parsed.filter(item => item && item.isCustomMode && validateSavedGameRecord(item));
+        localStorage.setItem('sudoku_saved_games_list', JSON.stringify(customList));
+      }
     }
   } catch {
     // ignore
   }
 
-  // Harita Seviyeleri Sabit Kartları (Silinemez)
-  const mapList: SavedGameRecord[] = [];
-  const variants: SudokuVariant[] = ['classic', 'irregular', 'killer', 'wordoku', 'samurai'];
+  // 2. Eski tekil kaydı (sudoku_saved_game) kontrol et ve sil/temizle
+  try {
+    const legacyRaw = localStorage.getItem('sudoku_saved_game');
+    if (legacyRaw) {
+      const parsed = JSON.parse(legacyRaw);
+      if (parsed && validateSavedGameRecord(parsed)) {
+        const variant: SudokuVariant = parsed.variant || 'classic';
+        const gameId = `saved_${variant}_${parsed.level || 1}`;
+        const record: SavedGameRecord = {
+          id: gameId,
+          variant,
+          level: parsed.level || 1,
+          diff: parsed.diff || 'basit',
+          timeElapsed: typeof parsed.timeElapsed === 'number' ? parsed.timeElapsed : 0,
+          userBoard: parsed.userBoard,
+          initialBoard: parsed.initialBoard,
+          currentSolution: parsed.currentSolution,
+          errors: typeof parsed.errors === 'number' ? parsed.errors : 0,
+          notesBoard: parsed.notesBoard || [],
+          isCustomMode: true,
+          updatedAtMs: Date.now()
+        };
+        customList.unshift(record);
+        localStorage.setItem('sudoku_saved_games_list', JSON.stringify(customList));
+      }
+      localStorage.removeItem('sudoku_saved_game');
+    }
+  } catch {
+    localStorage.removeItem('sudoku_saved_game');
+  }
 
-  variants.forEach(v => {
+  const mapList: SavedGameRecord[] = [];
+
+  // 3. Klasik Disiplin Harita Kartı (HER ZAMAN SABİT VE EN ÜSTTE)
+  const classicLvl = UserManager.getVariantLevel('classic');
+  const classicDiff = SudokuGen.getDifficulty(classicLvl);
+  const classicGameId = `saved_map_classic_${classicLvl}`;
+  let classicRecord: SavedGameRecord = {
+    id: classicGameId,
+    variant: 'classic',
+    level: classicLvl,
+    diff: classicDiff,
+    timeElapsed: 0,
+    userBoard: [],
+    initialBoard: [],
+    currentSolution: [],
+    errors: 0,
+    notesBoard: [],
+    isCustomMode: false,
+    updatedAtMs: Date.now()
+  };
+
+  try {
+    const rawClassicMap = localStorage.getItem(`sudoku_map_save_classic_${classicLvl}`);
+    if (rawClassicMap) {
+      const p = JSON.parse(rawClassicMap);
+      if (validateSavedGameRecord(p)) {
+        classicRecord.timeElapsed = p.timeElapsed || 0;
+        classicRecord.userBoard = p.userBoard;
+        classicRecord.initialBoard = p.initialBoard;
+        classicRecord.currentSolution = p.currentSolution;
+        classicRecord.errors = p.errors || 0;
+        classicRecord.notesBoard = p.notesBoard || [];
+      } else {
+        localStorage.removeItem(`sudoku_map_save_classic_${classicLvl}`);
+      }
+    }
+  } catch {
+    localStorage.removeItem(`sudoku_map_save_classic_${classicLvl}`);
+  }
+  mapList.push(classicRecord);
+
+  // 4. Diğer 4 Disiplin (Sadece Gerçekten Oynanmış ve Geçerli Kayıt Varsa Gösterilir)
+  const otherVariants: SudokuVariant[] = ['irregular', 'killer', 'wordoku', 'samurai'];
+  otherVariants.forEach(v => {
     const userLvl = UserManager.getVariantLevel(v);
     const diff = SudokuGen.getDifficulty(userLvl);
     const gameId = `saved_map_${v}_${userLvl}`;
-
-    let savedTime = 0;
-    let savedUserBoard: number[][] | null = null;
-    let savedInitialBoard: number[][] | null = null;
-    let savedSolution: number[][] | null = null;
-    let savedErrors = 0;
-    let savedNotes: any = [];
-    let savedRegionMap: number[][] | undefined = undefined;
-    let savedCages: KillerCage[] | undefined = undefined;
-    let savedSamuraiBoards: any = undefined;
-    let savedActiveSamuraiIndex: number | undefined = undefined;
 
     try {
       const rawMap = localStorage.getItem(`sudoku_map_save_${v}_${userLvl}`);
       if (rawMap) {
         const p = JSON.parse(rawMap);
-        savedTime = p.timeElapsed || 0;
-        savedUserBoard = p.userBoard;
-        savedInitialBoard = p.initialBoard;
-        savedSolution = p.currentSolution;
-        savedErrors = p.errors || 0;
-        savedNotes = p.notesBoard || [];
-        savedRegionMap = p.regionMap;
-        savedCages = p.cages;
-        savedSamuraiBoards = p.samuraiBoards;
-        savedActiveSamuraiIndex = p.activeSamuraiIndex;
+        if (validateSavedGameRecord(p)) {
+          mapList.push({
+            id: gameId,
+            variant: v,
+            level: userLvl,
+            diff,
+            timeElapsed: p.timeElapsed || 0,
+            userBoard: p.userBoard,
+            initialBoard: p.initialBoard,
+            currentSolution: p.currentSolution,
+            errors: p.errors || 0,
+            notesBoard: p.notesBoard || [],
+            regionMap: p.regionMap,
+            cages: p.cages,
+            samuraiBoards: p.samuraiBoards,
+            activeSamuraiIndex: p.activeSamuraiIndex,
+            isCustomMode: false,
+            updatedAtMs: Date.now()
+          });
+        } else {
+          localStorage.removeItem(`sudoku_map_save_${v}_${userLvl}`);
+        }
       }
     } catch {
-      // ignore
+      localStorage.removeItem(`sudoku_map_save_${v}_${userLvl}`);
     }
-
-    mapList.push({
-      id: gameId,
-      variant: v,
-      level: userLvl,
-      diff,
-      timeElapsed: savedTime,
-      userBoard: savedUserBoard || [],
-      initialBoard: savedInitialBoard || [],
-      currentSolution: savedSolution || [],
-      errors: savedErrors,
-      notesBoard: savedNotes,
-      regionMap: savedRegionMap,
-      cages: savedCages,
-      samuraiBoards: savedSamuraiBoards,
-      activeSamuraiIndex: savedActiveSamuraiIndex,
-      isCustomMode: false,
-      updatedAtMs: Date.now()
-    });
   });
 
   return [...mapList, ...customList];
@@ -1029,6 +1087,7 @@ const handleExitGameRequest = async (): Promise<boolean> => {
     saveActiveGameRecord();
   }
 
+  activeRefreshFn = null;
   if (timerInterval) clearInterval(timerInterval);
   UIManager.navigate('menu');
   return true;
