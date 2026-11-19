@@ -8,6 +8,18 @@ import { mapGlobalToSamuraiCell } from '../ui/samuraiViewport';
 import { getPlacementExamConfig, evaluatePlacementExam } from '../engine/placementEngine';
 import { escapeHTML, sanitizeUsername } from '../utils/sanitize';
 
+const storageMap: Record<string, string> = {};
+const mockLocalStorage = {
+  getItem: (key: string) => storageMap[key] ?? null,
+  setItem: (key: string, val: string) => { storageMap[key] = String(val); },
+  removeItem: (key: string) => { delete storageMap[key]; },
+  clear: () => { Object.keys(storageMap).forEach(k => delete storageMap[k]); }
+};
+
+if (typeof globalThis.localStorage === 'undefined' || typeof globalThis.localStorage.getItem !== 'function') {
+  (globalThis as any).localStorage = mockLocalStorage;
+}
+
 describe('XSS Security & Input Sanitization', () => {
   it('should escape HTML characters correctly', () => {
     const malicious = '<img src=x onerror="alert(1)">';
@@ -478,5 +490,36 @@ describe('Placement Engine - Performance-based Level Progression', () => {
 
     expect(result.assignedLevel).toBe(250);
     expect(result.levelsGained).toBe(0);
+  });
+});
+
+describe('Faz O1 - State & Progression Integrity Fixes', () => {
+  it('K-1 Regression: updateVariantProgress should never drop a promoted variant level back to a completed lower level', async () => {
+    await UserManager.updateVariantLevel('classic', 3, 10);
+    expect(UserManager.getVariantLevel('classic')).toBe(3);
+
+    await UserManager.updateVariantProgress('classic', 2, 50);
+    expect(UserManager.getVariantLevel('classic')).toBe(3);
+  });
+
+  it('K-1 Multi-Variant: irregular, killer, wordoku, samurai levels should advance independently without overwriting', async () => {
+    await UserManager.updateVariantLevel('irregular', 2, 10);
+    await UserManager.updateVariantLevel('killer', 3, 20);
+    await UserManager.updateVariantLevel('samurai', 5, 50);
+
+    expect(UserManager.getVariantLevel('irregular')).toBe(2);
+    expect(UserManager.getVariantLevel('killer')).toBe(3);
+    expect(UserManager.getVariantLevel('samurai')).toBe(5);
+  });
+
+  it('Ö-3 Rank Retention: player moving from Level 300 to Level 301 should retain rank title without dropping', () => {
+    const title300 = UserManager.calculatePlayerTitle(300, 0, 1000, 300);
+    const title301 = UserManager.calculatePlayerTitle(301, 0, 1000, 300);
+
+    expect(title300).toBe('🔥 Büyükusta');
+    expect(title301).toBe('🔥 Büyükusta');
+
+    const beginnerTitle = UserManager.calculatePlayerTitle(301, 0, 1000, 0);
+    expect(beginnerTitle).toBe('🥉 Çırak');
   });
 });

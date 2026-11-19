@@ -71,8 +71,8 @@ export const UserManager = {
     duelMmr: number = 1000,
     totalCompleted: number = 0
   ): string {
-    const progressLevels = level >= 701 ? (level - 701) : (level >= 301 ? (level - 301) : (level - 1));
-    const effectiveCompleted = Math.max(totalCompleted, Math.max(0, progressLevels));
+    const tierProgress = level >= 701 ? (level - 701) : (level >= 301 ? (level - 301) : (level - 1));
+    const effectiveCompleted = Math.max(totalCompleted, Math.max(0, tierProgress));
     const mmrBonus = Math.max(0, duelMmr - 1000) * 2;
     const tierBonus = level >= 701 ? 120 : (level >= 301 ? 50 : 0);
 
@@ -101,6 +101,7 @@ export const UserManager = {
   },
 
   getVariantLevel(variant: SudokuVariant = 'classic'): number {
+    if (typeof localStorage === 'undefined') return 1;
     const raw = localStorage.getItem(`sudoku_level_${variant}`);
     return raw ? parseInt(raw) : (variant === 'classic' ? this.getCurrentLevel() : 1);
   },
@@ -108,18 +109,24 @@ export const UserManager = {
   async updateVariantLevel(variant: SudokuVariant, newLevel: number, addedGold: number = 0): Promise<void> {
     const currentVariantLevel = this.getVariantLevel(variant);
     const updatedLevel = Math.max(currentVariantLevel, newLevel);
-    localStorage.setItem(`sudoku_level_${variant}`, updatedLevel.toString());
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(`sudoku_level_${variant}`, updatedLevel.toString());
+    }
 
     let currentGold = this.getGold();
     if (addedGold > 0) {
       currentGold += addedGold;
-      localStorage.setItem('sudoku_gold', currentGold.toString());
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('sudoku_gold', currentGold.toString());
+      }
     }
 
     if (variant === 'classic') {
       const currentClassicLevel = this.getCurrentLevel();
       const updatedClassic = Math.max(currentClassicLevel, updatedLevel);
-      localStorage.setItem('sudoku_level', updatedClassic.toString());
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('sudoku_level', updatedClassic.toString());
+      }
     }
 
     try {
@@ -141,25 +148,45 @@ export const UserManager = {
   },
 
   getVariantScore(variant: SudokuVariant = 'classic'): number {
+    if (typeof localStorage === 'undefined') return 0;
     const raw = localStorage.getItem(`sudoku_score_${variant}`);
     return raw ? parseInt(raw) : 0;
   },
 
   async updateVariantProgress(variant: SudokuVariant, level: number, pointsGained: number) {
-    localStorage.setItem(`sudoku_level_${variant}`, level.toString());
+    const currentVariantLevel = this.getVariantLevel(variant);
+    const safeLevel = Math.max(currentVariantLevel, level);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(`sudoku_level_${variant}`, safeLevel.toString());
+    }
+
     const mult = VARIANT_MULTIPLIERS[variant] || 1.0;
     const currentScore = this.getVariantScore(variant);
     const newScore = currentScore + Math.round(pointsGained * mult);
-    localStorage.setItem(`sudoku_score_${variant}`, newScore.toString());
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(`sudoku_score_${variant}`, newScore.toString());
+    }
+
+    if (variant === 'classic') {
+      const currentClassic = this.getCurrentLevel();
+      const safeClassic = Math.max(currentClassic, safeLevel);
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('sudoku_level', safeClassic.toString());
+      }
+    }
 
     try {
       if (auth.currentUser) {
         const uid = auth.currentUser.uid;
-        await setDoc(doc(db, 'leaderboard', uid), {
-          [`level_${variant}`]: level,
+        const updates: Record<string, any> = {
+          [`level_${variant}`]: safeLevel,
           [`score_${variant}`]: newScore,
           updatedAt: serverTimestamp()
-        }, { merge: true });
+        };
+        if (variant === 'classic') {
+          updates.level = Math.max(this.getCurrentLevel(), safeLevel);
+        }
+        await setDoc(doc(db, 'leaderboard', uid), updates, { merge: true });
       }
     } catch {
       // ignore
@@ -200,33 +227,85 @@ export const UserManager = {
         const duelWins = typeof data.duel_wins === 'number' ? data.duel_wins : 0;
         const duelMmr = typeof data.duel_mmr === 'number' ? data.duel_mmr : 1000;
         const totalCompleted = typeof data.total_completed === 'number' ? data.total_completed : 0;
-        const title = this.calculatePlayerTitle(level, duelWins, duelMmr, totalCompleted);
 
-        localStorage.setItem('sudoku_username', username);
-        localStorage.setItem('sudoku_gold', gold.toString());
-        localStorage.setItem('sudoku_level', level.toString());
-        localStorage.setItem('sudoku_avatar', avatar);
-        localStorage.setItem('sudoku_title', title);
+        const localTotal = this.getTotalCompleted();
+        const safeTotal = Math.max(localTotal, totalCompleted);
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('sudoku_total_completed', safeTotal.toString());
+        }
+
+        (['classic', 'irregular', 'killer', 'wordoku', 'samurai'] as SudokuVariant[]).forEach(v => {
+          const localLvl = this.getVariantLevel(v);
+          const fireLvl = typeof data[`level_${v}`] === 'number' ? data[`level_${v}`] : (v === 'classic' ? level : 1);
+          const safeLvl = Math.max(localLvl, fireLvl);
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem(`sudoku_level_${v}`, safeLvl.toString());
+          }
+
+          const localScore = this.getVariantScore(v);
+          const fireScore = typeof data[`score_${v}`] === 'number' ? data[`score_${v}`] : 0;
+          const safeScore = Math.max(localScore, fireScore);
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem(`sudoku_score_${v}`, safeScore.toString());
+          }
+        });
+
+        const classicLvl = this.getVariantLevel('classic');
+        const safeClassic = Math.max(this.getCurrentLevel(), level, classicLvl);
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('sudoku_level', safeClassic.toString());
+          localStorage.setItem('sudoku_username', username);
+          localStorage.setItem('sudoku_gold', gold.toString());
+          localStorage.setItem('sudoku_avatar', avatar);
+        }
+
+        const title = this.calculatePlayerTitle(safeClassic, duelWins, duelMmr, safeTotal);
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('sudoku_title', title);
+        }
 
         await this.setPresence('available');
 
-        return { uid, username, gold, level, avatar, title, duel_wins: duelWins, duel_mmr: duelMmr };
+        return { uid, username, gold, level: safeClassic, avatar, title, duel_wins: duelWins, duel_mmr: duelMmr };
       }
 
       const localUsername = this.getUsername();
       if (localUsername) {
         const found = await this.findUserByName(localUsername);
         if (found) {
-          localStorage.setItem('sudoku_gold', found.gold.toString());
-          localStorage.setItem('sudoku_level', found.level.toString());
-          const calcTitle = this.calculatePlayerTitle(found.level, found.duel_wins || 0, found.duel_mmr || 1000, found.total_completed || 0);
-          localStorage.setItem('sudoku_title', calcTitle);
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('sudoku_gold', found.gold.toString());
+
+            (['classic', 'irregular', 'killer', 'wordoku', 'samurai'] as SudokuVariant[]).forEach(v => {
+              if (found.variantLevels && typeof found.variantLevels[v] === 'number') {
+                const safeLvl = Math.max(this.getVariantLevel(v), found.variantLevels[v]);
+                localStorage.setItem(`sudoku_level_${v}`, safeLvl.toString());
+              }
+              if (found.variantScores && typeof found.variantScores[v] === 'number') {
+                const safeScore = Math.max(this.getVariantScore(v), found.variantScores[v]);
+                localStorage.setItem(`sudoku_score_${v}`, safeScore.toString());
+              }
+            });
+
+            const safeClassic = Math.max(this.getCurrentLevel(), found.level, this.getVariantLevel('classic'));
+            localStorage.setItem('sudoku_level', safeClassic.toString());
+
+            const localTotal = this.getTotalCompleted();
+            const safeTotal = Math.max(localTotal, found.total_completed || 0);
+            localStorage.setItem('sudoku_total_completed', safeTotal.toString());
+
+            const calcTitle = this.calculatePlayerTitle(safeClassic, found.duel_wins || 0, found.duel_mmr || 1000, safeTotal);
+            localStorage.setItem('sudoku_title', calcTitle);
+          }
+
+          const safeClassic = Math.max(this.getCurrentLevel(), found.level, this.getVariantLevel('classic'));
+          const calcTitle = this.calculatePlayerTitle(safeClassic, found.duel_wins || 0, found.duel_mmr || 1000, this.getTotalCompleted());
 
           await setDoc(userDocRef, {
             uid,
             username: found.username,
             gold: found.gold,
-            level: found.level,
+            level: safeClassic,
             avatar: found.avatar || '🎮',
             title: calcTitle,
             duel_mmr: found.duel_mmr || 1000,
@@ -236,7 +315,7 @@ export const UserManager = {
             updatedAt: serverTimestamp()
           }, { merge: true });
 
-          return { ...found, title: calcTitle };
+          return { ...found, level: safeClassic, title: calcTitle };
         }
       }
       return null;
@@ -318,18 +397,23 @@ export const UserManager = {
     return null;
   },
 
-  getUsername(): string | null { return localStorage.getItem('sudoku_username'); },
-  getGold(): number { return parseInt(localStorage.getItem('sudoku_gold') || '100'); },
-  getCurrentLevel(): number { return parseInt(localStorage.getItem('sudoku_level') || '1'); },
-  getAvatar(): string { return localStorage.getItem('sudoku_avatar') || '🎮'; },
+  getUsername(): string | null { if (typeof localStorage === 'undefined') return null; return localStorage.getItem('sudoku_username'); },
+  getGold(): number { if (typeof localStorage === 'undefined') return 100; return parseInt(localStorage.getItem('sudoku_gold') || '100'); },
+  getCurrentLevel(): number { if (typeof localStorage === 'undefined') return 1; return parseInt(localStorage.getItem('sudoku_level') || '1'); },
+  getTotalCompleted(): number { if (typeof localStorage === 'undefined') return 0; return parseInt(localStorage.getItem('sudoku_total_completed') || '0'); },
+  getAvatar(): string { if (typeof localStorage === 'undefined') return '🎮'; return localStorage.getItem('sudoku_avatar') || '🎮'; },
   getTitle(): string {
     const level = this.getCurrentLevel();
-    return localStorage.getItem('sudoku_title') || this.calculatePlayerTitle(level);
+    const totalCompleted = this.getTotalCompleted();
+    if (typeof localStorage === 'undefined') return this.calculatePlayerTitle(level, 0, 1000, totalCompleted);
+    return localStorage.getItem('sudoku_title') || this.calculatePlayerTitle(level, 0, 1000, totalCompleted);
   },
-  getNotificationsEnabled(): boolean { return localStorage.getItem('sudoku_notifications_enabled') === 'true'; },
+  getNotificationsEnabled(): boolean { if (typeof localStorage === 'undefined') return false; return localStorage.getItem('sudoku_notifications_enabled') === 'true'; },
 
   saveNotificationsEnabled(enabled: boolean) {
-    localStorage.setItem('sudoku_notifications_enabled', enabled ? 'true' : 'false');
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('sudoku_notifications_enabled', enabled ? 'true' : 'false');
+    }
   },
 
   async saveUser(username: string): Promise<UserData> {
@@ -338,7 +422,9 @@ export const UserManager = {
     const avatar = this.getAvatar();
     const title = this.getTitle();
 
-    localStorage.setItem('sudoku_username', username);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('sudoku_username', username);
+    }
 
     try {
       const cred = auth.currentUser ? { user: auth.currentUser } : await signInAnonymously(auth);
@@ -363,8 +449,10 @@ export const UserManager = {
   },
 
   async updateProgress(level: number, gold: number): Promise<void> {
-    localStorage.setItem('sudoku_level', level.toString());
-    localStorage.setItem('sudoku_gold', gold.toString());
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('sudoku_level', level.toString());
+      localStorage.setItem('sudoku_gold', gold.toString());
+    }
 
     const currentTitle = this.getTitle();
 
@@ -386,8 +474,10 @@ export const UserManager = {
   },
 
   async updateProfileCustomization(avatar: string, title: string) {
-    localStorage.setItem('sudoku_avatar', avatar);
-    localStorage.setItem('sudoku_title', title);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('sudoku_avatar', avatar);
+      localStorage.setItem('sudoku_title', title);
+    }
 
     try {
       if (auth.currentUser) {
@@ -407,7 +497,9 @@ export const UserManager = {
     try {
       const currentGold = this.getGold();
       const newGold = Math.max(0, currentGold + rewardGold);
-      localStorage.setItem('sudoku_gold', newGold.toString());
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('sudoku_gold', newGold.toString());
+      }
 
       if (auth.currentUser) {
         const uid = auth.currentUser.uid;
@@ -418,7 +510,7 @@ export const UserManager = {
         const level = typeof currentData.level === 'number' ? currentData.level : this.getCurrentLevel();
         const wins = (typeof currentData.duel_wins === 'number' ? currentData.duel_wins : 0) + (isWin ? 1 : 0);
         const losses = (typeof currentData.duel_losses === 'number' ? currentData.duel_losses : 0) + (isWin ? 0 : 1);
-        const completed = typeof currentData.total_completed === 'number' ? currentData.total_completed : 0;
+        const completed = typeof currentData.total_completed === 'number' ? currentData.total_completed : this.getTotalCompleted();
 
         const currentPvpMmr = typeof currentData.duel_mmr === 'number' ? currentData.duel_mmr : 1000;
         const currentBotMmr = typeof currentData.bot_mmr === 'number' ? currentData.bot_mmr : 1000;
@@ -427,7 +519,9 @@ export const UserManager = {
         const updatedMmr = isBot ? currentPvpMmr : Math.max(100, currentPvpMmr + effectiveMmrChange);
         const newTitle = this.calculatePlayerTitle(level, wins, updatedMmr, completed);
 
-        localStorage.setItem('sudoku_title', newTitle);
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('sudoku_title', newTitle);
+        }
 
         const updates: any = {
           gold: newGold,
@@ -481,10 +575,18 @@ export const UserManager = {
       const level = typeof currentData.level === 'number' ? currentData.level : details.level;
       const wins = typeof currentData.duel_wins === 'number' ? currentData.duel_wins : 0;
       const mmr = typeof currentData.duel_mmr === 'number' ? currentData.duel_mmr : 1000;
-      const totalCompleted = (typeof currentData.total_completed === 'number' ? currentData.total_completed : 0) + 1;
-      const calcTitle = this.calculatePlayerTitle(level, wins, mmr, totalCompleted);
 
-      localStorage.setItem('sudoku_title', calcTitle);
+      const localTotal = this.getTotalCompleted();
+      const totalCompleted = (typeof currentData.total_completed === 'number' ? currentData.total_completed : 0) + 1;
+      const safeTotal = Math.max(localTotal, totalCompleted);
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('sudoku_total_completed', safeTotal.toString());
+      }
+
+      const calcTitle = this.calculatePlayerTitle(level, wins, mmr, safeTotal);
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('sudoku_title', calcTitle);
+      }
 
       const updates: Record<string, any> = {
         uid,
@@ -492,7 +594,7 @@ export const UserManager = {
         title: calcTitle,
         lastSeenMs: Date.now(),
         updatedAt: serverTimestamp(),
-        total_completed: totalCompleted
+        total_completed: safeTotal
       };
 
       const diffKey = details.difficulty === 'basit' ? 'best_basit' : details.difficulty === 'orta' ? 'best_orta' : 'best_zor';
@@ -506,7 +608,7 @@ export const UserManager = {
 
       // Disiplin puanı kazanımı
       const basePoints = details.difficulty === 'basit' ? 50 : details.difficulty === 'orta' ? 100 : 200;
-      await this.updateVariantProgress(details.variant || 'classic', details.level, basePoints);
+      await this.updateVariantProgress(details.variant || 'classic', this.getVariantLevel(details.variant || 'classic'), basePoints);
     } catch (e) {
       console.warn("Oyun süresi ve kaydı Firebase'e yazılamadı:", e);
     }
@@ -520,7 +622,7 @@ export const UserManager = {
     const avatar = this.getAvatar();
     const notificationsEnabled = this.getNotificationsEnabled();
 
-    let totalCompleted = 0;
+    let totalCompleted = this.getTotalCompleted();
     let duelWins = 0;
     let duelLosses = 0;
     let duelMmr = 1000;
@@ -550,7 +652,7 @@ export const UserManager = {
         const snap = await getDoc(doc(db, 'leaderboard', uid));
         if (snap.exists()) {
           const d = snap.data();
-          totalCompleted = typeof d.total_completed === 'number' ? d.total_completed : 0;
+          totalCompleted = Math.max(totalCompleted, typeof d.total_completed === 'number' ? d.total_completed : 0);
           duelWins = typeof d.duel_wins === 'number' ? d.duel_wins : 0;
           duelLosses = typeof d.duel_losses === 'number' ? d.duel_losses : 0;
           duelMmr = typeof d.duel_mmr === 'number' ? d.duel_mmr : 1000;
@@ -560,8 +662,8 @@ export const UserManager = {
           bestZor = d.best_zor;
 
           (['classic', 'irregular', 'killer', 'wordoku', 'samurai'] as SudokuVariant[]).forEach(v => {
-            if (typeof d[`score_${v}`] === 'number') variantScores[v] = d[`score_${v}`];
-            if (typeof d[`level_${v}`] === 'number') variantLevels[v] = d[`level_${v}`];
+            if (typeof d[`score_${v}`] === 'number') variantScores[v] = Math.max(variantScores[v], d[`score_${v}`]);
+            if (typeof d[`level_${v}`] === 'number') variantLevels[v] = Math.max(variantLevels[v], d[`level_${v}`]);
           });
         }
       } catch (e) {
