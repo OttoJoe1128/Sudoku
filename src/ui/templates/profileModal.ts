@@ -95,7 +95,7 @@ export const profileModalTemplate = `
                 <div class="flex justify-between items-center mb-2">
                     <p class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-wider" data-i18n="profile_avatar_select">Avatar Seç</p>
                     <button id="btn-open-avatar-gallery" class="text-[10px] font-black text-[var(--accent-gold)] hover:underline flex items-center gap-0.5">
-                        <span data-i18n="btn_view_all_badges">Tümünü Gör ➔</span>
+                        <span>Tümünü Gör ➔</span>
                     </button>
                 </div>
                 <div id="profile-avatar-selector" class="grid grid-cols-4 gap-2">
