@@ -272,6 +272,10 @@ export const UIManager = {
     toast.className = `${bgClass} p-3.5 rounded-2xl shadow-xl border border-white/10 text-xs font-bold flex items-center justify-between pointer-events-auto transition-all transform duration-300 translate-y-[-10px] opacity-0`;
     toast.innerText = message;
 
+    while (container.children.length >= 2) {
+      container.firstElementChild?.remove();
+    }
+
     container.appendChild(toast);
 
     setTimeout(() => {

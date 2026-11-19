@@ -371,6 +371,7 @@ export class SudokuGen {
       }
     }
 
+    // Single-Cell Killer Cage Merging Polish
     for (let i = 0; i < cages.length; i++) {
       if (cages[i].cells.length === 1) {
         const cell = cages[i].cells[0];

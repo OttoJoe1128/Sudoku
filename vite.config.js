@@ -5,6 +5,18 @@ export default defineConfig({
   root: './',
   build: {
     outDir: 'dist',
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/firebase') || id.includes('node_modules/@firebase')) {
+            return 'vendor-firebase';
+          }
+          if (id.includes('node_modules')) {
+            return 'vendor-deps';
+          }
+        }
+      }
+    }
   },
   server: {
     host: '0.0.0.0',
