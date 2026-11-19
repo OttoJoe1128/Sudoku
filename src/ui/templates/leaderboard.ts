@@ -51,14 +51,14 @@ export const leaderboardTemplate = `
 
         <!-- En Hızlılar İçin Zorluk Filtresi -->
         <div id="speed-diff-filters" class="hidden gap-1.5 mb-2.5">
-            <button data-diff="all" class="speed-filter-btn flex-1 py-1 text-[11px] font-black rounded-lg bg-[var(--accent-gold)] text-[var(--text-on-gold)] shadow-sm">Tümü</button>
+            <button data-diff="all" class="speed-filter-btn flex-1 py-1 text-[11px] font-black rounded-lg bg-[var(--accent-gold)] text-[var(--text-on-gold)] shadow-sm" data-i18n="label_all">Tümü</button>
             <button data-diff="basit" class="speed-filter-btn flex-1 py-1 text-[11px] font-bold rounded-lg bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]" data-i18n="diff_basit">Basit</button>
             <button data-diff="orta" class="speed-filter-btn flex-1 py-1 text-[11px] font-bold rounded-lg bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]" data-i18n="diff_orta">Orta</button>
             <button data-diff="zor" class="speed-filter-btn flex-1 py-1 text-[11px] font-bold rounded-lg bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]" data-i18n="diff_zor">Zor</button>
         </div>
 
         <div id="leaderboard-header-bar" class="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 border-b border-[var(--border-subtle)] mb-2 flex justify-between items-center">
-            <span id="lb-header-left">Sıra & Oyuncu</span>
+            <span id="lb-header-left" data-i18n="lb_header_player">Sıra & Oyuncu</span>
             <span id="lb-header-right" data-i18n="lb_tab_level">Seviye</span>
         </div>
         <div id="leaderboard-list" class="flex-1 overflow-y-auto space-y-2 pr-1 hidden-scrollbar">

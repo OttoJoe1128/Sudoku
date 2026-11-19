@@ -12,7 +12,7 @@ import { inboxModalTemplate } from './templates/inboxModal';
 import { savedGamesModalTemplate } from './templates/savedGamesModal';
 import { getAmbientBackgroundHTML } from '../design/backgrounds';
 import { Icons, renderAvatarSVG, renderRankBadgeSVG, AVATAR_LIST } from '../design/icons';
-import { t } from '../i18n/translations';
+import { t, getLang } from '../i18n/translations';
 import { Player, SpeedRecord } from '../engine/leaderboard';
 import { ShopItems, ShopManager } from '../engine/shop';
 import { BadgeStatus } from '../engine/achievements';
@@ -373,9 +373,9 @@ export const UIManager = {
     if (avatarEl) avatarEl.innerHTML = renderAvatarSVG(stats.avatar || 'av_prism', 36);
     if (titleEl) titleEl.innerHTML = renderRankBadgeSVG(stats.title || 'Çırak');
     if (completedEl) completedEl.innerText = stats.totalCompleted.toString();
-    if (duelEl) duelEl.innerText = `${stats.duelWins} G / ${stats.duelLosses} M`;
+    if (duelEl) duelEl.innerText = t('duel_wl', { w: stats.duelWins, l: stats.duelLosses });
     if (pvpMmrEl) pvpMmrEl.innerText = `${stats.duelMmr} MMR`;
-    if (botMmrEl) botMmrEl.innerText = `${stats.botMmr || 1000} YZ`;
+    if (botMmrEl) botMmrEl.innerText = `${stats.botMmr || 1000} ${t('lb_tab_bot')}`;
     if (basitEl) basitEl.innerText = stats.bestBasitFormatted;
     if (ortaEl) ortaEl.innerText = stats.bestOrtaFormatted;
     if (zorEl) zorEl.innerText = stats.bestZorFormatted;
@@ -406,14 +406,19 @@ export const UIManager = {
 
     if (badgesPreviewEl) {
       if (unlockedBadges.length === 0) {
-        badgesPreviewEl.innerHTML = `<p class="text-xs text-slate-400 font-medium py-1">Henüz rozet kazanılmadı.</p>`;
+        badgesPreviewEl.innerHTML = `<p class="text-xs text-[var(--text-secondary)] font-medium py-1">${t('no_badges_yet')}</p>`;
       } else {
-        badgesPreviewEl.innerHTML = unlockedBadges.slice(0, 4).map(b => `
-          <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-xl shrink-0">
-            <span class="text-base">${b.icon}</span>
-            <span class="text-[11px] font-bold text-slate-700">${b.title}</span>
-          </div>
-        `).join('');
+        const isEn = getLang() === 'en';
+        badgesPreviewEl.innerHTML = unlockedBadges.slice(0, 4).map(b => {
+          const title = isEn && b.titleEn ? b.titleEn : b.title;
+          const svgIcon = Icons[b.icon as keyof typeof Icons] || Icons.target;
+          return `
+            <div class="flex items-center gap-1.5 bg-[var(--bg-card)] border border-[var(--border-subtle)] px-2.5 py-1 rounded-xl shrink-0 text-[var(--accent-gold)]">
+              <span>${svgIcon}</span>
+              <span class="text-[11px] font-bold text-[var(--text-primary)]">${title}</span>
+            </div>
+          `;
+        }).join('');
       }
     }
   },
@@ -507,8 +512,8 @@ export const UIManager = {
       listEl.innerHTML = `
         <div class="flex flex-col items-center justify-center py-8 text-center">
           <svg class="w-8 h-8 text-[var(--text-secondary)] opacity-50 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-          <p class="text-xs font-bold text-[var(--text-primary)] mb-0.5">Çevrimiçi oyuncu bulunamadı</p>
-          <p class="text-[10px] text-[var(--text-secondary)]">Rastgele rakip arayabilir veya YZ Botlarla kapışabilirsiniz.</p>
+          <p class="text-xs font-bold text-[var(--text-primary)] mb-0.5" data-i18n="lobby_empty_title">${t('lobby_empty_title')}</p>
+          <p class="text-[10px] text-[var(--text-secondary)]" data-i18n="lobby_empty_desc">${t('lobby_empty_desc')}</p>
         </div>
       `;
       return;
@@ -571,26 +576,31 @@ export const UIManager = {
     const listEl = document.getElementById('bot-characters-list');
     if (!listEl) return;
 
-    listEl.innerHTML = bots.map(bot => `
-      <div class="p-3 border border-[var(--border-subtle)] hover:border-[var(--border-strong)] rounded-2xl bg-[var(--bg-card)] shadow-sm flex items-center justify-between transition-all">
-        <div class="flex items-center gap-2.5">
-          <div class="w-10 h-10 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-xl shrink-0">
-            ${renderAvatarSVG(bot.avatar || 'av_prism', 26)}
-          </div>
-          <div class="text-left">
-            <div class="flex items-center gap-1.5">
-              <span class="font-black text-[var(--text-primary)] text-xs">${bot.name}</span>
-              <span class="bg-[var(--accent-gold)] text-[var(--text-on-gold)] text-[9px] font-black px-1.5 py-0.5 rounded-md">${t('label_level')} ${bot.level}</span>
+    const isEn = getLang() === 'en';
+
+    listEl.innerHTML = bots.map(bot => {
+      const desc = isEn && bot.descEn ? bot.descEn : bot.desc;
+      return `
+        <div class="p-3 border border-[var(--border-subtle)] hover:border-[var(--border-strong)] rounded-2xl bg-[var(--bg-card)] shadow-sm flex items-center justify-between transition-all">
+          <div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-xl shrink-0">
+              ${renderAvatarSVG(bot.avatar || 'av_prism', 26)}
             </div>
-            <p class="text-[10px] text-[var(--text-secondary)] font-medium line-clamp-1">${bot.desc}</p>
+            <div class="text-left">
+              <div class="flex items-center gap-1.5">
+                <span class="font-black text-[var(--text-primary)] text-xs">${bot.name}</span>
+                <span class="bg-[var(--accent-gold)] text-[var(--text-on-gold)] text-[9px] font-black px-1.5 py-0.5 rounded-md">${t('label_level')} ${bot.level}</span>
+              </div>
+              <p class="text-[10px] text-[var(--text-secondary)] font-medium line-clamp-1">${desc}</p>
+            </div>
           </div>
+          <button data-bot-id="${bot.id}" class="select-bot-btn bg-[var(--accent-gold)] text-[var(--text-on-gold)] hover:brightness-110 font-black text-xs px-3 py-1.5 rounded-xl shadow-sm active:scale-95 transition-transform shrink-0 whitespace-nowrap flex items-center gap-1">
+            <span>${Icons.sword}</span>
+            <span>${t('btn_play')}</span>
+          </button>
         </div>
-        <button data-bot-id="${bot.id}" class="select-bot-btn bg-[var(--accent-gold)] text-[var(--text-on-gold)] hover:brightness-110 font-black text-xs px-3 py-1.5 rounded-xl shadow-sm active:scale-95 transition-transform shrink-0 whitespace-nowrap flex items-center gap-1">
-          <span>${Icons.sword}</span>
-          <span>${t('btn_play')}</span>
-        </button>
-      </div>
-    `).join('');
+      `;
+    }).join('');
 
     listEl.querySelectorAll('.select-bot-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -882,7 +892,7 @@ export const UIManager = {
       if (isCurrent) {
         innerBox.innerHTML = `
           ${milestoneBadge}
-          <div class="absolute -top-7 bg-[var(--accent-gold)] text-[var(--text-on-gold)] font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-md border border-[var(--accent-gold-bright)] flex items-center gap-1 z-30">
+          <div class="absolute -top-7 bg-[var(--bg-app)] border border-[var(--accent-gold)] text-[var(--accent-gold-bright)] font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-md flex items-center gap-1 z-30">
             <span>${renderAvatarSVG(avatar, 14)}</span>
             <span>${t('label_level').toUpperCase()} ${lvl}</span>
           </div>
@@ -1062,10 +1072,12 @@ export const UIManager = {
 
     const purchased = ShopManager.getPurchasedThemes();
     const active = ShopManager.getActiveTheme();
+    const isEn = getLang() === 'en';
 
     listEl.innerHTML = ShopItems.map(item => {
       const isPurchased = purchased.includes(item.id);
       const isActive = active === item.id;
+      const name = isEn && item.nameEn ? item.nameEn : item.name;
 
       let btnText = `${item.price} ${t('label_gold')}`;
       let btnClass = "bg-[var(--accent-gold)] text-[var(--text-on-gold)] hover:brightness-110";
@@ -1085,7 +1097,7 @@ export const UIManager = {
               <div class="w-3.5 h-3.5 rounded-full" style="background-color: ${item.accentColor}"></div>
             </div>
             <div>
-              <p class="font-black text-[var(--text-primary)] text-sm">${item.name}</p>
+              <p class="font-black text-[var(--text-primary)] text-sm">${name}</p>
               <p class="text-[10px] text-[var(--text-secondary)] font-bold">${isPurchased ? t('shop_owned') : t('shop_item')}</p>
             </div>
           </div>
@@ -1115,22 +1127,28 @@ export const UIManager = {
 
     if (!listEl) return;
 
+    const isEn = getLang() === 'en';
+
     listEl.innerHTML = badges.map(b => {
+      const title = isEn && b.titleEn ? b.titleEn : b.title;
+      const desc = isEn && b.descEn ? b.descEn : b.desc;
+      const svgIcon = Icons[b.icon as keyof typeof Icons] || Icons.target;
+
       let statusBtn = `<span class="text-xs font-bold text-[var(--text-secondary)] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] px-3 py-1.5 rounded-xl shrink-0 whitespace-nowrap">${t('label_locked')}</span>`;
 
       if (b.isClaimed) {
         statusBtn = `<span class="text-xs font-bold text-[var(--accent-cyan)] bg-[var(--bg-elevated)] px-3 py-1.5 rounded-xl border border-[var(--border-subtle)] shrink-0 whitespace-nowrap">${t('label_claimed')}</span>`;
       } else if (b.isUnlocked) {
-        statusBtn = `<button data-badge-id="${b.id}" class="claim-badge-btn bg-[var(--accent-gold)] text-[var(--text-on-gold)] hover:brightness-110 font-black text-xs px-3.5 py-1.5 rounded-xl shadow active:scale-95 transition-transform animate-pulse shrink-0 whitespace-nowrap">+${b.rewardGold} 🪙 Al</button>`;
+        statusBtn = `<button data-badge-id="${b.id}" class="claim-badge-btn bg-[var(--accent-gold)] text-[var(--text-on-gold)] hover:brightness-110 font-black text-xs px-3.5 py-1.5 rounded-xl shadow active:scale-95 transition-transform animate-pulse shrink-0 whitespace-nowrap">+${b.rewardGold} ${t('label_gold')}</button>`;
       }
 
       return `
         <div class="p-3 border border-[var(--border-subtle)] rounded-2xl flex justify-between items-center bg-[var(--bg-card)] ${b.isUnlocked ? 'shadow-sm' : 'opacity-60'}">
           <div class="flex items-center gap-3">
-            <span class="text-2xl">${b.icon}</span>
+            <span class="text-xl text-[var(--accent-gold)]">${svgIcon}</span>
             <div>
-              <p class="font-black text-[var(--text-primary)] text-xs">${b.title}</p>
-              <p class="text-[10px] text-[var(--text-secondary)] font-medium">${b.desc}</p>
+              <p class="font-black text-[var(--text-primary)] text-xs">${title}</p>
+              <p class="text-[10px] text-[var(--text-secondary)] font-medium">${desc}</p>
             </div>
           </div>
           <div>${statusBtn}</div>

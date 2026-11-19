@@ -3,6 +3,7 @@ import { UserManager } from '../store/userState';
 export interface ShopItem {
   id: string;
   name: string;
+  nameEn: string;
   price: number;
   type: 'theme';
   previewColor: string;
@@ -10,11 +11,11 @@ export interface ShopItem {
 }
 
 export const ShopItems: ShopItem[] = [
-  { id: 'theme-obsidian', name: 'Obsidyen & Altın', price: 0, type: 'theme', previewColor: '#070D19', accentColor: '#C89B3C' },
-  { id: 'theme-ivory', name: 'Fildişi & Mermer (Gündüz)', price: 150, type: 'theme', previewColor: '#F7F3EA', accentColor: '#A67C2E' },
-  { id: 'theme-shogun', name: 'Kızıl Shogun', price: 250, type: 'theme', previewColor: '#0F090C', accentColor: '#D4A853' },
-  { id: 'theme-cyber', name: 'Siber Akşam', price: 300, type: 'theme', previewColor: '#0B0718', accentColor: '#22D3EE' },
-  { id: 'theme-jade', name: 'Antik Yeşim', price: 350, type: 'theme', previewColor: '#051613', accentColor: '#D4B475' }
+  { id: 'theme-obsidian', name: 'Obsidyen & Altın', nameEn: 'Obsidian & Gold', price: 0, type: 'theme', previewColor: '#070D19', accentColor: '#C89B3C' },
+  { id: 'theme-ivory', name: 'Fildişi & Mermer (Gündüz)', nameEn: 'Ivory & Marble (Daylight)', price: 150, type: 'theme', previewColor: '#F7F3EA', accentColor: '#A67C2E' },
+  { id: 'theme-shogun', name: 'Kızıl Shogun', nameEn: 'Crimson Shogun', price: 250, type: 'theme', previewColor: '#0F090C', accentColor: '#D4A853' },
+  { id: 'theme-cyber', name: 'Siber Akşam', nameEn: 'Cyber Dusk', price: 300, type: 'theme', previewColor: '#0B0718', accentColor: '#22D3EE' },
+  { id: 'theme-jade', name: 'Antik Yeşim', nameEn: 'Ancient Jade', price: 350, type: 'theme', previewColor: '#051613', accentColor: '#D4B475' }
 ];
 
 export const ShopManager = {

@@ -37,7 +37,7 @@ export const profileModalTemplate = `
 
         <!-- Düello ve Oyun İstatistikleri -->
         <div class="mb-3">
-            <h4 class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-wider mb-2 text-left">Oyun & Düello İstatistikleri</h4>
+            <h4 class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-wider mb-2 text-left" data-i18n="profile_stats_header">Oyun & Düello İstatistikleri</h4>
             <div class="grid grid-cols-2 gap-2 mb-2">
                 <div class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl p-2.5 text-center">
                     <p class="text-[9px] text-[var(--text-secondary)] font-bold uppercase" data-i18n="profile_stat_completed">Tamamlanan</p>

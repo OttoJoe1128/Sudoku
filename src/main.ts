@@ -1213,6 +1213,9 @@ document.getElementById('close-saved-games')?.addEventListener('click', () => {
 
 const updateLanguageUI = () => {
   const currentLang = getLang();
+  if (typeof document !== 'undefined' && document.documentElement) {
+    document.documentElement.lang = currentLang;
+  }
   const trOpt = document.getElementById('lang-opt-tr');
   const enOpt = document.getElementById('lang-opt-en');
   if (trOpt && enOpt) {
@@ -1232,14 +1235,20 @@ const updateLanguageUI = () => {
   const titleEl = document.getElementById('menu-player-title');
   if (titleEl) titleEl.innerHTML = renderRankBadgeSVG(currentTitle);
 
+  const mults: Record<SudokuVariant, string> = { classic: '1.0x', wordoku: '1.2x', irregular: '1.5x', killer: '1.8x', samurai: '2.5x' };
+
   const ruleDescCustom = document.getElementById('custom-variant-rule-desc');
   if (ruleDescCustom) ruleDescCustom.innerText = getRuleDescription(selectedCustomVariant);
+  const customBadge = document.getElementById('custom-variant-multiplier-badge');
+  if (customBadge) customBadge.innerText = t('pts_multiplier', { mult: mults[selectedCustomVariant] || '1.0x' });
 
   const ruleDescMap = document.getElementById('map-variant-rule-desc');
   if (ruleDescMap) ruleDescMap.innerText = getRuleDescription(selectedMapVariant);
 
   const ruleDescArena = document.getElementById('arena-variant-rule-desc');
   if (ruleDescArena) ruleDescArena.innerText = getRuleDescription(selectedArenaVariant);
+  const arenaBadge = document.getElementById('arena-variant-multiplier-badge');
+  if (arenaBadge) arenaBadge.innerText = t('pts_multiplier', { mult: mults[selectedArenaVariant] || '1.0x' });
 
   const notesTextEl = document.getElementById('notes-status-text');
   if (notesTextEl) notesTextEl.innerText = isNotesMode ? t('btn_notes_on') : t('btn_notes_off');
@@ -1458,8 +1467,8 @@ let selectedCustomTimeSec: number = 0;
 
     const badge = document.getElementById('custom-variant-multiplier-badge');
     const descEl = document.getElementById('custom-variant-rule-desc');
-    const mults: Record<SudokuVariant, string> = { classic: '1.0x Puan', wordoku: '1.2x Puan', irregular: '1.5x Puan', killer: '1.8x Puan', samurai: '2.5x Puan' };
-    if (badge) badge.innerText = mults[v] || '1.0x Puan';
+    const mults: Record<SudokuVariant, string> = { classic: '1.0x', wordoku: '1.2x', irregular: '1.5x', killer: '1.8x', samurai: '2.5x' };
+    if (badge) badge.innerText = t('pts_multiplier', { mult: mults[v] || '1.0x' });
     if (descEl) descEl.innerText = getRuleDescription(v);
   });
 });
@@ -1568,8 +1577,8 @@ let selectedArenaVariant: SudokuVariant = 'classic';
 
     const badge = document.getElementById('arena-variant-multiplier-badge');
     const descEl = document.getElementById('arena-variant-rule-desc');
-    const mults: Record<SudokuVariant, string> = { classic: '1.0x Puan', wordoku: '1.2x Puan', irregular: '1.5x Puan', killer: '1.8x Puan', samurai: '2.5x Puan' };
-    if (badge) badge.innerText = mults[v] || '1.0x Puan';
+    const mults: Record<SudokuVariant, string> = { classic: '1.0x', wordoku: '1.2x', irregular: '1.5x', killer: '1.8x', samurai: '2.5x' };
+    if (badge) badge.innerText = t('pts_multiplier', { mult: mults[v] || '1.0x' });
     if (descEl) descEl.innerText = getRuleDescription(v);
   });
 });
@@ -1765,8 +1774,10 @@ document.getElementById('tab-arena-lobby')?.addEventListener('click', () => {
   document.getElementById('section-arena-bots')?.classList.add('hidden');
   document.getElementById('section-arena-bots')?.classList.remove('flex');
 
-  document.getElementById('tab-arena-lobby')?.classList.add('bg-white', 'text-indigo-700', 'shadow-sm');
-  document.getElementById('tab-arena-bots')?.classList.remove('bg-white', 'text-indigo-700', 'shadow-sm');
+  const tabLobby = document.getElementById('tab-arena-lobby');
+  const tabBots = document.getElementById('tab-arena-bots');
+  if (tabLobby) tabLobby.className = "flex-1 py-2 rounded-xl font-black text-xs transition-all bg-[var(--bg-card)] text-[var(--accent-gold)] border border-[var(--border-strong)] shadow-sm flex items-center justify-center gap-1.5";
+  if (tabBots) tabBots.className = "flex-1 py-2 rounded-xl font-bold text-xs transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent flex items-center justify-center gap-1.5";
   loadArenaLobbyPlayers();
 });
 
@@ -1776,8 +1787,10 @@ document.getElementById('tab-arena-bots')?.addEventListener('click', () => {
   document.getElementById('section-arena-lobby')?.classList.add('hidden');
   document.getElementById('section-arena-lobby')?.classList.remove('flex');
 
-  document.getElementById('tab-arena-bots')?.classList.add('bg-white', 'text-indigo-700', 'shadow-sm');
-  document.getElementById('tab-arena-lobby')?.classList.remove('bg-white', 'text-indigo-700', 'shadow-sm');
+  const tabLobby = document.getElementById('tab-arena-lobby');
+  const tabBots = document.getElementById('tab-arena-bots');
+  if (tabBots) tabBots.className = "flex-1 py-2 rounded-xl font-black text-xs transition-all bg-[var(--bg-card)] text-[var(--accent-gold)] border border-[var(--border-strong)] shadow-sm flex items-center justify-center gap-1.5";
+  if (tabLobby) tabLobby.className = "flex-1 py-2 rounded-xl font-bold text-xs transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent flex items-center justify-center gap-1.5";
   loadBotCharactersUI(currentArenaDiff);
 });
 
@@ -1819,9 +1832,9 @@ const setupMatchTimeButtons = () => {
       if (!btn) return;
       const sec = parseInt(btn.getAttribute('data-time') || '0');
       if (sec === activeSec) {
-        btn.className = "match-time-btn flex-1 py-1.5 rounded-lg font-black text-[11px] transition-all bg-indigo-600 text-white shadow-sm";
+        btn.className = "match-time-btn flex-1 py-1 rounded-lg font-black text-[10px] transition-all bg-[var(--bg-card)] text-[var(--accent-gold)] border border-[var(--border-strong)] shadow-sm flex items-center justify-center gap-1";
       } else {
-        btn.className = "match-time-btn flex-1 py-1.5 rounded-lg font-bold text-[11px] transition-all text-slate-600 hover:text-slate-900 bg-transparent";
+        btn.className = "match-time-btn flex-1 py-1 rounded-lg font-bold text-[10px] transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent bg-transparent flex items-center justify-center gap-1";
       }
     });
   };
@@ -2009,8 +2022,10 @@ document.getElementById('btn-tab-gold')?.addEventListener('click', () => {
   document.getElementById('speed-diff-filters')?.classList.add('hidden');
   document.getElementById('speed-diff-filters')?.classList.remove('flex');
 
-  document.getElementById('btn-tab-gold')?.classList.add('bg-white', 'text-indigo-700', 'shadow-sm');
-  document.getElementById('btn-tab-speed')?.classList.remove('bg-white', 'text-indigo-700', 'shadow-sm');
+  const tabGold = document.getElementById('btn-tab-gold');
+  const tabSpeed = document.getElementById('btn-tab-speed');
+  if (tabGold) tabGold.className = "flex-1 py-1.5 px-2 rounded-lg font-black text-xs transition-all bg-[var(--bg-card)] text-[var(--accent-gold)] border border-[var(--border-strong)] shadow-sm";
+  if (tabSpeed) tabSpeed.className = "flex-1 py-1.5 px-2 rounded-lg font-bold text-xs transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent bg-transparent";
   loadLeaderboardData();
 });
 
@@ -2021,8 +2036,10 @@ document.getElementById('btn-tab-speed')?.addEventListener('click', async () => 
   document.getElementById('speed-diff-filters')?.classList.remove('hidden');
   document.getElementById('speed-diff-filters')?.classList.add('flex');
 
-  document.getElementById('btn-tab-speed')?.classList.add('bg-white', 'text-indigo-700', 'shadow-sm');
-  document.getElementById('btn-tab-gold')?.classList.remove('bg-white', 'text-indigo-700', 'shadow-sm');
+  const tabGold = document.getElementById('btn-tab-gold');
+  const tabSpeed = document.getElementById('btn-tab-speed');
+  if (tabSpeed) tabSpeed.className = "flex-1 py-1.5 px-2 rounded-lg font-black text-xs transition-all bg-[var(--bg-card)] text-[var(--accent-gold)] border border-[var(--border-strong)] shadow-sm";
+  if (tabGold) tabGold.className = "flex-1 py-1.5 px-2 rounded-lg font-bold text-xs transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent bg-transparent";
   loadLeaderboardData();
 });
 
@@ -2038,9 +2055,9 @@ const updateSortFilterBtns = (activeSort: 'level' | 'gold' | 'pvp_mmr' | 'bot_mm
   Object.entries(sortBtns).forEach(([key, btn]) => {
     if (!btn) return;
     if (key === activeSort) {
-      btn.className = "py-1.5 text-[10px] font-black rounded-xl bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-0.5";
+      btn.className = "py-1.5 text-[10px] font-black rounded-xl bg-[var(--accent-gold)] text-[var(--text-on-gold)] shadow-sm flex items-center justify-center gap-1";
     } else {
-      btn.className = "py-1.5 text-[10px] font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center gap-0.5";
+      btn.className = "py-1.5 text-[10px] font-bold rounded-xl bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] flex items-center justify-center gap-1";
     }
   });
 

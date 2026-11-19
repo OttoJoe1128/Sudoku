@@ -9,7 +9,7 @@ export const achievementsTemplate = `
                     <span>${Icons.crown}</span>
                     <span data-i18n="achievements_modal_title">Başarımlar & Rozetler</span>
                 </h3>
-                <p class="text-xs text-[var(--accent-cyan)] font-semibold flex items-center gap-1 mt-0.5">
+                <p class="text-xs text-[var(--accent-cyan)] font-semibold flex items-center gap-1 mt-0.5" data-i18n="achievements_sub">
                     Özel rozetleri aç, ekstra altın kazan!
                 </p>
             </div>

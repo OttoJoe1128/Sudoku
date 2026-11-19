@@ -1,9 +1,9 @@
-// src/engine/achievements.ts
-
 export interface Badge {
   id: string;
   title: string;
+  titleEn: string;
   desc: string;
+  descEn: string;
   icon: string;
   rewardGold: number;
 }
@@ -12,71 +12,91 @@ export const BADGES: Badge[] = [
   {
     id: 'first_win',
     title: 'İlk Zafer',
+    titleEn: 'First Victory',
     desc: 'İlk Sudoku bulmacanı başarıyla tamamla.',
-    icon: '🎯',
+    descEn: 'Successfully complete your first Sudoku puzzle.',
+    icon: 'target',
     rewardGold: 20
   },
   {
     id: 'level_10',
     title: 'Yolcu',
+    titleEn: 'Traveler',
     desc: 'Seviye 10 ve üzerine ulaş.',
-    icon: '🚶‍♂️',
+    descEn: 'Reach Level 10 and beyond.',
+    icon: 'map',
     rewardGold: 30
   },
   {
     id: 'speed_demon',
     title: 'Hızlı Parmaklar',
+    titleEn: 'Speed Demon',
     desc: 'Herhangi bir bulmacayı 3 dakikanın (180 sn) altında bitir.',
-    icon: '⚡',
+    descEn: 'Finish any puzzle in under 3 minutes (180s).',
+    icon: 'zap',
     rewardGold: 40
   },
   {
     id: 'flawless',
     title: 'Kusursuz Akıl',
+    titleEn: 'Flawless Mind',
     desc: 'Tek bir hata bile yapmadan (0 hata) bir bölüm tamamla.',
-    icon: '💎',
+    descEn: 'Complete a puzzle with 0 errors.',
+    icon: 'crown',
     rewardGold: 50
   },
   {
     id: 'level_50',
     title: 'Sudoku Ustası',
+    titleEn: 'Sudoku Master',
     desc: 'Seviye 50 ve üzerine ulaş.',
-    icon: '🎖️',
+    descEn: 'Reach Level 50 and beyond.',
+    icon: 'trophy',
     rewardGold: 100
   },
   {
     id: 'medium_unlocked',
     title: 'Orta Seviye Fatihi',
+    titleEn: 'Medium Conqueror',
     desc: 'Seviye 301\'e ulaşarak Orta Seviye kilidini aç.',
-    icon: '🏔️',
+    descEn: 'Reach Level 301 to unlock Medium tier.',
+    icon: 'fire',
     rewardGold: 150
   },
   {
     id: 'hard_unlocked',
     title: 'Efsanevi Çözücü',
+    titleEn: 'Legendary Solver',
     desc: 'Seviye 701\'e ulaşarak Zor Seviye kilidini aç.',
-    icon: '🔥',
+    descEn: 'Reach Level 701 to unlock Hard tier.',
+    icon: 'sword',
     rewardGold: 300
   },
   {
     id: 'gold_hoarder',
     title: 'Hazine Avcısı',
+    titleEn: 'Treasure Hunter',
     desc: 'Kasanızda 500 veya daha fazla altın biriktirin.',
-    icon: '💰',
+    descEn: 'Accumulate 500 or more gold in your vault.',
+    icon: 'coin',
     rewardGold: 50
   },
   {
     id: 'puzzle_machine',
     title: 'Bulmaca Canavarı',
+    titleEn: 'Puzzle Machine',
     desc: 'Toplam 10 veya daha fazla bulmaca tamamla.',
-    icon: '👑',
+    descEn: 'Complete 10 or more puzzles in total.',
+    icon: 'dice',
     rewardGold: 80
   },
   {
     id: 'daily_player',
     title: 'Sadık Oyuncu',
+    titleEn: 'Loyal Player',
     desc: 'Günlük ödülünü en az bir kez topla.',
-    icon: '🎁',
+    descEn: 'Claim your daily reward at least once.',
+    icon: 'zap',
     rewardGold: 25
   }
 ];
@@ -175,7 +195,6 @@ export const AchievementManager = {
   },
 
   getAllBadgesWithStatus(level: number, gold: number, totalCompleted: number = 0): BadgeStatus[] {
-    // Önce arka planda otomatik kontrol yap
     this.checkAndUnlockBadges({ level, gold, totalCompleted });
 
     const unlocked = new Set(this.getUnlockedBadgeIds());
