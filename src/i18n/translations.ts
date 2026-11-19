@@ -50,6 +50,7 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     select_time_mode: 'Süre Modu Seç',
     diff_level_label: 'Zorluk Seviyesi',
     time_unlimited: 'Süresiz',
+    time_3m: '3 Dk',
     time_7m: '7 Dk',
     time_3m_bonus: '3 Dk (+%50)',
     time_3m_short: '3 Dakika (Blitz)',
@@ -70,7 +71,7 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     exam_success_title: 'Sınav Başarılı!',
     exam_success_sub: 'Hedeflenen Seviye {level} başarıyla açıldı!',
 
-    // Oyun Ekranı & Samurai Radar
+    // Oyun Ekranı & Samurai Radar & Genel Etiketler
     game_errors: 'Hata: {count}/3',
     btn_hint: 'İpucu (10)',
     btn_notes_off: 'Not: Kapalı',
@@ -87,6 +88,20 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     notes_active_toast: 'Kalem / Not modu aktif!',
     samurai_board_done_toast: 'Bu tahta tamamlandı! Kalan tahtalara geçebilirsiniz.',
     time_expired_custom_toast: 'Süre Doldu! Serbest Mod oyunu sonlandırıldı.',
+    label_time: 'Süre',
+    label_errors: 'Hata',
+    label_reward: 'Ödül',
+    label_ready: 'Hazır',
+    label_level: 'Seviye',
+    label_gold: 'Altın',
+    label_pts: 'Puan',
+    label_all: 'Tümü',
+    btn_continue: 'Devam Et',
+    btn_play_now: 'Oyna',
+    label_locked: 'Kilitli',
+    label_claimed: 'Alındı ✓',
+    label_you: 'Siz',
+    label_rival: 'Rakip',
 
     // Modallar & Dinamik Listeler
     profile_title: 'Oyuncu Profili',
@@ -207,6 +222,7 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     select_time_mode: 'Select Time Mode',
     diff_level_label: 'Difficulty Level',
     time_unlimited: 'Unlimited',
+    time_3m: '3 Min',
     time_7m: '7 Min',
     time_3m_bonus: '3 Min (+50%)',
     time_3m_short: '3 Minutes (Blitz)',
@@ -227,7 +243,7 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     exam_success_title: 'Exam Passed!',
     exam_success_sub: 'Target Level {level} successfully unlocked!',
 
-    // Game View & Samurai Radar
+    // Game View & Samurai Radar & General Labels
     game_errors: 'Errors: {count}/3',
     btn_hint: 'Hint (10)',
     btn_notes_off: 'Notes: Off',
@@ -244,6 +260,20 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     notes_active_toast: 'Pencil / Notes mode active!',
     samurai_board_done_toast: 'This grid is completed! You can switch to remaining grids.',
     time_expired_custom_toast: 'Time Expired! Free Mode game ended.',
+    label_time: 'Time',
+    label_errors: 'Errors',
+    label_reward: 'Reward',
+    label_ready: 'Ready',
+    label_level: 'Level',
+    label_gold: 'Gold',
+    label_pts: 'Pts',
+    label_all: 'All',
+    btn_continue: 'Resume',
+    btn_play_now: 'Play',
+    label_locked: 'Locked',
+    label_claimed: 'Claimed ✓',
+    label_you: 'You',
+    label_rival: 'Rival',
 
     // Modals & Dynamic Lists
     profile_title: 'Player Profile',

@@ -204,7 +204,7 @@ export const UIManager = {
             <div class="w-full flex justify-between items-center mb-3">
                 <button id="btn-back-menu" class="bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] px-3.5 py-1.5 rounded-xl font-bold text-xs text-[var(--text-primary)] transition-colors flex items-center gap-1">
                     <svg class="w-4 h-4 text-[var(--accent-gold)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
-                    <span>Menü</span>
+                    <span data-i18n="btn_menu">Menü</span>
                 </button>
                 <div class="bg-[var(--bg-card)] text-[var(--accent-gold)] px-3 py-1 rounded-xl font-black text-xs border border-[var(--border-strong)] shadow-sm flex items-center gap-1.5">
                     ${Icons.coin}
@@ -230,15 +230,15 @@ export const UIManager = {
             <div class="flex gap-2 mb-3 w-full max-w-[380px] justify-center">
                 <button id="btn-hint" class="flex-1 bg-[var(--accent-gold)] text-[var(--text-on-gold)] hover:brightness-110 py-2.5 px-2 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1.5">
                     ${Icons.hint}
-                    <span>İpucu (10 🪙)</span>
+                    <span data-i18n="btn_hint">İpucu (10)</span>
                 </button>
                 <button id="btn-toggle-notes" class="bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] text-[var(--text-primary)] py-2.5 px-3 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1.5">
                     ${Icons.pen}
-                    <span id="notes-status-text">Not: Kapalı</span>
+                    <span id="notes-status-text" data-i18n="btn_notes_off">Not: Kapalı</span>
                 </button>
                 <button id="btn-erase" class="bg-rose-950/60 border border-rose-500/40 text-rose-300 py-2.5 px-3 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1.5">
                     ${Icons.trash}
-                    <span>Sil</span>
+                    <span data-i18n="btn_erase">Sil</span>
                 </button>
             </div>
 
@@ -330,7 +330,7 @@ export const UIManager = {
 
     if (userBar) userBar.style.width = `${userPct}%`;
     if (enemyBar) enemyBar.style.width = `${enemyPct}%`;
-    if (userNameEl) userNameEl.innerText = `Siz (%${userPct})`;
+    if (userNameEl) userNameEl.innerText = `${t('label_you')} (%${userPct})`;
     if (enemyNameEl) enemyNameEl.innerText = `${enemyName} (%${enemyPct})`;
   },
 
@@ -429,27 +429,19 @@ export const UIManager = {
     if (records.length === 0) {
       listEl.innerHTML = `
         <div class="flex flex-col items-center justify-center py-10 text-center">
-          <svg class="w-10 h-10 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          <p class="text-xs font-bold text-slate-500 mb-0.5">Kayıtlı aktif oyununuz yok</p>
-          <p class="text-[10px] text-slate-400">Yeni bir oyuna başladığınızda yarım kalan ilerlemeniz otomatik buraya kaydedilir.</p>
+          <svg class="w-10 h-10 text-[var(--text-secondary)] opacity-50 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <p class="text-xs font-bold text-[var(--text-primary)] mb-0.5">${t('no_active_games')}</p>
+          <p class="text-[10px] text-[var(--text-secondary)]">${t('no_active_games_desc')}</p>
         </div>
       `;
       return;
     }
 
-    const titleMap: Record<SudokuVariant, string> = {
-      classic: 'Klasik Sudoku',
-      irregular: 'Parçalı Sudoku',
-      killer: 'Hesap Sudoku',
-      wordoku: 'Harfli Sudoku',
-      samurai: 'Samurai Sudoku'
-    };
-
     listEl.innerHTML = records.map(r => {
       const variant = r.variant || 'classic';
       const emblem = this.getVariantEmblemSVG(variant, 20);
       const level = typeof r.level === 'number' ? r.level : 1;
-      const diffStr = r.diff ? r.diff.toUpperCase() : 'BASİT';
+      const diffStr = r.diff ? t('diff_' + r.diff).toUpperCase() : t('diff_basit').toUpperCase();
       const timeSec = typeof r.timeElapsed === 'number' ? r.timeElapsed : 0;
       const m = Math.floor(timeSec / 60).toString().padStart(2, '0');
       const s = (timeSec % 60).toString().padStart(2, '0');
@@ -469,15 +461,15 @@ export const UIManager = {
             </div>
             <div class="text-left">
               <div class="flex items-center gap-1">
-                <p class="font-black text-[var(--text-primary)] text-xs">${titleMap[variant] || 'Klasik Sudoku'}</p>
-                ${!isCustom ? `<span class="bg-[var(--accent-gold)] text-[var(--text-on-gold)] text-[8px] font-black px-1.5 py-0.5 rounded-md">Harita</span>` : `<span class="bg-[var(--accent-cyan)] text-[var(--text-on-gold)] text-[8px] font-black px-1.5 py-0.5 rounded-md">Serbest</span>`}
+                <p class="font-black text-[var(--text-primary)] text-xs">${t('var_' + variant + '_full')}</p>
+                ${!isCustom ? `<span class="bg-[var(--accent-gold)] text-[var(--text-on-gold)] text-[8px] font-black px-1.5 py-0.5 rounded-md">${t('tag_map')}</span>` : `<span class="bg-[var(--accent-cyan)] text-[var(--text-on-gold)] text-[8px] font-black px-1.5 py-0.5 rounded-md">${t('tag_custom')}</span>`}
               </div>
-              <p class="text-[10px] text-[var(--text-secondary)] font-bold">Seviye ${level} • ${diffStr} • ${timeSec > 0 ? `${m}:${s}` : 'Hazır'}</p>
+              <p class="text-[10px] text-[var(--text-secondary)] font-bold">${t('label_level')} ${level} • ${diffStr} • ${timeSec > 0 ? `${m}:${s}` : t('label_ready')}</p>
             </div>
           </div>
           <div class="flex items-center gap-1.5 shrink-0">
             <button data-record-id="${r.id}" class="play-saved-game-btn bg-[var(--accent-gold)] text-[var(--text-on-gold)] font-black text-xs px-3 py-1.5 rounded-xl shadow-sm active:scale-95 transition-transform flex items-center gap-1 hover:brightness-110">
-              <span>▶</span><span>Devam Et</span>
+              <span>▶</span><span>${t('btn_continue')}</span>
             </button>
             ${deleteBtnHTML}
           </div>
@@ -514,9 +506,9 @@ export const UIManager = {
     if (players.length === 0) {
       listEl.innerHTML = `
         <div class="flex flex-col items-center justify-center py-8 text-center">
-          <svg class="w-8 h-8 text-slate-300 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-          <p class="text-xs font-bold text-slate-500 mb-0.5">Çevrimiçi oyuncu bulunamadı</p>
-          <p class="text-[10px] text-slate-400">Rastgele rakip arayabilir veya YZ Botlarla kapışabilirsiniz.</p>
+          <svg class="w-8 h-8 text-[var(--text-secondary)] opacity-50 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+          <p class="text-xs font-bold text-[var(--text-primary)] mb-0.5">Çevrimiçi oyuncu bulunamadı</p>
+          <p class="text-[10px] text-[var(--text-secondary)]">Rastgele rakip arayabilir veya YZ Botlarla kapışabilirsiniz.</p>
         </div>
       `;
       return;
@@ -524,34 +516,34 @@ export const UIManager = {
 
     listEl.innerHTML = players.map(p => {
       const status = p.onlineStatus || 'available';
-      let statusBadge = `<span class="text-[9px] font-black text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-md">🟢 Müsait</span>`;
-      let btnText = `⚔️ Düello Gönder`;
-      let btnClass = `bg-indigo-600 hover:bg-indigo-700 text-white`;
+      let statusBadge = `<span class="text-[9px] font-black text-emerald-400 bg-emerald-950/60 border border-emerald-500/40 px-1.5 py-0.5 rounded-md">${t('status_available')}</span>`;
+      let btnText = `${Icons.sword} ${t('btn_send_duel')}`;
+      let btnClass = `bg-[var(--accent-gold)] text-[var(--text-on-gold)] hover:brightness-110`;
       let isDisabled = false;
 
       if (status === 'in_game') {
-        statusBadge = `<span class="text-[9px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md">🟡 Oyunda</span>`;
-        btnText = `📩 Davet Gönder`;
-        btnClass = `bg-purple-600 hover:bg-purple-700 text-white`;
+        statusBadge = `<span class="text-[9px] font-black text-amber-400 bg-amber-950/60 border border-amber-500/40 px-1.5 py-0.5 rounded-md">${t('status_in_game')}</span>`;
+        btnText = `${Icons.inbox} ${t('btn_send_invite')}`;
+        btnClass = `bg-[var(--accent-cyan)] text-[var(--text-on-gold)] hover:brightness-110`;
       } else if (status === 'in_duel') {
-        statusBadge = `<span class="text-[9px] font-black text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-md">🔴 Düelloda</span>`;
-        btnText = `Maçta`;
-        btnClass = `bg-slate-200 text-slate-400 opacity-60 cursor-not-allowed`;
+        statusBadge = `<span class="text-[9px] font-black text-rose-400 bg-rose-950/60 border border-rose-500/40 px-1.5 py-0.5 rounded-md">${t('status_in_duel')}</span>`;
+        btnText = t('btn_in_match');
+        btnClass = `bg-[var(--bg-elevated)] text-[var(--text-secondary)] opacity-60 cursor-not-allowed`;
         isDisabled = true;
       }
 
       const calculatedTitle = UserManager.calculatePlayerTitle(p.level, p.duel_wins || 0, p.duel_mmr || 1000);
 
       return `
-        <div class="p-2.5 border border-slate-200 hover:border-indigo-300 rounded-2xl bg-white shadow-sm flex items-center justify-between transition-all">
+        <div class="p-2.5 border border-[var(--border-subtle)] hover:border-[var(--border-strong)] rounded-2xl bg-[var(--bg-card)] shadow-sm flex items-center justify-between transition-all">
           <div class="flex items-center gap-2">
-            <div class="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-lg shrink-0">
-              ${p.avatar || '🎮'}
+            <div class="w-9 h-9 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-lg shrink-0">
+              ${renderAvatarSVG(p.avatar || 'av_prism', 24)}
             </div>
             <div class="text-left">
               <div class="flex items-center gap-1.5">
-                <span class="font-black text-slate-800 text-xs">${p.username}</span>
-                <span class="text-[9px] font-black text-indigo-600">${calculatedTitle}</span>
+                <span class="font-black text-[var(--text-primary)] text-xs">${p.username}</span>
+                <span class="text-[9px] font-black text-[var(--accent-gold)]">${renderRankBadgeSVG(calculatedTitle)}</span>
               </div>
               <div class="mt-0.5">${statusBadge}</div>
             </div>
@@ -580,21 +572,22 @@ export const UIManager = {
     if (!listEl) return;
 
     listEl.innerHTML = bots.map(bot => `
-      <div class="p-3 border border-slate-200 hover:border-indigo-300 rounded-2xl bg-white shadow-sm flex items-center justify-between transition-all">
+      <div class="p-3 border border-[var(--border-subtle)] hover:border-[var(--border-strong)] rounded-2xl bg-[var(--bg-card)] shadow-sm flex items-center justify-between transition-all">
         <div class="flex items-center gap-2.5">
-          <div class="w-10 h-10 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-xl shrink-0">
-            ${bot.avatar}
+          <div class="w-10 h-10 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-xl shrink-0">
+            ${renderAvatarSVG(bot.avatar || 'av_prism', 26)}
           </div>
           <div class="text-left">
             <div class="flex items-center gap-1.5">
-              <span class="font-black text-slate-800 text-xs">${bot.name}</span>
-              <span class="bg-indigo-100 text-indigo-800 text-[9px] font-black px-1.5 py-0.5 rounded-md">Sev. ${bot.level}</span>
+              <span class="font-black text-[var(--text-primary)] text-xs">${bot.name}</span>
+              <span class="bg-[var(--accent-gold)] text-[var(--text-on-gold)] text-[9px] font-black px-1.5 py-0.5 rounded-md">${t('label_level')} ${bot.level}</span>
             </div>
-            <p class="text-[10px] text-slate-500 font-medium line-clamp-1">${bot.desc}</p>
+            <p class="text-[10px] text-[var(--text-secondary)] font-medium line-clamp-1">${bot.desc}</p>
           </div>
         </div>
-        <button data-bot-id="${bot.id}" class="select-bot-btn bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs px-3 py-1.5 rounded-xl shadow-sm active:scale-95 transition-transform shrink-0 whitespace-nowrap">
-          ⚔️ Oyna
+        <button data-bot-id="${bot.id}" class="select-bot-btn bg-[var(--accent-gold)] text-[var(--text-on-gold)] hover:brightness-110 font-black text-xs px-3 py-1.5 rounded-xl shadow-sm active:scale-95 transition-transform shrink-0 whitespace-nowrap flex items-center gap-1">
+          <span>${Icons.sword}</span>
+          <span>${t('btn_play')}</span>
         </button>
       </div>
     `).join('');
@@ -988,12 +981,12 @@ export const UIManager = {
     const headerRight = document.getElementById('lb-header-right');
 
     if (headerRight) {
-      if (type === 'level') headerRight.innerText = '🏅 Seviye';
-      else if (type === 'gold') headerRight.innerText = '🪙 Altın';
-      else if (type === 'pvp_mmr') headerRight.innerText = '⚔️ PvP MMR';
-      else if (type === 'bot_mmr') headerRight.innerText = '🤖 YZ MMR';
-      else if (type === 'discipline') headerRight.innerText = '💠 Disiplin';
-      else headerRight.innerText = '⚡ Rekor Süre';
+      if (type === 'level') headerRight.innerText = t('lb_tab_level');
+      else if (type === 'gold') headerRight.innerText = t('lb_tab_gold');
+      else if (type === 'pvp_mmr') headerRight.innerText = t('lb_tab_pvp');
+      else if (type === 'bot_mmr') headerRight.innerText = t('lb_tab_bot');
+      else if (type === 'discipline') headerRight.innerText = t('lb_tab_discipline');
+      else headerRight.innerText = t('tab_fastest_time');
     }
 
     if (!listEl) return;
@@ -1001,13 +994,13 @@ export const UIManager = {
       if (type === 'speed') {
         listEl.innerHTML = `
           <div class="flex flex-col items-center justify-center py-12 text-center">
-            <svg class="w-12 h-12 text-indigo-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <p class="text-xs font-bold text-slate-600 mb-1">Bu zorlukta henüz rekor kırılmadı.</p>
-            <p class="text-[11px] text-slate-400">İlk rekoru kıran sen ol!</p>
+            <svg class="w-12 h-12 text-[var(--text-secondary)] opacity-50 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <p class="text-xs font-bold text-[var(--text-primary)] mb-1">Bu zorlukta henüz rekor kırılmadı.</p>
+            <p class="text-[11px] text-[var(--text-secondary)]">İlk rekoru kıran sen ol!</p>
           </div>
         `;
       } else {
-        listEl.innerHTML = `<div class="text-center text-slate-400 py-10 font-bold">Kayıt bulunamadı.</div>`;
+        listEl.innerHTML = `<div class="text-center text-[var(--text-secondary)] py-10 font-bold">Kayıt bulunamadı.</div>`;
       }
       return;
     }
@@ -1020,33 +1013,33 @@ export const UIManager = {
       const emblem = this.getVariantEmblemSVG(playerObj.dominantVariant || filterVariant, 18);
 
       if (type === 'level') {
-        rightVal = `<span class="flex items-center gap-1">${emblem} 🏅 Sev. ${playerObj.level || 1}</span>`;
+        rightVal = `<span class="flex items-center gap-1">${emblem} ${t('label_level')} ${playerObj.level || 1}</span>`;
       } else if (type === 'gold') {
-        rightVal = `<span class="flex items-center gap-1">${emblem} 🪙 ${playerObj.gold || 0}</span>`;
+        rightVal = `<span class="flex items-center gap-1">${emblem} ${playerObj.gold || 0} ${t('label_gold')}</span>`;
       } else if (type === 'pvp_mmr') {
-        rightVal = `⚔️ ${playerObj.duel_mmr || 1000} MMR`;
+        rightVal = `${playerObj.duel_mmr || 1000} MMR`;
       } else if (type === 'bot_mmr') {
-        rightVal = `🤖 ${playerObj.bot_mmr || 1000} YZ`;
+        rightVal = `${playerObj.bot_mmr || 1000} YZ`;
       } else if (type === 'discipline') {
         const score = playerObj.variantScores ? playerObj.variantScores[filterVariant] || 0 : 0;
-        rightVal = `<span class="flex items-center gap-1">${this.getVariantEmblemSVG(filterVariant, 18)} ${score} Puan</span>`;
+        rightVal = `<span class="flex items-center gap-1">${this.getVariantEmblemSVG(filterVariant, 18)} ${score} ${t('label_pts')}</span>`;
       } else if (isSpeed) {
         const speed = p as SpeedRecord;
-        rightVal = `⚡ ${speed.timeFormatted} (${speed.difficulty.toUpperCase()})`;
+        rightVal = `${speed.timeFormatted} (${speed.difficulty.toUpperCase()})`;
       }
 
       const calculatedTitle = playerObj.title || UserManager.calculatePlayerTitle(playerObj.level || 1, playerObj.duel_wins || 0, playerObj.duel_mmr || 1000);
 
       return `
-        <div data-lb-index="${i}" class="leaderboard-row-item flex justify-between items-center p-3 bg-white border border-slate-200 hover:border-indigo-300 rounded-xl shadow-sm cursor-pointer active:scale-[0.98] transition-all">
+        <div data-lb-index="${i}" class="leaderboard-row-item flex justify-between items-center p-3 bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] rounded-xl shadow-sm cursor-pointer active:scale-[0.98] transition-all">
           <div class="flex items-center gap-2">
-            <span class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center font-black text-xs text-slate-600">${i + 1}</span>
+            <span class="w-6 h-6 rounded-full bg-[var(--bg-elevated)] flex items-center justify-center font-black text-xs text-[var(--text-primary)] border border-[var(--border-subtle)]">${i + 1}</span>
             <div>
-              <p class="font-bold text-slate-800 text-sm leading-tight">${p.username}</p>
-              <p class="text-[9px] font-black text-indigo-600">${calculatedTitle}</p>
+              <p class="font-bold text-[var(--text-primary)] text-sm leading-tight">${p.username}</p>
+              <p class="text-[9px] font-black text-[var(--accent-gold)]">${renderRankBadgeSVG(calculatedTitle)}</p>
             </div>
           </div>
-          <span class="font-black text-indigo-600 text-xs">${rightVal}</span>
+          <span class="font-black text-[var(--accent-gold)] text-xs">${rightVal}</span>
         </div>
       `;
     }).join('');
@@ -1077,10 +1070,10 @@ export const UIManager = {
       let btnClass = "bg-[var(--accent-gold)] text-[var(--text-on-gold)] hover:brightness-110";
 
       if (isActive) {
-        btnText = "Aktif ✓";
+        btnText = t('btn_active');
         btnClass = "bg-[var(--accent-cyan)] text-[var(--text-on-gold)] cursor-default";
       } else if (isPurchased) {
-        btnText = "Kullan";
+        btnText = t('btn_use');
         btnClass = "bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-strong)] hover:bg-[var(--bg-card-hover)]";
       }
 
@@ -1092,7 +1085,7 @@ export const UIManager = {
             </div>
             <div>
               <p class="font-black text-[var(--text-primary)] text-sm">${item.name}</p>
-              <p class="text-[10px] text-[var(--text-secondary)] font-bold">${isPurchased ? 'Satın Alındı' : 'Mağaza Ürünü'}</p>
+              <p class="text-[10px] text-[var(--text-secondary)] font-bold">${isPurchased ? t('shop_owned') : t('shop_item')}</p>
             </div>
           </div>
           <button data-shop-id="${item.id}" class="shop-action-btn ${btnClass} px-4 py-2 rounded-xl font-black text-xs shadow-sm transition-all active:scale-95 shrink-0 whitespace-nowrap">
@@ -1122,21 +1115,21 @@ export const UIManager = {
     if (!listEl) return;
 
     listEl.innerHTML = badges.map(b => {
-      let statusBtn = `<span class="text-xs font-bold text-slate-400 bg-slate-100 px-3 py-1.5 rounded-xl shrink-0 whitespace-nowrap">Kilitli</span>`;
+      let statusBtn = `<span class="text-xs font-bold text-[var(--text-secondary)] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] px-3 py-1.5 rounded-xl shrink-0 whitespace-nowrap">${t('label_locked')}</span>`;
 
       if (b.isClaimed) {
-        statusBtn = `<span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 shrink-0 whitespace-nowrap">Alındı ✓</span>`;
+        statusBtn = `<span class="text-xs font-bold text-[var(--accent-cyan)] bg-[var(--bg-elevated)] px-3 py-1.5 rounded-xl border border-[var(--border-subtle)] shrink-0 whitespace-nowrap">${t('label_claimed')}</span>`;
       } else if (b.isUnlocked) {
-        statusBtn = `<button data-badge-id="${b.id}" class="claim-badge-btn bg-amber-500 hover:bg-amber-600 text-white font-black text-xs px-3.5 py-1.5 rounded-xl shadow active:scale-95 transition-transform animate-pulse shrink-0 whitespace-nowrap">+${b.rewardGold} 🪙 Al</button>`;
+        statusBtn = `<button data-badge-id="${b.id}" class="claim-badge-btn bg-[var(--accent-gold)] text-[var(--text-on-gold)] hover:brightness-110 font-black text-xs px-3.5 py-1.5 rounded-xl shadow active:scale-95 transition-transform animate-pulse shrink-0 whitespace-nowrap">+${b.rewardGold} 🪙 Al</button>`;
       }
 
       return `
-        <div class="p-3 border border-slate-200 rounded-2xl flex justify-between items-center ${b.isUnlocked ? 'bg-white shadow-sm' : 'bg-slate-50 opacity-60'}">
+        <div class="p-3 border border-[var(--border-subtle)] rounded-2xl flex justify-between items-center bg-[var(--bg-card)] ${b.isUnlocked ? 'shadow-sm' : 'opacity-60'}">
           <div class="flex items-center gap-3">
             <span class="text-2xl">${b.icon}</span>
             <div>
-              <p class="font-black text-slate-800 text-xs">${b.title}</p>
-              <p class="text-[10px] text-slate-500 font-medium">${b.desc}</p>
+              <p class="font-black text-[var(--text-primary)] text-xs">${b.title}</p>
+              <p class="text-[10px] text-[var(--text-secondary)] font-medium">${b.desc}</p>
             </div>
           </div>
           <div>${statusBtn}</div>

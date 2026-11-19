@@ -57,7 +57,7 @@ export const matchModalTemplate = `
             <div class="flex gap-1 p-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl">
                 <button id="btn-match-time-3m" data-time="180" class="match-time-btn flex-1 py-1 rounded-lg font-black text-[10px] transition-all bg-[var(--bg-card)] text-[var(--accent-gold)] border border-[var(--border-strong)] shadow-sm flex items-center justify-center gap-1">
                     <span>${Icons.zap}</span>
-                    <span data-i18n="time_7m_short">3 Dk</span>
+                    <span data-i18n="time_3m">3 Dk</span>
                 </button>
                 <button id="btn-match-time-7m" data-time="420" class="match-time-btn flex-1 py-1 rounded-lg font-bold text-[10px] transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center justify-center gap-1">
                     <span>${Icons.timer}</span>
@@ -128,7 +128,7 @@ export const matchModalTemplate = `
 <div id="duel-exit-modal" class="absolute inset-0 bg-slate-900/85 hidden flex-col items-center justify-center z-[92] p-4 backdrop-blur-md">
     <div class="bg-[var(--bg-card)] text-[var(--text-primary)] rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl relative border border-[var(--border-strong)]">
         <div class="w-14 h-14 bg-rose-950/60 border border-rose-500/40 text-rose-400 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3">
-            ⚠️
+            ${Icons.info}
         </div>
         <h3 class="text-xl font-black text-[var(--text-primary)] mb-1" data-i18n="duel_exit_title">Düellodan Çekiliyor Musunuz?</h3>
         <p class="text-xs font-medium text-[var(--text-secondary)] mb-5 leading-relaxed" data-i18n="duel_exit_desc">
@@ -155,17 +155,17 @@ export const matchModalTemplate = `
 
         <div class="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl p-4 flex justify-around items-center mb-4 shadow-inner">
             <div>
-                <p class="text-[10px] text-[var(--text-secondary)] font-bold uppercase" data-i18n="time_unlimited">Süre</p>
+                <p class="text-[10px] text-[var(--text-secondary)] font-bold uppercase" data-i18n="label_time">Süre</p>
                 <p id="match-result-time" class="text-sm font-black text-[var(--text-primary)]">02:30</p>
             </div>
             <div class="w-[1px] h-8 bg-[var(--border-subtle)]"></div>
             <div>
-                <p class="text-[10px] text-[var(--text-secondary)] font-bold uppercase" data-i18n="game_errors">Hata</p>
+                <p class="text-[10px] text-[var(--text-secondary)] font-bold uppercase" data-i18n="label_errors">Hata</p>
                 <p id="match-result-errors" class="text-sm font-black text-[var(--text-primary)]">0 / 3</p>
             </div>
             <div class="w-[1px] h-8 bg-[var(--border-subtle)]"></div>
             <div>
-                <p class="text-[10px] text-[var(--text-secondary)] font-bold uppercase" data-i18n="gold_rewards">Ödül</p>
+                <p class="text-[10px] text-[var(--text-secondary)] font-bold uppercase" data-i18n="label_reward">Ödül</p>
                 <p id="match-result-reward" class="text-sm font-black text-[var(--accent-gold)]">+50 🪙</p>
             </div>
         </div>

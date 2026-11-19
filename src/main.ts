@@ -545,24 +545,17 @@ const startGame = (
     const variantMultEl = document.getElementById('game-variant-multiplier');
     if (variantTitleEl) {
       const emblemSVG = UIManager.getVariantEmblemSVG(currentVariant, 18);
-      const titleMap: Record<SudokuVariant, string> = {
-        classic: 'Klasik Sudoku',
-        irregular: 'Parçalı Sudoku',
-        killer: 'Hesap Sudoku',
-        wordoku: 'Harfli Sudoku',
-        samurai: 'Samurai Sudoku'
-      };
-      variantTitleEl.innerHTML = `${emblemSVG} <span>${titleMap[currentVariant] || 'Klasik Sudoku'}</span>`;
+      variantTitleEl.innerHTML = `${emblemSVG} <span>${t('var_' + currentVariant + '_full')}</span>`;
     }
     if (variantMultEl) {
       const mults: Record<SudokuVariant, string> = {
-        classic: '1.0x Puan',
-        wordoku: '1.2x Puan',
-        irregular: '1.5x Puan',
-        killer: '1.8x Puan',
-        samurai: '2.5x Puan'
+        classic: '1.0x',
+        wordoku: '1.2x',
+        irregular: '1.5x',
+        killer: '1.8x',
+        samurai: '2.5x'
       };
-      variantMultEl.innerText = mults[currentVariant] || '1.0x Puan';
+      variantMultEl.innerText = t('pts_multiplier', { mult: mults[currentVariant] || '1.0x' });
     }
 
     // Düello Modu İlerleme Hesaplama & Canlı Dinleyici
@@ -642,7 +635,7 @@ const startGame = (
 
     const updateErrorUI = () => {
         const errorEl = document.getElementById('game-errors');
-        if (errorEl) errorEl.innerText = `Hata: ${errors}/3`;
+        if (errorEl) errorEl.innerText = t('game_errors', { count: errors });
     };
     updateErrorUI();
 
@@ -685,7 +678,7 @@ const startGame = (
       const { r, c } = selectedCell;
 
       if (userBoard[r][c] !== 0) {
-        UIManager.showToast("Bu hücre tamamlanmıştır, değiştirilemez.", "info");
+        UIManager.showToast(t('cell_locked_toast'), "info");
         return;
       }
 
@@ -718,7 +711,7 @@ const startGame = (
 
                 if (!allDone) {
                   if (currentDone) {
-                    UIManager.showToast("⚔️ Bu tahta tamamlandı! Kalan tahtalara geçebilirsiniz.", "success");
+                    UIManager.showToast(t('samurai_board_done_toast'), "success");
                   }
                   saveActiveGameRecord();
                   refresh();
@@ -882,7 +875,7 @@ const startGame = (
         if (!selectedCell) return;
         const { r, c } = selectedCell;
         if (userBoard[r][c] !== 0) {
-          UIManager.showToast("Bu hücre tamamlanmıştır, silinemez.", "info");
+          UIManager.showToast(t('cell_locked_erase_toast'), "info");
           return;
         }
         notesBoard[r][c].clear();
@@ -1250,6 +1243,14 @@ const updateLanguageUI = () => {
 
   const notesTextEl = document.getElementById('notes-status-text');
   if (notesTextEl) notesTextEl.innerText = isNotesMode ? t('btn_notes_on') : t('btn_notes_off');
+
+  const mult = selectedCustomTimeSec === 180 ? 1.5 : 1.0;
+  const b1 = document.getElementById('badge-custom-basit-reward');
+  const b2 = document.getElementById('badge-custom-orta-reward');
+  const b3 = document.getElementById('badge-custom-zor-reward');
+  if (b1) b1.innerText = `+${Math.round(10 * mult)} ${t('label_gold')}`;
+  if (b2) b2.innerText = `+${Math.round(20 * mult)} ${t('label_gold')}`;
+  if (b3) b3.innerText = `+${Math.round(35 * mult)} ${t('label_gold')}`;
 };
 
 document.getElementById('btn-lang-toggle')?.addEventListener('click', () => {
@@ -1485,9 +1486,9 @@ const setupCustomTimeButtons = () => {
     const b1 = document.getElementById('badge-custom-basit-reward');
     const b2 = document.getElementById('badge-custom-orta-reward');
     const b3 = document.getElementById('badge-custom-zor-reward');
-    if (b1) b1.innerText = `+${Math.round(10 * mult)} Altın`;
-    if (b2) b2.innerText = `+${Math.round(20 * mult)} Altın`;
-    if (b3) b3.innerText = `+${Math.round(35 * mult)} Altın`;
+    if (b1) b1.innerText = `+${Math.round(10 * mult)} ${t('label_gold')}`;
+    if (b2) b2.innerText = `+${Math.round(20 * mult)} ${t('label_gold')}`;
+    if (b3) b3.innerText = `+${Math.round(35 * mult)} ${t('label_gold')}`;
   };
 
   btnNoLimit?.addEventListener('click', () => updateBtns(0));
