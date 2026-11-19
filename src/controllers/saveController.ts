@@ -1,0 +1,267 @@
+import { SavedGameRecord, UIManager } from '../ui/uiManager';
+import { validateSavedGameRecord } from '../engine/saveValidator';
+import { SudokuVariant, SudokuGen, KillerCage } from '../engine/sudoku';
+import { UserManager } from '../store/userState';
+import { t } from '../i18n/translations';
+
+export interface ActiveGameSnapshot {
+  isMatchMode: boolean;
+  isCustomGameMode: boolean;
+  variant: SudokuVariant;
+  level: number;
+  diff: 'basit' | 'orta' | 'zor';
+  timeElapsed: number;
+  userBoard: number[][];
+  initialBoard: number[][];
+  currentSolution: number[][];
+  errors: number;
+  notesBoard?: Set<number>[][];
+  regionMap?: number[][];
+  cages?: KillerCage[];
+  samuraiBoards?: { userBoard: number[][]; initialBoard: number[][]; solution: number[][]; notesBoard: Set<number>[][] }[];
+  activeSamuraiIndex?: number;
+}
+
+export function getSavedGamesList(): SavedGameRecord[] {
+  let customList: SavedGameRecord[] = [];
+
+  try {
+    const raw = localStorage.getItem('sudoku_saved_games_list');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        customList = parsed.filter(item => item && item.isCustomMode && validateSavedGameRecord(item));
+        localStorage.setItem('sudoku_saved_games_list', JSON.stringify(customList));
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
+    const legacyRaw = localStorage.getItem('sudoku_saved_game');
+    if (legacyRaw) {
+      const parsed = JSON.parse(legacyRaw);
+      if (parsed && validateSavedGameRecord(parsed)) {
+        const variant: SudokuVariant = parsed.variant || 'classic';
+        const gameId = `saved_${variant}_${parsed.level || 1}`;
+        const record: SavedGameRecord = {
+          id: gameId,
+          variant,
+          level: parsed.level || 1,
+          diff: parsed.diff || 'basit',
+          timeElapsed: typeof parsed.timeElapsed === 'number' ? parsed.timeElapsed : 0,
+          userBoard: parsed.userBoard,
+          initialBoard: parsed.initialBoard,
+          currentSolution: parsed.currentSolution,
+          errors: typeof parsed.errors === 'number' ? parsed.errors : 0,
+          notesBoard: parsed.notesBoard || [],
+          isCustomMode: true,
+          updatedAtMs: Date.now()
+        };
+        customList.unshift(record);
+        localStorage.setItem('sudoku_saved_games_list', JSON.stringify(customList));
+      }
+      localStorage.removeItem('sudoku_saved_game');
+    }
+  } catch {
+    localStorage.removeItem('sudoku_saved_game');
+  }
+
+  const mapList: SavedGameRecord[] = [];
+
+  const classicLvl = UserManager.getVariantLevel('classic');
+  const classicDiff = SudokuGen.getDifficulty(classicLvl);
+  const classicGameId = `saved_map_classic_${classicLvl}`;
+  let classicRecord: SavedGameRecord = {
+    id: classicGameId,
+    variant: 'classic',
+    level: classicLvl,
+    diff: classicDiff,
+    timeElapsed: 0,
+    userBoard: [],
+    initialBoard: [],
+    currentSolution: [],
+    errors: 0,
+    notesBoard: [],
+    isCustomMode: false,
+    updatedAtMs: Date.now()
+  };
+
+  try {
+    const rawClassicMap = localStorage.getItem(`sudoku_map_save_classic_${classicLvl}`);
+    if (rawClassicMap) {
+      const p = JSON.parse(rawClassicMap);
+      if (validateSavedGameRecord(p)) {
+        classicRecord.timeElapsed = p.timeElapsed || 0;
+        classicRecord.userBoard = p.userBoard;
+        classicRecord.initialBoard = p.initialBoard;
+        classicRecord.currentSolution = p.currentSolution;
+        classicRecord.errors = p.errors || 0;
+        classicRecord.notesBoard = p.notesBoard || [];
+      } else {
+        localStorage.removeItem(`sudoku_map_save_classic_${classicLvl}`);
+      }
+    }
+  } catch {
+    localStorage.removeItem(`sudoku_map_save_classic_${classicLvl}`);
+  }
+  mapList.push(classicRecord);
+
+  const otherVariants: SudokuVariant[] = ['irregular', 'killer', 'wordoku', 'samurai'];
+  otherVariants.forEach(v => {
+    const userLvl = UserManager.getVariantLevel(v);
+    const diff = SudokuGen.getDifficulty(userLvl);
+    const gameId = `saved_map_${v}_${userLvl}`;
+
+    try {
+      const rawMap = localStorage.getItem(`sudoku_map_save_${v}_${userLvl}`);
+      if (rawMap) {
+        const p = JSON.parse(rawMap);
+        if (validateSavedGameRecord(p)) {
+          mapList.push({
+            id: gameId,
+            variant: v,
+            level: userLvl,
+            diff,
+            timeElapsed: p.timeElapsed || 0,
+            userBoard: p.userBoard,
+            initialBoard: p.initialBoard,
+            currentSolution: p.currentSolution,
+            errors: p.errors || 0,
+            notesBoard: p.notesBoard || [],
+            regionMap: p.regionMap,
+            cages: p.cages,
+            samuraiBoards: p.samuraiBoards,
+            activeSamuraiIndex: p.activeSamuraiIndex,
+            isCustomMode: false,
+            updatedAtMs: Date.now()
+          });
+        } else {
+          localStorage.removeItem(`sudoku_map_save_${v}_${userLvl}`);
+        }
+      }
+    } catch {
+      localStorage.removeItem(`sudoku_map_save_${v}_${userLvl}`);
+    }
+  });
+
+  return [...mapList, ...customList];
+}
+
+export function updateSavedGamesCountUI(): void {
+  const classicLvl = UserManager.getVariantLevel('classic');
+  const totalCount = getSavedGamesList().length;
+  const countLabel = document.getElementById('saved-games-count-label');
+  if (countLabel) {
+    countLabel.innerText = t('menu_active_games_count', { level: classicLvl, count: totalCount });
+  }
+}
+
+export function saveActiveGameRecord(snapshot: ActiveGameSnapshot): void {
+  if (snapshot.isMatchMode || !snapshot.userBoard || !snapshot.initialBoard) return;
+  try {
+    const safeNotes = snapshot.notesBoard ? snapshot.notesBoard.map(row => (
+      row ? row.map(s => (s && typeof s.values === 'function' ? Array.from(s) : Array.isArray(s) ? s : [])) : []
+    )) : [];
+
+    const safeSamuraiBoards = snapshot.variant === 'samurai' && snapshot.samuraiBoards && snapshot.samuraiBoards.length === 5 ? snapshot.samuraiBoards.map(b => ({
+      userBoard: b.userBoard,
+      initialBoard: b.initialBoard,
+      solution: b.solution,
+      notesBoard: b.notesBoard.map(row => row.map(s => (s && typeof s.values === 'function' ? Array.from(s) : Array.isArray(s) ? s : [])))
+    })) : undefined;
+
+    if (!snapshot.isCustomGameMode) {
+      localStorage.setItem(`sudoku_map_save_${snapshot.variant}_${snapshot.level}`, JSON.stringify({
+        variant: snapshot.variant,
+        level: snapshot.level,
+        diff: snapshot.diff,
+        timeElapsed: snapshot.timeElapsed,
+        userBoard: snapshot.userBoard,
+        initialBoard: snapshot.initialBoard,
+        currentSolution: snapshot.currentSolution,
+        errors: snapshot.errors,
+        notesBoard: safeNotes,
+        regionMap: snapshot.regionMap,
+        cages: snapshot.cages,
+        samuraiBoards: safeSamuraiBoards,
+        activeSamuraiIndex: snapshot.variant === 'samurai' ? snapshot.activeSamuraiIndex : undefined,
+        updatedAtMs: Date.now()
+      }));
+    } else {
+      const list = getSavedGamesList().filter(item => item.isCustomMode);
+      const gameId = `saved_custom_${snapshot.variant}_${snapshot.level}`;
+      const record: SavedGameRecord = {
+        id: gameId,
+        variant: snapshot.variant,
+        level: snapshot.level,
+        diff: snapshot.diff,
+        timeElapsed: snapshot.timeElapsed,
+        userBoard: snapshot.userBoard,
+        initialBoard: snapshot.initialBoard,
+        currentSolution: snapshot.currentSolution,
+        errors: snapshot.errors,
+        notesBoard: safeNotes,
+        regionMap: snapshot.regionMap,
+        cages: snapshot.cages,
+        samuraiBoards: safeSamuraiBoards,
+        activeSamuraiIndex: snapshot.variant === 'samurai' ? snapshot.activeSamuraiIndex : undefined,
+        isCustomMode: true,
+        updatedAtMs: Date.now()
+      };
+
+      const idx = list.findIndex(item => item.id === gameId);
+      if (idx >= 0) {
+        list[idx] = record;
+      } else {
+        list.unshift(record);
+      }
+
+      localStorage.setItem('sudoku_saved_games_list', JSON.stringify(list));
+    }
+
+    updateSavedGamesCountUI();
+  } catch (e) {
+    console.error("Aktif oyun kaydı saklanamadı:", e);
+  }
+}
+
+export function deleteSavedGameRecord(gameId: string): void {
+  let list = getSavedGamesList().filter(i => i.isCustomMode);
+  list = list.filter(item => item.id !== gameId);
+  localStorage.setItem('sudoku_saved_games_list', JSON.stringify(list));
+  updateSavedGamesCountUI();
+}
+
+export function clearSavedGame(variant: SudokuVariant, level: number): void {
+  localStorage.removeItem(`sudoku_map_save_${variant}_${level}`);
+  deleteSavedGameRecord(`saved_custom_${variant}_${level}`);
+}
+
+export function openSavedGamesModal(onPlaySavedGame: (record: SavedGameRecord) => void): void {
+  const list = getSavedGamesList();
+  UIManager.toggleModal('view-saved-games', true);
+  UIManager.renderSavedGamesList(
+    list,
+    (record) => {
+      UIManager.toggleModal('view-saved-games', false);
+      onPlaySavedGame(record);
+    },
+    (record) => {
+      deleteSavedGameRecord(record.id);
+      openSavedGamesModal(onPlaySavedGame);
+      UIManager.showToast("🗑️ Kayıtlı oyun silindi.", "info");
+    }
+  );
+}
+
+export function initSaveController(callbacks: { onPlaySavedGame: (record: SavedGameRecord) => void }): void {
+  document.getElementById('btn-open-saved-games')?.addEventListener('click', () => {
+    openSavedGamesModal(callbacks.onPlaySavedGame);
+  });
+
+  document.getElementById('close-saved-games')?.addEventListener('click', () => {
+    UIManager.toggleModal('view-saved-games', false);
+  });
+}
