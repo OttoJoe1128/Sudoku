@@ -5,6 +5,8 @@ import { getLang, setLang, t, applyStaticTranslations } from './i18n/translation
 import { validateSavedGameRecord } from './engine/saveValidator';
 import { saveActiveGameRecord, clearSavedGame, updateSavedGamesCountUI, initSaveController, ActiveGameSnapshot } from './controllers/saveController';
 import { initMapController, getSelectedMapVariant } from './controllers/mapController';
+import { initArenaController, getSelectedArenaVariant, getSelectedMatchTimeSec, handleIncomingChallenge, triggerExpertBotMatch } from './controllers/arenaController';
+import { initModalsController, getSelectedCustomVariant, getSelectedCustomTimeSec, openPlayerProfile, updateBadgeNotificationDot } from './controllers/modalsController';
 import { GameEngine } from './engine/gameEngine';
 import { SudokuGen, SudokuVariant, GeneratedSudoku, IRREGULAR_TEMPLATES, KillerCage } from './engine/sudoku';
 import { UserManager } from './store/userState';
@@ -921,15 +923,6 @@ document.getElementById('btn-close-match-result')?.addEventListener('click', () 
   UIManager.navigate('menu');
 });
 
-document.addEventListener('click', (e) => {
-    const target = (e.target as HTMLElement).closest('[data-level]');
-    if (target) {
-        const level = parseInt(target.getAttribute('data-level')!);
-        const diff = SudokuGen.getDifficulty(level);
-        startGame(level, diff, undefined, undefined, getSelectedMapVariant());
-    }
-});
-
 // Etkileşimli Sembol Bilgi Popover Dinleyicisi
 document.addEventListener('click', (e) => {
   const target = (e.target as HTMLElement).closest('[data-variant-info]');
@@ -937,54 +930,6 @@ document.addEventListener('click', (e) => {
     const v = target.getAttribute('data-variant-info') as SudokuVariant;
     if (v) UIManager.showVariantSymbolInfo(v);
   }
-});
-
-// Canlı Düello Davet Dinleyicisi
-const handleIncomingChallenge = (challenge: ChallengeRequest) => {
-  UIManager.renderIncomingChallengePopup(
-    challenge,
-    async () => {
-      const match = await MatchEngine.respondToChallenge(challenge.challengeId, true, challenge);
-      if (match) {
-        UIManager.showToast('⚔️ Düello başladı!', 'success');
-        startGame(1, challenge.difficulty, match);
-      }
-    },
-    async () => {
-      await MatchEngine.respondToChallenge(challenge.challengeId, false, challenge);
-      UIManager.showToast('Düello daveti reddedildi.', 'info');
-    }
-  );
-};
-
-// Gelen Kutusu (Inbox) Yükleme ve İşleme
-const loadInboxData = async () => {
-  const challenges = await MatchEngine.fetchPendingChallenges();
-  UIManager.renderInbox(
-    challenges,
-    async (challenge) => {
-      const match = await MatchEngine.respondToChallenge(challenge.challengeId, true, challenge);
-      if (match) {
-        UIManager.toggleModal('view-inbox', false);
-        UIManager.showToast(`⚔️ ${challenge.fromUsername} ile düello başladı!`, 'success');
-        startGame(1, challenge.difficulty, match);
-      }
-    },
-    async (challenge) => {
-      await MatchEngine.respondToChallenge(challenge.challengeId, false, challenge);
-      UIManager.showToast('Düello daveti reddedildi.', 'info');
-      loadInboxData();
-    }
-  );
-};
-
-document.getElementById('btn-open-inbox')?.addEventListener('click', () => {
-  UIManager.toggleModal('view-inbox', true);
-  loadInboxData();
-});
-
-document.getElementById('close-inbox')?.addEventListener('click', () => {
-  UIManager.toggleModal('view-inbox', false);
 });
 
 const updateLanguageUI = () => {
@@ -1013,24 +958,28 @@ const updateLanguageUI = () => {
 
   const mults: Record<SudokuVariant, string> = { classic: '1.0x', wordoku: '1.2x', irregular: '1.5x', killer: '1.8x', samurai: '2.5x' };
 
-  const ruleDescCustom = document.getElementById('custom-variant-rule-desc');
-  if (ruleDescCustom) ruleDescCustom.innerText = getRuleDescription(selectedCustomVariant);
-  const customBadge = document.getElementById('custom-variant-multiplier-badge');
-  if (customBadge) customBadge.innerText = t('pts_multiplier', { mult: mults[selectedCustomVariant] || '1.0x' });
-
+  const customVariant = getSelectedCustomVariant();
+  const customTimeSec = getSelectedCustomTimeSec();
   const mapVariant = getSelectedMapVariant();
+  const arenaVariant = getSelectedArenaVariant();
+
+  const ruleDescCustom = document.getElementById('custom-variant-rule-desc');
+  if (ruleDescCustom) ruleDescCustom.innerText = getRuleDescription(customVariant);
+  const customBadge = document.getElementById('custom-variant-multiplier-badge');
+  if (customBadge) customBadge.innerText = t('pts_multiplier', { mult: mults[customVariant] || '1.0x' });
+
   const ruleDescMap = document.getElementById('map-variant-rule-desc');
   if (ruleDescMap) ruleDescMap.innerText = getRuleDescription(mapVariant);
 
   const ruleDescArena = document.getElementById('arena-variant-rule-desc');
-  if (ruleDescArena) ruleDescArena.innerText = getRuleDescription(selectedArenaVariant);
+  if (ruleDescArena) ruleDescArena.innerText = getRuleDescription(arenaVariant);
   const arenaBadge = document.getElementById('arena-variant-multiplier-badge');
-  if (arenaBadge) arenaBadge.innerText = t('pts_multiplier', { mult: mults[selectedArenaVariant] || '1.0x' });
+  if (arenaBadge) arenaBadge.innerText = t('pts_multiplier', { mult: mults[arenaVariant] || '1.0x' });
 
   const notesTextEl = document.getElementById('notes-status-text');
   if (notesTextEl) notesTextEl.innerText = isNotesMode ? t('btn_notes_on') : t('btn_notes_off');
 
-  const mult = selectedCustomTimeSec === 180 ? 1.5 : 1.0;
+  const mult = customTimeSec === 180 ? 1.5 : 1.0;
   const b1 = document.getElementById('badge-custom-basit-reward');
   const b2 = document.getElementById('badge-custom-orta-reward');
   const b3 = document.getElementById('badge-custom-zor-reward');
@@ -1074,7 +1023,7 @@ const checkUser = async () => {
         startGame(1, acceptedChal.difficulty, acceptedChal.matchData);
       }
     });
-    MatchEngine.listenIncomingChallenges((chal) => handleIncomingChallenge(chal));
+    MatchEngine.listenIncomingChallenges((chal) => handleIncomingChallenge(chal, (level, diff, matchData, variant) => startGame(level, diff, matchData, undefined, variant)));
   }
 };
 
@@ -1102,782 +1051,65 @@ document.getElementById('close-username-modal')?.addEventListener('click', () =>
   }
 });
 
-// Modal: Profil & Avatar Seçimi
-let currentlyViewedTargetUid: string | undefined = undefined;
-let currentlyViewedTargetUsername: string | undefined = undefined;
-
-const openPlayerProfile = async (targetData?: any) => {
-  UIManager.toggleModal('view-profile', true);
-
-  const currentUsername = UserManager.getUsername();
-  const isOwn = !targetData || targetData.username === currentUsername;
-  let stats: any;
-
-  if (isOwn) {
-    stats = await UserManager.getUserProfileStats();
-    currentlyViewedTargetUid = undefined;
-    currentlyViewedTargetUsername = undefined;
-  } else {
-    currentlyViewedTargetUid = targetData.uid || targetData.username || 'target';
-    currentlyViewedTargetUsername = targetData.username || 'Oyuncu';
-    stats = await UserManager.getUserProfileStats(currentlyViewedTargetUid);
-    stats.username = currentlyViewedTargetUsername;
-    stats.avatar = targetData.avatar || stats.avatar || '🎮';
-  }
-
-  const badges = AchievementManager.getAllBadgesWithStatus(stats.level, stats.gold, stats.totalCompleted);
-  UIManager.renderProfileModal(stats, badges, isOwn);
-
-  if (isOwn) {
-    // Avatar Butonları Dinleyicisi
-    document.querySelectorAll('.avatar-option-btn').forEach(btn => {
-      (btn as HTMLElement).onclick = async (e: Event) => {
-        const newAvatar = (e.currentTarget as HTMLElement).getAttribute('data-avatar');
-        if (newAvatar) {
-          await UserManager.updateProfileCustomization(newAvatar, UserManager.getTitle());
-          const avatarBox = document.getElementById('menu-avatar-box');
-          if (avatarBox) avatarBox.innerHTML = renderAvatarSVG(newAvatar, 28);
-          UIManager.showToast("Avatar güncellendi!", "success");
-          openPlayerProfile();
-        }
-      };
-    });
-  }
-};
-
-document.getElementById('btn-open-profile')?.addEventListener('click', async () => {
-  openPlayerProfile();
-});
-
-document.getElementById('close-profile')?.addEventListener('click', () => {
-  UIManager.toggleModal('view-profile', false);
-});
-
-document.getElementById('btn-profile-edit-name')?.addEventListener('click', () => {
-  UIManager.toggleModal('view-profile', false);
-  const input = document.getElementById('username-input') as HTMLInputElement;
-  const closeBtn = document.getElementById('close-username-modal');
-  if (input) input.value = UserManager.getUsername() || '';
-  if (closeBtn) closeBtn.classList.remove('hidden');
-  UIManager.toggleModal('username-modal', true);
-});
-
-document.getElementById('btn-profile-open-achievements')?.addEventListener('click', () => {
-  UIManager.toggleModal('view-profile', false);
-  document.getElementById('btn-achievements')?.click();
-});
-
-// Bildirim Toggle Dinleyicisi
-document.getElementById('toggle-notifications')?.addEventListener('change', async (e) => {
-  const checked = (e.target as HTMLInputElement).checked;
-  if (checked) {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      const permission = await Notification.requestPermission();
-      if (permission === 'granted') {
-        UserManager.saveNotificationsEnabled(true);
-        UIManager.showToast('🔔 Canlı düello bildirimleri açıldı!', 'success');
-        MatchEngine.listenIncomingChallenges((chal) => handleIncomingChallenge(chal));
-      } else {
-        (e.target as HTMLInputElement).checked = false;
-        UserManager.saveNotificationsEnabled(false);
-        UIManager.showToast('⚠️ Bildirim izni verilmedi.', 'error');
-      }
-    } else {
-      UserManager.saveNotificationsEnabled(true);
-      UIManager.showToast('🔔 Düello bildirimleri aktif!', 'success');
-    }
-  } else {
-    UserManager.saveNotificationsEnabled(false);
-    UIManager.showToast('🔕 Bildirimler kapatıldı.', 'info');
-  }
-});
-
-// Başka Bir Oyuncuya Çift Taraflı Düello İsteği Gönder (Önce Süre Modu Seçilir)
-document.getElementById('btn-challenge-player')?.addEventListener('click', () => {
-  const targetUsername = currentlyViewedTargetUsername || document.getElementById('profile-username')?.innerText || 'Oyuncu';
-  const targetUid = currentlyViewedTargetUid || targetUsername;
-
-  if (!targetUid || targetUsername === UserManager.getUsername()) {
-    return UIManager.showToast("Kendi profilinize davet gönderemezsiniz.", "info");
-  }
-
-  UIManager.renderChallengeDurationSelectModal(targetUsername, async (durationSec) => {
-    try {
-      await MatchEngine.sendDirectChallenge(targetUid, targetUsername, 'basit', durationSec, selectedArenaVariant);
-      const modeText = durationSec > 0 ? `${Math.floor(durationSec / 60)} Dk` : 'Süresiz';
-      UIManager.showToast(`⚔️ Düello daveti (${modeText}) ${targetUsername} adlı oyuncunun gelen kutusuna gönderildi!`, 'success');
-      UIManager.toggleModal('view-profile', false);
-    } catch (e: any) {
-      console.warn("Düello davet gönderme yetki hatası:", e);
-      UIManager.toggleModal('view-profile', false);
-
-      UIManager.renderBotFallbackPromptModal(
-        () => {
-          const expertBot = BotCharacters.find(b => b.level === 300) || BotCharacters[0];
-          startBotMatch(expertBot);
-        },
-        () => {
-          UIManager.navigate('menu');
-        }
-      );
-    }
-  });
-});
-
-// Serbest Mod Disiplin ve Süre Seçiciler & Başlat Butonları
-let selectedCustomVariant: SudokuVariant = 'classic';
-let selectedCustomTimeSec: number = 0;
-
-(['classic', 'irregular', 'killer', 'wordoku', 'samurai'] as SudokuVariant[]).forEach(v => {
-  document.getElementById(`btn-variant-${v}`)?.addEventListener('click', () => {
-    selectedCustomVariant = v;
-    (['classic', 'irregular', 'killer', 'wordoku', 'samurai'] as SudokuVariant[]).forEach(other => {
-      const btn = document.getElementById(`btn-variant-${other}`);
-      if (btn) {
-        if (other === v) {
-          btn.className = "custom-variant-btn p-2 rounded-xl bg-[var(--bg-card)] text-[var(--accent-gold)] border border-[var(--border-strong)] shadow-sm flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform";
-        } else {
-          btn.className = "custom-variant-btn p-2 rounded-xl bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-card)] flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform";
-        }
-      }
-    });
-
-    const badge = document.getElementById('custom-variant-multiplier-badge');
-    const descEl = document.getElementById('custom-variant-rule-desc');
-    const mults: Record<SudokuVariant, string> = { classic: '1.0x', wordoku: '1.2x', irregular: '1.5x', killer: '1.8x', samurai: '2.5x' };
-    if (badge) badge.innerText = t('pts_multiplier', { mult: mults[v] || '1.0x' });
-    if (descEl) descEl.innerText = getRuleDescription(v);
-  });
-});
-
-// Serbest Mod Süre Seçici Dinleyicileri
-const setupCustomTimeButtons = () => {
-  const btnNoLimit = document.getElementById('btn-custom-time-no-limit');
-  const btn7m = document.getElementById('btn-custom-time-7m');
-  const btn3m = document.getElementById('btn-custom-time-3m');
-
-  const updateBtns = (sec: number) => {
-    selectedCustomTimeSec = sec;
-    [btnNoLimit, btn7m, btn3m].forEach(b => {
-      if (!b) return;
-      const bSec = parseInt(b.getAttribute('data-time') || '0');
-      if (bSec === sec) {
-        b.className = "custom-time-btn flex-1 py-1.5 rounded-xl font-black text-[10px] transition-all bg-[var(--bg-card)] text-[var(--accent-gold)] border border-[var(--border-strong)] shadow-sm flex items-center justify-center gap-1";
-      } else {
-        b.className = "custom-time-btn flex-1 py-1.5 rounded-xl font-bold text-[10px] transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-transparent flex items-center justify-center gap-1";
-      }
-    });
-
-    const mult = sec === 180 ? 1.5 : 1.0;
-    const b1 = document.getElementById('badge-custom-basit-reward');
-    const b2 = document.getElementById('badge-custom-orta-reward');
-    const b3 = document.getElementById('badge-custom-zor-reward');
-    if (b1) b1.innerText = `+${Math.round(10 * mult)} ${t('label_gold')}`;
-    if (b2) b2.innerText = `+${Math.round(20 * mult)} ${t('label_gold')}`;
-    if (b3) b3.innerText = `+${Math.round(35 * mult)} ${t('label_gold')}`;
-  };
-
-  btnNoLimit?.addEventListener('click', () => updateBtns(0));
-  btn7m?.addEventListener('click', () => updateBtns(420));
-  btn3m?.addEventListener('click', () => updateBtns(180));
-};
-setupCustomTimeButtons();
-
-// Serbest Mod Zorluk Kartları Tıklama Dinleyicileri (#btn-custom-basit, #btn-custom-orta, #btn-custom-zor)
-document.getElementById('btn-custom-basit')?.addEventListener('click', () => {
-  const userLvl = UserManager.getVariantLevel(selectedCustomVariant);
-  startGame(userLvl, 'basit', undefined, undefined, selectedCustomVariant, true, selectedCustomTimeSec);
-});
-
-document.getElementById('btn-custom-orta')?.addEventListener('click', () => {
-  const userLvl = Math.max(301, UserManager.getVariantLevel(selectedCustomVariant));
-  startGame(userLvl, 'orta', undefined, undefined, selectedCustomVariant, true, selectedCustomTimeSec);
-});
-
-document.getElementById('btn-custom-zor')?.addEventListener('click', () => {
-  const userLvl = Math.max(701, UserManager.getVariantLevel(selectedCustomVariant));
-  startGame(userLvl, 'zor', undefined, undefined, selectedCustomVariant, true, selectedCustomTimeSec);
-});
-
-// Bilgilendirme Modalı (ℹ️) Dinleyicileri
-document.getElementById('btn-custom-info')?.addEventListener('click', () => {
-  UIManager.showRulesAndScoringModal('custom');
-});
-
-document.getElementById('btn-arena-info')?.addEventListener('click', () => {
-  UIManager.showRulesAndScoringModal('arena');
-});
-
-// Düello Arenası Disiplin Seçici Dinleyicileri
-let selectedArenaVariant: SudokuVariant = 'classic';
-
-(['classic', 'irregular', 'killer', 'wordoku', 'samurai'] as SudokuVariant[]).forEach(v => {
-  document.getElementById(`arena-variant-${v}`)?.addEventListener('click', () => {
-    selectedArenaVariant = v;
-    (['classic', 'irregular', 'killer', 'wordoku', 'samurai'] as SudokuVariant[]).forEach(other => {
-      const btn = document.getElementById(`arena-variant-${other}`);
-      if (btn) {
-        if (other === v) {
-          btn.className = "arena-variant-btn p-1.5 rounded-xl bg-[var(--bg-card)] text-[var(--accent-gold)] border border-[var(--border-strong)] shadow-sm flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform";
-        } else {
-          btn.className = "arena-variant-btn p-1.5 rounded-xl bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-card)] flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform";
-        }
-      }
-    });
-
-    const badge = document.getElementById('arena-variant-multiplier-badge');
-    const descEl = document.getElementById('arena-variant-rule-desc');
-    const mults: Record<SudokuVariant, string> = { classic: '1.0x', wordoku: '1.2x', irregular: '1.5x', killer: '1.8x', samurai: '2.5x' };
-    if (badge) badge.innerText = t('pts_multiplier', { mult: mults[v] || '1.0x' });
-    if (descEl) descEl.innerText = getRuleDescription(v);
-  });
-});
-
-// AI Bot Karakterleri & Eşleşme Mantığı
-let currentArenaDiff: 'basit' | 'orta' | 'zor' = 'basit';
-let arenaUnsubLobby: (() => void) | null = null;
-
-const startBotMatch = (bot: BotCharacter) => {
-  UIManager.toggleModal('match-search-modal', false);
-
-  const currentUsername = UserManager.getUsername() || 'Oyuncu';
-  const currentUid = auth.currentUser ? auth.currentUser.uid : `user_${Date.now()}`;
-  const generated = SudokuGen.generateVariant(bot.difficulty, selectedArenaVariant);
-
-  const matchData: MatchState = {
-    matchId: `match_${Date.now()}`,
-    difficulty: bot.difficulty,
-    variant: selectedArenaVariant,
-    durationSec: selectedMatchTimeSec,
-    puzzle: generated.puzzle,
-    solution: generated.solution,
-    status: 'in_progress',
-    player1: {
-      uid: currentUid,
-      username: currentUsername,
-      isBot: false,
-      progress: 0,
-      errors: 0
-    },
-    player2: {
-      uid: bot.id,
-      username: `${bot.avatar} ${bot.name} (${bot.title})`,
-      isBot: true,
-      progress: 0,
-      errors: 0
-    }
-  };
-
-  startGame(bot.level, bot.difficulty, matchData, undefined, selectedArenaVariant);
-
-  const enemyName = `${bot.avatar} ${bot.name}`;
-  MatchEngine.startBotAI(bot.difficulty, async (botProgress) => {
-    matchEnemyFilled = botProgress;
-    UIManager.renderMatchProgress(matchUserFilled, matchEnemyFilled, enemyName, matchTotalEmpty);
-
-    if (matchEnemyFilled >= matchTotalEmpty && isMatchMode) {
-      if (timerInterval) clearInterval(timerInterval);
-      isMatchMode = false;
-      MatchEngine.clearActiveMatch();
-      UIManager.hideMatchHeader();
-      await UserManager.recordDuelResult(false, true, -15, 0);
-      showMatchResult(false, 0, enemyName);
-    }
-  }, bot.speedMs);
-};
-
-const startSimulatedMatch = (targetPlayer: Player) => {
-  UIManager.toggleModal('match-search-modal', false);
-
-  const currentUsername = UserManager.getUsername() || 'Oyuncu';
-  const currentUid = auth.currentUser ? auth.currentUser.uid : `user_${Date.now()}`;
-  const generated = SudokuGen.generateVariant(currentArenaDiff, selectedArenaVariant);
-
-  const matchData: MatchState = {
-    matchId: `match_${Date.now()}`,
-    difficulty: currentArenaDiff,
-    variant: selectedArenaVariant,
-    durationSec: selectedMatchTimeSec,
-    puzzle: generated.puzzle,
-    solution: generated.solution,
-    status: 'in_progress',
-    player1: {
-      uid: currentUid,
-      username: currentUsername,
-      isBot: false,
-      progress: 0,
-      errors: 0
-    },
-    player2: {
-      uid: targetPlayer.uid || `sim_${targetPlayer.username}`,
-      username: `${targetPlayer.avatar || '🎮'} ${targetPlayer.username} (${targetPlayer.title || 'Çırak'})`,
-      isBot: true,
-      progress: 0,
-      errors: 0
-    }
-  };
-
-  startGame(targetPlayer.level || 1, currentArenaDiff, matchData, undefined, selectedArenaVariant);
-
-  const enemyName = `${targetPlayer.avatar || '🎮'} ${targetPlayer.username}`;
-  const simSpeed = currentArenaDiff === 'basit' ? 3200 : currentArenaDiff === 'orta' ? 2400 : 1800;
-
-  MatchEngine.startBotAI(currentArenaDiff, async (botProgress) => {
-    matchEnemyFilled = botProgress;
-    UIManager.renderMatchProgress(matchUserFilled, matchEnemyFilled, enemyName, matchTotalEmpty);
-
-    if (matchEnemyFilled >= matchTotalEmpty && isMatchMode) {
-      if (timerInterval) clearInterval(timerInterval);
-      isMatchMode = false;
-      MatchEngine.clearActiveMatch();
-      UIManager.hideMatchHeader();
-      await UserManager.recordDuelResult(false, true, -15, 0);
-      showMatchResult(false, 0, enemyName);
-    }
-  }, simSpeed);
-};
-
-const loadArenaLobbyPlayers = () => {
-  if (arenaUnsubLobby) arenaUnsubLobby();
-
-  try {
-    const q = query(
-      collection(db, 'leaderboard'),
-      limit(30)
-    );
-    arenaUnsubLobby = onSnapshot(q, (snap) => {
-      const list: Player[] = [];
-      const myUsername = UserManager.getUsername();
-      snap.docs.forEach((docSnap) => {
-        const d = docSnap.data();
-        if (d.username !== myUsername) {
-          const level = typeof d.level === 'number' ? d.level : 1;
-          const wins = typeof d.duel_wins === 'number' ? d.duel_wins : 0;
-          const mmr = typeof d.duel_mmr === 'number' ? d.duel_mmr : 1000;
-          const completed = typeof d.total_completed === 'number' ? d.total_completed : 0;
-          const title = UserManager.calculatePlayerTitle(level, wins, mmr, completed);
-
-          list.push({
-            uid: d.uid || docSnap.id,
-            username: d.username || 'Oyuncu',
-            gold: d.gold || 100,
-            level,
-            avatar: d.avatar || '🎮',
-            title,
-            duel_wins: wins,
-            duel_mmr: mmr,
-            total_completed: completed,
-            onlineStatus: d.onlineStatus || 'available',
-            lastSeenMs: d.lastSeenMs
-          } as any);
-        }
-      });
-
-      // Simüle canlı lobi oyuncularını ekle
-      SIMULATED_LOBBY_PLAYERS.forEach(sim => {
-        if (!list.some(p => p.username === sim.username)) {
-          const title = UserManager.calculatePlayerTitle(sim.level, sim.duel_wins || 0, sim.duel_mmr || 1000, sim.total_completed || 0);
-          list.push({ ...sim, title });
-        }
-      });
-
-      UIManager.renderLobbyPlayers(list, async (targetPlayer) => {
-        const modeText = selectedMatchTimeSec > 0 ? `${Math.floor(selectedMatchTimeSec / 60)} Dk` : 'Süresiz';
-        UIManager.showToast(`📩 ${targetPlayer.username} davetini inceliyor (${modeText})...`, 'info');
-
-        setTimeout(() => {
-          UIManager.showToast(`⚔️ ${targetPlayer.username} davetini kabul etti! Düello başlıyor...`, 'success');
-          startSimulatedMatch(targetPlayer);
-        }, 1800);
-      });
-    });
-  } catch (e) {
-    console.warn("Lobi oyuncuları dinlenemedi:", e);
-  }
-};
-
-const loadBotCharactersUI = (diff: 'basit' | 'orta' | 'zor') => {
-  currentArenaDiff = diff;
-  const filtered = BotCharacters.filter(b => b.difficulty === diff);
-
-  ['basit', 'orta', 'zor'].forEach(d => {
-    const btn = document.getElementById(`btn-diff-${d}`);
-    if (btn) {
-      if (d === diff) {
-        let bgClass = "bg-emerald-600";
-        if (d === 'orta') bgClass = "bg-amber-600";
-        if (d === 'zor') bgClass = "bg-rose-600";
-        btn.className = `arena-diff-btn flex-1 py-1 rounded-lg font-black text-[10px] transition-all ${bgClass} text-white shadow-sm`;
-      } else {
-        btn.className = "arena-diff-btn flex-1 py-1 rounded-lg font-bold text-[10px] transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent bg-transparent";
-      }
-    }
-  });
-
-  UIManager.renderBotCharacters(filtered, (selectedBot) => startBotMatch(selectedBot));
-};
-
-// Arena Sekme Değişim Dinleyicileri
-document.getElementById('tab-arena-lobby')?.addEventListener('click', () => {
-  document.getElementById('section-arena-lobby')?.classList.remove('hidden');
-  document.getElementById('section-arena-lobby')?.classList.add('flex');
-  document.getElementById('section-arena-bots')?.classList.add('hidden');
-  document.getElementById('section-arena-bots')?.classList.remove('flex');
-
-  const tabLobby = document.getElementById('tab-arena-lobby');
-  const tabBots = document.getElementById('tab-arena-bots');
-  if (tabLobby) tabLobby.className = "flex-1 py-2 rounded-xl font-black text-xs transition-all bg-[var(--bg-card)] text-[var(--accent-gold)] border border-[var(--border-strong)] shadow-sm flex items-center justify-center gap-1.5";
-  if (tabBots) tabBots.className = "flex-1 py-2 rounded-xl font-bold text-xs transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent flex items-center justify-center gap-1.5";
-  loadArenaLobbyPlayers();
-});
-
-document.getElementById('tab-arena-bots')?.addEventListener('click', () => {
-  document.getElementById('section-arena-bots')?.classList.remove('hidden');
-  document.getElementById('section-arena-bots')?.classList.add('flex');
-  document.getElementById('section-arena-lobby')?.classList.add('hidden');
-  document.getElementById('section-arena-lobby')?.classList.remove('flex');
-
-  const tabLobby = document.getElementById('tab-arena-lobby');
-  const tabBots = document.getElementById('tab-arena-bots');
-  if (tabBots) tabBots.className = "flex-1 py-2 rounded-xl font-black text-xs transition-all bg-[var(--bg-card)] text-[var(--accent-gold)] border border-[var(--border-strong)] shadow-sm flex items-center justify-center gap-1.5";
-  if (tabLobby) tabLobby.className = "flex-1 py-2 rounded-xl font-bold text-xs transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent flex items-center justify-center gap-1.5";
-  loadBotCharactersUI(currentArenaDiff);
-});
-
-document.getElementById('btn-diff-basit')?.addEventListener('click', () => loadBotCharactersUI('basit'));
-document.getElementById('btn-diff-orta')?.addEventListener('click', () => loadBotCharactersUI('orta'));
-document.getElementById('btn-diff-zor')?.addEventListener('click', () => loadBotCharactersUI('zor'));
-
-// Modal: Düello / Maç Açılışı
-document.getElementById('btn-open-match')?.addEventListener('click', () => {
-  UIManager.toggleModal('match-search-modal', true);
-  loadArenaLobbyPlayers();
-  loadBotCharactersUI(currentArenaDiff);
-});
-
-document.getElementById('close-match-search')?.addEventListener('click', () => {
-  if (arenaUnsubLobby) {
-    arenaUnsubLobby();
-    arenaUnsubLobby = null;
-  }
-  MatchEngine.clearActiveMatch();
-  const box = document.getElementById('match-search-status-box');
-  if (box) box.classList.add('hidden');
-  UIManager.toggleModal('match-search-modal', false);
-});
-
-document.getElementById('btn-quick-online-match')?.addEventListener('click', () => {
-  startMatchWithDiff(currentArenaDiff);
-});
-
-// Düello Süre Seçim Butonları
-const setupMatchTimeButtons = () => {
-  const btn3m = document.getElementById('btn-match-time-3m');
-  const btn7m = document.getElementById('btn-match-time-7m');
-  const btnNoLimit = document.getElementById('btn-match-time-no-limit');
-
-  const updateTimeBtns = (activeSec: number) => {
-    selectedMatchTimeSec = activeSec;
-    [btn3m, btn7m, btnNoLimit].forEach(btn => {
-      if (!btn) return;
-      const sec = parseInt(btn.getAttribute('data-time') || '0');
-      if (sec === activeSec) {
-        btn.className = "match-time-btn flex-1 py-1 rounded-lg font-black text-[10px] transition-all bg-[var(--bg-card)] text-[var(--accent-gold)] border border-[var(--border-strong)] shadow-sm flex items-center justify-center gap-1";
-      } else {
-        btn.className = "match-time-btn flex-1 py-1 rounded-lg font-bold text-[10px] transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent bg-transparent flex items-center justify-center gap-1";
-      }
-    });
-  };
-
-  btn3m?.addEventListener('click', () => updateTimeBtns(180));
-  btn7m?.addEventListener('click', () => updateTimeBtns(420));
-  btnNoLimit?.addEventListener('click', () => updateTimeBtns(0));
-};
-setupMatchTimeButtons();
-
-const startMatchWithDiff = (diff: 'basit' | 'orta' | 'zor') => {
-  const box = document.getElementById('match-search-status-box');
-  const textEl = document.getElementById('match-search-status-text');
-
-  if (box) box.classList.remove('hidden');
-
-  MatchEngine.startMatchSearch(
-    diff,
-    (match) => {
-      UIManager.toggleModal('match-search-modal', false);
-      if (box) box.classList.add('hidden');
-      startGame(1, diff, match, undefined, selectedArenaVariant);
-    },
-    (statusText) => {
-      if (textEl) textEl.innerText = statusText;
-    },
-    selectedArenaVariant
-  );
-};
-
-// Ana Menü Buton Bağlantıları & Kayıtlı Oyunu Sürdürme
-document.getElementById('btn-continue-game')?.addEventListener('click', () => {
-    const saved = localStorage.getItem('sudoku_saved_game');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        startGame(parsed.level, parsed.diff, undefined, parsed, parsed.variant || 'classic');
-        UIManager.showToast("▶ Kayıtlı oyuna devam ediliyor!", "success");
-        return;
-      } catch {
-        clearCurrentSavedGame();
-      }
-    }
-    const userLvl = UserManager.getCurrentLevel();
-    const diff = SudokuGen.getDifficulty(userLvl);
-    startGame(userLvl, diff, undefined, undefined, 'classic');
-});
-
-document.getElementById('btn-delete-saved-game')?.addEventListener('click', (e) => {
-  e.stopPropagation();
-  clearCurrentSavedGame();
-  UIManager.showToast("🗑️ Kayıtlı oyun sıfırlandı.", "info");
-});
-
-document.getElementById('btn-new-game')?.addEventListener('click', () => {
-    UIManager.navigate('custom');
-});
-
-// Controller Bağlantıları (Save & Map Controllers)
-initSaveController({
-  onPlaySavedGame: (record) => {
-    startGame(record.level, record.diff, undefined, record, record.variant);
-    UIManager.showToast(`▶ Kayıtlı ${record.variant.toUpperCase()} oyununa devam ediliyor!`, "success");
-  }
-});
-
-initMapController({
-  onStartLevel: (level, diff, variant) => {
-    startGame(level, diff, undefined, undefined, variant);
+// Controller Bağlantıları (Arena & Modals Controllers)
+initArenaController({
+  onStartMatchGame: (level, diff, matchData, variant) => {
+    startGame(level, diff, matchData, undefined, variant);
   },
-  onBackToMenu: () => {
-    updateSavedGamesCountUI();
-    UIManager.navigate('menu');
+  onBotMatchProgress: async (botProgress, enemyName) => {
+    matchEnemyFilled = botProgress;
+    UIManager.renderMatchProgress(matchUserFilled, matchEnemyFilled, enemyName, matchTotalEmpty);
+
+    if (matchEnemyFilled >= matchTotalEmpty && isMatchMode) {
+      if (timerInterval) clearInterval(timerInterval);
+      isMatchMode = false;
+      MatchEngine.clearActiveMatch();
+      UIManager.hideMatchHeader();
+      await UserManager.recordDuelResult(false, true, -15, 0);
+      showMatchResult(false, 0, enemyName);
+    }
   },
   getRuleDescription
 });
 
-// Özel Zorluk Seçim Ekranı Butonları
-document.getElementById('btn-back-custom')?.addEventListener('click', () => {
+initModalsController({
+  onStartCustomGame: (level, diff, variant, timeLimitSec) => {
+    startGame(level, diff, undefined, undefined, variant, true, timeLimitSec);
+  },
+  onStartPlacementExam: (diff) => {
+    let targetLevel = diff === 'basit' ? 1 : diff === 'orta' ? 301 : 701;
+    startGame(targetLevel, diff, undefined, undefined, 'classic', false);
+  },
+  onStartLevelDirect: (level, diff) => {
+    startGame(level, diff, undefined, undefined, 'classic', false);
+  },
+  onUpdateGoldDisplay: () => {
+    updateGoldDisplay();
+  },
+  onUpdateSavedGamesUI: () => {
     updateSavedGamesCountUI();
-    UIManager.navigate('menu');
-});
+  },
+  onTriggerExpertBotMatch: () => {
+    triggerExpertBotMatch(
+      (level, diff, matchData, variant) => startGame(level, diff, matchData, undefined, variant),
+      async (botProgress, enemyName) => {
+        matchEnemyFilled = botProgress;
+        UIManager.renderMatchProgress(matchUserFilled, matchEnemyFilled, enemyName, matchTotalEmpty);
 
-// Günlük Ödül
-document.getElementById('btn-daily-reward')?.addEventListener('click', async () => {
-    const result = await Rewards.claimReward();
-    UIManager.showToast(result.message, result.success ? "success" : "info");
-    if (result.success) {
-        updateGoldDisplay();
-        AchievementManager.checkAndUnlockBadges({
-            level: UserManager.getCurrentLevel(),
-            gold: UserManager.getGold(),
-            dailyClaimed: true
-        });
-    }
-});
-
-// Modallar: Liderlik Tablosu & Filtreleme & Oyuncu Profili Açma
-let currentLeaderboardType: 'level' | 'gold' | 'pvp_mmr' | 'bot_mmr' | 'speed' | 'discipline' = 'level';
-let currentLeaderboardVariant: SudokuVariant = 'classic';
-
-const loadLeaderboardData = async () => {
-  if (currentLeaderboardType === 'speed') {
-    const records = await Leaderboard.fetchFastestRecords('all');
-    UIManager.renderLeaderboard(records, 'speed', (p) => openPlayerProfile(p), currentLeaderboardVariant);
-  } else if (currentLeaderboardType === 'discipline') {
-    const players = await Leaderboard.fetchTopPlayers('level');
-    players.sort((a, b) => {
-      const scoreA = a.variantScores ? a.variantScores[currentLeaderboardVariant] || 0 : 0;
-      const scoreB = b.variantScores ? b.variantScores[currentLeaderboardVariant] || 0 : 0;
-      return scoreB - scoreA;
-    });
-    UIManager.renderLeaderboard(players, 'discipline', (p) => openPlayerProfile(p), currentLeaderboardVariant);
-  } else {
-    const players = await Leaderboard.fetchTopPlayers(currentLeaderboardType);
-    UIManager.renderLeaderboard(players, currentLeaderboardType, (p) => openPlayerProfile(p), currentLeaderboardVariant);
-  }
-};
-
-document.getElementById('btn-leaderboard')?.addEventListener('click', async () => {
-  UIManager.toggleModal('view-leaderboard', true);
-  loadLeaderboardData();
-});
-
-document.getElementById('close-leaderboard')?.addEventListener('click', () => {
-  UIManager.toggleModal('view-leaderboard', false);
-});
-
-document.getElementById('refresh-leaderboard')?.addEventListener('click', () => {
-  loadLeaderboardData();
-});
-
-// Sekme Dinleyicileri
-document.getElementById('btn-tab-gold')?.addEventListener('click', () => {
-  currentLeaderboardType = 'level';
-  document.getElementById('general-sort-filters')?.classList.remove('hidden');
-  document.getElementById('general-sort-filters')?.classList.add('grid');
-  document.getElementById('speed-diff-filters')?.classList.add('hidden');
-  document.getElementById('speed-diff-filters')?.classList.remove('flex');
-
-  const tabGold = document.getElementById('btn-tab-gold');
-  const tabSpeed = document.getElementById('btn-tab-speed');
-  if (tabGold) tabGold.className = "flex-1 py-1.5 px-2 rounded-lg font-black text-xs transition-all bg-[var(--bg-card)] text-[var(--accent-gold)] border border-[var(--border-strong)] shadow-sm";
-  if (tabSpeed) tabSpeed.className = "flex-1 py-1.5 px-2 rounded-lg font-bold text-xs transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent bg-transparent";
-  loadLeaderboardData();
-});
-
-document.getElementById('btn-tab-speed')?.addEventListener('click', async () => {
-  currentLeaderboardType = 'speed';
-  document.getElementById('general-sort-filters')?.classList.add('hidden');
-  document.getElementById('general-sort-filters')?.classList.remove('grid');
-  document.getElementById('speed-diff-filters')?.classList.remove('hidden');
-  document.getElementById('speed-diff-filters')?.classList.add('flex');
-
-  const tabGold = document.getElementById('btn-tab-gold');
-  const tabSpeed = document.getElementById('btn-tab-speed');
-  if (tabSpeed) tabSpeed.className = "flex-1 py-1.5 px-2 rounded-lg font-black text-xs transition-all bg-[var(--bg-card)] text-[var(--accent-gold)] border border-[var(--border-strong)] shadow-sm";
-  if (tabGold) tabGold.className = "flex-1 py-1.5 px-2 rounded-lg font-bold text-xs transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent bg-transparent";
-  loadLeaderboardData();
-});
-
-const updateSortFilterBtns = (activeSort: 'level' | 'gold' | 'pvp_mmr' | 'bot_mmr') => {
-  currentLeaderboardType = activeSort;
-  const sortBtns = {
-    level: document.getElementById('btn-sort-level'),
-    gold: document.getElementById('btn-sort-gold'),
-    pvp_mmr: document.getElementById('btn-sort-pvp-mmr'),
-    bot_mmr: document.getElementById('btn-sort-bot-mmr')
-  };
-
-  Object.entries(sortBtns).forEach(([key, btn]) => {
-    if (!btn) return;
-    if (key === activeSort) {
-      btn.className = "py-1.5 text-[10px] font-black rounded-xl bg-[var(--accent-gold)] text-[var(--text-on-gold)] shadow-sm flex items-center justify-center gap-1";
-    } else {
-      btn.className = "py-1.5 text-[10px] font-bold rounded-xl bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] flex items-center justify-center gap-1";
-    }
-  });
-
-  loadLeaderboardData();
-};
-
-document.getElementById('btn-sort-level')?.addEventListener('click', () => updateSortFilterBtns('level'));
-document.getElementById('btn-sort-gold')?.addEventListener('click', () => updateSortFilterBtns('gold'));
-document.getElementById('btn-sort-pvp-mmr')?.addEventListener('click', () => updateSortFilterBtns('pvp_mmr'));
-document.getElementById('btn-sort-bot-mmr')?.addEventListener('click', () => updateSortFilterBtns('bot_mmr'));
-
-document.querySelectorAll('.speed-filter-btn').forEach(btn => {
-  btn.addEventListener('click', async (e) => {
-    const target = e.currentTarget as HTMLElement;
-    const diff = target.getAttribute('data-diff') as any;
-
-    document.querySelectorAll('.speed-filter-btn').forEach(other => {
-      if (other === target) {
-        other.className = "speed-filter-btn flex-1 py-1 text-[11px] font-black rounded-lg bg-[var(--accent-gold)] text-[var(--text-on-gold)] shadow-sm";
-      } else {
-        other.className = "speed-filter-btn flex-1 py-1 text-[11px] font-bold rounded-lg bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]";
+        if (matchEnemyFilled >= matchTotalEmpty && isMatchMode) {
+          if (timerInterval) clearInterval(timerInterval);
+          isMatchMode = false;
+          MatchEngine.clearActiveMatch();
+          UIManager.hideMatchHeader();
+          await UserManager.recordDuelResult(false, true, -15, 0);
+          showMatchResult(false, 0, enemyName);
+        }
       }
-    });
-
-    const records = await Leaderboard.fetchFastestRecords(diff || 'all');
-    UIManager.renderLeaderboard(records, 'speed', (p) => openPlayerProfile(p), currentLeaderboardVariant);
-  });
-});
-
-// Modallar: Mağaza
-const openAndRenderShop = () => {
-  UIManager.renderShop(async (itemId) => {
-    const result = await ShopManager.buyItem(itemId);
-    UIManager.showToast(result.msg, result.success ? "success" : "error");
-    if (result.success) {
-      updateGoldDisplay();
-      UIManager.applyTheme(ShopManager.getActiveTheme());
-      openAndRenderShop();
-    }
-  });
-};
-
-document.getElementById('btn-shop')?.addEventListener('click', () => {
-  UIManager.toggleModal('view-shop', true);
-  openAndRenderShop();
-});
-
-document.getElementById('close-shop')?.addEventListener('click', () => {
-  UIManager.toggleModal('view-shop', false);
-});
-
-// Modallar: Başarımlar / Rozetler
-const updateBadgeNotificationDot = (unclaimedCount: number) => {
-  const dot = document.getElementById('badge-notify-dot');
-  if (dot) {
-    if (unclaimedCount > 0) dot.classList.remove('hidden');
-    else dot.classList.add('hidden');
-  }
-};
-
-const openAndRenderAchievements = () => {
-  const badges = AchievementManager.getAllBadgesWithStatus(
-    UserManager.getCurrentLevel(),
-    UserManager.getGold()
-  );
-
-  const unclaimedCount = badges.filter(b => b.isUnlocked && !b.isClaimed).length;
-  updateBadgeNotificationDot(unclaimedCount);
-
-  UIManager.renderAchievements(badges, async (badgeId) => {
-    const claimResult = AchievementManager.claimBadgeReward(badgeId);
-    UIManager.showToast(claimResult.message, claimResult.success ? "success" : "info");
-    if (claimResult.success) {
-      const newGold = UserManager.getGold() + claimResult.goldAdded;
-      await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
-      updateGoldDisplay();
-      openAndRenderAchievements();
-    }
-  });
-};
-
-document.getElementById('btn-achievements')?.addEventListener('click', () => {
-  UIManager.toggleModal('view-achievements', true);
-  openAndRenderAchievements();
-});
-
-document.getElementById('close-achievements')?.addEventListener('click', () => {
-  UIManager.toggleModal('view-achievements', false);
-});
-
-// Seviye Belirleme Sınavı Modalı
-const openPlacementModal = () => {
-  UIManager.toggleModal('placement-modal', true);
-};
-
-document.getElementById('btn-menu-placement-test')?.addEventListener('click', openPlacementModal);
-document.getElementById('btn-open-placement-test')?.addEventListener('click', openPlacementModal);
-document.getElementById('close-placement-modal')?.addEventListener('click', () => {
-  UIManager.toggleModal('placement-modal', false);
-});
-document.getElementById('btn-skip-placement')?.addEventListener('click', () => {
-  UIManager.toggleModal('placement-modal', false);
-});
-
-document.getElementById('btn-placement-basit')?.addEventListener('click', () => {
-  UIManager.toggleModal('placement-modal', false);
-  startGame(1, 'basit');
-});
-
-document.getElementById('btn-placement-orta')?.addEventListener('click', () => {
-  UIManager.toggleModal('placement-modal', false);
-  startGame(301, 'orta');
-});
-
-document.getElementById('btn-placement-zor')?.addEventListener('click', () => {
-  UIManager.toggleModal('placement-modal', false);
-  startGame(701, 'zor');
+    );
+  },
+  getSelectedArenaVariant,
+  getRuleDescription,
+  onHandleIncomingChallenge: (chal) => handleIncomingChallenge(chal, (level, diff, matchData, variant) => startGame(level, diff, matchData, undefined, variant))
 });
 
 // Heartbeat Presence Zamanlayıcısı (Her 30 saniyede bir)
