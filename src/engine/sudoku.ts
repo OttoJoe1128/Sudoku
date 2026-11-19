@@ -102,6 +102,70 @@ const BASE_SUDOKU_SOLUTION: number[][] = [
   [9,7,8, 3,1,2, 6,4,5]
 ];
 
+// 5 Adet %100 Matematiksel Geçerli Kenetlenmiş Samurai Taban Çözümü
+const BASE_SAMURAI_SOLUTIONS: number[][][] = [
+  // 0: Merkez
+  [
+    [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    [4, 5, 6, 7, 8, 9, 1, 2, 3],
+    [7, 8, 9, 1, 2, 3, 4, 5, 6],
+    [2, 3, 1, 5, 6, 4, 8, 9, 7],
+    [5, 6, 4, 8, 9, 7, 2, 3, 1],
+    [8, 9, 7, 2, 3, 1, 5, 6, 4],
+    [3, 1, 2, 6, 4, 5, 9, 7, 8],
+    [6, 4, 5, 9, 7, 8, 3, 1, 2],
+    [9, 7, 8, 3, 1, 2, 6, 4, 5]
+  ],
+  // 1: Sol-Üst (Sağ-Alt 3x3 = Merkez Sol-Üst 3x3)
+  [
+    [9, 4, 1, 8, 5, 3, 6, 7, 2],
+    [3, 8, 2, 6, 1, 7, 5, 9, 4],
+    [6, 5, 7, 4, 9, 2, 8, 3, 1],
+    [4, 7, 5, 3, 6, 9, 2, 1, 8],
+    [1, 2, 3, 7, 8, 4, 9, 6, 5],
+    [8, 9, 6, 1, 2, 5, 3, 4, 7],
+    [7, 6, 9, 5, 4, 8, 1, 2, 3],
+    [2, 3, 8, 9, 7, 1, 4, 5, 6],
+    [5, 1, 4, 2, 3, 6, 7, 8, 9]
+  ],
+  // 2: Sağ-Üst (Sol-Alt 3x3 = Merkez Sağ-Üst 3x3)
+  [
+    [5, 1, 2, 3, 7, 4, 8, 9, 6],
+    [6, 7, 4, 2, 8, 9, 5, 1, 3],
+    [9, 3, 8, 1, 6, 5, 4, 2, 7],
+    [2, 4, 7, 6, 9, 3, 1, 5, 8],
+    [8, 9, 5, 4, 1, 7, 6, 3, 2],
+    [3, 6, 1, 8, 5, 2, 7, 4, 9],
+    [7, 8, 9, 5, 2, 1, 3, 6, 4],
+    [1, 2, 3, 7, 4, 6, 9, 8, 5],
+    [4, 5, 6, 9, 3, 8, 2, 7, 1]
+  ],
+  // 3: Sol-Alt (Sağ-Üst 3x3 = Merkez Sol-Alt 3x3)
+  [
+    [7, 6, 9, 4, 5, 8, 3, 1, 2],
+    [3, 8, 2, 7, 9, 1, 6, 4, 5],
+    [1, 5, 4, 3, 6, 2, 9, 7, 8],
+    [2, 1, 6, 5, 7, 3, 4, 8, 9],
+    [9, 3, 8, 2, 4, 6, 7, 5, 1],
+    [5, 4, 7, 8, 1, 9, 2, 3, 6],
+    [4, 9, 1, 6, 8, 7, 5, 2, 3],
+    [8, 2, 5, 9, 3, 4, 1, 6, 7],
+    [6, 7, 3, 1, 2, 5, 8, 9, 4]
+  ],
+  // 4: Sağ-Alt (Sol-Üst 3x3 = Merkez Sağ-Alt 3x3)
+  [
+    [9, 7, 8, 3, 1, 4, 6, 2, 5],
+    [3, 1, 2, 8, 5, 6, 7, 9, 4],
+    [6, 4, 5, 7, 2, 9, 3, 8, 1],
+    [2, 3, 6, 1, 4, 7, 8, 5, 9],
+    [4, 5, 9, 6, 8, 2, 1, 7, 3],
+    [7, 8, 1, 5, 9, 3, 4, 6, 2],
+    [5, 6, 4, 2, 3, 8, 9, 1, 7],
+    [8, 2, 3, 9, 7, 1, 5, 4, 6],
+    [1, 9, 7, 4, 6, 5, 2, 3, 8]
+  ]
+];
+
 export class SudokuGen {
   static getStartLevelForDifficulty(diff: 'basit' | 'orta' | 'zor'): number {
     if (diff === 'basit') return 1;
@@ -135,29 +199,44 @@ export class SudokuGen {
 
   static generateVariant(difficulty: string, variant: SudokuVariant = 'classic'): GeneratedSudoku {
     if (variant === 'samurai') {
-      const center = this.generate(difficulty);
-      const topLeft = this.generate(difficulty);
-      const topRight = this.generate(difficulty);
-      const bottomLeft = this.generate(difficulty);
-      const bottomRight = this.generate(difficulty);
+      const perm = [1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5);
+      const targetRemoves = difficulty === 'basit' ? 24 : difficulty === 'orta' ? 34 : 44;
 
+      const samuraiGrids = BASE_SAMURAI_SOLUTIONS.map(baseSol => {
+        const solution = baseSol.map(row => row.map(num => perm[num - 1]));
+        const puzzle = solution.map(row => [...row]);
+
+        const positions: { r: number; c: number }[] = [];
+        for (let r = 0; r < 9; r++) {
+          for (let c = 0; c < 9; c++) {
+            positions.push({ r, c });
+          }
+        }
+        positions.sort(() => Math.random() - 0.5);
+        for (let i = 0; i < targetRemoves && i < positions.length; i++) {
+          const { r, c } = positions[i];
+          puzzle[r][c] = 0;
+        }
+
+        return { puzzle, solution };
+      });
+
+      const center = samuraiGrids[0];
+      const topLeft = samuraiGrids[1];
+      const topRight = samuraiGrids[2];
+      const bottomLeft = samuraiGrids[3];
+      const bottomRight = samuraiGrids[4];
+
+      // Kesişen 3x3 köşelerin maskesini Merkez tahtadan dış tahtalara birebir aktar
       for (let r = 0; r < 3; r++) {
         for (let c = 0; c < 3; c++) {
-          center.solution[r][c] = topLeft.solution[r + 6][c + 6];
-          center.puzzle[r][c] = topLeft.puzzle[r + 6][c + 6];
-
-          center.solution[r][c + 6] = topRight.solution[r + 6][c];
-          center.puzzle[r][c + 6] = topRight.puzzle[r + 6][c];
-
-          center.solution[r + 6][c] = bottomLeft.solution[r][c + 6];
-          center.puzzle[r + 6][c] = bottomLeft.puzzle[r][c + 6];
-
-          center.solution[r + 6][c + 6] = bottomRight.solution[r][c];
-          center.puzzle[r + 6][c + 6] = bottomRight.puzzle[r][c];
+          topLeft.puzzle[r + 6][c + 6] = center.puzzle[r][c];
+          topRight.puzzle[r + 6][c] = center.puzzle[r][c + 6];
+          bottomLeft.puzzle[r][c + 6] = center.puzzle[r + 6][c];
+          bottomRight.puzzle[r][c] = center.puzzle[r + 6][c + 6];
         }
       }
 
-      const samuraiGrids = [center, topLeft, topRight, bottomLeft, bottomRight];
       return {
         puzzle: center.puzzle,
         solution: center.solution,

@@ -103,6 +103,8 @@ const getSavedGamesList = (): SavedGameRecord[] => {
     let savedNotes: any = [];
     let savedRegionMap: number[][] | undefined = undefined;
     let savedCages: KillerCage[] | undefined = undefined;
+    let savedSamuraiBoards: any = undefined;
+    let savedActiveSamuraiIndex: number | undefined = undefined;
 
     try {
       const rawMap = localStorage.getItem(`sudoku_map_save_${v}_${userLvl}`);
@@ -116,6 +118,8 @@ const getSavedGamesList = (): SavedGameRecord[] => {
         savedNotes = p.notesBoard || [];
         savedRegionMap = p.regionMap;
         savedCages = p.cages;
+        savedSamuraiBoards = p.samuraiBoards;
+        savedActiveSamuraiIndex = p.activeSamuraiIndex;
       }
     } catch {
       // ignore
@@ -134,6 +138,8 @@ const getSavedGamesList = (): SavedGameRecord[] => {
       notesBoard: savedNotes,
       regionMap: savedRegionMap,
       cages: savedCages,
+      samuraiBoards: savedSamuraiBoards,
+      activeSamuraiIndex: savedActiveSamuraiIndex,
       isCustomMode: false,
       updatedAtMs: Date.now()
     });
@@ -149,6 +155,13 @@ const saveActiveGameRecord = () => {
       row ? row.map(s => (s && typeof s.values === 'function' ? Array.from(s) : Array.isArray(s) ? s : [])) : []
     )) : [];
 
+    const safeSamuraiBoards = currentVariant === 'samurai' && samuraiBoards.length === 5 ? samuraiBoards.map(b => ({
+      userBoard: b.userBoard,
+      initialBoard: b.initialBoard,
+      solution: b.solution,
+      notesBoard: b.notesBoard.map(row => row.map(s => (s && typeof s.values === 'function' ? Array.from(s) : Array.isArray(s) ? s : [])))
+    })) : undefined;
+
     if (!isCustomGameMode) {
       // Harita kaydıysa özel harita anahtarına kaydet
       localStorage.setItem(`sudoku_map_save_${currentVariant}_${currentLevelNumber}`, JSON.stringify({
@@ -163,6 +176,8 @@ const saveActiveGameRecord = () => {
         notesBoard: safeNotes,
         regionMap: currentRegionMap,
         cages: currentCages,
+        samuraiBoards: safeSamuraiBoards,
+        activeSamuraiIndex: currentVariant === 'samurai' ? activeSamuraiIndex : undefined,
         updatedAtMs: Date.now()
       }));
     } else {
@@ -181,6 +196,8 @@ const saveActiveGameRecord = () => {
         notesBoard: safeNotes,
         regionMap: currentRegionMap,
         cages: currentCages,
+        samuraiBoards: safeSamuraiBoards,
+        activeSamuraiIndex: currentVariant === 'samurai' ? activeSamuraiIndex : undefined,
         isCustomMode: true,
         updatedAtMs: Date.now()
       };
@@ -363,6 +380,36 @@ const startGame = (
       currentCages = undefined;
     }
 
+    if (currentVariant === 'samurai') {
+      if (isValidRestored && restoredState.samuraiBoards && restoredState.samuraiBoards.length === 5) {
+        samuraiBoards = restoredState.samuraiBoards.map((b: any) => ({
+          userBoard: b.userBoard.map((r: any) => [...r]),
+          initialBoard: b.initialBoard.map((r: any) => [...r]),
+          solution: b.solution.map((r: any) => [...r]),
+          notesBoard: b.notesBoard.map((r: any) => r.map((arr: any) => new Set<number>(arr)))
+        }));
+        activeSamuraiIndex = typeof restoredState.activeSamuraiIndex === 'number' ? restoredState.activeSamuraiIndex : 0;
+      } else {
+        const genSamurai = activeGeneratedSudoku?.samuraiGrids || (SudokuGen.generateVariant(diff, 'samurai')).samuraiGrids!;
+        samuraiBoards = genSamurai.map(g => ({
+          userBoard: g.puzzle.map(r => [...r]),
+          initialBoard: g.puzzle.map(r => [...r]),
+          solution: g.solution.map(r => [...r]),
+          notesBoard: Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => new Set<number>()))
+        }));
+        activeSamuraiIndex = 0;
+      }
+
+      const active = samuraiBoards[activeSamuraiIndex];
+      userBoard = active.userBoard;
+      initialBoard = active.initialBoard;
+      currentSolution = active.solution;
+      notesBoard = active.notesBoard;
+    } else {
+      samuraiBoards = [];
+      UIManager.hideSamuraiRadar();
+    }
+
     if (!isMatchMode) {
       saveActiveGameRecord();
     }
@@ -489,8 +536,15 @@ const startGame = (
             notesBoard,
             currentVariant,
             currentRegionMap,
-            currentCages
+            currentCages,
+            currentVariant === 'samurai' ? activeSamuraiIndex : undefined
         );
+
+        if (currentVariant === 'samurai') {
+          UIManager.renderSamuraiRadar(activeSamuraiIndex, getSamuraiCompletionStatuses(), (idx) => switchSamuraiGrid(idx));
+        } else {
+          UIManager.hideSamuraiRadar();
+        }
 
         UIManager.renderNumpad(
           (num) => handleNumpadInput(num),
@@ -531,6 +585,20 @@ const startGame = (
           currentSolution,
           initialBoard,
           async () => {
+              if (currentVariant === 'samurai') {
+                const currentDone = userBoard.every((row, ri) => row.every((val, ci) => val === currentSolution[ri][ci]));
+                const allDone = samuraiBoards.every(b => b.userBoard.every((row, ri) => row.every((val, ci) => val === b.solution[ri][ci])));
+
+                if (!allDone) {
+                  if (currentDone) {
+                    UIManager.showToast("⚔️ Bu tahta tamamlandı! Kalan tahtalara geçebilirsiniz.", "success");
+                  }
+                  saveActiveGameRecord();
+                  refresh();
+                  return;
+                }
+              }
+
               if (timerInterval) clearInterval(timerInterval);
               clearCurrentSavedGame();
 
@@ -647,6 +715,10 @@ const startGame = (
           }
         }
 
+        if (currentVariant === 'samurai') {
+          syncSamuraiCell(activeSamuraiIndex, r, c, num);
+        }
+
         if (isMatchMode && activeMatch) {
           matchUserFilled++;
           const isP1 = activeMatch.player1.uid === (auth.currentUser ? auth.currentUser.uid : '');
@@ -749,6 +821,10 @@ const startGame = (
               }
             }
 
+            if (currentVariant === 'samurai') {
+              syncSamuraiCell(activeSamuraiIndex, targetR, targetC, correctNum);
+            }
+
             if (isMatchMode && activeMatch) {
               matchUserFilled++;
               const isP1 = activeMatch.player1.uid === (auth.currentUser ? auth.currentUser.uid : '');
@@ -761,9 +837,23 @@ const startGame = (
             refresh();
 
             // Zafer Kontrolü
-            const isWin = userBoard.every((row, ri) =>
-              row.every((val, ci) => val === currentSolution[ri][ci])
-            );
+            let isWin = false;
+            if (currentVariant === 'samurai') {
+              const currentDone = userBoard.every((row, ri) => row.every((val, ci) => val === currentSolution[ri][ci]));
+              const allDone = samuraiBoards.every(b => b.userBoard.every((row, ri) => row.every((val, ci) => val === b.solution[ri][ci])));
+
+              if (!allDone) {
+                if (currentDone) {
+                  UIManager.showToast("⚔️ Bu tahta tamamlandı! Kalan tahtalara geçebilirsiniz.", "success");
+                }
+                saveActiveGameRecord();
+                refresh();
+                return;
+              }
+              isWin = true;
+            } else {
+              isWin = userBoard.every((row, ri) => row.every((val, ci) => val === currentSolution[ri][ci]));
+            }
 
             if (isWin) {
               if (timerInterval) clearInterval(timerInterval);

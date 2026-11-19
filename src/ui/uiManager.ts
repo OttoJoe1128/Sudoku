@@ -217,6 +217,9 @@ export const UIManager = {
                 <span id="game-variant-multiplier" class="text-[10px] font-extrabold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">1.0x Puan</span>
             </div>
 
+            <!-- Samurai 5-Grid Mini-Radar Seçici Bar -->
+            <div id="samurai-radar-bar" class="hidden w-full grid-cols-5 gap-1 mb-2"></div>
+
             <!-- Sudoku Grid -->
             <div id="sudoku-grid" class="grid grid-cols-9 gap-[1px] bg-slate-800 p-[1.5px] rounded-2xl shadow-2xl mb-3 border-2 border-slate-800 relative"></div>
 
@@ -1065,6 +1068,61 @@ export const UIManager = {
     });
   },
 
+  renderSamuraiRadar(
+    activeIndex: number,
+    completionStatuses: { completed: boolean; remaining: number }[],
+    onSelect: (idx: number) => void
+  ) {
+    const barEl = document.getElementById('samurai-radar-bar');
+    if (!barEl) return;
+    barEl.classList.remove('hidden');
+    barEl.classList.add('grid');
+
+    const radarItems = [
+      { idx: 1, label: '↖ Sol-Üst' },
+      { idx: 2, label: '↗ Sağ-Üst' },
+      { idx: 0, label: '🎯 Merkez' },
+      { idx: 3, label: '↙ Sol-Alt' },
+      { idx: 4, label: '↘ Sağ-Alt' }
+    ];
+
+    barEl.innerHTML = radarItems.map(item => {
+      const isSelected = item.idx === activeIndex;
+      const status = completionStatuses[item.idx] || { completed: false, remaining: 0 };
+
+      let btnClass = "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50";
+      if (isSelected) {
+        btnClass = "bg-rose-600 text-white font-black shadow-sm ring-2 ring-rose-400";
+      } else if (status.completed) {
+        btnClass = "bg-emerald-500 text-white font-black";
+      }
+
+      const badgeText = status.completed ? '✓' : `${status.remaining} Boş`;
+
+      return `
+        <button data-samurai-idx="${item.idx}" class="samurai-radar-btn ${btnClass} py-1.5 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center transition-all active:scale-95 leading-tight">
+          <span>${item.label}</span>
+          <span class="text-[8px] font-mono opacity-90">${badgeText}</span>
+        </button>
+      `;
+    }).join('');
+
+    barEl.querySelectorAll('.samurai-radar-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt((e.currentTarget as HTMLElement).getAttribute('data-samurai-idx') || '0');
+        onSelect(idx);
+      });
+    });
+  },
+
+  hideSamuraiRadar() {
+    const barEl = document.getElementById('samurai-radar-bar');
+    if (barEl) {
+      barEl.classList.add('hidden');
+      barEl.classList.remove('grid');
+    }
+  },
+
   showError(r: number, c: number) {
     const boardEl = document.getElementById('sudoku-grid');
     if (!boardEl) return;
@@ -1087,7 +1145,8 @@ export const UIManager = {
     notesBoard?: Set<number>[][],
     variant: SudokuVariant = 'classic',
     regionMap?: number[][],
-    cages?: KillerCage[]
+    cages?: KillerCage[],
+    samuraiGridIndex?: number
   ) {
     const boardEl = document.getElementById('sudoku-grid');
     if (!boardEl) return;
@@ -1122,6 +1181,15 @@ export const UIManager = {
 
         const isMatchingValue = selectedVal !== 0 && val === selectedVal;
 
+        let isSamuraiCorner = false;
+        if (variant === 'samurai' && typeof samuraiGridIndex === 'number') {
+          if (samuraiGridIndex === 0) isSamuraiCorner = (r < 3 || r >= 6) && (c < 3 || c >= 6);
+          else if (samuraiGridIndex === 1) isSamuraiCorner = r >= 6 && c >= 6;
+          else if (samuraiGridIndex === 2) isSamuraiCorner = r >= 6 && c < 3;
+          else if (samuraiGridIndex === 3) isSamuraiCorner = r < 3 && c >= 6;
+          else if (samuraiGridIndex === 4) isSamuraiCorner = r < 3 && c < 3;
+        }
+
         let stateClass = '';
 
         if (isSelected) {
@@ -1130,6 +1198,8 @@ export const UIManager = {
           stateClass = 'sudoku-cell-matching bg-indigo-200 text-indigo-950 font-black ring-2 ring-indigo-400 z-1';
         } else if (isRelatedGroup) {
           stateClass = 'sudoku-cell-related bg-indigo-50/90 text-indigo-900 font-bold';
+        } else if (isSamuraiCorner) {
+          stateClass = 'sudoku-cell-samurai bg-rose-50/80 text-rose-950 font-bold ring-1 ring-inset ring-rose-300/80';
         } else if (isInitial) {
           stateClass = 'sudoku-cell-initial bg-slate-200 text-slate-900 font-black cursor-pointer';
         } else {

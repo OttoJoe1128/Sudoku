@@ -96,11 +96,51 @@ describe('Sudoku Engine & 5 Variants', () => {
     expect(res.puzzle).toHaveLength(9);
   });
 
-  it('should generate Samurai 5-grid Sudoku', () => {
+  it('should generate Samurai 5-grid Sudoku and verify 5 valid grids and matching overlapping 3x3 corners', () => {
     const res = SudokuGen.generateVariant('basit', 'samurai');
     expect(res.variant).toBe('samurai');
     expect(res.samuraiGrids).toBeDefined();
     expect(res.samuraiGrids).toHaveLength(5);
+
+    // 1. Verify all 5 grids are valid 9x9 Sudoku solutions
+    res.samuraiGrids!.forEach(gridObj => {
+      const solution = gridObj.solution;
+      for (let r = 0; r < 9; r++) {
+        expect(new Set(solution[r]).size).toBe(9);
+      }
+      for (let c = 0; c < 9; c++) {
+        const colDigits = new Set();
+        for (let r = 0; r < 9; r++) colDigits.add(solution[r][c]);
+        expect(colDigits.size).toBe(9);
+      }
+    });
+
+    // 2. Verify overlapping 3x3 corners match between Center (0) and 4 outer grids
+    const center = res.samuraiGrids![0];
+    const topLeft = res.samuraiGrids![1];
+    const topRight = res.samuraiGrids![2];
+    const bottomLeft = res.samuraiGrids![3];
+    const bottomRight = res.samuraiGrids![4];
+
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        // Top-Left corner
+        expect(center.solution[r][c]).toBe(topLeft.solution[r + 6][c + 6]);
+        expect(center.puzzle[r][c]).toBe(topLeft.puzzle[r + 6][c + 6]);
+
+        // Top-Right corner
+        expect(center.solution[r][c + 6]).toBe(topRight.solution[r + 6][c]);
+        expect(center.puzzle[r][c + 6]).toBe(topRight.puzzle[r + 6][c]);
+
+        // Bottom-Left corner
+        expect(center.solution[r + 6][c]).toBe(bottomLeft.solution[r][c + 6]);
+        expect(center.puzzle[r + 6][c]).toBe(bottomLeft.puzzle[r][c + 6]);
+
+        // Bottom-Right corner
+        expect(center.solution[r + 6][c + 6]).toBe(bottomRight.solution[r][c]);
+        expect(center.puzzle[r + 6][c + 6]).toBe(bottomRight.puzzle[r][c]);
+      }
+    }
   });
 });
 
