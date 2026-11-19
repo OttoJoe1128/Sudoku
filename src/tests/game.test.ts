@@ -168,7 +168,7 @@ describe('MatchEngine - ELO Rating & Serialization', () => {
     const deserialized = deserializePuzzle(serialized);
     expect(deserialized).toHaveLength(9);
     expect(deserialized[0]).toHaveLength(9);
-    expect(deserialized[0][0]).toBeOriginal = originalGrid[0][0];
+    expect(deserialized[0][0]).toBe(originalGrid[0][0]);
   });
 });
 

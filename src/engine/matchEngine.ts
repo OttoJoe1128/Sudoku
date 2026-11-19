@@ -19,6 +19,8 @@ export interface MatchState {
   durationSec?: number;
   puzzle: number[][];
   solution: number[][];
+  regionMap?: number[][];
+  cages?: any[];
   status: 'waiting' | 'in_progress' | 'completed';
   player1: MatchPlayer;
   player2?: MatchPlayer;
@@ -263,6 +265,14 @@ export const MatchEngine = {
       console.warn("Gelen davetler çekilemedi:", e);
       return [];
     }
+  },
+
+  listenIncomingChallenges(onIncoming: (challenge: ChallengeRequest) => void) {
+    this.listenPendingChallenges((challenges) => {
+      if (challenges.length > 0) {
+        onIncoming(challenges[0]);
+      }
+    });
   },
 
   listenPendingChallenges(onUpdate: (challenges: ChallengeRequest[]) => void) {

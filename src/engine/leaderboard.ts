@@ -1,6 +1,7 @@
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../api/firebase';
 import { UserManager } from '../store/userState';
+import { SudokuVariant } from './sudoku';
 
 export interface Player {
   uid?: string;
@@ -20,6 +21,8 @@ export interface Player {
   best_basit?: number;
   best_orta?: number;
   best_zor?: number;
+  dominantVariant?: SudokuVariant;
+  variantScores?: Record<SudokuVariant, number>;
 }
 
 export interface SpeedRecord {
@@ -47,7 +50,7 @@ export const SIMULATED_LOBBY_PLAYERS: Player[] = [
 ];
 
 export const Leaderboard = {
-  getCachedPlayers(sortBy: 'level' | 'gold' = 'level'): Player[] {
+  getCachedPlayers(sortBy: 'level' | 'gold' | 'pvp_mmr' | 'bot_mmr' = 'level'): Player[] {
     try {
       const saved = localStorage.getItem('sudoku_cached_leaderboard');
       if (saved) {
@@ -55,8 +58,12 @@ export const Leaderboard = {
         if (Array.isArray(parsed) && parsed.length > 0) {
           if (sortBy === 'level') {
             parsed.sort((a, b) => b.level !== a.level ? b.level - a.level : b.gold - a.gold);
-          } else {
+          } else if (sortBy === 'gold') {
             parsed.sort((a, b) => b.gold !== a.gold ? b.gold - a.gold : b.level - a.level);
+          } else if (sortBy === 'pvp_mmr') {
+            parsed.sort((a, b) => (b.duel_mmr || 1000) !== (a.duel_mmr || 1000) ? (b.duel_mmr || 1000) - (a.duel_mmr || 1000) : b.level - a.level);
+          } else if (sortBy === 'bot_mmr') {
+            parsed.sort((a, b) => (b.bot_mmr || 1000) !== (a.bot_mmr || 1000) ? (b.bot_mmr || 1000) - (a.bot_mmr || 1000) : b.level - a.level);
           }
           return parsed;
         }

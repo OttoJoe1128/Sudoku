@@ -31,6 +31,8 @@ export interface SavedGameRecord {
   notesBoard: number[][][];
   regionMap?: number[][];
   cages?: KillerCage[];
+  samuraiBoards?: { userBoard: number[][]; initialBoard: number[][]; solution: number[][]; notesBoard: number[][][] }[];
+  activeSamuraiIndex?: number;
   isCustomMode?: boolean;
   updatedAtMs: number;
 }
@@ -820,6 +822,8 @@ export const UIManager = {
   ) {
     const container = document.getElementById('map-path-container');
     const targetLabel = document.getElementById('map-target-label');
+    const biomeTitle = document.getElementById('map-biome-title');
+    const tierProgress = document.getElementById('map-tier-progress');
     if (!container) return;
     container.innerHTML = '';
 
@@ -828,52 +832,79 @@ export const UIManager = {
       targetLabel.innerText = `Seviye ${currentLevel} • ${diff.toUpperCase()}`;
     }
 
+    if (biomeTitle) {
+      if (currentLevel <= 300) biomeTitle.innerText = "🌿 ZÜMRÜT VADİ";
+      else if (currentLevel <= 700) biomeTitle.innerText = "💎 HEXTECH KALESİ";
+      else biomeTitle.innerText = "🔥 KIZIL ZİRVE";
+    }
+
+    if (tierProgress) {
+      const pct = Math.min(100, Math.max(5, Math.round(((currentLevel % 300) / 300) * 100)));
+      tierProgress.style.width = `${pct}%`;
+    }
+
     const focusLvl = startFocusLevel || currentLevel;
     const startLvl = windowStartLevel || Math.max(1, focusLvl - 6);
     const endLvl = Math.min(1000, startLvl + 20);
 
     const avatar = UserManager.getAvatar() || '🎮';
 
-    for (let lvl = startLvl; lvl <= endLvl; lvl++) {
+    const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svgEl.setAttribute('class', 'absolute inset-0 w-full h-full pointer-events-none z-0');
+    container.appendChild(svgEl);
+
+    const nodePositions: { lvl: number; x: number; y: number }[] = [];
+    const stepY = 80;
+    let currentY = 20;
+
+    for (let lvl = endLvl; lvl >= startLvl; lvl--) {
       const isCompleted = lvl < currentLevel;
       const isCurrent = lvl === currentLevel;
+      const isMilestone = lvl % 10 === 0;
 
-      // S-Eğrisi Dikey Kıvrım Hesaplaması (Duolingo/Candy Crush Stili)
       const offsetIndex = lvl % 6;
       let translateXClass = "translate-x-0";
-      if (offsetIndex === 1) translateXClass = "translate-x-[-35px]";
-      if (offsetIndex === 2) translateXClass = "translate-x-[-55px]";
-      if (offsetIndex === 3) translateXClass = "translate-x-[0px]";
-      if (offsetIndex === 4) translateXClass = "translate-x-[35px]";
-      if (offsetIndex === 5) translateXClass = "translate-x-[55px]";
+      let posXPercent = 50;
+      if (offsetIndex === 1) { translateXClass = "translate-x-[-35px]"; posXPercent = 35; }
+      if (offsetIndex === 2) { translateXClass = "translate-x-[-55px]"; posXPercent = 25; }
+      if (offsetIndex === 3) { translateXClass = "translate-x-[0px]"; posXPercent = 50; }
+      if (offsetIndex === 4) { translateXClass = "translate-x-[35px]"; posXPercent = 65; }
+      if (offsetIndex === 5) { translateXClass = "translate-x-[55px]"; posXPercent = 75; }
+
+      nodePositions.push({ lvl, x: posXPercent, y: currentY + 30 });
 
       const wrapper = document.createElement('div');
       wrapper.id = `map-node-${lvl}`;
-      wrapper.className = `flex flex-col items-center justify-center transition-transform ${translateXClass} relative group`;
+      wrapper.className = `flex flex-col items-center justify-center transition-transform ${translateXClass} relative group z-10`;
+
+      const milestoneBadge = isMilestone ? `<span class="absolute -top-3 text-sm z-30 pointer-events-none">👑</span>` : '';
 
       if (isCurrent) {
         wrapper.innerHTML = `
-          <div class="absolute -top-7 bg-amber-400 text-amber-950 font-black text-[10px] px-2 py-0.5 rounded-full shadow-md border border-amber-300 animate-bounce flex items-center gap-1 z-20">
+          ${milestoneBadge}
+          <div class="absolute -top-7 bg-gradient-to-r from-amber-400 to-amber-500 text-amber-950 font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-md border border-amber-300 flex items-center gap-1 z-30">
             <span>${avatar}</span>
             <span>SEVİYE ${lvl}</span>
           </div>
-          <button data-level="${lvl}" class="w-18 h-18 sm:w-20 sm:h-20 rounded-full ring-4 ring-indigo-400 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 text-white shadow-xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-all z-10">
-            <span class="text-lg font-black leading-none">${lvl}</span>
-            <span class="text-[9px] font-black text-amber-300 uppercase tracking-widest mt-0.5">BAŞLA</span>
+          <button data-level="${lvl}" class="w-24 h-24 rounded-3xl bg-gradient-to-b from-[#1E3A5F] via-[#0F2442] to-[#091428] border-2 border-[#C8AA6E] border-b-4 ring-4 ring-[#0AC8B9]/60 text-white shadow-xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-transform">
+            <span class="text-xl font-mono font-black leading-none text-[#F0E6D2]">${lvl}</span>
+            <span class="text-[9px] font-black text-[#C8AA6E] tracking-widest mt-1">⚔️ BAŞLA</span>
           </button>
         `;
       } else if (isCompleted) {
         wrapper.innerHTML = `
-          <button data-level="${lvl}" class="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white font-black text-sm shadow-md flex items-center justify-center cursor-pointer active:scale-95 transition-all relative">
-            <span>${lvl}</span>
-            <span class="absolute -bottom-1 -right-1 bg-white text-emerald-700 w-4 h-4 rounded-full text-[9px] font-black flex items-center justify-center border border-emerald-300 shadow">✓</span>
+          ${milestoneBadge}
+          <button data-level="${lvl}" class="w-16 h-16 rounded-2xl bg-gradient-to-b from-[#0A323C] to-[#091428] border-2 border-[#0AC8B9] border-b-4 text-[#F0E6D2] shadow-md flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-transform">
+            <span class="text-base font-mono font-black leading-none">${lvl}</span>
+            <span class="text-[10px] font-black text-[#0AC8B9] mt-0.5">✓</span>
           </button>
         `;
       } else {
         wrapper.innerHTML = `
-          <button disabled class="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-slate-300 text-slate-500 font-bold text-xs opacity-60 flex items-center justify-center cursor-not-allowed relative">
-            <span>${lvl}</span>
-            <span class="absolute -bottom-1 -right-1 bg-slate-200 text-slate-600 w-4 h-4 rounded-full text-[9px] flex items-center justify-center border border-slate-300">🔒</span>
+          ${milestoneBadge}
+          <button disabled class="w-16 h-16 rounded-2xl bg-[#0A1428]/90 border-2 border-slate-700/80 border-b-4 text-slate-400 flex flex-col items-center justify-center cursor-not-allowed opacity-80">
+            <span class="text-sm font-mono font-black leading-none">${lvl}</span>
+            <span class="text-[10px] mt-0.5">🔒</span>
           </button>
         `;
       }
@@ -884,6 +915,24 @@ export const UIManager = {
       }
 
       container.appendChild(wrapper);
+      currentY += stepY;
+    }
+
+    for (let i = 0; i < nodePositions.length - 1; i++) {
+      const p1 = nodePositions[i];
+      const p2 = nodePositions[i + 1];
+      const isCompletedLine = p1.lvl <= currentLevel && p2.lvl <= currentLevel;
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      const d = `M ${p1.x}% ${p1.y} C ${p1.x}% ${(p1.y + p2.y) / 2}, ${p2.x}% ${(p1.y + p2.y) / 2}, ${p2.x}% ${p2.y}`;
+      path.setAttribute('d', d);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', isCompletedLine ? '#0AC8B9' : '#334155');
+      path.setAttribute('stroke-width', isCompletedLine ? '4' : '3');
+      if (!isCompletedLine) {
+        path.setAttribute('stroke-dasharray', '6 6');
+      }
+      svgEl.appendChild(path);
     }
 
     setTimeout(() => {

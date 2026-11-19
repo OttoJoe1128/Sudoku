@@ -7,8 +7,7 @@ export const GameLogic = {
     const puzzle = SudokuGen.generate(difficulty);
     updateGameState({ currentLevel: getGameState().currentLevel + 1 });
     
-    console.log("Oyun başladı, Puzzle:", puzzle);
-    UIManager.updateUI(getGameState().currentLevel, getGameState().gold, "Oyuncu");
-    UIManager.renderBoard(puzzle.puzzle);
+    UIManager.updateHeaderGold(getGameState().gold);
+    UIManager.renderBoard(puzzle.puzzle, () => {}, -1, -1, puzzle.puzzle);
   }
 };

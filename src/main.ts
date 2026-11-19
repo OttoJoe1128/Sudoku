@@ -9,7 +9,7 @@ import { AchievementManager } from './engine/achievements';
 import { MatchEngine, MatchState, ChallengeRequest, calculateEloChange } from './engine/matchEngine';
 import { BotCharacters, BotCharacter } from './engine/botData';
 import { App } from '@capacitor/app';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, query, collection, limit } from 'firebase/firestore';
 import { auth, db } from './api/firebase';
 
 UIManager.mountUI();
@@ -33,6 +33,74 @@ let isCustomGameMode = false;
 let currentTimeLimitSec = 0;
 let currentRegionMap: number[][] | undefined = undefined;
 let currentCages: KillerCage[] | undefined = undefined;
+
+let samuraiBoards: { userBoard: number[][]; initialBoard: number[][]; solution: number[][]; notesBoard: Set<number>[][] }[] = [];
+let activeSamuraiIndex = 0;
+let activeRefreshFn: any = null;
+
+const getSamuraiCompletionStatuses = () => {
+  return samuraiBoards.map(b => {
+    let remaining = 0;
+    b.userBoard.forEach(row => row.forEach(val => { if (val === 0) remaining++; }));
+    const completed = remaining === 0 && b.userBoard.every((row, ri) => row.every((val, ci) => val === b.solution[ri][ci]));
+    return { completed, remaining };
+  });
+};
+
+const syncSamuraiCell = (gridIdx: number, r: number, c: number, val: number) => {
+  if (currentVariant !== 'samurai' || samuraiBoards.length < 5) return;
+
+  const targetMapping: { targetGrid: number; targetR: number; targetC: number }[] = [];
+
+  if (gridIdx === 0) {
+    if (r < 3 && c < 3) targetMapping.push({ targetGrid: 1, targetR: r + 6, targetC: c + 6 });
+    if (r < 3 && c >= 6) targetMapping.push({ targetGrid: 2, targetR: r + 6, targetC: c - 6 });
+    if (r >= 6 && c < 3) targetMapping.push({ targetGrid: 3, targetR: r - 6, targetC: c + 6 });
+    if (r >= 6 && c >= 6) targetMapping.push({ targetGrid: 4, targetR: r - 6, targetC: c - 6 });
+  } else if (gridIdx === 1 && r >= 6 && c >= 6) {
+    targetMapping.push({ targetGrid: 0, targetR: r - 6, targetC: c - 6 });
+  } else if (gridIdx === 2 && r >= 6 && c < 3) {
+    targetMapping.push({ targetGrid: 0, targetR: r - 6, targetC: c + 6 });
+  } else if (gridIdx === 3 && r < 3 && c >= 6) {
+    targetMapping.push({ targetGrid: 0, targetR: r + 6, targetC: c - 6 });
+  } else if (gridIdx === 4 && r < 3 && c < 3) {
+    targetMapping.push({ targetGrid: 0, targetR: r + 6, targetC: c + 6 });
+  }
+
+  targetMapping.forEach(target => {
+    const tBoard = samuraiBoards[target.targetGrid];
+    if (tBoard) {
+      tBoard.userBoard[target.targetR][target.targetC] = val;
+      tBoard.notesBoard[target.targetR][target.targetC].clear();
+
+      if (val > 0) {
+        const boxR = Math.floor(target.targetR / 3) * 3;
+        const boxC = Math.floor(target.targetC / 3) * 3;
+        for (let i = 0; i < 9; i++) {
+          tBoard.notesBoard[target.targetR][i].delete(val);
+          tBoard.notesBoard[i][target.targetC].delete(val);
+        }
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+            tBoard.notesBoard[boxR + i][boxC + j].delete(val);
+          }
+        }
+      }
+    }
+  });
+};
+
+const switchSamuraiGrid = (idx: number) => {
+  if (currentVariant !== 'samurai' || !samuraiBoards[idx]) return;
+  activeSamuraiIndex = idx;
+  const target = samuraiBoards[idx];
+  userBoard = target.userBoard;
+  initialBoard = target.initialBoard;
+  currentSolution = target.solution;
+  notesBoard = target.notesBoard;
+  selectedCell = null;
+  if (activeRefreshFn) activeRefreshFn();
+};
 
 // Maç / Düello Modu Değişkenleri
 let activeMatch: MatchState | null = null;
@@ -1174,7 +1242,7 @@ const openPlayerProfile = async (targetData?: any) => {
   if (isOwn) {
     // Avatar Butonları Dinleyicisi
     document.querySelectorAll('.avatar-option-btn').forEach(btn => {
-      btn.onclick = async (e) => {
+      (btn as HTMLElement).onclick = async (e: Event) => {
         const newAvatar = (e.currentTarget as HTMLElement).getAttribute('data-avatar');
         if (newAvatar) {
           await UserManager.updateProfileCustomization(newAvatar, UserManager.getTitle());
