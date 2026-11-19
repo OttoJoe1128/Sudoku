@@ -5,6 +5,7 @@ import { UserManager } from '../store/userState';
 import { validateSavedGameRecord } from '../engine/saveValidator';
 import { TRANSLATIONS, setLang, getLang, t, translateRankName } from '../i18n/translations';
 import { mapGlobalToSamuraiCell } from '../ui/samuraiViewport';
+import { getPlacementExamConfig, evaluatePlacementExam } from '../engine/placementEngine';
 
 describe('Sudoku Engine & 5 Variants', () => {
   it('should generate valid Classic 9x9 Sudoku puzzle and solution', () => {
@@ -369,5 +370,93 @@ describe('Samurai Viewport - 21x21 Global Coordinate Mapping', () => {
       c: 1,
       isOverlap: true
     });
+  });
+});
+
+describe('Placement Engine - Performance-based Level Progression', () => {
+  it('should assign full target level and full gold for full completion within time and max errors', () => {
+    const config = getPlacementExamConfig('classic', 'orta');
+    expect(config.targetLevel).toBe(301);
+    expect(config.timeLimitSec).toBe(420); // 7 mins
+
+    const result = evaluatePlacementExam({
+      variant: 'classic',
+      tier: 'orta',
+      currentVariantLevel: 1,
+      filledByUser: 50,
+      totalInitialEmpty: 50,
+      errors: 1,
+      completedAll: true,
+      timeElapsedSec: 300,
+      timeLimitSec: 420
+    });
+
+    expect(result.passedFull).toBe(true);
+    expect(result.assignedLevel).toBe(301);
+    expect(result.levelsGained).toBe(300);
+    expect(result.rewardGold).toBe(150);
+  });
+
+  it('should assign partial level for 50% completion with 2 errors in medium exam', () => {
+    const result = evaluatePlacementExam({
+      variant: 'classic',
+      tier: 'orta',
+      currentVariantLevel: 1,
+      filledByUser: 25,
+      totalInitialEmpty: 50,
+      errors: 2,
+      completedAll: false,
+      timeElapsedSec: 420,
+      timeLimitSec: 420
+    });
+
+    expect(result.passedFull).toBe(false);
+    expect(result.partialAssigned).toBe(true);
+    expect(result.completionPercent).toBe(50);
+    expect(result.assignedLevel).toBe(118);
+    expect(result.levelsGained).toBe(117);
+    expect(result.rewardGold).toBeGreaterThan(0);
+  });
+
+  it('should assign no level gains for completion under 15%', () => {
+    const result = evaluatePlacementExam({
+      variant: 'classic',
+      tier: 'orta',
+      currentVariantLevel: 1,
+      filledByUser: 5,
+      totalInitialEmpty: 50,
+      errors: 0,
+      completedAll: false,
+      timeElapsedSec: 420,
+      timeLimitSec: 420
+    });
+
+    expect(result.passedFull).toBe(false);
+    expect(result.partialAssigned).toBe(false);
+    expect(result.levelsGained).toBe(0);
+    expect(result.assignedLevel).toBe(1);
+    expect(result.rewardGold).toBe(0);
+  });
+
+  it('should never decrease higher existing level and verify Samurai exam duration multiplier is 2.5x Classic', () => {
+    const classicConfig = getPlacementExamConfig('classic', 'orta');
+    const samuraiConfig = getPlacementExamConfig('samurai', 'orta');
+
+    expect(samuraiConfig.timeLimitSec).toBe(1080);
+
+    const result = evaluatePlacementExam({
+      variant: 'classic',
+      tier: 'orta',
+      currentVariantLevel: 250,
+      filledByUser: 25,
+      totalInitialEmpty: 50,
+      errors: 2,
+      completedAll: false,
+      timeElapsedSec: 420,
+      timeLimitSec: 420
+    });
+
+    expect(result.assignedLevel).toBe(250);
+    expect(result.levelsGained).toBe(0);
   });
 });

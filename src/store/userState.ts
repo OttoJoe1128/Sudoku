@@ -105,6 +105,41 @@ export const UserManager = {
     return raw ? parseInt(raw) : (variant === 'classic' ? this.getCurrentLevel() : 1);
   },
 
+  async updateVariantLevel(variant: SudokuVariant, newLevel: number, addedGold: number = 0): Promise<void> {
+    const currentVariantLevel = this.getVariantLevel(variant);
+    const updatedLevel = Math.max(currentVariantLevel, newLevel);
+    localStorage.setItem(`sudoku_level_${variant}`, updatedLevel.toString());
+
+    let currentGold = this.getGold();
+    if (addedGold > 0) {
+      currentGold += addedGold;
+      localStorage.setItem('sudoku_gold', currentGold.toString());
+    }
+
+    if (variant === 'classic') {
+      const currentClassicLevel = this.getCurrentLevel();
+      const updatedClassic = Math.max(currentClassicLevel, updatedLevel);
+      localStorage.setItem('sudoku_level', updatedClassic.toString());
+    }
+
+    try {
+      if (auth.currentUser) {
+        const uid = auth.currentUser.uid;
+        const updates: Record<string, any> = {
+          [`level_${variant}`]: updatedLevel,
+          gold: currentGold,
+          updatedAt: serverTimestamp()
+        };
+        if (variant === 'classic') {
+          updates.level = Math.max(this.getCurrentLevel(), updatedLevel);
+        }
+        await setDoc(doc(db, 'leaderboard', uid), updates, { merge: true });
+      }
+    } catch {
+      // ignore
+    }
+  },
+
   getVariantScore(variant: SudokuVariant = 'classic'): number {
     const raw = localStorage.getItem(`sudoku_score_${variant}`);
     return raw ? parseInt(raw) : 0;
