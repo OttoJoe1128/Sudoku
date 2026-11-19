@@ -4,6 +4,7 @@ import { calculateEloChange, serializePuzzle, deserializePuzzle } from '../engin
 import { UserManager } from '../store/userState';
 import { validateSavedGameRecord } from '../engine/saveValidator';
 import { TRANSLATIONS, setLang, getLang, t, translateRankName } from '../i18n/translations';
+import { mapGlobalToSamuraiCell } from '../ui/samuraiViewport';
 
 describe('Sudoku Engine & 5 Variants', () => {
   it('should generate valid Classic 9x9 Sudoku puzzle and solution', () => {
@@ -328,5 +329,45 @@ describe('i18n - Modular Translation Infrastructure', () => {
     setLang('tr');
     expect(translateRankName('🥉 Çırak')).toBe('Çırak');
     expect(translateRankName('🥈 Kaşif')).toBe('Kaşif');
+  });
+});
+
+describe('Samurai Viewport - 21x21 Global Coordinate Mapping', () => {
+  it('should return null for 4 outer void corners and correct cell ref for Center grid', () => {
+    expect(mapGlobalToSamuraiCell(2, 10)).toBeNull();
+    expect(mapGlobalToSamuraiCell(10, 2)).toBeNull();
+    expect(mapGlobalToSamuraiCell(10, 18)).toBeNull();
+    expect(mapGlobalToSamuraiCell(18, 10)).toBeNull();
+
+    const centerCell = mapGlobalToSamuraiCell(10, 10);
+    expect(centerCell).not.toBeNull();
+    expect(centerCell).toEqual({
+      gridIdx: 0,
+      r: 4,
+      c: 4,
+      isOverlap: false
+    });
+  });
+
+  it('should detect overlap corners and respect preferredGridIdx parameter', () => {
+    const overlapCell = mapGlobalToSamuraiCell(7, 7);
+    expect(overlapCell).not.toBeNull();
+    expect(overlapCell!.isOverlap).toBe(true);
+
+    const matchTopLeft = mapGlobalToSamuraiCell(7, 7, 1);
+    expect(matchTopLeft).toEqual({
+      gridIdx: 1,
+      r: 7,
+      c: 7,
+      isOverlap: true
+    });
+
+    const matchCenter = mapGlobalToSamuraiCell(7, 7, 0);
+    expect(matchCenter).toEqual({
+      gridIdx: 0,
+      r: 1,
+      c: 1,
+      isOverlap: true
+    });
   });
 });
