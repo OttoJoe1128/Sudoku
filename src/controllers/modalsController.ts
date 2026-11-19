@@ -62,6 +62,28 @@ export async function openPlayerProfile(targetData?: any): Promise<void> {
         }
       };
     });
+
+    const openGalleryModal = () => {
+      UIManager.toggleModal('avatar-gallery-modal', true);
+      UIManager.renderAvatarGallery(UserManager.getAvatar(), async (newAvatar) => {
+        await UserManager.updateProfileCustomization(newAvatar, UserManager.getTitle());
+        const avatarBox = document.getElementById('menu-avatar-box');
+        if (avatarBox) avatarBox.innerHTML = renderAvatarSVG(newAvatar, 28);
+        UIManager.toggleModal('avatar-gallery-modal', false);
+        UIManager.showToast("Avatar güncellendi!", "success");
+        openPlayerProfile();
+      });
+    };
+
+    const displayBox = document.getElementById('profile-avatar-display');
+    if (displayBox) {
+      displayBox.onclick = () => openGalleryModal();
+    }
+
+    const openGalleryBtn = document.getElementById('btn-open-avatar-gallery');
+    if (openGalleryBtn) {
+      openGalleryBtn.onclick = () => openGalleryModal();
+    }
   }
 }
 
@@ -211,6 +233,10 @@ export function initModalsController(callbacks: {
 
   document.getElementById('close-profile')?.addEventListener('click', () => {
     UIManager.toggleModal('view-profile', false);
+  });
+
+  document.getElementById('close-avatar-gallery')?.addEventListener('click', () => {
+    UIManager.toggleModal('avatar-gallery-modal', false);
   });
 
   document.getElementById('btn-profile-edit-name')?.addEventListener('click', () => {

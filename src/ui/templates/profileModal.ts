@@ -16,8 +16,11 @@ export const profileModalTemplate = `
 
         <!-- Profil Üst Kartı -->
         <div class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl p-4 mb-3 flex flex-col items-center text-center shadow-inner relative">
-            <div id="profile-avatar-display" class="w-16 h-16 rounded-2xl bg-[var(--bg-card)] border-2 border-[var(--border-strong)] flex items-center justify-center text-3xl shadow-sm mb-2 relative group cursor-pointer">
+            <div id="profile-avatar-display" title="Avatar Galerisini Aç" class="w-16 h-16 rounded-2xl bg-[var(--bg-card)] border-2 border-[var(--border-strong)] flex items-center justify-center text-3xl shadow-sm mb-2 relative group cursor-pointer">
                 ${renderAvatarSVG('av_prism', 40)}
+                <span class="absolute -bottom-1 -right-1 bg-[var(--accent-gold)] text-[var(--text-on-gold)] p-1 rounded-full text-[10px] shadow border border-[var(--border-strong)] flex items-center justify-center">
+                    ${Icons.pen}
+                </span>
             </div>
 
             <p id="profile-player-title" class="text-[10px] font-black text-[var(--accent-gold)] uppercase tracking-wider block mb-0.5">Çırak</p>
@@ -89,9 +92,14 @@ export const profileModalTemplate = `
         <div id="profile-own-controls" class="flex flex-col gap-2.5 mb-1">
             <!-- Avatar Seçici -->
             <div class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl p-3 text-left">
-                <p class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-wider mb-2" data-i18n="profile_avatar_select">Avatar Seç</p>
+                <div class="flex justify-between items-center mb-2">
+                    <p class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-wider" data-i18n="profile_avatar_select">Avatar Seç</p>
+                    <button id="btn-open-avatar-gallery" class="text-[10px] font-black text-[var(--accent-gold)] hover:underline flex items-center gap-0.5">
+                        <span data-i18n="btn_view_all_badges">Tümünü Gör ➔</span>
+                    </button>
+                </div>
                 <div id="profile-avatar-selector" class="grid grid-cols-4 gap-2">
-                    <!-- 8 Geometrik Avatar Seçeneği -->
+                    <!-- 8 İllüstrasyonlu Önizleme Avatarları -->
                 </div>
             </div>
 
@@ -117,6 +125,22 @@ export const profileModalTemplate = `
                 <span>${Icons.sword}</span>
                 <span data-i18n="btn_challenge_player">Bu Oyuncuya Düello İsteği Gönder</span>
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- Avatar Galerisi Modalı -->
+<div id="avatar-gallery-modal" class="absolute inset-0 bg-slate-900/85 hidden flex-col items-center justify-center z-[80] p-4 backdrop-blur-md">
+    <div class="bg-[var(--bg-card)] text-[var(--text-primary)] rounded-3xl p-5 w-full max-w-sm flex flex-col max-h-[82vh] shadow-2xl relative border border-[var(--border-strong)]">
+        <div class="flex justify-between items-center mb-3 pb-2 border-b border-[var(--border-subtle)] shrink-0">
+            <h3 class="text-base font-black text-[var(--accent-gold)] flex items-center gap-2">
+                <span>${Icons.user}</span>
+                <span data-i18n="profile_avatar_select">Avatar Seç</span>
+            </h3>
+            <button id="close-avatar-gallery" class="text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-full p-2 text-xs font-bold">✕</button>
+        </div>
+        <div id="avatar-gallery-grid" class="grid grid-cols-3 gap-2.5 overflow-y-auto hidden-scrollbar py-1">
+            <!-- İllüstrasyonlu Avatarlar Render Edilecek -->
         </div>
     </div>
 </div>

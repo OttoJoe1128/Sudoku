@@ -407,12 +407,16 @@ export const UIManager = {
 
         const avatarSelector = document.getElementById('profile-avatar-selector');
         if (avatarSelector) {
-          avatarSelector.innerHTML = AVATAR_LIST.map(a => `
-            <button data-avatar="${a.key}" class="avatar-option-btn p-2 rounded-xl border flex flex-col items-center justify-center active:scale-90 transition-transform ${a.key === stats.avatar ? 'bg-[var(--accent-gold)] text-[var(--text-on-gold)] border-[var(--accent-gold)] shadow-md ring-2 ring-[var(--accent-gold-bright)]' : 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border-subtle)] hover:bg-[var(--bg-card-hover)]'}">
-              ${renderAvatarSVG(a.key, 24)}
-              <span class="text-[8px] font-black mt-1">${a.name}</span>
-            </button>
-          `).join('');
+          const isEn = getLang() === 'en';
+          avatarSelector.innerHTML = AVATAR_LIST.slice(0, 8).map(a => {
+            const name = isEn && a.nameEn ? a.nameEn : a.name;
+            return `
+              <button data-avatar="${a.key}" class="avatar-option-btn p-2 rounded-xl border flex flex-col items-center justify-center active:scale-90 transition-transform ${a.key === stats.avatar ? 'bg-[var(--accent-gold)] text-[var(--text-on-gold)] border-[var(--accent-gold)] shadow-md ring-2 ring-[var(--accent-gold-bright)]' : 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border-subtle)] hover:bg-[var(--bg-card-hover)]'}">
+                ${renderAvatarSVG(a.key, 32)}
+                <span class="text-[8px] font-black mt-1 line-clamp-1">${name}</span>
+              </button>
+            `;
+          }).join('');
         }
       } else {
         ownControls.classList.add('hidden');
@@ -1309,6 +1313,36 @@ export const UIManager = {
     if (vpEl && !vpEl.classList.contains('hidden')) {
       SamuraiViewport.focusGrid(gridIdx, vpEl, true);
     }
+  },
+
+  renderAvatarGallery(currentAvatar: string, onSelect: (avatarKey: string) => void) {
+    const gridEl = document.getElementById('avatar-gallery-grid');
+    if (!gridEl) return;
+
+    const isEn = getLang() === 'en';
+
+    gridEl.innerHTML = AVATAR_LIST.map(a => {
+      const isSelected = a.key === currentAvatar;
+      const name = isEn && a.nameEn ? a.nameEn : a.name;
+
+      const activeClass = isSelected
+        ? 'bg-[var(--bg-card)] border-2 border-[var(--accent-gold)] ring-2 ring-[var(--accent-gold-bright)] shadow-lg'
+        : 'bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] hover:bg-[var(--bg-card-hover)]';
+
+      return `
+        <button data-avatar="${a.key}" class="avatar-gallery-item p-3 rounded-2xl ${activeClass} flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-transform text-center group">
+          <div class="mb-1.5">${renderAvatarSVG(a.key, 48)}</div>
+          <span class="text-[10px] font-black text-[var(--text-primary)] leading-tight line-clamp-1">${name}</span>
+        </button>
+      `;
+    }).join('');
+
+    gridEl.querySelectorAll('.avatar-gallery-item').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const key = (e.currentTarget as HTMLElement).getAttribute('data-avatar');
+        if (key) onSelect(key);
+      });
+    });
   },
 
   showError(r: number, c: number) {
