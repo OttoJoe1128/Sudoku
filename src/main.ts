@@ -1,10 +1,11 @@
 import './design/tokens.css';
 import { UIManager } from './ui/uiManager';
-import { renderAvatarSVG, renderRankBadgeSVG } from './design/icons';
+import { renderAvatarSVG, renderRankBadgeSVG, Icons } from './design/icons';
 import { getLang, setLang, t, applyStaticTranslations } from './i18n/translations';
 import { SudokuGen, SudokuVariant } from './engine/sudoku';
 import { UserManager } from './store/userState';
 import { ShopManager } from './engine/shop';
+import { SoundManager } from './engine/soundManager';
 import { MatchEngine } from './engine/matchEngine';
 import { App } from '@capacitor/app';
 
@@ -169,6 +170,31 @@ document.getElementById('btn-theme-toggle')?.addEventListener('click', () => {
     : (isEn ? 'Night Theme (Obsidian & Gold)' : 'Gece Teması (Obsidyen & Altın)');
   UIManager.showToast(msg, 'info');
 });
+
+const updateSoundButtonUI = () => {
+  const btn = document.getElementById('btn-sound-toggle');
+  if (btn) {
+    if (SoundManager.isEnabled()) {
+      btn.innerHTML = Icons.volumeOn;
+      btn.className = "bg-[var(--bg-elevated)] text-[var(--accent-gold)] p-2.5 rounded-2xl active:scale-95 transition-transform border border-[var(--border-subtle)] flex items-center justify-center";
+    } else {
+      btn.innerHTML = Icons.volumeOff;
+      btn.className = "bg-[var(--bg-elevated)] text-[var(--text-secondary)] opacity-60 p-2.5 rounded-2xl active:scale-95 transition-transform border border-[var(--border-subtle)] flex items-center justify-center";
+    }
+  }
+};
+updateSoundButtonUI();
+
+document.getElementById('btn-sound-toggle')?.addEventListener('click', () => {
+  const isNowEnabled = SoundManager.toggle();
+  updateSoundButtonUI();
+  const isEn = getLang() === 'en';
+  UIManager.showToast(isNowEnabled ? (isEn ? 'Sound Enabled' : 'Ses Açıldı') : (isEn ? 'Sound Disabled' : 'Ses Kapatıldı'), 'info');
+});
+
+document.addEventListener('pointerdown', () => {
+  SoundManager.startBgm();
+}, { once: true });
 
 // Etkileşimli Sembol Bilgi Popover Dinleyicisi
 document.addEventListener('click', (e) => {

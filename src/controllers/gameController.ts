@@ -8,6 +8,7 @@ import { saveActiveGameRecord, clearSavedGame, updateSavedGamesCountUI } from '.
 import { t, getLang } from '../i18n/translations';
 import { auth } from '../api/firebase';
 import { ExamTier, PlacementExamConfig, getPlacementExamConfig, evaluatePlacementExam, calculateExamProgress } from '../engine/placementEngine';
+import { SoundManager } from '../engine/soundManager';
 
 let currentSolution: number[][];
 let userBoard: number[][];
@@ -666,6 +667,7 @@ export function startGame(
         selectedCell?.r ?? -1,
         selectedCell?.c ?? -1,
         (clickedGridIdx, r, c) => {
+          SoundManager.playTap();
           if (clickedGridIdx !== activeSamuraiIndex) {
             switchSamuraiGrid(clickedGridIdx, false);
           }
@@ -679,6 +681,7 @@ export function startGame(
       UIManager.renderBoard(
         userBoard,
         (r, c) => {
+          SoundManager.playTap();
           selectedCell = { r, c };
           refresh();
         },
@@ -818,6 +821,7 @@ export function startGame(
         });
 
         if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();
+        SoundManager.playWin();
 
         AchievementManager.checkAndUnlockBadges({
           level: nextLevel,
@@ -830,6 +834,7 @@ export function startGame(
         UIManager.navigate('menu');
       },
       async (errCount) => {
+        SoundManager.playError();
         errors += errCount;
         updateErrorUI();
         persistCurrentGame();
@@ -855,6 +860,7 @@ export function startGame(
     );
 
     if (success) {
+      SoundManager.playNumber();
       notesBoard[r][c].clear();
 
       if (currentVariant === 'irregular' && currentRegionMap) {

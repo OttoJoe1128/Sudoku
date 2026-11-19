@@ -29,6 +29,11 @@ export const menuTemplate = `
                 </button>
             </div>
 
+            <!-- Ses Aç / Kapa Butonu -->
+            <button id="btn-sound-toggle" title="Ses Aç / Kapa" class="bg-[var(--bg-elevated)] text-[var(--accent-gold)] p-2.5 rounded-2xl active:scale-95 transition-transform border border-[var(--border-subtle)] flex items-center justify-center">
+                ${Icons.volumeOn}
+            </button>
+
             <!-- Düello Gelen Kutusu (Inbox) Butonu -->
             <button id="btn-open-inbox" title="Düello Gelen Kutusu" class="relative bg-[var(--bg-elevated)] text-[var(--text-primary)] p-2.5 rounded-2xl active:scale-95 transition-transform border border-[var(--border-subtle)] flex items-center justify-center">
                 ${Icons.inbox}
