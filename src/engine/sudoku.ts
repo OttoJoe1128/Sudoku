@@ -14,28 +14,80 @@ export interface GeneratedSudoku {
   samuraiGrids?: { puzzle: number[][]; solution: number[][] }[];
 }
 
-export const BASE_IRREGULAR_REGION_MAP: number[][] = [
-  [0, 0, 0, 1, 1, 1, 2, 2, 2],
-  [0, 0, 0, 1, 1, 1, 2, 2, 2],
-  [0, 0, 0, 1, 1, 1, 2, 2, 2],
-  [3, 3, 3, 4, 4, 4, 5, 5, 5],
-  [3, 3, 3, 4, 4, 4, 5, 5, 5],
-  [3, 3, 3, 4, 4, 4, 5, 5, 5],
-  [6, 6, 6, 7, 7, 7, 8, 8, 8],
-  [6, 6, 6, 7, 7, 7, 8, 8, 8],
-  [6, 6, 6, 7, 7, 7, 8, 8, 8]
-];
-
-export const BASE_IRREGULAR_SOLUTION: number[][] = [
-  [1, 2, 3, 4, 5, 6, 7, 8, 9],
-  [4, 5, 6, 7, 8, 9, 1, 2, 3],
-  [7, 8, 9, 1, 2, 3, 4, 5, 6],
-  [2, 3, 1, 5, 6, 4, 8, 9, 7],
-  [5, 6, 4, 8, 9, 7, 2, 3, 1],
-  [8, 9, 7, 2, 3, 1, 5, 6, 4],
-  [3, 1, 2, 6, 4, 5, 9, 7, 8],
-  [6, 4, 5, 9, 7, 8, 3, 1, 2],
-  [9, 7, 8, 3, 1, 2, 6, 4, 5]
+// 3 Adet %100 Doğrulanmış Gerçek Düzensiz (Jigsaw) Şablon
+export const IRREGULAR_TEMPLATES: { regionMap: number[][]; solution: number[][] }[] = [
+  {
+    regionMap: [
+      [0, 0, 0, 0, 1, 2, 2, 2, 2],
+      [0, 0, 1, 0, 1, 1, 1, 2, 2],
+      [3, 0, 1, 1, 1, 1, 5, 2, 2],
+      [3, 0, 4, 4, 4, 5, 5, 5, 2],
+      [3, 3, 3, 4, 4, 5, 5, 5, 5],
+      [3, 3, 3, 3, 4, 4, 4, 4, 5],
+      [6, 6, 6, 6, 7, 7, 7, 8, 8],
+      [6, 6, 7, 6, 7, 8, 7, 8, 8],
+      [6, 6, 7, 7, 7, 8, 8, 8, 8]
+    ],
+    solution: [
+      [1, 2, 3, 4, 5, 6, 7, 8, 9],
+      [9, 7, 6, 5, 3, 8, 2, 1, 4],
+      [6, 8, 9, 1, 7, 4, 3, 5, 2],
+      [7, 6, 8, 2, 1, 5, 4, 9, 3],
+      [4, 5, 1, 3, 9, 2, 8, 7, 6],
+      [3, 9, 2, 8, 4, 7, 5, 6, 1],
+      [5, 4, 7, 9, 6, 3, 1, 2, 8],
+      [2, 3, 5, 6, 8, 1, 9, 4, 7],
+      [8, 1, 4, 7, 2, 9, 6, 3, 5]
+    ]
+  },
+  {
+    regionMap: [
+      [0, 0, 0, 1, 1, 1, 2, 2, 2],
+      [0, 0, 0, 1, 1, 4, 2, 2, 2],
+      [3, 3, 0, 1, 1, 4, 2, 5, 5],
+      [3, 3, 0, 1, 1, 4, 2, 5, 5],
+      [3, 6, 0, 4, 4, 4, 2, 5, 5],
+      [3, 6, 6, 4, 4, 4, 5, 5, 5],
+      [3, 6, 6, 7, 7, 8, 8, 8, 8],
+      [3, 3, 6, 7, 7, 8, 8, 8, 8],
+      [6, 6, 6, 7, 7, 7, 7, 7, 8]
+    ],
+    solution: [
+      [1, 2, 3, 4, 5, 6, 7, 8, 9],
+      [6, 7, 9, 1, 2, 8, 3, 4, 5],
+      [7, 4, 8, 9, 3, 5, 6, 2, 1],
+      [5, 6, 4, 8, 7, 1, 2, 9, 3],
+      [8, 3, 5, 2, 9, 4, 1, 6, 7],
+      [2, 9, 1, 3, 6, 7, 4, 5, 8],
+      [9, 5, 6, 7, 4, 3, 8, 1, 2],
+      [3, 1, 2, 6, 8, 9, 5, 7, 4],
+      [4, 8, 7, 5, 1, 2, 9, 3, 6]
+    ]
+  },
+  {
+    regionMap: [
+      [0, 0, 0, 0, 1, 1, 2, 2, 2],
+      [0, 0, 1, 1, 1, 1, 2, 2, 2],
+      [0, 0, 3, 1, 1, 1, 5, 5, 2],
+      [0, 3, 3, 3, 4, 4, 4, 5, 2],
+      [3, 3, 3, 4, 4, 5, 5, 5, 2],
+      [3, 3, 4, 4, 4, 4, 5, 8, 8],
+      [7, 7, 7, 7, 7, 7, 5, 5, 8],
+      [6, 7, 6, 7, 6, 7, 8, 8, 8],
+      [6, 6, 6, 6, 6, 6, 8, 8, 8]
+    ],
+    solution: [
+      [1, 2, 3, 4, 5, 6, 7, 8, 9],
+      [5, 6, 9, 1, 8, 7, 3, 2, 4],
+      [9, 7, 6, 3, 4, 2, 8, 5, 1],
+      [8, 3, 1, 2, 6, 4, 9, 7, 5],
+      [4, 8, 5, 7, 3, 9, 2, 1, 6],
+      [7, 9, 8, 5, 2, 1, 6, 4, 3],
+      [2, 1, 7, 6, 9, 5, 4, 3, 8],
+      [6, 4, 2, 8, 1, 3, 5, 9, 7],
+      [3, 5, 4, 9, 7, 8, 1, 6, 2]
+    ]
+  }
 ];
 
 const BASE_SUDOKU_SOLUTION: number[][] = [
@@ -63,11 +115,22 @@ export class SudokuGen {
     return 'zor';
   }
 
+  // 90 Derece Saat Yönünde Matris Döndürücü
+  static rotate90(grid: number[][]): number[][] {
+    const N = grid.length;
+    const res = Array.from({ length: N }, () => Array(N).fill(0));
+    for (let r = 0; r < N; r++) {
+      for (let c = 0; c < N; c++) {
+        res[c][N - 1 - r] = grid[r][c];
+      }
+    }
+    return res;
+  }
+
   // 0.01 Saniyede Anında Geçerli Çözüm Üretici (Rakam Permütasyonu)
-  static generateSolutionFast(isIrregular: boolean = false): number[][] {
+  static generateSolutionFast(): number[][] {
     const perm = [1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5);
-    const source = isIrregular ? BASE_IRREGULAR_SOLUTION : BASE_SUDOKU_SOLUTION;
-    return source.map(row => row.map(num => perm[num - 1]));
+    return BASE_SUDOKU_SOLUTION.map(row => row.map(num => perm[num - 1]));
   }
 
   static generateVariant(difficulty: string, variant: SudokuVariant = 'classic'): GeneratedSudoku {
@@ -103,14 +166,46 @@ export class SudokuGen {
       };
     }
 
-    const isIrregular = variant === 'irregular';
-    const gen = this.generate(difficulty, isIrregular);
-    let regionMap: number[][] | undefined = undefined;
+    if (variant === 'irregular') {
+      const template = IRREGULAR_TEMPLATES[Math.floor(Math.random() * IRREGULAR_TEMPLATES.length)];
+      let regionMap = template.regionMap.map(r => [...r]);
+      let baseSolution = template.solution.map(r => [...r]);
+
+      const rotations = Math.floor(Math.random() * 4);
+      for (let i = 0; i < rotations; i++) {
+        regionMap = this.rotate90(regionMap);
+        baseSolution = this.rotate90(baseSolution);
+      }
+
+      const perm = [1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5);
+      const solution = baseSolution.map(row => row.map(num => perm[num - 1]));
+      const puzzle = solution.map(row => [...row]);
+
+      const targetRemoves = difficulty === 'basit' ? 32 : difficulty === 'orta' ? 44 : 54;
+      const positions: { r: number; c: number }[] = [];
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          positions.push({ r, c });
+        }
+      }
+      positions.sort(() => Math.random() - 0.5);
+      for (let i = 0; i < targetRemoves && i < positions.length; i++) {
+        const { r, c } = positions[i];
+        puzzle[r][c] = 0;
+      }
+
+      return {
+        puzzle,
+        solution,
+        variant: 'irregular',
+        regionMap
+      };
+    }
+
+    const gen = this.generate(difficulty);
     let cages: KillerCage[] | undefined = undefined;
 
-    if (isIrregular) {
-      regionMap = BASE_IRREGULAR_REGION_MAP;
-    } else if (variant === 'killer') {
+    if (variant === 'killer') {
       cages = this.generateKillerCages(gen.solution);
     }
 
@@ -118,13 +213,12 @@ export class SudokuGen {
       puzzle: gen.puzzle,
       solution: gen.solution,
       variant,
-      regionMap,
       cages
     };
   }
 
-  static generate(difficulty: string, isIrregular: boolean = false): { puzzle: number[][]; solution: number[][] } {
-    const solution = this.generateSolutionFast(isIrregular);
+  static generate(difficulty: string): { puzzle: number[][]; solution: number[][] } {
+    const solution = this.generateSolutionFast();
     const puzzle = solution.map(row => [...row]);
 
     const targetRemoves = difficulty === 'basit' ? 30 : difficulty === 'orta' ? 42 : 52;

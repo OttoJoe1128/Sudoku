@@ -24,6 +24,10 @@ describe('Sudoku Engine & 5 Variants', () => {
     const solution = res.solution;
     const regionMap = res.regionMap!;
 
+    // 0. Verify regionMap is NOT a standard 3x3 layout
+    const isStandard3x3 = regionMap.every((row, r) => row.every((val, c) => val === Math.floor(r / 3) * 3 + Math.floor(c / 3)));
+    expect(isStandard3x3).toBe(false);
+
     // 1. Row uniqueness
     for (let r = 0; r < 9; r++) {
       const rowDigits = new Set(solution[r]);

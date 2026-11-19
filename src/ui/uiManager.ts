@@ -1117,7 +1117,7 @@ export const UIManager = {
         const isRelatedGroup = selectedR >= 0 && (
           r === selectedR ||
           c === selectedC ||
-          (Math.floor(r / 3) === selectedBoxR && Math.floor(c / 3) === selectedBoxC)
+          (variant === 'irregular' && regionMap ? (regionMap[r][c] === regionMap[selectedR][selectedC]) : (Math.floor(r / 3) === selectedBoxR && Math.floor(c / 3) === selectedBoxC))
         );
 
         const isMatchingValue = selectedVal !== 0 && val === selectedVal;
@@ -1142,10 +1142,10 @@ export const UIManager = {
         if (variant === 'irregular' && regionMap) {
           const currentRegion = regionMap[r][c];
           if (c < 8 && regionMap[r][c + 1] !== currentRegion) {
-            borderRight = 'border-r-[3px] border-r-slate-800';
+            borderRight = 'border-r-[3px] border-r-slate-900 dark:border-r-slate-200';
           }
           if (r < 8 && regionMap[r + 1][c] !== currentRegion) {
-            borderBottom = 'border-b-[3px] border-b-slate-800';
+            borderBottom = 'border-b-[3px] border-b-slate-900 dark:border-b-slate-200';
           }
         } else {
           if (c === 2 || c === 5) borderRight = 'border-r-4 border-r-slate-800';

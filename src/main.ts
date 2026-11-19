@@ -1,6 +1,6 @@
 import { UIManager, SavedGameRecord } from './ui/uiManager';
 import { GameEngine } from './engine/gameEngine';
-import { SudokuGen, SudokuVariant, GeneratedSudoku } from './engine/sudoku';
+import { SudokuGen, SudokuVariant, GeneratedSudoku, IRREGULAR_TEMPLATES } from './engine/sudoku';
 import { UserManager } from './store/userState';
 import { Leaderboard, Player, SpeedRecord, SIMULATED_LOBBY_PLAYERS } from './engine/leaderboard';
 import { ShopManager } from './engine/shop';
@@ -31,6 +31,7 @@ let isNotesMode = false;
 let currentLevelNumber = 1;
 let isCustomGameMode = false;
 let currentTimeLimitSec = 0;
+let currentRegionMap: number[][] | undefined = undefined;
 
 // Maç / Düello Modu Değişkenleri
 let activeMatch: MatchState | null = null;
@@ -152,6 +153,7 @@ const saveActiveGameRecord = () => {
       currentSolution,
       errors,
       notesBoard: safeNotes,
+      regionMap: currentRegionMap,
       updatedAtMs: Date.now()
     }));
 
@@ -294,12 +296,14 @@ const startGame = (
       initialBoard = restoredState.initialBoard.map((row: any) => [...row]);
       currentSolution = restoredState.currentSolution;
       timeElapsed = typeof restoredState.timeElapsed === 'number' ? restoredState.timeElapsed : 0;
+      currentRegionMap = restoredState.regionMap;
     } else if (matchData) {
       if (restoredState) clearCurrentSavedGame();
       currentSolution = matchData.solution;
       userBoard = matchData.puzzle.map(row => [...row]);
       initialBoard = matchData.puzzle.map(row => [...row]);
       timeElapsed = 0;
+      currentRegionMap = matchData.regionMap || IRREGULAR_TEMPLATES[0].regionMap;
     } else {
       if (restoredState) clearCurrentSavedGame();
       activeGeneratedSudoku = SudokuGen.generateVariant(diff, currentVariant);
@@ -307,7 +311,12 @@ const startGame = (
       userBoard = activeGeneratedSudoku.puzzle.map(row => [...row]);
       initialBoard = activeGeneratedSudoku.puzzle.map(row => [...row]);
       timeElapsed = 0;
+      currentRegionMap = activeGeneratedSudoku.regionMap;
       UIManager.hideMatchHeader();
+    }
+
+    if (currentVariant !== 'irregular') {
+      currentRegionMap = undefined;
     }
 
     if (!isMatchMode) {
