@@ -423,9 +423,11 @@ export function startGame(
       }
     }
 
-    notesBoard = Array.from({ length: 9 }, () =>
-      Array.from({ length: 9 }, () => new Set<number>())
-    );
+    if (currentVariant !== 'samurai') {
+      notesBoard = Array.from({ length: 9 }, () =>
+        Array.from({ length: 9 }, () => new Set<number>())
+      );
+    }
   }
 
   const variantTitleEl = document.getElementById('game-variant-title');
