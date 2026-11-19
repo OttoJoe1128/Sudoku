@@ -1,4 +1,4 @@
-import { Icons, renderAvatarSVG } from '../../design/icons';
+import { Icons, renderAvatarSVG, renderBrandLogoHTML } from '../../design/icons';
 
 export const menuTemplate = `
 <div id="view-menu" class="flex-1 flex flex-col p-5 gap-3.5 pb-24 overflow-y-auto hidden-scrollbar relative">
@@ -35,6 +35,9 @@ export const menuTemplate = `
             </div>
         </div>
     </div>
+
+    <!-- Marka Logos & Amblem -->
+    ${renderBrandLogoHTML()}
 
     <!-- PWA Yükleme Kartı -->
     <button id="btn-install-pwa" class="hidden w-full bg-[var(--bg-card)] text-[var(--text-primary)] p-3 rounded-2xl text-xs font-bold items-center justify-between shadow-sm transition-all border border-[var(--border-subtle)]">

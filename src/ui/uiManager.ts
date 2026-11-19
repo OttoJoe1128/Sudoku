@@ -109,13 +109,13 @@ export const UIManager = {
         <div class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl p-3">
           <p class="font-black text-[var(--accent-gold)] text-sm mb-1">${t('mmr_rank_pts')}</p>
           <p>• PvP: <strong class="text-[var(--accent-cyan)]">+25 MMR</strong> (Flawless: <strong class="text-[var(--accent-cyan)]">+30 MMR</strong>)</p>
-          <p>• Bot: <strong class="text-[var(--accent-cyan)]">+15 YZ MMR</strong></p>
+          <p>• Bot: <strong class="text-[var(--accent-cyan)]">+15 ${t('lb_tab_bot')} MMR</strong></p>
         </div>
 
         <div class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl p-3">
           <p class="font-black text-[var(--accent-gold)] text-sm mb-1">${t('discipline_mults')}</p>
-          <p>• Klasik: <strong>1.0x</strong> | Harfli: <strong>1.2x</strong> | Parçalı: <strong>1.5x</strong></p>
-          <p>• Hesap: <strong>1.8x</strong> | Samurai: <strong>2.5x</strong></p>
+          <p>• ${t('var_classic')}: <strong>1.0x</strong> | ${t('var_wordoku')}: <strong>1.2x</strong> | ${t('var_irregular')}: <strong>1.5x</strong></p>
+          <p>• ${t('var_killer')}: <strong>1.8x</strong> | ${t('var_samurai')}: <strong>2.5x</strong></p>
         </div>
 
         <div class="bg-[var(--bg-elevated)] border border-rose-500/40 rounded-2xl p-3">
@@ -133,12 +133,12 @@ export const UIManager = {
         <div class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl p-3">
           <p class="font-black text-[var(--accent-gold)] text-sm mb-1">${t('gold_and_blitz')}</p>
           <p>• <span class="w-2 h-2 rounded-full inline-block bg-emerald-500 mr-1"></span>${t('diff_basit')}: +10 ${t('label_gold')} | <span class="w-2 h-2 rounded-full inline-block bg-amber-500 mr-1"></span>${t('diff_orta')}: +20 ${t('label_gold')} | <span class="w-2 h-2 rounded-full inline-block bg-rose-500 mr-1"></span>${t('diff_zor')}: +35 ${t('label_gold')}</p>
-          <p>• <span class="mr-1">${Icons.zap}</span>3 Dk Blitz: <strong class="text-[var(--accent-cyan)]">+%50 ${t('label_gold')}</strong></p>
+          <p>• <span class="mr-1">${Icons.zap}</span>${t('time_3m')} Blitz: <strong class="text-[var(--accent-cyan)]">+%50 ${t('label_gold')}</strong></p>
         </div>
 
         <div class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl p-3">
           <p class="font-black text-[var(--accent-gold)] text-sm mb-1">${t('mastery_and_rp')}</p>
-          <p>• Ustalık Puanı + Rütbe Puanı (+15 RP)</p>
+          <p>• ${t('mastery_and_rp_desc')}</p>
         </div>
       </div>
     `;
@@ -1006,12 +1006,12 @@ export const UIManager = {
         listEl.innerHTML = `
           <div class="flex flex-col items-center justify-center py-12 text-center">
             <svg class="w-12 h-12 text-[var(--text-secondary)] opacity-50 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <p class="text-xs font-bold text-[var(--text-primary)] mb-1">Bu zorlukta henüz rekor kırılmadı.</p>
-            <p class="text-[11px] text-[var(--text-secondary)]">İlk rekoru kıran sen ol!</p>
+            <p class="text-xs font-bold text-[var(--text-primary)] mb-1">${t('lb_no_speed_title')}</p>
+            <p class="text-[11px] text-[var(--text-secondary)]">${t('lb_no_speed_sub')}</p>
           </div>
         `;
       } else {
-        listEl.innerHTML = `<div class="text-center text-[var(--text-secondary)] py-10 font-bold">Kayıt bulunamadı.</div>`;
+        listEl.innerHTML = `<div class="text-center text-[var(--text-secondary)] py-10 font-bold">${t('lb_no_records')}</div>`;
       }
       return;
     }
@@ -1030,21 +1030,36 @@ export const UIManager = {
       } else if (type === 'pvp_mmr') {
         rightVal = `${playerObj.duel_mmr || 1000} MMR`;
       } else if (type === 'bot_mmr') {
-        rightVal = `${playerObj.bot_mmr || 1000} YZ`;
+        rightVal = `${playerObj.bot_mmr || 1000} ${t('lb_tab_bot')}`;
       } else if (type === 'discipline') {
         const score = playerObj.variantScores ? playerObj.variantScores[filterVariant] || 0 : 0;
         rightVal = `<span class="flex items-center gap-1">${this.getVariantEmblemSVG(filterVariant, 18)} ${score} ${t('label_pts')}</span>`;
       } else if (isSpeed) {
         const speed = p as SpeedRecord;
-        rightVal = `${speed.timeFormatted} (${speed.difficulty.toUpperCase()})`;
+        const localizedDiff = t('diff_' + speed.difficulty).toUpperCase();
+        rightVal = `${speed.timeFormatted} (${localizedDiff})`;
       }
 
       const calculatedTitle = playerObj.title || UserManager.calculatePlayerTitle(playerObj.level || 1, playerObj.duel_wins || 0, playerObj.duel_mmr || 1000);
 
+      let rankBadgeClass = "bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)]";
+      let rowBorderClass = "border-[var(--border-subtle)] hover:border-[var(--border-strong)]";
+
+      if (i === 0) {
+        rankBadgeClass = "bg-gradient-to-b from-amber-300 to-amber-500 text-slate-950 ring-2 ring-amber-400/60 shadow-md";
+        rowBorderClass = "border-amber-500/50";
+      } else if (i === 1) {
+        rankBadgeClass = "bg-gradient-to-b from-slate-200 to-slate-400 text-slate-950 ring-2 ring-slate-300/50";
+        rowBorderClass = "border-slate-400/40";
+      } else if (i === 2) {
+        rankBadgeClass = "bg-gradient-to-b from-amber-600 to-amber-800 text-amber-50 ring-2 ring-amber-700/50";
+        rowBorderClass = "border-amber-700/40";
+      }
+
       return `
-        <div data-lb-index="${i}" class="leaderboard-row-item flex justify-between items-center p-3 bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] rounded-xl shadow-sm cursor-pointer active:scale-[0.98] transition-all">
+        <div data-lb-index="${i}" class="leaderboard-row-item flex justify-between items-center p-3 bg-[var(--bg-card)] border ${rowBorderClass} rounded-xl shadow-sm cursor-pointer active:scale-[0.98] transition-all">
           <div class="flex items-center gap-2">
-            <span class="w-6 h-6 rounded-full bg-[var(--bg-elevated)] flex items-center justify-center font-black text-xs text-[var(--text-primary)] border border-[var(--border-subtle)]">${i + 1}</span>
+            <span class="w-6 h-6 rounded-full flex items-center justify-center font-black text-xs ${rankBadgeClass}">${i + 1}</span>
             <div>
               <p class="font-bold text-[var(--text-primary)] text-sm leading-tight">${p.username}</p>
               <p class="text-[9px] font-black text-[var(--accent-gold)]">${renderRankBadgeSVG(calculatedTitle)}</p>
@@ -1142,11 +1157,15 @@ export const UIManager = {
         statusBtn = `<button data-badge-id="${b.id}" class="claim-badge-btn bg-[var(--accent-gold)] text-[var(--text-on-gold)] hover:brightness-110 font-black text-xs px-3.5 py-1.5 rounded-xl shadow active:scale-95 transition-transform animate-pulse shrink-0 whitespace-nowrap">+${b.rewardGold} ${t('label_gold')}</button>`;
       }
 
+      const iconContainerClass = b.isUnlocked
+        ? "w-11 h-11 rounded-2xl bg-[var(--bg-elevated)] border-2 border-[var(--accent-gold)] text-[var(--accent-gold)] flex items-center justify-center shrink-0 shadow-inner"
+        : "w-11 h-11 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-secondary)] flex items-center justify-center shrink-0 opacity-60";
+
       return `
         <div class="p-3 border border-[var(--border-subtle)] rounded-2xl flex justify-between items-center bg-[var(--bg-card)] ${b.isUnlocked ? 'shadow-sm' : 'opacity-60'}">
           <div class="flex items-center gap-3">
-            <span class="text-xl text-[var(--accent-gold)]">${svgIcon}</span>
-            <div>
+            <div class="${iconContainerClass}">${svgIcon}</div>
+            <div class="text-left">
               <p class="font-black text-[var(--text-primary)] text-xs">${title}</p>
               <p class="text-[10px] text-[var(--text-secondary)] font-medium">${desc}</p>
             </div>

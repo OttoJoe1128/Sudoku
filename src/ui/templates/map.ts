@@ -59,11 +59,15 @@ export const mapTemplate = `
         </div>
     </div>
 
-    <!-- Kaydırılabilir Sonsuz Patika Alanı -->
-    <div id="map-scroll-area" class="flex-1 w-full overflow-y-auto hidden-scrollbar relative z-10 pt-4 pb-28">
-        <div id="map-path-container" class="w-[320px] mx-auto relative py-4">
-            <!-- SVG Enerji Yolu & Dikey Taşlar Render Edilecek -->
+    <!-- Kaydırılabilir Sonsuz Patika Alanı & Yumuşak Perde Maskeleri -->
+    <div class="relative flex-1 w-full overflow-hidden z-10">
+        <div class="pointer-events-none absolute top-0 left-0 right-0 h-10 bg-gradient-to-b from-[var(--bg-app)] to-transparent z-20"></div>
+        <div id="map-scroll-area" class="w-full h-full overflow-y-auto hidden-scrollbar relative z-10 pt-4 pb-28">
+            <div id="map-path-container" class="w-[320px] mx-auto relative py-4">
+                <!-- SVG Enerji Yolu & Dikey Taşlar Render Edilecek -->
+            </div>
         </div>
+        <div class="pointer-events-none absolute bottom-0 left-0 right-0 h-14 bg-gradient-to-t from-[var(--bg-app)] to-transparent z-20"></div>
     </div>
 </div>
 `;

@@ -1,5 +1,29 @@
 import { translateRankName } from '../i18n/translations';
 
+export function renderBrandLogoHTML(): string {
+  return `
+    <div class="flex flex-col items-center justify-center my-2 text-center select-none pointer-events-none">
+      <div class="flex items-center gap-2.5 mb-1">
+        <div class="w-10 h-10 rounded-2xl bg-[var(--bg-card)] border-2 border-[var(--border-strong)] p-1.5 shadow-xl flex items-center justify-center text-[var(--accent-gold)]">
+          <svg viewBox="0 0 36 36" fill="none" class="w-full h-full">
+            <rect x="4" y="4" width="28" height="28" rx="6" stroke="currentColor" stroke-width="2" stroke-opacity="0.8"/>
+            <path d="M4 15H32M4 21H32M15 4V32M21 4V32" stroke="currentColor" stroke-width="1" stroke-opacity="0.3"/>
+            <path d="M18 6L30 18L18 30L6 18L18 6Z" stroke="currentColor" stroke-width="1.8" fill="currentColor" fill-opacity="0.1"/>
+            <circle cx="18" cy="18" r="3" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="flex flex-col text-left">
+          <h1 class="text-lg font-black tracking-[0.22em] leading-none">
+            <span class="text-[var(--text-primary)]">SUDOKU</span><span class="text-[var(--accent-gold)]">MAP</span>
+          </h1>
+          <span class="text-[8px] font-bold text-[var(--text-secondary)] tracking-[0.18em] uppercase mt-0.5 opacity-80">SMART PUZZLE ARENA</span>
+        </div>
+      </div>
+      <div class="h-[1px] w-32 bg-gradient-to-r from-transparent via-[var(--accent-gold)]/60 to-transparent"></div>
+    </div>
+  `;
+}
+
 export const AVATAR_LIST: { key: string; name: string; svg: string }[] = [
   {
     key: 'av_prism',

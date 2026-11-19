@@ -1759,7 +1759,7 @@ const loadBotCharactersUI = (diff: 'basit' | 'orta' | 'zor') => {
         if (d === 'zor') bgClass = "bg-rose-600";
         btn.className = `arena-diff-btn flex-1 py-1 rounded-lg font-black text-[10px] transition-all ${bgClass} text-white shadow-sm`;
       } else {
-        btn.className = "arena-diff-btn flex-1 py-1 rounded-lg font-bold text-[10px] transition-all text-slate-600 hover:text-slate-900 bg-transparent";
+        btn.className = "arena-diff-btn flex-1 py-1 rounded-lg font-bold text-[10px] transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent bg-transparent";
       }
     }
   });
@@ -2071,7 +2071,17 @@ document.getElementById('btn-sort-bot-mmr')?.addEventListener('click', () => upd
 
 document.querySelectorAll('.speed-filter-btn').forEach(btn => {
   btn.addEventListener('click', async (e) => {
-    const diff = (e.currentTarget as HTMLElement).getAttribute('data-diff') as any;
+    const target = e.currentTarget as HTMLElement;
+    const diff = target.getAttribute('data-diff') as any;
+
+    document.querySelectorAll('.speed-filter-btn').forEach(other => {
+      if (other === target) {
+        other.className = "speed-filter-btn flex-1 py-1 text-[11px] font-black rounded-lg bg-[var(--accent-gold)] text-[var(--text-on-gold)] shadow-sm";
+      } else {
+        other.className = "speed-filter-btn flex-1 py-1 text-[11px] font-bold rounded-lg bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]";
+      }
+    });
+
     const records = await Leaderboard.fetchFastestRecords(diff || 'all');
     UIManager.renderLeaderboard(records, 'speed', (p) => openPlayerProfile(p), currentLeaderboardVariant);
   });
