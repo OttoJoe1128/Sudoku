@@ -22,6 +22,7 @@ import { BotCharacter } from '../engine/botData';
 import { SudokuVariant, KillerCage, SudokuGen } from '../engine/sudoku';
 import { SamuraiViewport, renderSamuraiBoard, SamuraiBoardData } from './samuraiViewport';
 import { SoundManager } from '../engine/soundManager';
+import { escapeHTML } from '../utils/sanitize';
 
 export interface SavedGameRecord {
   id: string;
@@ -569,7 +570,7 @@ export const UIManager = {
 
       if (isMatch) {
         badgeHTML = `<span class="bg-rose-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md">${t('saved_tab_duel')}</span>`;
-        sublineHTML = `VS ${r.enemyName || t('label_rival')} • ${diffStr} • ${m}:${s}`;
+        sublineHTML = `VS ${escapeHTML(r.enemyName || t('label_rival'))} • ${diffStr} • ${m}:${s}`;
       } else if (isCustom) {
         badgeHTML = `<span class="bg-[var(--accent-cyan)] text-[var(--text-on-gold)] text-[8px] font-black px-1.5 py-0.5 rounded-md">${t('tag_custom')}</span>`;
         sublineHTML = `${diffStr} • ${timeSec > 0 ? `${m}:${s}` : t('label_ready')}`;
@@ -664,7 +665,7 @@ export const UIManager = {
             </div>
             <div class="text-left">
               <div class="flex items-center gap-1.5">
-                <span class="font-black text-[var(--text-primary)] text-xs">${p.username}</span>
+                <span class="font-black text-[var(--text-primary)] text-xs">${escapeHTML(p.username)}</span>
                 <span class="text-[9px] font-black text-[var(--accent-gold)]">${renderRankBadgeSVG(calculatedTitle)}</span>
               </div>
               <div class="mt-0.5">${statusBadge}</div>
@@ -847,7 +848,7 @@ export const UIManager = {
           <div class="flex items-center gap-2">
             <span class="text-base text-[var(--accent-gold)]">${Icons.sword}</span>
             <div class="text-left">
-              <p class="font-black text-[var(--text-primary)] text-xs">${c.fromUsername}</p>
+              <p class="font-black text-[var(--text-primary)] text-xs">${escapeHTML(c.fromUsername)}</p>
               <p class="text-[10px] text-[var(--accent-gold)] font-bold uppercase tracking-wider">${t('diff_' + c.difficulty).toUpperCase()} DÜELLO</p>
             </div>
           </div>
@@ -895,7 +896,7 @@ export const UIManager = {
         <span class="text-xs font-black text-amber-400 uppercase tracking-wider">⚔️ Canlı Düello İsteği!</span>
         <span id="challenge-popup-timer" class="text-xs font-mono font-bold bg-slate-800 px-2 py-0.5 rounded-lg text-rose-400">15s</span>
       </div>
-      <p class="text-xs font-medium text-slate-200"><span class="font-black text-white">${challenge.fromUsername}</span> seni <strong>${challenge.difficulty.toUpperCase()}</strong> düelloya davet ediyor!</p>
+      <p class="text-xs font-medium text-slate-200"><span class="font-black text-white">${escapeHTML(challenge.fromUsername)}</span> seni <strong>${challenge.difficulty.toUpperCase()}</strong> düelloya davet ediyor!</p>
       <div class="flex gap-2 mt-1">
         <button id="btn-accept-challenge" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2 rounded-xl text-xs active:scale-95 transition-transform">Kabul Et</button>
         <button id="btn-decline-challenge" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold py-2 rounded-xl text-xs active:scale-95 transition-transform">Reddet</button>
@@ -1178,7 +1179,7 @@ export const UIManager = {
           <div class="flex items-center gap-2">
             <span class="w-6 h-6 rounded-full flex items-center justify-center font-black text-xs ${rankBadgeClass}">${i + 1}</span>
             <div>
-              <p class="font-bold text-[var(--text-primary)] text-sm leading-tight">${p.username}</p>
+              <p class="font-bold text-[var(--text-primary)] text-sm leading-tight">${escapeHTML(p.username)}</p>
               <p class="text-[9px] font-black text-[var(--accent-gold)]">${renderRankBadgeSVG(calculatedTitle)}</p>
             </div>
           </div>

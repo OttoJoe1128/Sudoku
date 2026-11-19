@@ -6,6 +6,26 @@ import { validateSavedGameRecord } from '../engine/saveValidator';
 import { TRANSLATIONS, setLang, getLang, t, translateRankName } from '../i18n/translations';
 import { mapGlobalToSamuraiCell } from '../ui/samuraiViewport';
 import { getPlacementExamConfig, evaluatePlacementExam } from '../engine/placementEngine';
+import { escapeHTML, sanitizeUsername } from '../utils/sanitize';
+
+describe('XSS Security & Input Sanitization', () => {
+  it('should escape HTML characters correctly', () => {
+    const malicious = '<img src=x onerror="alert(1)">';
+    const escaped = escapeHTML(malicious);
+    expect(escaped).not.toContain('<');
+    expect(escaped).not.toContain('>');
+    expect(escaped).toBe('&lt;img src=x onerror=&quot;alert(1)&quot;&gt;');
+  });
+
+  it('should sanitize usernames by stripping tags, collapsing spaces and enforcing 20 char limit', () => {
+    const raw = '  <b>Otto</b>   is a very long name that exceeds the limit ';
+    const clean = sanitizeUsername(raw);
+    expect(clean).not.toContain('<');
+    expect(clean).not.toContain('>');
+    expect(clean).toBe('bOttob is a very lon');
+    expect(clean.length).toBeLessThanOrEqual(20);
+  });
+});
 
 describe('Sudoku Engine & 5 Variants', () => {
   it('should generate valid Classic 9x9 Sudoku puzzle and solution', () => {

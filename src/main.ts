@@ -7,6 +7,7 @@ import { UserManager } from './store/userState';
 import { ShopManager } from './engine/shop';
 import { SoundManager } from './engine/soundManager';
 import { MatchEngine } from './engine/matchEngine';
+import { sanitizeUsername } from './utils/sanitize';
 import { App } from '@capacitor/app';
 
 import { initSaveController, updateSavedGamesCountUI } from './controllers/saveController';
@@ -257,8 +258,8 @@ const checkUser = async () => {
 
 document.getElementById('save-username')?.addEventListener('click', async () => {
   const input = document.getElementById('username-input') as HTMLInputElement;
-  const newName = input?.value?.trim();
-  if (newName && newName.length >= 3) {
+  const newName = sanitizeUsername(input?.value || '');
+  if (newName.length >= 3) {
     const user = await UserManager.saveUser(newName);
     const nameEl = document.getElementById('menu-player-name');
     const profileNameEl = document.getElementById('profile-username');
