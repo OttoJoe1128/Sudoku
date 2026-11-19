@@ -75,7 +75,9 @@ export function renderRankBadgeSVG(title: string = '🥉 Çırak'): string {
     badgeIcon = `<svg class="w-3.5 h-3.5 inline-block mr-1 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 19 21 12 17 5 21 12 2"/></svg>`;
   }
 
-  return `<span class="inline-flex items-center font-black text-xs">${badgeIcon}<span>${title}</span></span>`;
+  const cleanTitle = title.replace(/^[^\p{L}]+/u, '').trim();
+
+  return `<span class="inline-flex items-center font-black text-xs">${badgeIcon}<span>${cleanTitle || title}</span></span>`;
 }
 
 export const Icons = {

@@ -812,9 +812,10 @@ export const UIManager = {
 
   renderMap(
     currentLevel: number,
-    startFocusLevel: number,
+    windowStart: number,
+    windowEnd: number,
     onNodeClick: (level: number) => void,
-    windowStartLevel?: number
+    autoScrollToCurrent: boolean = false
   ) {
     const container = document.getElementById('map-path-container');
     const targetLabel = document.getElementById('map-target-label');
@@ -829,9 +830,9 @@ export const UIManager = {
     }
 
     if (biomeTitle) {
-      if (currentLevel <= 300) biomeTitle.innerText = "🌿 ZÜMRÜT VADİ";
-      else if (currentLevel <= 700) biomeTitle.innerText = "💎 HEXTECH KALESİ";
-      else biomeTitle.innerText = "🔥 KIZIL ZİRVE";
+      if (currentLevel <= 300) biomeTitle.innerText = "ZÜMRÜT VADİ";
+      else if (currentLevel <= 700) biomeTitle.innerText = "HEXTECH KALESİ";
+      else biomeTitle.innerText = "KIZIL ZİRVE";
     }
 
     if (tierProgress) {
@@ -839,104 +840,144 @@ export const UIManager = {
       tierProgress.style.width = `${pct}%`;
     }
 
-    const focusLvl = startFocusLevel || currentLevel;
-    const startLvl = windowStartLevel || Math.max(1, focusLvl - 6);
-    const endLvl = Math.min(1000, startLvl + 20);
+    const startLvl = Math.max(1, windowStart);
+    const endLvl = Math.min(1000, Math.max(startLvl + 5, windowEnd));
+    const totalLevels = endLvl - startLvl + 1;
 
-    const avatar = UserManager.getAvatar() || '🎮';
+    const ROW_H = 104;
+    const totalHeight = totalLevels * ROW_H;
+    container.style.height = `${totalHeight}px`;
 
+    const avatar = UserManager.getAvatar() || 'av_prism';
+
+    // Exact Numeric SVG Energy Path
     const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svgEl.setAttribute('class', 'absolute inset-0 w-full h-full pointer-events-none z-0');
+    svgEl.setAttribute('width', '320');
+    svgEl.setAttribute('height', totalHeight.toString());
+    svgEl.setAttribute('viewBox', `0 0 320 ${totalHeight}`);
+    svgEl.setAttribute('class', 'absolute top-0 left-0 pointer-events-none z-0');
     container.appendChild(svgEl);
 
-    const nodePositions: { lvl: number; x: number; y: number }[] = [];
-    const stepY = 80;
-    let currentY = 20;
+    const nodePoints: { lvl: number; cx: number; cy: number }[] = [];
 
+    let index = 0;
     for (let lvl = endLvl; lvl >= startLvl; lvl--) {
       const isCompleted = lvl < currentLevel;
       const isCurrent = lvl === currentLevel;
       const isMilestone = lvl % 10 === 0;
 
-      const offsetIndex = lvl % 6;
-      let translateXClass = "translate-x-0";
-      let posXPercent = 50;
-      if (offsetIndex === 1) { translateXClass = "translate-x-[-35px]"; posXPercent = 35; }
-      if (offsetIndex === 2) { translateXClass = "translate-x-[-55px]"; posXPercent = 25; }
-      if (offsetIndex === 3) { translateXClass = "translate-x-[0px]"; posXPercent = 50; }
-      if (offsetIndex === 4) { translateXClass = "translate-x-[35px]"; posXPercent = 65; }
-      if (offsetIndex === 5) { translateXClass = "translate-x-[55px]"; posXPercent = 75; }
+      const offsetX = Math.round(Math.sin(lvl * 0.85) * 76);
+      const cx = 160 + offsetX;
+      const cy = index * ROW_H + (ROW_H / 2);
 
-      nodePositions.push({ lvl, x: posXPercent, y: currentY + 30 });
+      nodePoints.push({ lvl, cx, cy });
 
       const wrapper = document.createElement('div');
       wrapper.id = `map-node-${lvl}`;
-      wrapper.className = `flex flex-col items-center justify-center transition-transform ${translateXClass} relative group z-10`;
+      wrapper.style.position = 'absolute';
+      wrapper.style.top = `${index * ROW_H}px`;
+      wrapper.style.left = '0px';
+      wrapper.style.width = '320px';
+      wrapper.style.height = `${ROW_H}px`;
+      wrapper.className = 'flex items-center justify-center relative z-10';
 
-      const milestoneBadge = isMilestone ? `<span class="absolute -top-3 text-sm z-30 pointer-events-none">👑</span>` : '';
+      const innerBox = document.createElement('div');
+      innerBox.className = 'relative flex flex-col items-center justify-center group';
+      innerBox.style.transform = `translateX(${offsetX}px)`;
+
+      const milestoneBadge = isMilestone ? `<span class="absolute -top-3 text-xs z-30 pointer-events-none">${Icons.crown}</span>` : '';
 
       if (isCurrent) {
-        wrapper.innerHTML = `
+        innerBox.innerHTML = `
           ${milestoneBadge}
-          <div class="absolute -top-7 bg-gradient-to-r from-amber-400 to-amber-500 text-amber-950 font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-md border border-amber-300 flex items-center gap-1 z-30">
-            <span>${avatar}</span>
+          <div class="absolute -top-7 bg-[var(--accent-gold)] text-[var(--text-on-gold)] font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-md border border-[var(--accent-gold-bright)] flex items-center gap-1 z-30">
+            <span>${renderAvatarSVG(avatar, 14)}</span>
             <span>SEVİYE ${lvl}</span>
           </div>
-          <button data-level="${lvl}" class="w-24 h-24 rounded-3xl bg-gradient-to-b from-[#1E3A5F] via-[#0F2442] to-[#091428] border-2 border-[#C8AA6E] border-b-4 ring-4 ring-[#0AC8B9]/60 text-white shadow-xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-transform">
-            <span class="text-xl font-mono font-black leading-none text-[#F0E6D2]">${lvl}</span>
-            <span class="text-[9px] font-black text-[#C8AA6E] tracking-widest mt-1">⚔️ BAŞLA</span>
+          <button data-level="${lvl}" class="w-24 h-24 rounded-3xl bg-[var(--bg-card)] border-2 border-[var(--border-strong)] ring-4 ring-[var(--accent-cyan)]/60 text-[var(--text-primary)] shadow-2xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-transform">
+            <span class="text-xl font-mono font-black leading-none text-[var(--accent-gold)]">${lvl}</span>
+            <span class="text-[9px] font-black text-[var(--accent-gold-bright)] tracking-widest mt-1">OYNA</span>
           </button>
         `;
       } else if (isCompleted) {
-        wrapper.innerHTML = `
+        innerBox.innerHTML = `
           ${milestoneBadge}
-          <button data-level="${lvl}" class="w-16 h-16 rounded-2xl bg-gradient-to-b from-[#0A323C] to-[#091428] border-2 border-[#0AC8B9] border-b-4 text-[#F0E6D2] shadow-md flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-transform">
+          <button data-level="${lvl}" class="w-16 h-16 rounded-2xl bg-[var(--bg-card)] border-2 border-[var(--accent-cyan)] text-[var(--text-primary)] shadow-md flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-transform">
             <span class="text-base font-mono font-black leading-none">${lvl}</span>
-            <span class="text-[10px] font-black text-[#0AC8B9] mt-0.5">✓</span>
+            <span class="mt-0.5">${Icons.check}</span>
           </button>
         `;
       } else {
-        wrapper.innerHTML = `
+        innerBox.innerHTML = `
           ${milestoneBadge}
-          <button disabled class="w-16 h-16 rounded-2xl bg-[#0A1428]/90 border-2 border-slate-700/80 border-b-4 text-slate-400 flex flex-col items-center justify-center cursor-not-allowed opacity-80">
+          <button disabled class="w-16 h-16 rounded-2xl bg-[var(--bg-elevated)] border-2 border-[var(--border-subtle)] text-[var(--text-secondary)] flex flex-col items-center justify-center cursor-not-allowed opacity-60">
             <span class="text-sm font-mono font-black leading-none">${lvl}</span>
-            <span class="text-[10px] mt-0.5">🔒</span>
+            <span class="mt-0.5">${Icons.lock}</span>
           </button>
         `;
       }
 
-      const btn = wrapper.querySelector('button[data-level]');
+      const btn = innerBox.querySelector('button[data-level]');
       if (btn) {
         btn.addEventListener('click', () => onNodeClick(lvl));
       }
 
+      wrapper.appendChild(innerBox);
       container.appendChild(wrapper);
-      currentY += stepY;
+      index++;
     }
 
-    for (let i = 0; i < nodePositions.length - 1; i++) {
-      const p1 = nodePositions[i];
-      const p2 = nodePositions[i + 1];
+    for (let i = 0; i < nodePoints.length - 1; i++) {
+      const p1 = nodePoints[i];
+      const p2 = nodePoints[i + 1];
+
+      const midY = (p1.cy + p2.cy) / 2;
+      const d = `M ${p1.cx} ${p1.cy} C ${p1.cx} ${midY}, ${p2.cx} ${midY}, ${p2.cx} ${p2.cy}`;
+
       const isCompletedLine = p1.lvl <= currentLevel && p2.lvl <= currentLevel;
+      const isActiveLine = p2.lvl === currentLevel;
 
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      const d = `M ${p1.x}% ${p1.y} C ${p1.x}% ${(p1.y + p2.y) / 2}, ${p2.x}% ${(p1.y + p2.y) / 2}, ${p2.x}% ${p2.y}`;
-      path.setAttribute('d', d);
-      path.setAttribute('fill', 'none');
-      path.setAttribute('stroke', isCompletedLine ? '#0AC8B9' : '#334155');
-      path.setAttribute('stroke-width', isCompletedLine ? '4' : '3');
-      if (!isCompletedLine) {
-        path.setAttribute('stroke-dasharray', '6 6');
+      if (isCompletedLine) {
+        const glowPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        glowPath.setAttribute('d', d);
+        glowPath.setAttribute('fill', 'none');
+        glowPath.setAttribute('stroke', 'var(--accent-cyan)');
+        glowPath.setAttribute('stroke-opacity', '0.22');
+        glowPath.setAttribute('stroke-width', '10');
+        svgEl.appendChild(glowPath);
+
+        const corePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        corePath.setAttribute('d', d);
+        corePath.setAttribute('fill', 'none');
+        corePath.setAttribute('stroke', 'var(--accent-cyan)');
+        corePath.setAttribute('stroke-width', '3.5');
+        svgEl.appendChild(corePath);
+      } else if (isActiveLine) {
+        const activePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        activePath.setAttribute('d', d);
+        activePath.setAttribute('fill', 'none');
+        activePath.setAttribute('stroke', 'var(--accent-gold)');
+        activePath.setAttribute('stroke-width', '3.5');
+        svgEl.appendChild(activePath);
+      } else {
+        const lockedPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        lockedPath.setAttribute('d', d);
+        lockedPath.setAttribute('fill', 'none');
+        lockedPath.setAttribute('stroke', 'var(--border-subtle)');
+        lockedPath.setAttribute('stroke-width', '3');
+        lockedPath.setAttribute('stroke-dasharray', '6 6');
+        svgEl.appendChild(lockedPath);
       }
-      svgEl.appendChild(path);
     }
 
-    setTimeout(() => {
-      const currentEl = document.getElementById(`map-node-${focusLvl}`);
-      if (currentEl) {
-        currentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }, 100);
+    if (autoScrollToCurrent) {
+      setTimeout(() => {
+        const currentEl = document.getElementById(`map-node-${currentLevel}`);
+        if (currentEl) {
+          currentEl.scrollIntoView({ behavior: 'auto', block: 'center' });
+        }
+      }, 50);
+    }
   },
 
   renderLeaderboard(

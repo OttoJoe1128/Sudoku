@@ -1502,8 +1502,10 @@ let selectedMapVariant: SudokuVariant = 'classic';
     const descEl = document.getElementById('map-variant-rule-desc');
     if (descEl) descEl.innerText = RULE_DESCRIPTIONS[v] || RULE_DESCRIPTIONS.classic;
 
-    mapWindowStartLevel = 1;
-    renderMapPathUI();
+    const userLvl = UserManager.getVariantLevel(v);
+    mapWindowStart = Math.max(1, userLvl - 8);
+    mapWindowEnd = Math.min(1000, userLvl + 14);
+    renderMapPathUI(true);
   });
 });
 
@@ -1838,44 +1840,64 @@ document.getElementById('btn-new-game')?.addEventListener('click', () => {
     UIManager.navigate('custom');
 });
 
-let mapWindowStartLevel = 1;
+let mapWindowStart = 1;
+let mapWindowEnd = 25;
 
-const renderMapPathUI = () => {
+const renderMapPathUI = (autoScrollToCurrent: boolean = false) => {
   const userLvl = UserManager.getVariantLevel(selectedMapVariant);
-  if (mapWindowStartLevel === 1) {
-    mapWindowStartLevel = Math.max(1, userLvl - 6);
-  }
   UIManager.renderMap(
     userLvl,
-    userLvl,
+    mapWindowStart,
+    mapWindowEnd,
     (lvl) => {
       const diff = SudokuGen.getDifficulty(lvl);
       startGame(lvl, diff, undefined, undefined, selectedMapVariant);
     },
-    mapWindowStartLevel
+    autoScrollToCurrent
   );
 };
 
+const setupMapScrollListener = () => {
+  const scrollEl = document.getElementById('map-scroll-area');
+  if (!scrollEl) return;
+
+  scrollEl.onscroll = () => {
+    if (scrollEl.scrollTop < 140 && mapWindowEnd < 1000) {
+      const prevH = scrollEl.scrollHeight;
+      const prevTop = scrollEl.scrollTop;
+
+      mapWindowEnd = Math.min(1000, mapWindowEnd + 15);
+      renderMapPathUI(false);
+
+      const newH = scrollEl.scrollHeight;
+      scrollEl.scrollTop = prevTop + (newH - prevH);
+    } else if (scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight < 140 && mapWindowStart > 1) {
+      mapWindowStart = Math.max(1, mapWindowStart - 15);
+      renderMapPathUI(false);
+    }
+  };
+};
+
 document.getElementById('btn-open-map')?.addEventListener('click', () => {
-    mapWindowStartLevel = 1;
+    const userLvl = UserManager.getVariantLevel(selectedMapVariant);
+    mapWindowStart = Math.max(1, userLvl - 8);
+    mapWindowEnd = Math.min(1000, userLvl + 14);
     UIManager.navigate('map');
-    renderMapPathUI();
+    renderMapPathUI(true);
+    setupMapScrollListener();
+});
+
+document.getElementById('btn-map-focus-current')?.addEventListener('click', () => {
+    const userLvl = UserManager.getVariantLevel(selectedMapVariant);
+    mapWindowStart = Math.max(1, userLvl - 8);
+    mapWindowEnd = Math.min(1000, userLvl + 14);
+    renderMapPathUI(true);
 });
 
 document.getElementById('btn-map-start-current')?.addEventListener('click', () => {
     const userLvl = UserManager.getVariantLevel(selectedMapVariant);
     const diff = SudokuGen.getDifficulty(userLvl);
     startGame(userLvl, diff, undefined, undefined, selectedMapVariant);
-});
-
-document.getElementById('btn-map-page-up')?.addEventListener('click', () => {
-    mapWindowStartLevel = Math.min(980, mapWindowStartLevel + 20);
-    renderMapPathUI();
-});
-
-document.getElementById('btn-map-page-down')?.addEventListener('click', () => {
-    mapWindowStartLevel = Math.max(1, mapWindowStartLevel - 20);
-    renderMapPathUI();
 });
 
 // Özel Zorluk Seçim Ekranı Butonları
@@ -1888,21 +1910,6 @@ document.getElementById('btn-back-custom')?.addEventListener('click', () => {
 document.getElementById('btn-back-map')?.addEventListener('click', () => {
     updateSavedGamesCountUI();
     UIManager.navigate('menu');
-});
-
-document.getElementById('btn-map-jump-basit')?.addEventListener('click', () => {
-    mapWindowStartLevel = 1;
-    renderMapPathUI();
-});
-
-document.getElementById('btn-map-jump-orta')?.addEventListener('click', () => {
-    mapWindowStartLevel = 301;
-    renderMapPathUI();
-});
-
-document.getElementById('btn-map-jump-zor')?.addEventListener('click', () => {
-    mapWindowStartLevel = 701;
-    renderMapPathUI();
 });
 
 // Günlük Ödül
