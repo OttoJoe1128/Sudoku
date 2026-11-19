@@ -807,9 +807,10 @@ export function startGame(
         const reward = diff === 'basit' ? 10 : diff === 'orta' ? 20 : 35;
         const userLvl = UserManager.getVariantLevel(currentVariant);
         const nextLevel = level === userLvl ? userLvl + 1 : userLvl;
-        const newGold = UserManager.getGold() + reward;
 
-        await UserManager.updateProgress(nextLevel, newGold);
+        await UserManager.updateVariantLevel(currentVariant, nextLevel, reward);
+        const newGold = UserManager.getGold();
+
         await UserManager.recordGameCompletion({
           level,
           difficulty: diff,
@@ -1053,9 +1054,10 @@ export function startGame(
           const reward = currentDifficulty === 'basit' ? 10 : currentDifficulty === 'orta' ? 20 : 35;
           const userLvl = UserManager.getVariantLevel(currentVariant);
           const nextLevel = currentLevelNumber === userLvl ? userLvl + 1 : userLvl;
-          const finalGold = UserManager.getGold() + reward;
 
-          await UserManager.updateProgress(nextLevel, finalGold);
+          await UserManager.updateVariantLevel(currentVariant, nextLevel, reward);
+          const finalGold = UserManager.getGold();
+
           if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();
 
           const minutes = Math.floor(timeElapsed / 60).toString().padStart(2, '0');
