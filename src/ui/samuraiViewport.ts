@@ -70,6 +70,8 @@ let tx = 0;
 let ty = 0;
 let initialized = false;
 let listenersBound = false;
+let isPointerDown = false;
+let isPinching = false;
 let isDragging = false;
 let pointerDownX = 0;
 let pointerDownY = 0;
@@ -108,6 +110,12 @@ export const SamuraiViewport = {
   },
 
   focusGrid(gridIdx: number, viewportEl: HTMLElement, smooth: boolean = true) {
+    if (!viewportEl) return;
+    if (viewportEl.clientWidth === 0) {
+      requestAnimationFrame(() => this.focusGrid(gridIdx, viewportEl, smooth));
+      return;
+    }
+
     const offset = SAMURAI_GRID_OFFSETS.find(o => o.gridIdx === gridIdx) || SAMURAI_GRID_OFFSETS[0];
 
     const vWidth = viewportEl.clientWidth || 360;
@@ -165,18 +173,21 @@ export const SamuraiViewport = {
     listenersBound = true;
 
     viewportEl.classList.add('touch-none', 'select-none');
+    viewportEl.style.backgroundImage = 'radial-gradient(var(--border-subtle) 1px, transparent 1px)';
+    viewportEl.style.backgroundSize = '20px 20px';
 
     viewportEl.addEventListener('pointerdown', (e) => {
+      if (isPinching) return;
+      isPointerDown = true;
       isDragging = false;
       pointerDownX = e.clientX;
       pointerDownY = e.clientY;
       dragStartX = tx;
       dragStartY = ty;
-      viewportEl.setPointerCapture(e.pointerId);
     });
 
     viewportEl.addEventListener('pointermove', (e) => {
-      if (!viewportEl.hasPointerCapture(e.pointerId)) return;
+      if (!isPointerDown || isPinching) return;
 
       const dx = e.clientX - pointerDownX;
       const dy = e.clientY - pointerDownY;
@@ -192,14 +203,21 @@ export const SamuraiViewport = {
       }
     });
 
-    viewportEl.addEventListener('pointerup', (e) => {
-      if (viewportEl.hasPointerCapture(e.pointerId)) {
-        viewportEl.releasePointerCapture(e.pointerId);
-      }
-    });
+    const handlePointerUp = () => {
+      isPointerDown = false;
+      setTimeout(() => {
+        isDragging = false;
+      }, 40);
+    };
+
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
 
     viewportEl.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 2) {
+      if (e.touches.length >= 2) {
+        isPinching = true;
+        isPointerDown = false;
+        isDragging = true;
         lastPinchDist = Math.hypot(
           e.touches[0].clientX - e.touches[1].clientX,
           e.touches[0].clientY - e.touches[1].clientY
@@ -208,7 +226,7 @@ export const SamuraiViewport = {
     }, { passive: true });
 
     viewportEl.addEventListener('touchmove', (e) => {
-      if (e.touches.length === 2) {
+      if (e.touches.length >= 2) {
         const currentDist = Math.hypot(
           e.touches[0].clientX - e.touches[1].clientX,
           e.touches[0].clientY - e.touches[1].clientY
@@ -237,8 +255,11 @@ export const SamuraiViewport = {
       }
     }, { passive: true });
 
-    viewportEl.addEventListener('touchend', () => {
-      lastPinchDist = 0;
+    viewportEl.addEventListener('touchend', (e) => {
+      if (e.touches.length < 2) {
+        isPinching = false;
+        lastPinchDist = 0;
+      }
     }, { passive: true });
 
     viewportEl.addEventListener('wheel', (e) => {
@@ -308,6 +329,10 @@ export function renderSamuraiBoard(
     ? activeBoard.userBoard[selectedR][selectedC]
     : 0;
 
+  const activeOffset = SAMURAI_GRID_OFFSETS.find(o => o.gridIdx === activeGridIdx);
+  const selGlobalR = (activeOffset && selectedR >= 0) ? activeOffset.rowOff + selectedR : -1;
+  const selGlobalC = (activeOffset && selectedC >= 0) ? activeOffset.colOff + selectedC : -1;
+
   let html = '';
 
   for (let gr = 0; gr < 21; gr++) {
@@ -325,11 +350,7 @@ export function renderSamuraiBoard(
       const initialVal = (bData && bData.initialBoard && bData.initialBoard[r]) ? bData.initialBoard[r][c] : 0;
       const isInitial = initialVal > 0;
 
-      const isSelected = (gridIdx === activeGridIdx && r === selectedR && c === selectedC) ||
-                         (isOverlap && activeGridIdx === 0 && ((gridIdx === 1 && r === selectedR + 6 && c === selectedC + 6) ||
-                                                               (gridIdx === 2 && r === selectedR + 6 && c === selectedC - 6) ||
-                                                               (gridIdx === 3 && r === selectedR - 6 && c === selectedC + 6) ||
-                                                               (gridIdx === 4 && r === selectedR - 6 && c === selectedC - 6)));
+      const isSelected = selGlobalR === gr && selGlobalC === gc;
 
       const isMatchingValue = selectedValue > 0 && val === selectedValue;
 

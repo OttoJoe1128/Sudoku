@@ -20,6 +20,7 @@ import { ProfileStats, UserManager } from '../store/userState';
 import { ChallengeRequest } from '../engine/matchEngine';
 import { BotCharacter } from '../engine/botData';
 import { SudokuVariant, KillerCage, SudokuGen } from '../engine/sudoku';
+import { SamuraiViewport, renderSamuraiBoard, SamuraiBoardData } from './samuraiViewport';
 
 export interface SavedGameRecord {
   id: string;
@@ -225,6 +226,9 @@ export const UIManager = {
 
             <!-- Sudoku Grid -->
             <div id="sudoku-grid" class="grid grid-cols-9 gap-[1px] bg-[var(--board-bg)] p-[2px] rounded-2xl shadow-2xl mb-3 border-2 border-[var(--border-strong)] relative"></div>
+
+            <!-- Samurai 21x21 Uzay Boşluğu Viewport -->
+            <div id="samurai-viewport" class="hidden w-full flex-1 min-h-[320px] max-h-[430px] rounded-2xl bg-[var(--board-bg)] border-2 border-[var(--border-strong)] shadow-2xl mb-3 relative overflow-hidden"></div>
 
             <!-- Oyun Kontrol Araç Çubuğu -->
             <div class="flex gap-2 mb-3 w-full max-w-[380px] justify-center">
@@ -1247,6 +1251,47 @@ export const UIManager = {
     if (barEl) {
       barEl.classList.add('hidden');
       barEl.classList.remove('grid');
+    }
+  },
+
+  renderSamuraiSpace(
+    boards: SamuraiBoardData[],
+    activeGridIdx: number,
+    selectedR: number,
+    selectedC: number,
+    onCellClick: (gridIdx: number, r: number, c: number) => void
+  ) {
+    const gridEl = document.getElementById('sudoku-grid');
+    const vpEl = document.getElementById('samurai-viewport');
+
+    if (gridEl) {
+      gridEl.classList.add('hidden');
+      gridEl.classList.remove('grid');
+    }
+    if (vpEl) {
+      vpEl.classList.remove('hidden');
+      renderSamuraiBoard(vpEl, boards, activeGridIdx, selectedR, selectedC, onCellClick);
+    }
+  },
+
+  hideSamuraiSpace() {
+    const gridEl = document.getElementById('sudoku-grid');
+    const vpEl = document.getElementById('samurai-viewport');
+
+    if (vpEl) {
+      vpEl.classList.add('hidden');
+    }
+    if (gridEl) {
+      gridEl.classList.remove('hidden');
+      gridEl.classList.add('grid');
+    }
+    SamuraiViewport.resetCamera();
+  },
+
+  focusSamuraiGrid(gridIdx: number) {
+    const vpEl = document.getElementById('samurai-viewport');
+    if (vpEl && !vpEl.classList.contains('hidden')) {
+      SamuraiViewport.focusGrid(gridIdx, vpEl, true);
     }
   },
 

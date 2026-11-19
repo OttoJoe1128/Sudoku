@@ -96,7 +96,7 @@ const syncSamuraiCell = (gridIdx: number, r: number, c: number, val: number) => 
   });
 };
 
-const switchSamuraiGrid = (idx: number) => {
+const switchSamuraiGrid = (idx: number, shouldFocusCamera: boolean = true) => {
   if (currentVariant !== 'samurai' || !samuraiBoards[idx]) return;
 
   activeSamuraiIndex = idx;
@@ -106,6 +106,10 @@ const switchSamuraiGrid = (idx: number) => {
   currentSolution = target.solution;
   notesBoard = target.notesBoard;
   selectedCell = null;
+
+  if (shouldFocusCamera) {
+    UIManager.focusSamuraiGrid(idx);
+  }
 
   if (activeRefreshFn) activeRefreshFn();
 };
@@ -302,6 +306,7 @@ export async function handleExitGameRequest(): Promise<boolean> {
 
   activeRefreshFn = null;
   if (timerInterval) clearInterval(timerInterval);
+  UIManager.hideSamuraiSpace();
   UIManager.navigate('menu');
   return true;
 }
@@ -316,6 +321,7 @@ export function startGame(
   customTimeLimitSec: number = 0
 ) {
   if (timerInterval) clearInterval(timerInterval);
+  UIManager.hideSamuraiSpace();
 
   isMatchMode = !!matchData;
   activeMatch = matchData || null;
@@ -515,25 +521,38 @@ export function startGame(
   startTimer(currentTimeLimitSec);
 
   const refresh = () => {
-    UIManager.renderBoard(
-      userBoard,
-      (r, c) => {
-        selectedCell = { r, c };
-        refresh();
-      },
-      selectedCell?.r ?? -1,
-      selectedCell?.c ?? -1,
-      initialBoard,
-      notesBoard,
-      currentVariant,
-      currentRegionMap,
-      currentCages,
-      currentVariant === 'samurai' ? activeSamuraiIndex : undefined
-    );
-
-    if (currentVariant === 'samurai') {
-      UIManager.renderSamuraiRadar(activeSamuraiIndex, getSamuraiCompletionStatuses(), (idx) => switchSamuraiGrid(idx));
+    if (currentVariant === 'samurai' && samuraiBoards.length === 5) {
+      UIManager.renderSamuraiSpace(
+        samuraiBoards,
+        activeSamuraiIndex,
+        selectedCell?.r ?? -1,
+        selectedCell?.c ?? -1,
+        (clickedGridIdx, r, c) => {
+          if (clickedGridIdx !== activeSamuraiIndex) {
+            switchSamuraiGrid(clickedGridIdx, false);
+          }
+          selectedCell = { r, c };
+          refresh();
+        }
+      );
+      UIManager.renderSamuraiRadar(activeSamuraiIndex, getSamuraiCompletionStatuses(), (idx) => switchSamuraiGrid(idx, true));
     } else {
+      UIManager.hideSamuraiSpace();
+      UIManager.renderBoard(
+        userBoard,
+        (r, c) => {
+          selectedCell = { r, c };
+          refresh();
+        },
+        selectedCell?.r ?? -1,
+        selectedCell?.c ?? -1,
+        initialBoard,
+        notesBoard,
+        currentVariant,
+        currentRegionMap,
+        currentCages,
+        undefined
+      );
       UIManager.hideSamuraiRadar();
     }
 
