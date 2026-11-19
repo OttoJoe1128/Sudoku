@@ -29,6 +29,8 @@ let currentVariant: SudokuVariant = 'classic';
 let activeGeneratedSudoku: GeneratedSudoku | null = null;
 let isNotesMode = false;
 let currentLevelNumber = 1;
+let isCustomGameMode = false;
+let currentTimeLimitSec = 0;
 
 // Maç / Düello Modu Değişkenleri
 let activeMatch: MatchState | null = null;
@@ -215,27 +217,33 @@ const startTimer = (limitSeconds: number = 0) => {
     }, 1000);
 };
 
-// Düello Süresi Dolduğunda Kazanan Tespiti
+// Düello veya Serbest Mod Süresi Dolduğunda Kazanan / Sonuç Tespiti
 const handleMatchTimeExpired = async () => {
-  if (!isMatchMode) return;
-  isMatchMode = false;
-  MatchEngine.clearActiveMatch();
-  UIManager.hideMatchHeader();
+  if (isMatchMode) {
+    isMatchMode = false;
+    MatchEngine.clearActiveMatch();
+    UIManager.hideMatchHeader();
 
-  const enemyName = activeMatch?.player2?.username || 'Rakip';
+    const enemyName = activeMatch?.player2?.username || 'Rakip';
 
-  if (matchUserFilled > matchEnemyFilled) {
-    const reward = currentDifficulty === 'basit' ? 50 : currentDifficulty === 'orta' ? 100 : 200;
-    const newGold = UserManager.getGold() + reward;
-    await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
-    await UserManager.recordDuelResult(true);
-    updateGoldDisplay();
-    showMatchResult(true, reward, enemyName);
-  } else if (matchUserFilled < matchEnemyFilled) {
-    await UserManager.recordDuelResult(false);
-    showMatchResult(false, 0, enemyName);
-  } else {
-    UIManager.showToast("⏱️ Süre Doldu! Her iki taraf da eşit sayıda hücre çözdü.", "info");
+    if (matchUserFilled > matchEnemyFilled) {
+      const reward = currentDifficulty === 'basit' ? 50 : currentDifficulty === 'orta' ? 100 : 200;
+      const newGold = UserManager.getGold() + reward;
+      await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
+      await UserManager.recordDuelResult(true);
+      updateGoldDisplay();
+      showMatchResult(true, reward, enemyName);
+    } else if (matchUserFilled < matchEnemyFilled) {
+      await UserManager.recordDuelResult(false);
+      showMatchResult(false, 0, enemyName);
+    } else {
+      UIManager.showToast("⏱️ Süre Doldu! Her iki taraf da eşit sayıda hücre çözdü.", "info");
+      UIManager.navigate('menu');
+    }
+  } else if (isCustomGameMode) {
+    if (timerInterval) clearInterval(timerInterval);
+    clearCurrentSavedGame();
+    UIManager.showToast("⏱️ Süre Doldu! Serbest Mod oyunu sonlandırıldı.", "error");
     UIManager.navigate('menu');
   }
 };
@@ -245,7 +253,9 @@ const startGame = (
   diff: 'basit' | 'orta' | 'zor',
   matchData?: MatchState,
   restoredState?: any,
-  variant: SudokuVariant = 'classic'
+  variant: SudokuVariant = 'classic',
+  isCustom: boolean = false,
+  customTimeLimitSec: number = 0
 ) => {
     errors = restoredState && typeof restoredState.errors === 'number' ? restoredState.errors : 0;
     hintsUsed = 0;
@@ -253,6 +263,8 @@ const startGame = (
     currentDifficulty = diff;
     currentLevelNumber = level;
     currentVariant = restoredState?.variant || matchData?.variant || variant;
+    isCustomGameMode = restoredState?.isCustomMode ?? isCustom;
+    currentTimeLimitSec = restoredState?.timeLimitSec ?? (matchData ? (matchData.durationSec || 0) : customTimeLimitSec);
     isMatchMode = !!matchData;
     activeMatch = matchData || null;
     isNotesMode = false;
@@ -409,7 +421,7 @@ const startGame = (
     updateErrorUI();
 
     UIManager.navigate('game');
-    startTimer(isMatchMode ? selectedMatchTimeSec : 0);
+    startTimer(currentTimeLimitSec);
 
     const refresh = () => {
         UIManager.renderBoard(
