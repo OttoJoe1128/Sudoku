@@ -449,7 +449,7 @@ export function initModalsController(callbacks: {
     const t1 = document.getElementById('placement-basit-title');
     const k1 = document.getElementById('placement-basit-kriter');
     if (t1) t1.innerText = `${isEn ? 'Target' : 'Hedef'}: ${t('diff_basit')} (${t('label_level')} ${basitCfg.targetLevel})`;
-    if (k1) k1.innerText = `${isEn ? 'Criteria' : 'Kriter'}: ${t('placement_kriter_basit')}`;
+    if (k1) k1.innerText = `${isEn ? 'Criteria' : 'Kriter'}: Max 3 ${t('label_errors').toLowerCase()} & <${Math.round(basitCfg.timeLimitSec / 60)} ${isEn ? 'min' : 'dk'}`;
 
     const t2 = document.getElementById('placement-orta-title');
     const k2 = document.getElementById('placement-orta-kriter');

@@ -454,16 +454,21 @@ export function renderSamuraiBoard(
         borderClass += ' outline outline-1 outline-[var(--accent-gold)]/35 -outline-offset-1';
       }
 
-      let bgClass = 'bg-[var(--cell-bg)] text-[var(--accent-cyan)]';
+      let bgStyle = 'bg-[var(--cell-bg)]';
+      if (isMatchingValue) {
+        bgStyle = 'bg-[var(--cell-match-bg)] ring-1 ring-[var(--accent-gold)]/50 z-1';
+      } else if (isRelatedGroup) {
+        bgStyle = 'bg-[var(--cell-related-bg)]';
+      } else if (isInitial) {
+        bgStyle = 'bg-[var(--cell-initial-bg)]';
+      }
+
+      const textColor = isInitial ? 'text-[var(--cell-initial-text)] font-black' : 'text-[var(--cell-user-text)] font-black';
+
+      let bgClass = `${bgStyle} ${textColor}`;
 
       if (isSelected) {
         bgClass = 'bg-[var(--cell-selected-bg)] text-[var(--text-on-gold)] font-black shadow-lg ring-2 ring-[var(--accent-gold-bright)] z-10';
-      } else if (isMatchingValue) {
-        bgClass = 'bg-[var(--cell-match-bg)] text-[var(--accent-gold-bright)] font-black ring-1 ring-[var(--accent-gold)]/50 z-1';
-      } else if (isRelatedGroup) {
-        bgClass = 'bg-[var(--cell-related-bg)] text-[var(--text-primary)] font-bold';
-      } else if (isInitial) {
-        bgClass = 'bg-[var(--cell-initial-bg)] text-[var(--text-primary)] font-black';
       }
 
       let contentHTML = '';

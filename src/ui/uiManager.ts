@@ -1362,20 +1362,24 @@ export const UIManager = {
           else if (samuraiGridIndex === 4) isSamuraiCorner = r < 3 && c < 3;
         }
 
-        let stateClass = '';
+        let bgStyle = 'bg-[var(--cell-bg)]';
+        if (isMatchingValue) {
+          bgStyle = 'bg-[var(--cell-match-bg)] ring-1 ring-[var(--accent-gold)]/50 z-1';
+        } else if (isRelatedGroup) {
+          bgStyle = 'bg-[var(--cell-related-bg)]';
+        } else if (isSamuraiCorner) {
+          bgStyle = 'bg-[var(--cell-initial-bg)] ring-1 ring-inset ring-rose-500/50';
+        } else if (isInitial) {
+          bgStyle = 'bg-[var(--cell-initial-bg)]';
+        }
 
+        const textColor = isInitial ? 'text-[var(--cell-initial-text)] font-black' : 'text-[var(--cell-user-text)] font-black';
+
+        let stateClass = '';
         if (isSelected) {
           stateClass = 'sudoku-cell-selected bg-[var(--cell-selected-bg)] text-[var(--text-on-gold)] font-black shadow-lg ring-2 ring-[var(--accent-gold-bright)] z-10';
-        } else if (isMatchingValue) {
-          stateClass = 'sudoku-cell-matching bg-[var(--cell-match-bg)] text-[var(--accent-gold-bright)] font-black ring-1 ring-[var(--accent-gold)]/50 z-1';
-        } else if (isRelatedGroup) {
-          stateClass = 'sudoku-cell-related bg-[var(--cell-related-bg)] text-[var(--text-primary)] font-bold';
-        } else if (isSamuraiCorner) {
-          stateClass = 'sudoku-cell-samurai bg-[var(--cell-initial-bg)] text-[var(--text-primary)] font-bold ring-1 ring-inset ring-rose-500/50';
-        } else if (isInitial) {
-          stateClass = 'sudoku-cell-initial bg-[var(--cell-initial-bg)] text-[var(--text-primary)] font-black cursor-pointer';
         } else {
-          stateClass = 'sudoku-cell-empty bg-[var(--cell-bg)] text-[var(--accent-cyan)] font-black cursor-pointer';
+          stateClass = `${bgStyle} ${textColor} cursor-pointer`;
         }
 
         let borderRight = '';

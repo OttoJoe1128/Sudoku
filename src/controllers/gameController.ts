@@ -201,7 +201,12 @@ async function finishPlacementExam(completedAll: boolean): Promise<void> {
   if (primaryBtn) {
     primaryBtn.onclick = () => {
       UIManager.toggleModal('placement-result-modal', false);
-      UIManager.navigate('map');
+      const openMapBtn = document.getElementById('btn-open-map');
+      if (openMapBtn) {
+        openMapBtn.click();
+      } else {
+        UIManager.navigate('map');
+      }
     };
   }
 
@@ -699,11 +704,6 @@ export function startGame(
       currentSolution,
       initialBoard,
       async () => {
-        if (activePlacementExam) {
-          await finishPlacementExam(true);
-          return;
-        }
-
         if (currentVariant === 'samurai') {
           const currentDone = userBoard.every((row, ri) => row.every((val, ci) => val === currentSolution[ri][ci]));
           const allDone = samuraiBoards.every(b => b.userBoard.every((row, ri) => row.every((val, ci) => val === b.solution[ri][ci])));
@@ -716,6 +716,11 @@ export function startGame(
             refresh();
             return;
           }
+        }
+
+        if (activePlacementExam) {
+          await finishPlacementExam(true);
+          return;
         }
 
         if (timerInterval) clearInterval(timerInterval);

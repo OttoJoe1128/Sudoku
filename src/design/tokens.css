@@ -17,7 +17,9 @@
 
   --board-bg: #050914;
   --cell-bg: #0D1628;
-  --cell-initial-bg: #152238;
+  --cell-initial-bg: #0D1628;
+  --cell-initial-text: #F8FAFC;
+  --cell-user-text: #34D399;
   --cell-related-bg: #1B2D4A;
   --cell-match-bg: #233B5E;
   --cell-selected-bg: #C89B3C;
@@ -61,9 +63,11 @@
 
   --board-bg: #142038;
   --cell-bg: #FFFFFF;
-  --cell-initial-bg: #EAE3D5;
-  --cell-related-bg: #DCE5F2;
-  --cell-match-bg: #C2D6EE;
+  --cell-initial-bg: #FFFFFF;
+  --cell-initial-text: #111827;
+  --cell-user-text: #059669;
+  --cell-related-bg: #F1F5F9;
+  --cell-match-bg: #DCFCE7;
   --cell-selected-bg: #A67C2E;
 
   --hero-bg: linear-gradient(135deg, #FFFFFF 0%, #F1E6D2 100%);
@@ -105,7 +109,9 @@
 
   --board-bg: #0F090C;
   --cell-bg: #1B1015;
-  --cell-initial-bg: #2B1621;
+  --cell-initial-bg: #1B1015;
+  --cell-initial-text: #F8FAFC;
+  --cell-user-text: #34D399;
   --cell-related-bg: #3D1C2D;
   --cell-match-bg: #5C1D38;
   --cell-selected-bg: #D4A853;
@@ -149,7 +155,9 @@
 
   --board-bg: #0B0718;
   --cell-bg: #150F2B;
-  --cell-initial-bg: #221845;
+  --cell-initial-bg: #150F2B;
+  --cell-initial-text: #F8FAFC;
+  --cell-user-text: #34D399;
   --cell-related-bg: #2C1E5B;
   --cell-match-bg: #3E2078;
   --cell-selected-bg: #22D3EE;
@@ -193,7 +201,9 @@
 
   --board-bg: #051613;
   --cell-bg: #0B241F;
-  --cell-initial-bg: #133D35;
+  --cell-initial-bg: #0B241F;
+  --cell-initial-text: #F8FAFC;
+  --cell-user-text: #34D399;
   --cell-related-bg: #1A5247;
   --cell-match-bg: #1E6B5D;
   --cell-selected-bg: #D4B475;
