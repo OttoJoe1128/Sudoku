@@ -178,6 +178,10 @@ export function loadArenaLobbyPlayers(
             startSimulatedMatch(targetPlayer, onStartMatchGame, onBotMatchProgress);
           }, 1800);
         } else {
+          if (!UserManager.getNotificationsEnabled()) {
+            await UIManager.promptNotificationPermission('duel');
+          }
+
           try {
             await MatchEngine.sendDirectChallenge(
               targetPlayer.uid || targetPlayer.username,

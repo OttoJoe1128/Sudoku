@@ -246,6 +246,12 @@ const checkUser = async () => {
     UIManager.navigate('menu');
 
     startChallengeListeners();
+
+    setTimeout(() => {
+      if (!UserManager.getNotificationsEnabled() && localStorage.getItem('sudoku_notify_prompted') !== '1') {
+        UIManager.promptNotificationPermission('startup');
+      }
+    }, 1200);
   }
 };
 
@@ -271,6 +277,12 @@ document.getElementById('save-username')?.addEventListener('click', async () => 
 
     UIManager.toggleModal('username-modal', false);
     UIManager.showToast(`Kullanıcı adı güncellendi: ${user.username}`, 'success');
+
+    setTimeout(() => {
+      if (!UserManager.getNotificationsEnabled() && localStorage.getItem('sudoku_notify_prompted') !== '1') {
+        UIManager.promptNotificationPermission('startup');
+      }
+    }, 1200);
   } else {
     UIManager.showToast("Lütfen en az 3 karakterden oluşan bir isim giriniz!", "error");
   }

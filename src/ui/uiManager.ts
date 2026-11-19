@@ -307,6 +307,86 @@ export const UIManager = {
     }
   },
 
+  async promptNotificationPermission(reason: 'startup' | 'duel' = 'startup'): Promise<boolean> {
+    if (UserManager.getNotificationsEnabled()) {
+      return true;
+    }
+
+    return new Promise((resolve) => {
+      const existing = document.getElementById('notify-permission-modal');
+      if (existing) existing.remove();
+
+      const modal = document.createElement('div');
+      modal.id = 'notify-permission-modal';
+      modal.className = 'absolute inset-0 bg-slate-900/80 flex flex-col items-center justify-center z-[100] p-4 backdrop-blur-md transition-opacity duration-300';
+
+      const isEn = getLang() === 'en';
+      const title = isEn ? 'Live Duel Notifications' : 'Canlı Düello Bildirimleri';
+      const desc = reason === 'duel'
+        ? (isEn ? 'Allow notifications to get notified instantly when your opponent accepts your duel invite.' : 'Rakibiniz düello davetinizi kabul ettiğinde anında haberdar olmak için bildirimlere izin verin.')
+        : (isEn ? 'Would you like to allow notifications so you never miss live duel invites from friends?' : 'Arkadaşlarınızdan gelen canlı düello davetlerini kaçırmamak için bildirimlere izin vermek ister misiniz?');
+
+      modal.innerHTML = `
+        <div class="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-3xl p-6 w-full max-w-xs shadow-2xl flex flex-col items-center text-center transform scale-95 transition-transform duration-300">
+          <div class="w-14 h-14 bg-[var(--bg-elevated)] text-[var(--accent-gold)] rounded-2xl flex items-center justify-center text-3xl mb-4 border border-[var(--border-subtle)] shadow-inner">
+            ${Icons.bell}
+          </div>
+          <h3 class="text-[var(--text-primary)] font-black text-lg mb-2">${title}</h3>
+          <p class="text-[var(--text-secondary)] text-[11px] font-medium leading-relaxed mb-6">${desc}</p>
+          <div class="w-full flex flex-col gap-2.5">
+            <button id="btn-notify-allow" class="w-full bg-[var(--accent-gold)] text-[var(--text-on-gold)] font-black py-3 rounded-xl shadow-lg active:scale-95 transition-all text-sm hover:brightness-110">
+              ${isEn ? 'Allow' : 'İzin Ver'}
+            </button>
+            <button id="btn-notify-cancel" class="w-full bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)] font-bold py-3 rounded-xl active:scale-95 transition-all text-sm hover:bg-[var(--bg-card-hover)]">
+              ${isEn ? 'Not Now' : 'Şimdi Değil'}
+            </button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('container')?.appendChild(modal);
+
+      requestAnimationFrame(() => {
+        modal.classList.add('opacity-100');
+        const box = modal.querySelector('div');
+        if (box) box.classList.replace('scale-95', 'scale-100');
+      });
+
+      const cleanup = () => {
+        modal.classList.remove('opacity-100');
+        modal.classList.add('opacity-0');
+        setTimeout(() => modal.remove(), 300);
+      };
+
+      document.getElementById('btn-notify-allow')?.addEventListener('click', async () => {
+        cleanup();
+        try {
+          if (typeof window !== 'undefined' && 'Notification' in window) {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+              UserManager.saveNotificationsEnabled(true);
+              localStorage.setItem('sudoku_notify_prompted', '1');
+              const msg = isEn ? 'Notifications enabled!' : 'Bildirimler açıldı!';
+              UIManager.showToast(msg, 'success');
+              resolve(true);
+              return;
+            }
+          }
+        } catch {
+          // ignore
+        }
+        localStorage.setItem('sudoku_notify_prompted', '1');
+        resolve(false);
+      });
+
+      document.getElementById('btn-notify-cancel')?.addEventListener('click', () => {
+        cleanup();
+        localStorage.setItem('sudoku_notify_prompted', '1');
+        resolve(false);
+      });
+    });
+  },
+
   updateHeaderGold(gold: number) {
     const goldEl = document.getElementById('menu-gold');
     const gameGoldEl = document.getElementById('game-gold');
