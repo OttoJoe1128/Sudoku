@@ -99,15 +99,12 @@ const syncSamuraiCell = (gridIdx: number, r: number, c: number, val: number) => 
 const switchSamuraiGrid = (idx: number) => {
   if (currentVariant !== 'samurai' || !samuraiBoards[idx]) return;
 
-  samuraiBoards[activeSamuraiIndex].userBoard = userBoard.map(row => [...row]);
-  samuraiBoards[activeSamuraiIndex].notesBoard = notesBoard.map(row => row.map(s => new Set(s)));
-
   activeSamuraiIndex = idx;
   const target = samuraiBoards[idx];
-  userBoard = target.userBoard.map(row => [...row]);
+  userBoard = target.userBoard;
   initialBoard = target.initialBoard;
   currentSolution = target.solution;
-  notesBoard = target.notesBoard.map(row => row.map(s => new Set(s)));
+  notesBoard = target.notesBoard;
   selectedCell = null;
 
   if (activeRefreshFn) activeRefreshFn();
@@ -320,15 +317,25 @@ export function startGame(
 ) {
   if (timerInterval) clearInterval(timerInterval);
 
+  isMatchMode = !!matchData;
+  activeMatch = matchData || null;
+
   currentDifficulty = diff;
   currentVariant = variant;
   currentLevelNumber = level;
   isCustomGameMode = isCustom;
-  currentTimeLimitSec = isMatchMode ? 0 : customTimeLimitSec;
-  isMatchMode = !!matchData;
-  activeMatch = matchData || null;
+  currentTimeLimitSec = restoredState?.timeLimitSec ?? (matchData ? (matchData.durationSec || 0) : customTimeLimitSec);
 
-  if (restoredState) {
+  UserManager.setPresence(isMatchMode ? 'in_duel' : 'in_game');
+
+  const isValidRestored = !!(
+    restoredState &&
+    Array.isArray(restoredState.userBoard) && restoredState.userBoard.length === 9 &&
+    Array.isArray(restoredState.initialBoard) && restoredState.initialBoard.length === 9 &&
+    Array.isArray(restoredState.currentSolution) && restoredState.currentSolution.length === 9
+  );
+
+  if (isValidRestored) {
     currentVariant = restoredState.variant || variant;
     currentLevelNumber = restoredState.level || level;
     currentDifficulty = restoredState.diff || diff;
@@ -353,9 +360,9 @@ export function startGame(
     if (currentVariant === 'samurai' && restoredState.samuraiBoards) {
       activeSamuraiIndex = restoredState.activeSamuraiIndex || 0;
       samuraiBoards = restoredState.samuraiBoards.map((b: any) => ({
-        userBoard: b.userBoard.map((row: number[]) => [...row]),
-        initialBoard: b.initialBoard.map((row: number[]) => [...row]),
-        solution: b.solution.map((row: number[]) => [...row]),
+        userBoard: b.userBoard,
+        initialBoard: b.initialBoard,
+        solution: b.solution,
         notesBoard: Array.from({ length: 9 }, (_, r) =>
           Array.from({ length: 9 }, (_, c) => {
             const raw = b.notesBoard && b.notesBoard[r] && b.notesBoard[r][c];
@@ -363,6 +370,11 @@ export function startGame(
           })
         )
       }));
+      const activeBoard = samuraiBoards[activeSamuraiIndex];
+      userBoard = activeBoard.userBoard;
+      initialBoard = activeBoard.initialBoard;
+      currentSolution = activeBoard.solution;
+      notesBoard = activeBoard.notesBoard;
     } else {
       samuraiBoards = [];
     }
@@ -393,14 +405,16 @@ export function startGame(
         activeSamuraiIndex = 0;
         samuraiBoards = generated.samuraiGrids.map(gridObj => ({
           userBoard: gridObj.puzzle.map(row => [...row]),
-          initialBoard: gridObj.puzzle.map(row => [...row]),
-          solution: gridObj.solution.map(row => [...row]),
+          initialBoard: gridObj.puzzle,
+          solution: gridObj.solution,
           notesBoard: Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => new Set<number>()))
         }));
 
-        userBoard = samuraiBoards[0].userBoard.map(row => [...row]);
-        initialBoard = samuraiBoards[0].initialBoard;
-        currentSolution = samuraiBoards[0].solution;
+        const activeBoard = samuraiBoards[0];
+        userBoard = activeBoard.userBoard;
+        initialBoard = activeBoard.initialBoard;
+        currentSolution = activeBoard.solution;
+        notesBoard = activeBoard.notesBoard;
       } else {
         userBoard = generated.puzzle.map(row => [...row]);
         initialBoard = generated.puzzle;
@@ -527,6 +541,7 @@ export function startGame(
       currentVariant === 'wordoku'
     );
   };
+  activeRefreshFn = refresh;
 
   const handleNumpadInput = (num: number) => {
     if (!selectedCell) return;
@@ -674,15 +689,26 @@ export function startGame(
     if (success) {
       notesBoard[r][c].clear();
 
-      const boxR = Math.floor(r / 3) * 3;
-      const boxC = Math.floor(c / 3) * 3;
-      for (let i = 0; i < 9; i++) {
-        notesBoard[r][i].delete(num);
-        notesBoard[i][c].delete(num);
-      }
-      for (let i = 0; i < 3; i++) {
-        for (let j = 0; j < 3; j++) {
-          notesBoard[boxR + i][boxC + j].delete(num);
+      if (currentVariant === 'irregular' && currentRegionMap) {
+        const currentRegionId = currentRegionMap[r][c];
+        for (let i = 0; i < 9; i++) {
+          for (let j = 0; j < 9; j++) {
+            if (i === r || j === c || currentRegionMap[i][j] === currentRegionId) {
+              notesBoard[i][j].delete(num);
+            }
+          }
+        }
+      } else {
+        const boxR = Math.floor(r / 3) * 3;
+        const boxC = Math.floor(c / 3) * 3;
+        for (let i = 0; i < 9; i++) {
+          notesBoard[r][i].delete(num);
+          notesBoard[i][c].delete(num);
+        }
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+            notesBoard[boxR + i][boxC + j].delete(num);
+          }
         }
       }
 
@@ -777,15 +803,27 @@ export function startGame(
       hintsUsed++;
 
       notesBoard[targetR][targetC].clear();
-      const boxR = Math.floor(targetR / 3) * 3;
-      const boxC = Math.floor(targetC / 3) * 3;
-      for (let i = 0; i < 9; i++) {
-        notesBoard[targetR][i].delete(correctNum);
-        notesBoard[i][targetC].delete(correctNum);
-      }
-      for (let i = 0; i < 3; i++) {
-        for (let j = 0; j < 3; j++) {
-          notesBoard[boxR + i][boxC + j].delete(correctNum);
+
+      if (currentVariant === 'irregular' && currentRegionMap) {
+        const currentRegionId = currentRegionMap[targetR][targetC];
+        for (let i = 0; i < 9; i++) {
+          for (let j = 0; j < 9; j++) {
+            if (i === targetR || j === targetC || currentRegionMap[i][j] === currentRegionId) {
+              notesBoard[i][j].delete(correctNum);
+            }
+          }
+        }
+      } else {
+        const boxR = Math.floor(targetR / 3) * 3;
+        const boxC = Math.floor(targetC / 3) * 3;
+        for (let i = 0; i < 9; i++) {
+          notesBoard[targetR][i].delete(correctNum);
+          notesBoard[i][targetC].delete(correctNum);
+        }
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+            notesBoard[boxR + i][boxC + j].delete(correctNum);
+          }
         }
       }
 
