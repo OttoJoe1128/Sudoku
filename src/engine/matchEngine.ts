@@ -41,6 +41,7 @@ export interface ChallengeRequest {
   matchId?: string;
   matchData?: MatchState;
   createdAt?: any;
+  createdAtMs?: number;
 }
 
 // Chess ELO (MMR) Hesaplama Motoru
@@ -193,10 +194,28 @@ export const MatchEngine = {
   ): Promise<{ challengeId: string }> {
     const currentUsername = UserManager.getUsername() || 'Oyuncu';
     const currentUid = auth.currentUser ? auth.currentUser.uid : `user_${Date.now()}`;
+    const safeTargetUid = targetUid || targetUsername || 'target_player';
+
+    // Zaten bekleyen bir davet var mı kontrolü
+    try {
+      const q = query(
+        collection(db, 'challenges'),
+        where('fromUid', '==', currentUid),
+        where('targetUid', '==', safeTargetUid),
+        where('status', '==', 'pending')
+      );
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        throw new Error('PENDING_EXISTS');
+      }
+    } catch (e: any) {
+      if (e.message === 'PENDING_EXISTS') throw e;
+      // Index yoksa veya başka hata varsa devam et (opt-in)
+    }
+
     const challengeId = `chal_${Date.now()}`;
     const generated = SudokuGen.generateVariant(difficulty, variant);
 
-    const safeTargetUid = targetUid || targetUsername || 'target_player';
     const safeTargetUsername = targetUsername || 'Oyuncu';
 
     const challengeData: ChallengeRequest = {
@@ -310,6 +329,7 @@ export const MatchEngine = {
   listenOutgoingChallenges(onChallengeAccepted: (challenge: ChallengeRequest) => void) {
     if (!auth.currentUser) return;
     const currentUid = auth.currentUser.uid;
+    const now = Date.now();
 
     const q = query(
       collection(db, 'challenges'),
@@ -322,7 +342,8 @@ export const MatchEngine = {
         snap.docChanges().forEach((change) => {
           if (change.type === 'added' || change.type === 'modified') {
             const data = deserializeChallengeFromFirestore(change.doc.data());
-            if (data.status === 'accepted' && data.matchData) {
+            // Sadece bu oturum başlatıldıktan SONRA oluşturulmuş/güncellenmiş davetleri yakala
+            if (data.status === 'accepted' && data.matchData && data.createdAtMs && data.createdAtMs > now - 10000) {
               onChallengeAccepted(data);
             }
           }

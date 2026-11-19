@@ -192,9 +192,13 @@ export function loadArenaLobbyPlayers(
             );
             const modeText = selectedMatchTimeSec > 0 ? `${Math.floor(selectedMatchTimeSec / 60)} Dk` : 'Süresiz';
             UIManager.showToast(`📩 ${targetPlayer.username} adlı oyuncuya gerçek düello daveti gönderildi (${modeText})! Kabul etmesi bekleniyor...`, 'success');
-          } catch (err) {
+          } catch (err: any) {
             console.warn('Düello daveti gönderilemedi:', err);
-            UIManager.showToast('Düello daveti gönderilemedi. Bağlantınızı kontrol edin.', 'error');
+            if (err.message === 'PENDING_EXISTS') {
+              UIManager.showToast('Bu oyuncuya zaten bekleyen bir davetiniz var.', 'info');
+            } else {
+              UIManager.showToast('Düello daveti gönderilemedi. Bağlantınızı kontrol edin.', 'error');
+            }
           }
         }
       });
