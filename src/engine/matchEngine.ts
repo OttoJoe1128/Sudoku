@@ -172,6 +172,7 @@ export const deserializeChallengeFromFirestore = (data: any): ChallengeRequest =
 let activeMatchSnapshotUnsubscribe: (() => void) | null = null;
 let challengeSnapshotUnsubscribe: (() => void) | null = null;
 let outgoingChallengesUnsub: (() => void) | null = null;
+let incomingChallengesUnsub: (() => void) | null = null;
 let botTimerInterval: any = null;
 
 export const MatchEngine = {
@@ -180,6 +181,14 @@ export const MatchEngine = {
       activeMatchSnapshotUnsubscribe();
       activeMatchSnapshotUnsubscribe = null;
     }
+    if (botTimerInterval) {
+      clearInterval(botTimerInterval);
+      botTimerInterval = null;
+    }
+  },
+
+  clearAllListeners() {
+    this.clearActiveMatch();
     if (challengeSnapshotUnsubscribe) {
       challengeSnapshotUnsubscribe();
       challengeSnapshotUnsubscribe = null;
@@ -188,9 +197,9 @@ export const MatchEngine = {
       outgoingChallengesUnsub();
       outgoingChallengesUnsub = null;
     }
-    if (botTimerInterval) {
-      clearInterval(botTimerInterval);
-      botTimerInterval = null;
+    if (incomingChallengesUnsub) {
+      incomingChallengesUnsub();
+      incomingChallengesUnsub = null;
     }
   },
 
@@ -296,11 +305,44 @@ export const MatchEngine = {
   },
 
   listenIncomingChallenges(onIncoming: (challenge: ChallengeRequest) => void) {
-    this.listenPendingChallenges((challenges) => {
-      if (challenges.length > 0) {
-        onIncoming(challenges[0]);
-      }
-    });
+    if (incomingChallengesUnsub) {
+      incomingChallengesUnsub();
+      incomingChallengesUnsub = null;
+    }
+    if (!auth.currentUser) return;
+
+    const currentUid = auth.currentUser.uid;
+    const currentUsername = UserManager.getUsername() || '';
+
+    const q = query(
+      collection(db, 'challenges'),
+      where('status', '==', 'pending')
+    );
+
+    try {
+      incomingChallengesUnsub = onSnapshot(
+        q,
+        (snap) => {
+          const list: ChallengeRequest[] = [];
+          snap.docs.forEach((d) => {
+            const data = deserializeChallengeFromFirestore(d.data());
+            if (
+              data.targetUid === currentUid ||
+              (currentUsername && data.targetUsername === currentUsername) ||
+              (data.targetUid && data.targetUid === currentUsername)
+            ) {
+              list.push(data);
+            }
+          });
+          if (list.length > 0) {
+            onIncoming(list[0]);
+          }
+        },
+        (err) => console.warn('Canlı davetler dinlenirken hata:', err)
+      );
+    } catch (e) {
+      console.warn("Canlı davetler dinlenemedi:", e);
+    }
   },
 
   listenPendingChallenges(onUpdate: (challenges: ChallengeRequest[]) => void) {
