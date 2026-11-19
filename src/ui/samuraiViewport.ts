@@ -235,7 +235,7 @@ export const SamuraiViewport = {
       isPointerDown = false;
       setTimeout(() => {
         isDragging = false;
-      }, 40);
+      }, 100);
     };
 
     window.addEventListener('pointerup', handleRelease);

@@ -353,7 +353,8 @@ export class SudokuGen {
             return neighbors;
           };
 
-          while (cells.length < targetCageSize) {
+          let failSafe = 50;
+          while (cells.length < targetCageSize && failSafe-- > 0) {
             const availableNeighbors = getNeighbors(cells);
             if (availableNeighbors.length === 0) break;
             const nextIdx = Math.floor(Math.random() * availableNeighbors.length);
