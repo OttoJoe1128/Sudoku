@@ -20,6 +20,8 @@ export interface ActiveGameSnapshot {
   cages?: KillerCage[];
   samuraiBoards?: { userBoard: number[][]; initialBoard: number[][]; solution: number[][]; notesBoard: Set<number>[][] }[];
   activeSamuraiIndex?: number;
+  matchData?: any;
+  enemyName?: string;
 }
 
 export function getSavedGamesList(): SavedGameRecord[] {
@@ -30,8 +32,22 @@ export function getSavedGamesList(): SavedGameRecord[] {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
-        customList = parsed.filter(item => item && item.isCustomMode && validateSavedGameRecord(item));
+        customList = parsed.filter(item => item && item.isCustomMode && !item.isMatchMode && validateSavedGameRecord(item));
         localStorage.setItem('sudoku_saved_games_list', JSON.stringify(customList));
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  let duelList: SavedGameRecord[] = [];
+  try {
+    const raw = localStorage.getItem('sudoku_saved_duels_list');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        duelList = parsed.filter(item => item && item.isMatchMode && validateSavedGameRecord(item));
+        localStorage.setItem('sudoku_saved_duels_list', JSON.stringify(duelList));
       }
     }
   } catch {
@@ -146,7 +162,7 @@ export function getSavedGamesList(): SavedGameRecord[] {
     }
   });
 
-  return [...mapList, ...customList];
+  return [...mapList, ...customList, ...duelList];
 }
 
 export function updateSavedGamesCountUI(): void {
@@ -159,6 +175,58 @@ export function updateSavedGamesCountUI(): void {
 }
 
 export function saveActiveGameRecord(snapshot: ActiveGameSnapshot): void {
+  if (snapshot.isMatchMode && snapshot.matchData && snapshot.matchData.durationSec === 0) {
+    try {
+      const raw = localStorage.getItem('sudoku_saved_duels_list');
+      let list: SavedGameRecord[] = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(list)) list = [];
+      list = list.filter(item => validateSavedGameRecord(item));
+
+      const safeNotes = snapshot.notesBoard ? snapshot.notesBoard.map(row => (
+        row ? row.map(s => (s && typeof s.values === 'function' ? Array.from(s) : Array.isArray(s) ? s : [])) : []
+      )) : [];
+
+      const safeSamuraiBoards = snapshot.variant === 'samurai' && snapshot.samuraiBoards && snapshot.samuraiBoards.length === 5 ? snapshot.samuraiBoards.map(b => ({
+        userBoard: b.userBoard,
+        initialBoard: b.initialBoard,
+        solution: b.solution,
+        notesBoard: b.notesBoard.map(row => row.map(s => (s && typeof s.values === 'function' ? Array.from(s) : Array.isArray(s) ? s : [])))
+      })) : undefined;
+
+      const gameId = `saved_duel_${snapshot.matchData.matchId || Date.now()}`;
+      const record: SavedGameRecord = {
+        id: gameId,
+        variant: snapshot.variant,
+        level: snapshot.level,
+        diff: snapshot.diff,
+        timeElapsed: snapshot.timeElapsed,
+        userBoard: snapshot.userBoard,
+        initialBoard: snapshot.initialBoard,
+        currentSolution: snapshot.currentSolution,
+        errors: snapshot.errors,
+        notesBoard: safeNotes,
+        regionMap: snapshot.regionMap,
+        cages: snapshot.cages,
+        samuraiBoards: safeSamuraiBoards as any,
+        activeSamuraiIndex: snapshot.variant === 'samurai' ? snapshot.activeSamuraiIndex : undefined,
+        isMatchMode: true,
+        matchData: snapshot.matchData,
+        enemyName: snapshot.enemyName || snapshot.matchData?.player2?.username || 'Rakip',
+        updatedAtMs: Date.now()
+      };
+
+      const idx = list.findIndex(item => item.id === gameId);
+      if (idx >= 0) list[idx] = record;
+      else list.unshift(record);
+
+      localStorage.setItem('sudoku_saved_duels_list', JSON.stringify(list));
+      updateSavedGamesCountUI();
+    } catch (e) {
+      console.error("Düello kaydı saklanamadı:", e);
+    }
+    return;
+  }
+
   if (snapshot.isMatchMode || !snapshot.userBoard || !snapshot.initialBoard) return;
   try {
     const safeNotes = snapshot.notesBoard ? snapshot.notesBoard.map(row => (
@@ -190,7 +258,7 @@ export function saveActiveGameRecord(snapshot: ActiveGameSnapshot): void {
         updatedAtMs: Date.now()
       }));
     } else {
-      const list = getSavedGamesList().filter(item => item.isCustomMode);
+      const list = getSavedGamesList().filter(item => item.isCustomMode && !item.isMatchMode);
       const gameId = `saved_custom_${snapshot.variant}_${snapshot.level}`;
       const record: SavedGameRecord = {
         id: gameId,
@@ -228,9 +296,18 @@ export function saveActiveGameRecord(snapshot: ActiveGameSnapshot): void {
 }
 
 export function deleteSavedGameRecord(gameId: string): void {
-  let list = getSavedGamesList().filter(i => i.isCustomMode);
-  list = list.filter(item => item.id !== gameId);
-  localStorage.setItem('sudoku_saved_games_list', JSON.stringify(list));
+  try {
+    let customList = getSavedGamesList().filter(i => i.isCustomMode && !i.isMatchMode);
+    customList = customList.filter(item => item.id !== gameId);
+    localStorage.setItem('sudoku_saved_games_list', JSON.stringify(customList));
+
+    let duelList = getSavedGamesList().filter(i => i.isMatchMode);
+    duelList = duelList.filter(item => item.id !== gameId);
+    localStorage.setItem('sudoku_saved_duels_list', JSON.stringify(duelList));
+  } catch {
+    // ignore
+  }
+
   updateSavedGamesCountUI();
 }
 
@@ -239,21 +316,64 @@ export function clearSavedGame(variant: SudokuVariant, level: number): void {
   deleteSavedGameRecord(`saved_custom_${variant}_${level}`);
 }
 
+let activeSavedTab: 'journey' | 'custom' | 'duel' = 'journey';
+
 export function openSavedGamesModal(onPlaySavedGame: (record: SavedGameRecord) => void): void {
-  const list = getSavedGamesList();
   UIManager.toggleModal('view-saved-games', true);
-  UIManager.renderSavedGamesList(
-    list,
-    (record) => {
-      UIManager.toggleModal('view-saved-games', false);
-      onPlaySavedGame(record);
-    },
-    (record) => {
-      deleteSavedGameRecord(record.id);
-      openSavedGamesModal(onPlaySavedGame);
-      UIManager.showToast("🗑️ Kayıtlı oyun silindi.", "info");
+
+  const renderCurrentTab = () => {
+    const allRecords = getSavedGamesList();
+    let filtered: SavedGameRecord[] = [];
+    let emptyMsg = t('no_active_games');
+
+    if (activeSavedTab === 'journey') {
+      filtered = allRecords.filter(r => !r.isCustomMode && !r.isMatchMode);
+      emptyMsg = t('no_active_games');
+    } else if (activeSavedTab === 'custom') {
+      filtered = allRecords.filter(r => !!r.isCustomMode && !r.isMatchMode);
+      emptyMsg = t('no_custom_games');
+    } else if (activeSavedTab === 'duel') {
+      filtered = allRecords.filter(r => !!r.isMatchMode);
+      emptyMsg = t('no_duel_games');
     }
-  );
+
+    const updateTabBtns = () => {
+      ['journey', 'custom', 'duel'].forEach(tab => {
+        const btn = document.getElementById(`tab-saved-${tab}`);
+        if (btn) {
+          if (tab === activeSavedTab) {
+            btn.className = "saved-tab-btn py-1.5 rounded-xl font-black text-[11px] bg-[var(--bg-card)] text-[var(--accent-gold)] border border-[var(--border-strong)] shadow-sm transition-all";
+          } else {
+            btn.className = "saved-tab-btn py-1.5 rounded-xl font-bold text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent transition-all";
+          }
+        }
+      });
+    };
+    updateTabBtns();
+
+    UIManager.renderSavedGamesList(
+      filtered,
+      (record) => {
+        UIManager.toggleModal('view-saved-games', false);
+        onPlaySavedGame(record);
+      },
+      (record) => {
+        deleteSavedGameRecord(record.id);
+        renderCurrentTab();
+        UIManager.showToast("🗑️ Kayıtlı oyun silindi.", "info");
+      },
+      emptyMsg
+    );
+  };
+
+  ['journey', 'custom', 'duel'].forEach(tab => {
+    document.getElementById(`tab-saved-${tab}`)?.addEventListener('click', () => {
+      activeSavedTab = tab as any;
+      renderCurrentTab();
+    });
+  });
+
+  renderCurrentTab();
 }
 
 export function initSaveController(callbacks: { onPlaySavedGame: (record: SavedGameRecord) => void }): void {

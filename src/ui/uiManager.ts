@@ -38,6 +38,9 @@ export interface SavedGameRecord {
   samuraiBoards?: { userBoard: number[][]; initialBoard: number[][]; solution: number[][]; notesBoard: number[][][] }[];
   activeSamuraiIndex?: number;
   isCustomMode?: boolean;
+  isMatchMode?: boolean;
+  matchData?: any;
+  enemyName?: string;
   updatedAtMs: number;
 }
 
@@ -442,7 +445,8 @@ export const UIManager = {
   renderSavedGamesList(
     records: SavedGameRecord[],
     onPlay: (record: SavedGameRecord) => void,
-    onDelete: (record: SavedGameRecord) => void
+    onDelete: (record: SavedGameRecord) => void,
+    emptyText?: string
   ) {
     const listEl = document.getElementById('saved-games-list');
     if (!listEl) return;
@@ -451,7 +455,7 @@ export const UIManager = {
       listEl.innerHTML = `
         <div class="flex flex-col items-center justify-center py-10 text-center">
           <svg class="w-10 h-10 text-[var(--text-secondary)] opacity-50 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          <p class="text-xs font-bold text-[var(--text-primary)] mb-0.5">${t('no_active_games')}</p>
+          <p class="text-xs font-bold text-[var(--text-primary)] mb-0.5">${emptyText || t('no_active_games')}</p>
           <p class="text-[10px] text-[var(--text-secondary)]">${t('no_active_games_desc')}</p>
         </div>
       `;
@@ -467,12 +471,24 @@ export const UIManager = {
       const m = Math.floor(timeSec / 60).toString().padStart(2, '0');
       const s = (timeSec % 60).toString().padStart(2, '0');
       const isCustom = !!r.isCustomMode;
+      const isMatch = !!r.isMatchMode;
 
-      const deleteBtnHTML = isCustom ? `
+      const deleteBtnHTML = (isCustom || isMatch) ? `
         <button data-record-id="${r.id}" class="delete-saved-game-btn bg-rose-950/60 border border-rose-500/40 text-rose-300 font-black text-xs p-1.5 rounded-xl active:scale-90 transition-transform">
           ✕
         </button>
       ` : '';
+
+      let badgeHTML = `<span class="bg-[var(--accent-gold)] text-[var(--text-on-gold)] text-[8px] font-black px-1.5 py-0.5 rounded-md">${t('tag_map')}</span>`;
+      let sublineHTML = `${t('label_level')} ${level} • ${diffStr} • ${timeSec > 0 ? `${m}:${s}` : t('label_ready')}`;
+
+      if (isMatch) {
+        badgeHTML = `<span class="bg-rose-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md">${t('saved_tab_duel')}</span>`;
+        sublineHTML = `VS ${r.enemyName || t('label_rival')} • ${diffStr} • ${m}:${s}`;
+      } else if (isCustom) {
+        badgeHTML = `<span class="bg-[var(--accent-cyan)] text-[var(--text-on-gold)] text-[8px] font-black px-1.5 py-0.5 rounded-md">${t('tag_custom')}</span>`;
+        sublineHTML = `${diffStr} • ${timeSec > 0 ? `${m}:${s}` : t('label_ready')}`;
+      }
 
       return `
         <div class="p-3 border border-[var(--border-subtle)] rounded-2xl bg-[var(--bg-card)] shadow-sm flex items-center justify-between transition-all">
@@ -483,9 +499,9 @@ export const UIManager = {
             <div class="text-left">
               <div class="flex items-center gap-1">
                 <p class="font-black text-[var(--text-primary)] text-xs">${t('var_' + variant + '_full')}</p>
-                ${!isCustom ? `<span class="bg-[var(--accent-gold)] text-[var(--text-on-gold)] text-[8px] font-black px-1.5 py-0.5 rounded-md">${t('tag_map')}</span>` : `<span class="bg-[var(--accent-cyan)] text-[var(--text-on-gold)] text-[8px] font-black px-1.5 py-0.5 rounded-md">${t('tag_custom')}</span>`}
+                ${badgeHTML}
               </div>
-              <p class="text-[10px] text-[var(--text-secondary)] font-bold">${t('label_level')} ${level} • ${diffStr} • ${timeSec > 0 ? `${m}:${s}` : t('label_ready')}</p>
+              <p class="text-[10px] text-[var(--text-secondary)] font-bold">${sublineHTML}</p>
             </div>
           </div>
           <div class="flex items-center gap-1.5 shrink-0">

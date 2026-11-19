@@ -235,7 +235,9 @@ const persistCurrentGame = () => {
     regionMap: currentRegionMap,
     cages: currentCages,
     samuraiBoards: samuraiBoards.length === 5 ? samuraiBoards : undefined,
-    activeSamuraiIndex: currentVariant === 'samurai' ? activeSamuraiIndex : undefined
+    activeSamuraiIndex: currentVariant === 'samurai' ? activeSamuraiIndex : undefined,
+    matchData: activeMatch,
+    enemyName: activeMatch?.player2?.username
   });
 };
 
@@ -356,6 +358,19 @@ export async function handleExitGameRequest(): Promise<boolean> {
     return true;
   }
 
+  if (isMatchMode && activeMatch && activeMatch.durationSec === 0) {
+    persistCurrentGame();
+    isMatchMode = false;
+    MatchEngine.clearActiveMatch();
+    UIManager.hideMatchHeader();
+    activeRefreshFn = null;
+    if (timerInterval) clearInterval(timerInterval);
+    UIManager.hideSamuraiSpace();
+    UIManager.navigate('menu');
+    UIManager.showToast("▶ Süresiz düellodan çıkıldı (ilerleme kaydedildi).", "info");
+    return true;
+  }
+
   if (isMatchMode && activeMatch) {
     return new Promise((resolve) => {
       UIManager.toggleModal('duel-exit-modal', true);
@@ -426,6 +441,11 @@ export function startGame(
 
   isMatchMode = !!matchData;
   activeMatch = matchData || null;
+
+  if (restoredState && restoredState.isMatchMode && restoredState.matchData) {
+    isMatchMode = true;
+    activeMatch = restoredState.matchData;
+  }
 
   currentDifficulty = diff;
   currentVariant = variant;
@@ -619,7 +639,15 @@ export function startGame(
   }
 
   const title = document.getElementById('game-title');
-  if (title) title.innerText = isMatchMode ? `⚔️ Düello (${diff.toUpperCase()})` : `Seviye ${level}`;
+  if (title) {
+    if (isMatchMode) {
+      title.innerText = `⚔️ Düello (${diff.toUpperCase()})`;
+    } else if (isCustomGameMode) {
+      title.innerText = t('diff_' + diff);
+    } else {
+      title.innerText = `Seviye ${level}`;
+    }
+  }
 
   const updateErrorUI = () => {
     const errorEl = document.getElementById('game-errors');

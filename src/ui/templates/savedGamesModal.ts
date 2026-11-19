@@ -13,6 +13,13 @@ export const savedGamesModalTemplate = `
             </button>
         </div>
 
+        <!-- 3'lü Kategori Sekme Barı: Yolculuk, Serbest Mod, Düello -->
+        <div class="grid grid-cols-3 gap-1 p-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl mb-3 shrink-0">
+            <button id="tab-saved-journey" data-saved-tab="journey" class="saved-tab-btn py-1.5 rounded-xl font-black text-[11px] bg-[var(--bg-card)] text-[var(--accent-gold)] border border-[var(--border-strong)] shadow-sm transition-all" data-i18n="saved_tab_journey">Yolculuk</button>
+            <button id="tab-saved-custom" data-saved-tab="custom" class="saved-tab-btn py-1.5 rounded-xl font-bold text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent transition-all" data-i18n="saved_tab_custom">Serbest Mod</button>
+            <button id="tab-saved-duel" data-saved-tab="duel" class="saved-tab-btn py-1.5 rounded-xl font-bold text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent transition-all" data-i18n="saved_tab_duel">Düello</button>
+        </div>
+
         <div id="saved-games-list" class="flex-1 overflow-y-auto space-y-2 pr-0.5 hidden-scrollbar">
             <div class="text-center text-[var(--text-secondary)] py-10 font-bold" data-i18n="no_active_games">Kayıtlı aktif oyununuz yok.</div>
         </div>
