@@ -6,7 +6,7 @@ export const inboxModalTemplate = `
         <div class="flex justify-between items-center mb-3 pb-2 border-b border-[var(--border-subtle)]">
             <h3 class="text-lg font-black text-[var(--accent-gold)] flex items-center gap-2">
                 <span>${Icons.inbox}</span>
-                <span>Düello Gelen Kutusu</span>
+                <span data-i18n="inbox_title">Düello Gelen Kutusu</span>
             </h3>
             <button id="close-inbox" class="text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-full p-2 text-xs font-bold transition-colors">
                 ✕
@@ -14,7 +14,7 @@ export const inboxModalTemplate = `
         </div>
 
         <div id="inbox-list" class="flex-1 overflow-y-auto space-y-2 pr-1 hidden-scrollbar">
-            <div class="text-center text-[var(--text-secondary)] py-10 font-bold">Gelen davet bulunmuyor.</div>
+            <div class="text-center text-[var(--text-secondary)] py-10 font-bold" data-i18n="inbox_empty">Gelen davet bulunmuyor.</div>
         </div>
     </div>
 </div>

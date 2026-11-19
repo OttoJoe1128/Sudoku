@@ -79,7 +79,7 @@ export const menuTemplate = `
             <button id="btn-new-game" class="bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] rounded-3xl p-4 flex flex-col justify-between shadow-md active:scale-[0.97] transition-all border border-[var(--border-subtle)] min-h-[120px] text-left group">
                 <div class="flex justify-between items-center w-full">
                     <span class="text-lg text-[var(--accent-cyan)] group-hover:rotate-12 transition-transform">${Icons.target}</span>
-                    <span class="text-xs text-[var(--accent-gold)] font-bold" data-i18n="menu_custom_mode_tag">Disiplinler</span>
+                    <span class="text-xs text-[var(--accent-gold)] font-bold" data-i18n="menu_variants_short">Disiplinler</span>
                 </div>
                 <div>
                     <span class="text-[9px] font-black uppercase tracking-wider text-[var(--text-secondary)] block" data-i18n="menu_custom_mode_tag">SERBEST MOD</span>

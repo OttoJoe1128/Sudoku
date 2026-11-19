@@ -6,7 +6,7 @@ export const shopTemplate = `
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-xl font-black text-[var(--accent-gold)] flex items-center gap-2">
                 <span>${Icons.dice}</span>
-                <span>Mağaza & Temalar</span>
+                <span data-i18n="shop_modal_title">Mağaza & Temalar</span>
             </h3>
             <button id="close-shop" class="text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-full p-2 text-xs">✕</button>
         </div>

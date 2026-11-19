@@ -7,7 +7,7 @@ export const achievementsTemplate = `
             <div>
                 <h3 class="text-xl font-black text-[var(--accent-gold)] flex items-center gap-2">
                     <span>${Icons.crown}</span>
-                    <span>Başarımlar & Rozetler</span>
+                    <span data-i18n="achievements_modal_title">Başarımlar & Rozetler</span>
                 </h3>
                 <p class="text-xs text-[var(--accent-cyan)] font-semibold flex items-center gap-1 mt-0.5">
                     Özel rozetleri aç, ekstra altın kazan!
@@ -21,7 +21,7 @@ export const achievementsTemplate = `
         <!-- Rozet İlerleme Özeti -->
         <div class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl p-3.5 mb-3 flex items-center justify-between">
             <div>
-                <span class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider block">Kazanılan Rozetler</span>
+                <span class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider block" data-i18n="menu_badges">Kazanılan Rozetler</span>
                 <span id="badges-unlocked-count" class="text-lg font-black text-[var(--accent-gold)]">0 / 10</span>
             </div>
             <div class="w-32 bg-[var(--bg-card)] h-2.5 rounded-full overflow-hidden border border-[var(--border-subtle)]">

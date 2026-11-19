@@ -7,9 +7,9 @@ export const leaderboardTemplate = `
             <div>
                 <h3 class="text-xl font-black text-[var(--accent-gold)] flex items-center gap-2">
                     <span>${Icons.trophy}</span>
-                    <span>Sıralama</span>
+                    <span data-i18n="leaderboard_title">Sıralama</span>
                 </h3>
-                <p class="text-[11px] text-[var(--text-secondary)] font-bold mt-0.5">
+                <p class="text-[11px] text-[var(--text-secondary)] font-bold mt-0.5" data-i18n="leaderboard_sub">
                     Küresel Oyuncu Sıralaması
                 </p>
             </div>
@@ -25,10 +25,10 @@ export const leaderboardTemplate = `
 
         <!-- Sekmeler: Genel Sıralama / En Hızlı Çözenler -->
         <div class="flex gap-1.5 p-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl mb-2.5">
-            <button id="btn-tab-gold" class="flex-1 py-1.5 px-2 rounded-lg font-black text-xs transition-all bg-[var(--bg-card)] text-[var(--accent-gold)] border border-[var(--border-strong)] shadow-sm">
+            <button id="btn-tab-gold" class="flex-1 py-1.5 px-2 rounded-lg font-black text-xs transition-all bg-[var(--bg-card)] text-[var(--accent-gold)] border border-[var(--border-strong)] shadow-sm" data-i18n="tab_general_rank">
                 Genel Sıralama
             </button>
-            <button id="btn-tab-speed" class="flex-1 py-1.5 px-2 rounded-lg font-bold text-xs transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+            <button id="btn-tab-speed" class="flex-1 py-1.5 px-2 rounded-lg font-bold text-xs transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)]" data-i18n="tab_fastest_time">
                 En Hızlılar
             </button>
         </div>
@@ -36,30 +36,30 @@ export const leaderboardTemplate = `
         <!-- Genel Sıralama Filtreleri: Seviye, Altın, PvP MMR, YZ Puanı -->
         <div id="general-sort-filters" class="grid grid-cols-4 gap-1 mb-2.5">
             <button id="btn-sort-level" class="py-1.5 text-[10px] font-black rounded-xl bg-[var(--accent-gold)] text-[var(--text-on-gold)] shadow-sm flex items-center justify-center gap-1">
-                <span>${Icons.target}</span> Seviye
+                <span>${Icons.target}</span> <span data-i18n="lb_tab_level">Seviye</span>
             </button>
             <button id="btn-sort-gold" class="py-1.5 text-[10px] font-bold rounded-xl bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] flex items-center justify-center gap-1">
-                <span>${Icons.coin}</span> Altın
+                <span>${Icons.coin}</span> <span data-i18n="lb_tab_gold">Altın</span>
             </button>
             <button id="btn-sort-pvp-mmr" class="py-1.5 text-[10px] font-bold rounded-xl bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] flex items-center justify-center gap-1">
-                <span>${Icons.sword}</span> PvP
+                <span>${Icons.sword}</span> <span data-i18n="lb_tab_pvp">PvP</span>
             </button>
             <button id="btn-sort-bot-mmr" class="py-1.5 text-[10px] font-bold rounded-xl bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] flex items-center justify-center gap-1">
-                <span>${Icons.bot}</span> YZ
+                <span>${Icons.bot}</span> <span data-i18n="lb_tab_bot">YZ</span>
             </button>
         </div>
 
         <!-- En Hızlılar İçin Zorluk Filtresi -->
         <div id="speed-diff-filters" class="hidden gap-1.5 mb-2.5">
             <button data-diff="all" class="speed-filter-btn flex-1 py-1 text-[11px] font-black rounded-lg bg-[var(--accent-gold)] text-[var(--text-on-gold)] shadow-sm">Tümü</button>
-            <button data-diff="basit" class="speed-filter-btn flex-1 py-1 text-[11px] font-bold rounded-lg bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]">Basit</button>
-            <button data-diff="orta" class="speed-filter-btn flex-1 py-1 text-[11px] font-bold rounded-lg bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]">Orta</button>
-            <button data-diff="zor" class="speed-filter-btn flex-1 py-1 text-[11px] font-bold rounded-lg bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]">Zor</button>
+            <button data-diff="basit" class="speed-filter-btn flex-1 py-1 text-[11px] font-bold rounded-lg bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]" data-i18n="diff_basit">Basit</button>
+            <button data-diff="orta" class="speed-filter-btn flex-1 py-1 text-[11px] font-bold rounded-lg bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]" data-i18n="diff_orta">Orta</button>
+            <button data-diff="zor" class="speed-filter-btn flex-1 py-1 text-[11px] font-bold rounded-lg bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]" data-i18n="diff_zor">Zor</button>
         </div>
 
         <div id="leaderboard-header-bar" class="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 border-b border-[var(--border-subtle)] mb-2 flex justify-between items-center">
             <span id="lb-header-left">Sıra & Oyuncu</span>
-            <span id="lb-header-right">Seviye</span>
+            <span id="lb-header-right" data-i18n="lb_tab_level">Seviye</span>
         </div>
         <div id="leaderboard-list" class="flex-1 overflow-y-auto space-y-2 pr-1 hidden-scrollbar">
             <div class="text-center text-[var(--text-secondary)] py-10 font-bold animate-pulse">Liderler yükleniyor...</div>

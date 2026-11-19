@@ -6,7 +6,7 @@ export const savedGamesModalTemplate = `
         <div class="flex justify-between items-center mb-3 pb-2 border-b border-[var(--border-subtle)] shrink-0">
             <h3 class="text-lg font-black text-[var(--accent-gold)] flex items-center gap-2">
                 <span>${Icons.target}</span>
-                <span>Aktif Oyunlarım</span>
+                <span data-i18n="saved_games_modal_title">Aktif Oyunlarım</span>
             </h3>
             <button id="close-saved-games" class="text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-full p-2 text-xs font-bold transition-colors">
                 ✕
@@ -14,7 +14,7 @@ export const savedGamesModalTemplate = `
         </div>
 
         <div id="saved-games-list" class="flex-1 overflow-y-auto space-y-2 pr-0.5 hidden-scrollbar">
-            <div class="text-center text-[var(--text-secondary)] py-10 font-bold">Kayıtlı aktif oyununuz yok.</div>
+            <div class="text-center text-[var(--text-secondary)] py-10 font-bold" data-i18n="no_active_games">Kayıtlı aktif oyununuz yok.</div>
         </div>
     </div>
 </div>
