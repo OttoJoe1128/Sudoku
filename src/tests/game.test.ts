@@ -3,6 +3,7 @@ import { SudokuGen } from '../engine/sudoku';
 import { calculateEloChange, serializePuzzle, deserializePuzzle } from '../engine/matchEngine';
 import { UserManager } from '../store/userState';
 import { validateSavedGameRecord } from '../engine/saveValidator';
+import { TRANSLATIONS, setLang, getLang, t, translateRankName } from '../i18n/translations';
 
 describe('Sudoku Engine & 5 Variants', () => {
   it('should generate valid Classic 9x9 Sudoku puzzle and solution', () => {
@@ -292,5 +293,40 @@ describe('saveValidator - Pure Save Record Validation', () => {
       cages: corruptCages
     };
     expect(validateSavedGameRecord(corruptRecord)).toBe(false);
+  });
+});
+
+describe('i18n - Modular Translation Infrastructure', () => {
+  it('should verify TRANSLATIONS.tr and TRANSLATIONS.en have matching key sets', () => {
+    const trKeys = Object.keys(TRANSLATIONS.tr).sort();
+    const enKeys = Object.keys(TRANSLATIONS.en).sort();
+    expect(enKeys).toEqual(trKeys);
+  });
+
+  it('should correctly translate keys and substitute parameters in both TR and EN modes', () => {
+    setLang('tr');
+    expect(getLang()).toBe('tr');
+    expect(t('menu_active_games_count', { level: 5, count: 2 })).toBe('Seviye 5 • 2 Aktif Oyun');
+    expect(t('var_classic')).toBe('Klasik');
+
+    setLang('en');
+    expect(getLang()).toBe('en');
+    expect(t('menu_active_games_count', { level: 5, count: 2 })).toBe('Level 5 • 2 Active Games');
+    expect(t('var_classic')).toBe('Classic');
+
+    setLang('tr');
+  });
+
+  it('should accurately translate rank titles in EN mode without breaking TR rank names', () => {
+    setLang('en');
+    expect(translateRankName('🥉 Çırak')).toBe('Apprentice');
+    expect(translateRankName('🥈 Kaşif')).toBe('Explorer');
+    expect(translateRankName('🥇 Zihin Ustası')).toBe('Mind Master');
+    expect(translateRankName('💎 Üstat')).toBe('Master');
+    expect(translateRankName('🔥 Büyükusta')).toBe('Grandmaster');
+
+    setLang('tr');
+    expect(translateRankName('🥉 Çırak')).toBe('Çırak');
+    expect(translateRankName('🥈 Kaşif')).toBe('Kaşif');
   });
 });

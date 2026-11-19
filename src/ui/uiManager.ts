@@ -12,6 +12,7 @@ import { inboxModalTemplate } from './templates/inboxModal';
 import { savedGamesModalTemplate } from './templates/savedGamesModal';
 import { getAmbientBackgroundHTML } from '../design/backgrounds';
 import { Icons, renderAvatarSVG, renderRankBadgeSVG, AVATAR_LIST } from '../design/icons';
+import { t } from '../i18n/translations';
 import { Player, SpeedRecord } from '../engine/leaderboard';
 import { ShopItems, ShopManager } from '../engine/shop';
 import { BadgeStatus } from '../engine/achievements';
@@ -94,53 +95,50 @@ export const UIManager = {
     if (existing) existing.remove();
 
     const isArena = mode === 'arena';
-    const title = isArena ? "⚔️ Düello Arenası Kuralları & Puanlama" : "🧩 Serbest Mod Kuralları & Puanlama";
+    const title = isArena ? t('rules_scoring_title_arena') : t('rules_scoring_title_custom');
 
     const contentHTML = isArena ? `
-      <div class="text-left text-xs space-y-3 font-medium text-slate-600 leading-relaxed">
-        <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-3">
-          <p class="font-black text-indigo-900 text-sm mb-1">🪙 Altın Ödülleri</p>
-          <p>• 🟢 Basit Düello Zaferi: <strong class="text-indigo-700">+50 🪙 Altın</strong></p>
-          <p>• 🟡 Orta Düello Zaferi: <strong class="text-indigo-700">+100 🪙 Altın</strong></p>
-          <p>• 🔴 Zor Düello Zaferi: <strong class="text-indigo-700">+200 🪙 Altın</strong></p>
+      <div class="text-left text-xs space-y-3 font-medium text-[var(--text-secondary)] leading-relaxed">
+        <div class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl p-3">
+          <p class="font-black text-[var(--accent-gold)] text-sm mb-1">${t('gold_rewards')}</p>
+          <p>• 🟢 ${t('diff_basit')}: <strong class="text-[var(--text-primary)]">+50 🪙</strong></p>
+          <p>• 🟡 ${t('diff_orta')}: <strong class="text-[var(--text-primary)]">+100 🪙</strong></p>
+          <p>• 🔴 ${t('diff_zor')}: <strong class="text-[var(--text-primary)]">+200 🪙</strong></p>
         </div>
 
-        <div class="bg-purple-50 border border-purple-100 rounded-2xl p-3">
-          <p class="font-black text-purple-900 text-sm mb-1">⚔️ MMR & Rütbe Puanları</p>
-          <p>• Gerçek Oyuncu (PvP) Zaferi: <strong class="text-purple-700">+25 MMR</strong> (0 Hata Flawless: <strong class="text-purple-700">+30 MMR</strong>)</p>
-          <p>• PvP Mağlubiyeti: <strong class="text-rose-600">-20 MMR</strong></p>
-          <p>• YZ Bot Zaferi: <strong class="text-purple-700">+15 YZ MMR</strong> | Mağlubiyet: <strong class="text-rose-600">-15 YZ MMR</strong></p>
+        <div class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl p-3">
+          <p class="font-black text-[var(--accent-gold)] text-sm mb-1">${t('mmr_rank_pts')}</p>
+          <p>• PvP: <strong class="text-[var(--accent-cyan)]">+25 MMR</strong> (Flawless: <strong class="text-[var(--accent-cyan)]">+30 MMR</strong>)</p>
+          <p>• Bot: <strong class="text-[var(--accent-cyan)]">+15 YZ MMR</strong></p>
         </div>
 
-        <div class="bg-amber-50 border border-amber-100 rounded-2xl p-3">
-          <p class="font-black text-amber-900 text-sm mb-1">💠 Disiplin Çarpanları</p>
+        <div class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl p-3">
+          <p class="font-black text-[var(--accent-gold)] text-sm mb-1">${t('discipline_mults')}</p>
           <p>• Klasik: <strong>1.0x</strong> | Harfli: <strong>1.2x</strong> | Parçalı: <strong>1.5x</strong></p>
-          <p>• Hesap: <strong>1.8x</strong> | Samurai: <strong>2.5x</strong> Puan Çarpanı</p>
+          <p>• Hesap: <strong>1.8x</strong> | Samurai: <strong>2.5x</strong></p>
         </div>
 
-        <div class="bg-rose-50 border border-rose-100 rounded-2xl p-3">
-          <p class="font-black text-rose-900 text-sm mb-1">⚠️ Terk & Ceza Kuralı</p>
-          <p>• Aktif maçtan çekilmek <strong class="text-rose-600">-50 🪙 Altın</strong> ve <strong class="text-rose-600">-30 MMR</strong> cezası düşer.</p>
-          <p>• Süreli maçlarda süre dolduğunda en çok doğru hücre çözen kazanır.</p>
+        <div class="bg-[var(--bg-elevated)] border border-rose-500/40 rounded-2xl p-3">
+          <p class="font-black text-rose-400 text-sm mb-1">${t('forfeit_rule_title')}</p>
+          <p>• <strong class="text-rose-300">-50 🪙 & -30 MMR</strong></p>
         </div>
       </div>
     ` : `
-      <div class="text-left text-xs space-y-3 font-medium text-slate-600 leading-relaxed">
-        <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-3">
-          <p class="font-black text-emerald-900 text-sm mb-1">🎯 Serbest Mod Amacı</p>
-          <p>Harita seviyesini ve Düello MMR puanını riske atmadan 5 disiplinde antrenman yapma ve süre rekoru kırma modudur.</p>
+      <div class="text-left text-xs space-y-3 font-medium text-[var(--text-secondary)] leading-relaxed">
+        <div class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl p-3">
+          <p class="font-black text-[var(--accent-gold)] text-sm mb-1">${t('custom_mode_purpose')}</p>
+          <p>${t('custom_mode_purpose_desc')}</p>
         </div>
 
-        <div class="bg-amber-50 border border-amber-100 rounded-2xl p-3">
-          <p class="font-black text-amber-900 text-sm mb-1">🪙 Altın Kazanımı & Blitz Bonusu</p>
-          <p>• 🟢 Basit: <strong class="text-amber-700">+10 🪙</strong> | 🟡 Orta: <strong class="text-amber-700">+20 🪙</strong> | 🔴 Zor: <strong class="text-amber-700">+35 🪙</strong></p>
-          <p>• ⚡ <strong>3 Dakika Blitz Modu:</strong> Tüm altın ödüllerine <strong class="text-amber-700">+%50 Ekstra Altın</strong> kazandırır!</p>
+        <div class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl p-3">
+          <p class="font-black text-[var(--accent-gold)] text-sm mb-1">${t('gold_and_blitz')}</p>
+          <p>• 🟢 ${t('diff_basit')}: +10 🪙 | 🟡 ${t('diff_orta')}: +20 🪙 | 🔴 ${t('diff_zor')}: +35 🪙</p>
+          <p>• ⚡ 3 Dk Blitz: <strong class="text-[var(--accent-cyan)]">+%50 🪙</strong></p>
         </div>
 
-        <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-3">
-          <p class="font-black text-indigo-900 text-sm mb-1">💠 Ustalık & Rütbe Puanı</p>
-          <p>• Tamamlanan her bulmaca Ustalık Puanınızı (Disiplin Çarpanıyla) ve Rütbe Puanınızı (+15 RP) yükseltir.</p>
-          <p>• Serbest Modda harita seviyeniz değişmez ve düello MMR puanı etkilenmez.</p>
+        <div class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl p-3">
+          <p class="font-black text-[var(--accent-gold)] text-sm mb-1">${t('mastery_and_rp')}</p>
+          <p>• Ustalık Puanı + Rütbe Puanı (+15 RP)</p>
         </div>
       </div>
     `;
@@ -150,16 +148,16 @@ export const UIManager = {
     modal.className = "fixed inset-0 bg-slate-900/80 z-[96] flex items-center justify-center p-4 backdrop-blur-md";
 
     modal.innerHTML = `
-      <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl relative border border-slate-100 max-h-[85vh] flex flex-col">
-        <button id="close-rules-scoring-modal" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 text-sm">✕</button>
-        <h3 class="text-lg font-black text-slate-800 mb-3 text-left border-b border-slate-100 pb-2.5 shrink-0 flex items-center gap-1.5">
+      <div class="bg-[var(--bg-card)] text-[var(--text-primary)] rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl relative border border-[var(--border-strong)] max-h-[85vh] flex flex-col">
+        <button id="close-rules-scoring-modal" class="absolute top-4 right-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] p-1 text-sm">✕</button>
+        <h3 class="text-lg font-black text-[var(--accent-gold)] mb-3 text-left border-b border-[var(--border-subtle)] pb-2.5 shrink-0 flex items-center gap-1.5">
           ${title}
         </h3>
         <div class="flex-1 overflow-y-auto hidden-scrollbar pr-0.5">
           ${contentHTML}
         </div>
-        <button id="btn-confirm-rules-modal" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3 rounded-2xl shadow-md active:scale-95 transition-transform text-xs mt-3 shrink-0">
-          Anladım ➔
+        <button id="btn-confirm-rules-modal" class="w-full bg-[var(--accent-gold)] text-[var(--text-on-gold)] font-black py-3 rounded-2xl shadow-md active:scale-95 transition-transform text-xs mt-3 shrink-0 hover:brightness-110">
+          ${t('btn_got_it')}
         </button>
       </div>
     `;
@@ -1165,25 +1163,25 @@ export const UIManager = {
     barEl.classList.add('grid');
 
     const radarItems = [
-      { idx: 1, label: '↖ Sol-Üst' },
-      { idx: 2, label: '↗ Sağ-Üst' },
-      { idx: 0, label: '🎯 Merkez' },
-      { idx: 3, label: '↙ Sol-Alt' },
-      { idx: 4, label: '↘ Sağ-Alt' }
+      { idx: 1, label: t('radar_top_left') },
+      { idx: 2, label: t('radar_top_right') },
+      { idx: 0, label: t('radar_center') },
+      { idx: 3, label: t('radar_bottom_left') },
+      { idx: 4, label: t('radar_bottom_right') }
     ];
 
     barEl.innerHTML = radarItems.map(item => {
       const isSelected = item.idx === activeIndex;
       const status = completionStatuses[item.idx] || { completed: false, remaining: 0 };
 
-      let btnClass = "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50";
+      let btnClass = "bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]";
       if (isSelected) {
         btnClass = "bg-rose-600 text-white font-black shadow-sm ring-2 ring-rose-400";
       } else if (status.completed) {
         btnClass = "bg-emerald-500 text-white font-black";
       }
 
-      const badgeText = status.completed ? '✓' : `${status.remaining} Boş`;
+      const badgeText = status.completed ? '✓' : t('radar_empty_count', { count: status.remaining });
 
       return `
         <button data-samurai-idx="${item.idx}" class="samurai-radar-btn ${btnClass} py-1.5 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center transition-all active:scale-95 leading-tight">

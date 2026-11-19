@@ -1,6 +1,7 @@
 import './design/tokens.css';
 import { UIManager, SavedGameRecord } from './ui/uiManager';
 import { renderAvatarSVG, renderRankBadgeSVG } from './design/icons';
+import { getLang, setLang, t, applyStaticTranslations } from './i18n/translations';
 import { validateSavedGameRecord } from './engine/saveValidator';
 import { GameEngine } from './engine/gameEngine';
 import { SudokuGen, SudokuVariant, GeneratedSudoku, IRREGULAR_TEMPLATES, KillerCage } from './engine/sudoku';
@@ -114,12 +115,8 @@ let matchTotalEmpty = 30;
 let selectedMatchTimeSec = 180;
 let matchTimeRemaining = 180;
 
-const RULE_DESCRIPTIONS: Record<SudokuVariant, string> = {
-  classic: "Her satır, sütun ve 3x3 karede 1-9 rakamları birer kez yer almalıdır.",
-  irregular: "Standart 3x3 kareler yerine kalın çizgilerle ayrılmış düzensiz şekilli bölgelerde 1-9 rakamları birer kez yer almalıdır.",
-  killer: "Kesikli çizgili kafeslerin içindeki rakamların toplamı, köşedeki küçük sayıya eşit olmalıdır.",
-  wordoku: "Rakamlar yerine A'dan I'ya kadar olan 9 harfi satır, sütun ve kutularda tekrar etmeyecek şekilde yerleştir.",
-  samurai: "Köşelerinden birbirine bağlı 5 adet Sudoku tablosunu ortak bölgelere dikkat ederek çöz."
+const getRuleDescription = (variant: SudokuVariant): string => {
+  return t('rule_' + variant);
 };
 
 const updateGoldDisplay = () => {
@@ -1221,6 +1218,47 @@ document.getElementById('close-saved-games')?.addEventListener('click', () => {
   UIManager.toggleModal('view-saved-games', false);
 });
 
+const updateLanguageUI = () => {
+  const currentLang = getLang();
+  const trOpt = document.getElementById('lang-opt-tr');
+  const enOpt = document.getElementById('lang-opt-en');
+  if (trOpt && enOpt) {
+    if (currentLang === 'tr') {
+      trOpt.className = 'text-[var(--accent-gold)]';
+      enOpt.className = 'text-[var(--text-secondary)] opacity-50';
+    } else {
+      trOpt.className = 'text-[var(--text-secondary)] opacity-50';
+      enOpt.className = 'text-[var(--accent-gold)]';
+    }
+  }
+
+  applyStaticTranslations();
+  updateSavedGamesCountUI();
+
+  const currentTitle = UserManager.getTitle();
+  const titleEl = document.getElementById('menu-player-title');
+  if (titleEl) titleEl.innerHTML = renderRankBadgeSVG(currentTitle);
+
+  const ruleDescCustom = document.getElementById('custom-variant-rule-desc');
+  if (ruleDescCustom) ruleDescCustom.innerText = getRuleDescription(selectedCustomVariant);
+
+  const ruleDescMap = document.getElementById('map-variant-rule-desc');
+  if (ruleDescMap) ruleDescMap.innerText = getRuleDescription(selectedMapVariant);
+
+  const ruleDescArena = document.getElementById('arena-variant-rule-desc');
+  if (ruleDescArena) ruleDescArena.innerText = getRuleDescription(selectedArenaVariant);
+
+  const notesTextEl = document.getElementById('notes-status-text');
+  if (notesTextEl) notesTextEl.innerText = isNotesMode ? t('btn_notes_on') : t('btn_notes_off');
+};
+
+document.getElementById('btn-lang-toggle')?.addEventListener('click', () => {
+  const nextLang = getLang() === 'tr' ? 'en' : 'tr';
+  setLang(nextLang);
+  updateLanguageUI();
+  UIManager.showToast(nextLang === 'en' ? 'Language switched to English' : 'Dil Türkçe olarak ayarlandı', 'info');
+});
+
 // Kullanıcı Profil Giriş Akışı
 const checkUser = async () => {
   const user = await UserManager.initUser();
@@ -1235,6 +1273,7 @@ const checkUser = async () => {
     if (titleEl) titleEl.innerHTML = renderRankBadgeSVG(user.title || 'Çırak');
     if (avatarBox) avatarBox.innerHTML = renderAvatarSVG(user.avatar || 'av_prism', 28);
 
+    updateLanguageUI();
     updateGoldDisplay();
     updateSavedGamesCountUI();
     UIManager.navigate('menu');
@@ -1420,7 +1459,7 @@ let selectedCustomTimeSec: number = 0;
     const descEl = document.getElementById('custom-variant-rule-desc');
     const mults: Record<SudokuVariant, string> = { classic: '1.0x Puan', wordoku: '1.2x Puan', irregular: '1.5x Puan', killer: '1.8x Puan', samurai: '2.5x Puan' };
     if (badge) badge.innerText = mults[v] || '1.0x Puan';
-    if (descEl) descEl.innerText = RULE_DESCRIPTIONS[v] || RULE_DESCRIPTIONS.classic;
+    if (descEl) descEl.innerText = getRuleDescription(v);
   });
 });
 
@@ -1500,7 +1539,7 @@ let selectedMapVariant: SudokuVariant = 'classic';
     });
 
     const descEl = document.getElementById('map-variant-rule-desc');
-    if (descEl) descEl.innerText = RULE_DESCRIPTIONS[v] || RULE_DESCRIPTIONS.classic;
+    if (descEl) descEl.innerText = getRuleDescription(v);
 
     const userLvl = UserManager.getVariantLevel(v);
     mapWindowStart = Math.max(1, userLvl - 8);
@@ -1530,7 +1569,7 @@ let selectedArenaVariant: SudokuVariant = 'classic';
     const descEl = document.getElementById('arena-variant-rule-desc');
     const mults: Record<SudokuVariant, string> = { classic: '1.0x Puan', wordoku: '1.2x Puan', irregular: '1.5x Puan', killer: '1.8x Puan', samurai: '2.5x Puan' };
     if (badge) badge.innerText = mults[v] || '1.0x Puan';
-    if (descEl) descEl.innerText = RULE_DESCRIPTIONS[v] || RULE_DESCRIPTIONS.classic;
+    if (descEl) descEl.innerText = getRuleDescription(v);
   });
 });
 
