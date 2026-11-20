@@ -64,6 +64,10 @@ export function hasPlayerMadeAnyMove(snapshotOrRecord: any): boolean {
   return false;
 }
 
+export function isWorthKeepingSave(rec: any): boolean {
+  return hasPlayerMadeAnyMove(rec) || (typeof rec?.timeElapsed === 'number' && rec.timeElapsed >= 5);
+}
+
 export function getSavedGamesList(): SavedGameRecord[] {
   let customList: SavedGameRecord[] = [];
 
@@ -72,7 +76,7 @@ export function getSavedGamesList(): SavedGameRecord[] {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
-        customList = parsed.filter(item => item && item.isCustomMode && !item.isMatchMode && validateSavedGameRecord(item) && hasPlayerMadeAnyMove(item));
+        customList = parsed.filter(item => item && item.isCustomMode && !item.isMatchMode && validateSavedGameRecord(item) && isWorthKeepingSave(item));
         localStorage.setItem('sudoku_saved_games_list', JSON.stringify(customList));
       }
     }
@@ -98,7 +102,7 @@ export function getSavedGamesList(): SavedGameRecord[] {
     const legacyRaw = localStorage.getItem('sudoku_saved_game');
     if (legacyRaw) {
       const parsed = JSON.parse(legacyRaw);
-      if (parsed && validateSavedGameRecord(parsed) && hasPlayerMadeAnyMove(parsed)) {
+      if (parsed && validateSavedGameRecord(parsed) && isWorthKeepingSave(parsed)) {
         const variant: SudokuVariant = parsed.variant || 'classic';
         const gameId = `saved_${variant}_${parsed.level || 1}`;
         const record: SavedGameRecord = {
@@ -135,46 +139,51 @@ export function getSavedGamesList(): SavedGameRecord[] {
         if (rawMap) {
           try {
             const p = JSON.parse(rawMap);
-            if (validateSavedGameRecord(p) && hasPlayerMadeAnyMove(p)) {
+            if (validateSavedGameRecord(p)) {
               const variant: SudokuVariant = p.variant || 'classic';
               const level = p.level || 1;
               const diff = p.diff || SudokuGen.getDifficulty(level);
 
+              // Auto-reconcile BEFORE filtering by isWorthKeepingSave
               if (level > UserManager.getVariantLevel(variant)) {
                 UserManager.updateVariantLevel(variant, level, 0);
               }
 
-              const rec: SavedGameRecord = {
-                id: `saved_map_${variant}_${level}`,
-                variant,
-                level,
-                diff,
-                timeElapsed: p.timeElapsed || 0,
-                userBoard: p.userBoard,
-                initialBoard: p.initialBoard,
-                currentSolution: p.currentSolution,
-                errors: p.errors || 0,
-                notesBoard: p.notesBoard || [],
-                regionMap: p.regionMap,
-                cages: p.cages,
-                samuraiBoards: p.samuraiBoards,
-                activeSamuraiIndex: p.activeSamuraiIndex,
-                isCustomMode: false,
-                updatedAtMs: p.updatedAtMs || Date.now()
-              };
+              if (isWorthKeepingSave(p)) {
+                const rec: SavedGameRecord = {
+                  id: `saved_map_${variant}_${level}`,
+                  variant,
+                  level,
+                  diff,
+                  timeElapsed: p.timeElapsed || 0,
+                  userBoard: p.userBoard,
+                  initialBoard: p.initialBoard,
+                  currentSolution: p.currentSolution,
+                  errors: p.errors || 0,
+                  notesBoard: p.notesBoard || [],
+                  regionMap: p.regionMap,
+                  cages: p.cages,
+                  samuraiBoards: p.samuraiBoards,
+                  activeSamuraiIndex: p.activeSamuraiIndex,
+                  isCustomMode: false,
+                  updatedAtMs: p.updatedAtMs || Date.now()
+                };
 
-              const existing = mapByVariant.get(variant);
-              if (!existing) {
-                mapByVariant.set(variant, rec);
-              } else {
-                let keepRec = rec;
-                let dropRec = existing;
-                if (existing.level > rec.level || (existing.level === rec.level && existing.updatedAtMs >= rec.updatedAtMs)) {
-                  keepRec = existing;
-                  dropRec = rec;
+                const existing = mapByVariant.get(variant);
+                if (!existing) {
+                  mapByVariant.set(variant, rec);
+                } else {
+                  let keepRec = rec;
+                  let dropRec = existing;
+                  if (existing.level > rec.level || (existing.level === rec.level && existing.updatedAtMs >= rec.updatedAtMs)) {
+                    keepRec = existing;
+                    dropRec = rec;
+                  }
+                  mapByVariant.set(variant, keepRec);
+                  mapKeysToDelete.push(`sudoku_map_save_${dropRec.variant}_${dropRec.level}`);
                 }
-                mapByVariant.set(variant, keepRec);
-                mapKeysToDelete.push(`sudoku_map_save_${dropRec.variant}_${dropRec.level}`);
+              } else {
+                mapKeysToDelete.push(key);
               }
             } else {
               mapKeysToDelete.push(key);
@@ -262,7 +271,7 @@ export function clearDuelSavedGame(matchId: string): void {
 }
 
 export function saveActiveGameRecord(snapshot: ActiveGameSnapshot): void {
-  if (!snapshot.isMatchMode && !hasPlayerMadeAnyMove(snapshot)) {
+  if (!snapshot.isMatchMode && !isWorthKeepingSave(snapshot)) {
     return;
   }
 
@@ -444,6 +453,18 @@ export function openSavedGamesModal(onPlaySavedGame: (record: SavedGameRecord) =
 
   const renderCurrentTab = () => {
     const allRecords = getSavedGamesList();
+    const journeyCount = allRecords.filter(r => !r.isCustomMode && !r.isMatchMode).length;
+    const customCount = allRecords.filter(r => !!r.isCustomMode && !r.isMatchMode).length;
+    const duelCount = allRecords.filter(r => !!r.isMatchMode).length;
+
+    let activeCount = activeSavedTab === 'journey' ? journeyCount : (activeSavedTab === 'custom' ? customCount : duelCount);
+
+    if (activeCount === 0) {
+      if (journeyCount > 0) activeSavedTab = 'journey';
+      else if (customCount > 0) activeSavedTab = 'custom';
+      else if (duelCount > 0) activeSavedTab = 'duel';
+    }
+
     let filtered: SavedGameRecord[] = [];
     let emptyMsg = t('no_active_games');
 
@@ -459,9 +480,16 @@ export function openSavedGamesModal(onPlaySavedGame: (record: SavedGameRecord) =
     }
 
     const updateTabBtns = () => {
+      const tabLabels: Record<string, string> = {
+        journey: `${t('saved_tab_journey')} (${journeyCount})`,
+        custom: `${t('saved_tab_custom')} (${customCount})`,
+        duel: `${t('saved_tab_duel')} (${duelCount})`
+      };
+
       ['journey', 'custom', 'duel'].forEach(tab => {
         const btn = document.getElementById(`tab-saved-${tab}`);
         if (btn) {
+          btn.innerText = tabLabels[tab];
           if (tab === activeSavedTab) {
             btn.className = "saved-tab-btn py-1.5 rounded-xl font-black text-[11px] bg-[var(--bg-card)] text-[var(--accent-gold)] border border-[var(--border-strong)] shadow-sm transition-all";
           } else {

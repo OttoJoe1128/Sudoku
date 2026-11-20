@@ -232,6 +232,7 @@ const startChallengeListeners = () => {
 const checkUser = async () => {
   const user = await UserManager.initUser();
   reconcileLevelsWithSavedGames();
+  UserManager.validateAndRepairLocalState();
   if (!user || !UserManager.getUsername()) {
     UIManager.toggleModal('username-modal', true);
   } else {

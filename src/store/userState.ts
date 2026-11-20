@@ -197,7 +197,34 @@ export const UserManager = {
     }
   },
 
+  validateAndRepairLocalState(): void {
+    if (typeof localStorage === 'undefined') return;
+
+    (['classic', 'irregular', 'killer', 'wordoku', 'samurai'] as SudokuVariant[]).forEach(v => {
+      const raw = localStorage.getItem(`sudoku_level_${v}`);
+      let lvl = raw ? parseInt(raw) : (v === 'classic' ? this.getCurrentLevel() : 1);
+      if (isNaN(lvl) || lvl < 1) lvl = 1;
+      if (lvl > 1000) lvl = 1000;
+      localStorage.setItem(`sudoku_level_${v}`, lvl.toString());
+    });
+
+    const classicLvl = this.getVariantLevel('classic');
+    const currentLvl = this.getCurrentLevel();
+    const safeClassic = Math.max(1, Math.min(1000, Math.max(classicLvl, currentLvl)));
+    localStorage.setItem('sudoku_level', safeClassic.toString());
+    localStorage.setItem('sudoku_level_classic', safeClassic.toString());
+
+    let gold = parseInt(localStorage.getItem('sudoku_gold') || '100');
+    if (isNaN(gold) || gold < 0) gold = 0;
+    localStorage.setItem('sudoku_gold', gold.toString());
+
+    let totalComp = parseInt(localStorage.getItem('sudoku_total_completed') || '0');
+    if (isNaN(totalComp) || totalComp < 0) totalComp = 0;
+    localStorage.setItem('sudoku_total_completed', totalComp.toString());
+  },
+
   getOfflineFallbackUser(): UserData | null {
+    this.validateAndRepairLocalState();
     const localUsername = this.getUsername();
     if (!localUsername) return null;
     const level = this.getCurrentLevel();
@@ -261,6 +288,34 @@ export const UserManager = {
           localStorage.setItem('sudoku_username', username);
           localStorage.setItem('sudoku_gold', gold.toString());
           localStorage.setItem('sudoku_avatar', avatar);
+        }
+
+        this.validateAndRepairLocalState();
+
+        // 2-Way Sync: write back to Firestore if local levels/scores are higher
+        const dirtyUpdates: Record<string, any> = {};
+        (['classic', 'irregular', 'killer', 'wordoku', 'samurai'] as SudokuVariant[]).forEach(v => {
+          const localLvl = this.getVariantLevel(v);
+          const fireLvl = typeof data[`level_${v}`] === 'number' ? data[`level_${v}`] : (v === 'classic' ? level : 1);
+          if (localLvl > fireLvl) {
+            dirtyUpdates[`level_${v}`] = localLvl;
+            if (v === 'classic') dirtyUpdates.level = localLvl;
+          }
+
+          const localScore = this.getVariantScore(v);
+          const fireScore = typeof data[`score_${v}`] === 'number' ? data[`score_${v}`] : 0;
+          if (localScore > fireScore) {
+            dirtyUpdates[`score_${v}`] = localScore;
+          }
+        });
+
+        if (safeTotal > totalCompleted) {
+          dirtyUpdates.total_completed = safeTotal;
+        }
+
+        if (Object.keys(dirtyUpdates).length > 0) {
+          dirtyUpdates.updatedAt = serverTimestamp();
+          await setDoc(userDocRef, dirtyUpdates, { merge: true });
         }
 
         const title = this.calculatePlayerTitle(safeClassic, duelWins, duelMmr, safeTotal);
