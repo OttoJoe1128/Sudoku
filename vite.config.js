@@ -26,7 +26,7 @@ export default defineConfig({
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon-192.png', 'icon-512.png'],
+      includeAssets: ['icon-192.png', 'icon-512.png', 'logo.png'],
       manifest: {
         id: '/',
         name: 'SudokuMap',

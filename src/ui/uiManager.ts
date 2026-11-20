@@ -180,6 +180,29 @@ export const UIManager = {
 
     app.innerHTML = `
       <div id="container" class="w-full max-w-[480px] h-[100dvh] bg-[var(--bg-app)] text-[var(--text-primary)] flex flex-col relative overflow-hidden transition-colors duration-300 font-sans">
+        <!-- Sabit Global Üst Kontrol Çubuğu (Tüm Ekranlarda Görünür) -->
+        <div id="global-utility-bar" class="w-full bg-[var(--bg-card)]/90 backdrop-blur-md border-b border-[var(--border-subtle)] px-4 py-1.5 flex justify-between items-center z-50 shrink-0 h-10">
+            <div class="flex items-center gap-2">
+                <!-- Ses Aç / Kapa Düğmesi -->
+                <button id="btn-sound-toggle" title="Ses Aç / Kapa" class="bg-[var(--bg-elevated)] text-[var(--accent-gold)] px-2.5 py-1 rounded-xl active:scale-95 transition-transform border border-[var(--border-subtle)] flex items-center justify-center text-xs">
+                    ${Icons.volumeOn}
+                </button>
+            </div>
+            <div class="flex items-center gap-2">
+                <!-- Dil Seçici (TR | EN) -->
+                <button id="btn-lang-toggle" title="Dil / Language" class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] px-2 py-1 rounded-xl text-[10px] font-mono font-black tracking-wider flex items-center justify-center gap-1 active:scale-95 transition-all">
+                    <span id="lang-opt-tr" class="text-[var(--accent-gold)]">TR</span>
+                    <span class="text-[var(--text-secondary)] opacity-50">|</span>
+                    <span id="lang-opt-en" class="text-[var(--text-secondary)]">EN</span>
+                </button>
+                <!-- Tema Seçici (Gündüz | Gece) -->
+                <button id="btn-theme-toggle" title="Gündüz / Gece Teması" class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] px-2.5 py-1 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-all text-xs">
+                    <span id="theme-opt-day" class="text-[var(--accent-gold)] flex items-center">${Icons.sun}</span>
+                    <span class="text-[var(--text-secondary)] opacity-40 text-[9px]">|</span>
+                    <span id="theme-opt-night" class="text-[var(--text-secondary)] opacity-50 flex items-center">${Icons.moon}</span>
+                </button>
+            </div>
+        </div>
         ${getAmbientBackgroundHTML()}
         ${menuTemplate}
         ${mapTemplate}
