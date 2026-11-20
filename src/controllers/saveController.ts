@@ -24,6 +24,46 @@ export interface ActiveGameSnapshot {
   enemyName?: string;
 }
 
+export function hasPlayerMadeAnyMove(snapshotOrRecord: any): boolean {
+  if (!snapshotOrRecord || typeof snapshotOrRecord !== 'object') return false;
+  if (typeof snapshotOrRecord.errors === 'number' && snapshotOrRecord.errors > 0) return true;
+
+  if (snapshotOrRecord.variant === 'samurai' && Array.isArray(snapshotOrRecord.samuraiBoards)) {
+    for (let i = 0; i < snapshotOrRecord.samuraiBoards.length; i++) {
+      const b = snapshotOrRecord.samuraiBoards[i];
+      if (!b || !Array.isArray(b.userBoard) || !Array.isArray(b.initialBoard)) continue;
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          if (b.userBoard[r][c] !== b.initialBoard[r][c]) return true;
+          if (Array.isArray(b.notesBoard) && b.notesBoard[r] && b.notesBoard[r][c]) {
+            const n = b.notesBoard[r][c];
+            if (Array.isArray(n) && n.length > 0) return true;
+            if (n && typeof n.size === 'number' && n.size > 0) return true;
+            if (n && typeof n.values === 'function' && Array.from(n).length > 0) return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  if (Array.isArray(snapshotOrRecord.userBoard) && Array.isArray(snapshotOrRecord.initialBoard)) {
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 9; c++) {
+        if (snapshotOrRecord.userBoard[r][c] !== snapshotOrRecord.initialBoard[r][c]) return true;
+        if (Array.isArray(snapshotOrRecord.notesBoard) && snapshotOrRecord.notesBoard[r] && snapshotOrRecord.notesBoard[r][c]) {
+          const n = snapshotOrRecord.notesBoard[r][c];
+          if (Array.isArray(n) && n.length > 0) return true;
+          if (n && typeof n.size === 'number' && n.size > 0) return true;
+          if (n && typeof n.values === 'function' && Array.from(n).length > 0) return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
 export function getSavedGamesList(): SavedGameRecord[] {
   let customList: SavedGameRecord[] = [];
 
@@ -32,7 +72,7 @@ export function getSavedGamesList(): SavedGameRecord[] {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
-        customList = parsed.filter(item => item && item.isCustomMode && !item.isMatchMode && validateSavedGameRecord(item));
+        customList = parsed.filter(item => item && item.isCustomMode && !item.isMatchMode && validateSavedGameRecord(item) && hasPlayerMadeAnyMove(item));
         localStorage.setItem('sudoku_saved_games_list', JSON.stringify(customList));
       }
     }
@@ -58,7 +98,7 @@ export function getSavedGamesList(): SavedGameRecord[] {
     const legacyRaw = localStorage.getItem('sudoku_saved_game');
     if (legacyRaw) {
       const parsed = JSON.parse(legacyRaw);
-      if (parsed && validateSavedGameRecord(parsed)) {
+      if (parsed && validateSavedGameRecord(parsed) && hasPlayerMadeAnyMove(parsed)) {
         const variant: SudokuVariant = parsed.variant || 'classic';
         const gameId = `saved_${variant}_${parsed.level || 1}`;
         const record: SavedGameRecord = {
@@ -95,10 +135,15 @@ export function getSavedGamesList(): SavedGameRecord[] {
         if (rawMap) {
           try {
             const p = JSON.parse(rawMap);
-            if (validateSavedGameRecord(p)) {
+            if (validateSavedGameRecord(p) && hasPlayerMadeAnyMove(p)) {
               const variant: SudokuVariant = p.variant || 'classic';
               const level = p.level || 1;
               const diff = p.diff || SudokuGen.getDifficulty(level);
+
+              if (level > UserManager.getVariantLevel(variant)) {
+                UserManager.updateVariantLevel(variant, level, 0);
+              }
+
               const rec: SavedGameRecord = {
                 id: `saved_map_${variant}_${level}`,
                 variant,
@@ -152,6 +197,20 @@ export function getSavedGamesList(): SavedGameRecord[] {
   return [...mapList, ...customList, ...duelList];
 }
 
+export function reconcileLevelsWithSavedGames(): void {
+  try {
+    const list = getSavedGamesList().filter(r => !r.isCustomMode && !r.isMatchMode);
+    list.forEach(r => {
+      const currentLevel = UserManager.getVariantLevel(r.variant);
+      if (r.level > currentLevel) {
+        UserManager.updateVariantLevel(r.variant, r.level, 0);
+      }
+    });
+  } catch {
+    // ignore
+  }
+}
+
 export function updateSavedGamesCountUI(): void {
   if (typeof document === 'undefined') return;
   const classicLvl = UserManager.getVariantLevel('classic');
@@ -162,14 +221,21 @@ export function updateSavedGamesCountUI(): void {
   }
 }
 
-export function clearVariantJourneySaves(variant: SudokuVariant): void {
+export function clearVariantJourneySaves(variant: SudokuVariant, maxLevelToClear?: number): void {
   try {
     const prefix = `sudoku_map_save_${variant}_`;
     const keysToRemove: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key && key.startsWith(prefix)) {
-        keysToRemove.push(key);
+        if (typeof maxLevelToClear === 'number') {
+          const levelNum = parseInt(key.substring(prefix.length));
+          if (!isNaN(levelNum) && levelNum <= maxLevelToClear) {
+            keysToRemove.push(key);
+          }
+        } else {
+          keysToRemove.push(key);
+        }
       }
     }
     keysToRemove.forEach(k => localStorage.removeItem(k));
@@ -196,6 +262,10 @@ export function clearDuelSavedGame(matchId: string): void {
 }
 
 export function saveActiveGameRecord(snapshot: ActiveGameSnapshot): void {
+  if (!snapshot.isMatchMode && !hasPlayerMadeAnyMove(snapshot)) {
+    return;
+  }
+
   if (snapshot.isMatchMode && snapshot.matchData && snapshot.matchData.durationSec === 0) {
     try {
       const raw = localStorage.getItem('sudoku_saved_duels_list');
@@ -333,6 +403,17 @@ export function saveActiveGameRecord(snapshot: ActiveGameSnapshot): void {
 
 export function deleteSavedGameRecord(gameId: string): void {
   try {
+    if (gameId.startsWith('saved_map_')) {
+      const parts = gameId.split('_'); // ['saved', 'map', variant, level]
+      if (parts.length >= 4) {
+        const variant = parts[2] as SudokuVariant;
+        const level = parseInt(parts[3]);
+        if (!isNaN(level)) {
+          localStorage.removeItem(`sudoku_map_save_${variant}_${level}`);
+        }
+      }
+    }
+
     let customList = getSavedGamesList().filter(i => i.isCustomMode && !i.isMatchMode);
     customList = customList.filter(item => item.id !== gameId);
     localStorage.setItem('sudoku_saved_games_list', JSON.stringify(customList));

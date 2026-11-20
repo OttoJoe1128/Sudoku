@@ -1,7 +1,7 @@
 import { SudokuVariant, SudokuGen, GeneratedSudoku, KillerCage } from '../engine/sudoku';
 import { UIManager } from '../ui/uiManager';
 import { GameEngine } from '../engine/gameEngine';
-import { UserManager } from '../store/userState';
+import { UserManager, computeNextJourneyLevel } from '../store/userState';
 import { MatchEngine, MatchState, calculateEloChange } from '../engine/matchEngine';
 import { AchievementManager } from '../engine/achievements';
 import { saveActiveGameRecord, clearSavedGame, updateSavedGamesCountUI, clearVariantJourneySaves, clearDuelSavedGame } from './saveController';
@@ -168,7 +168,7 @@ async function finishPlacementExam(completedAll: boolean): Promise<void> {
   if (res.levelsGained > 0 || res.rewardGold > 0) {
     await UserManager.updateVariantLevel(config.variant, res.assignedLevel, res.rewardGold);
     if (res.levelsGained > 0) {
-      clearVariantJourneySaves(config.variant);
+      clearVariantJourneySaves(config.variant, res.assignedLevel - 1);
     }
     if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();
   }
@@ -829,10 +829,10 @@ export function startGame(
 
         const reward = diff === 'basit' ? 10 : diff === 'orta' ? 20 : 35;
         const userLvl = UserManager.getVariantLevel(currentVariant);
-        const nextLevel = level === userLvl ? userLvl + 1 : userLvl;
+        const nextLevel = computeNextJourneyLevel(level, userLvl);
 
         await UserManager.updateVariantLevel(currentVariant, nextLevel, reward);
-        clearVariantJourneySaves(currentVariant);
+        clearVariantJourneySaves(currentVariant, nextLevel - 1);
         const newGold = UserManager.getGold();
 
         await UserManager.recordGameCompletion({
@@ -1087,11 +1087,11 @@ export function startGame(
         } else {
           const reward = currentDifficulty === 'basit' ? 10 : currentDifficulty === 'orta' ? 20 : 35;
           const userLvl = UserManager.getVariantLevel(currentVariant);
-          const nextLevel = currentLevelNumber === userLvl ? userLvl + 1 : userLvl;
+          const nextLevel = computeNextJourneyLevel(currentLevelNumber, userLvl);
 
           await UserManager.updateVariantLevel(currentVariant, nextLevel, reward);
           if (!isCustomGameMode) {
-            clearVariantJourneySaves(currentVariant);
+            clearVariantJourneySaves(currentVariant, nextLevel - 1);
           }
           const finalGold = UserManager.getGold();
 

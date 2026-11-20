@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { UserManager } from '../store/userState';
-import { getSavedGamesList, saveActiveGameRecord, clearVariantJourneySaves, clearSavedGame, deleteSavedGameRecord } from '../controllers/saveController';
+import { UserManager, computeNextJourneyLevel } from '../store/userState';
+import { getSavedGamesList, saveActiveGameRecord, clearVariantJourneySaves, clearSavedGame, deleteSavedGameRecord, reconcileLevelsWithSavedGames } from '../controllers/saveController';
 import { evaluatePlacementExam, getPlacementExamConfig } from '../engine/placementEngine';
 import { GameEngine } from '../engine/gameEngine';
 import { SudokuGen } from '../engine/sudoku';
@@ -37,7 +37,20 @@ if (typeof globalThis.document === 'undefined') {
   };
 }
 
-describe('Uçtan Uca Oyun Akışları ve Bütünlük Testleri (15 Senaryo)', () => {
+function makeMovedBoard(gen: any) {
+  const uBoard = gen.puzzle.map((r: number[]) => [...r]);
+  for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 9; c++) {
+      if (uBoard[r][c] === 0) {
+        uBoard[r][c] = gen.solution[r][c];
+        return uBoard;
+      }
+    }
+  }
+  return uBoard;
+}
+
+describe('Uçtan Uca Oyun Akışları ve Bütünlük Testleri (21 Senaryo)', () => {
   beforeEach(() => {
     mockLocalStorage.clear();
   });
@@ -87,6 +100,9 @@ describe('Uçtan Uca Oyun Akışları ve Bütünlük Testleri (15 Senaryo)', () 
       const gen1 = SudokuGen.generateVariant('basit', 'classic');
       const gen2 = SudokuGen.generateVariant('basit', 'classic');
 
+      const moved1 = makeMovedBoard(gen1);
+      const moved2 = makeMovedBoard(gen2);
+
       saveActiveGameRecord({
         isMatchMode: false,
         isCustomGameMode: false,
@@ -94,7 +110,7 @@ describe('Uçtan Uca Oyun Akışları ve Bütünlük Testleri (15 Senaryo)', () 
         level: 1,
         diff: 'basit',
         timeElapsed: 10,
-        userBoard: gen1.puzzle,
+        userBoard: moved1,
         initialBoard: gen1.puzzle,
         currentSolution: gen1.solution,
         errors: 0
@@ -107,7 +123,7 @@ describe('Uçtan Uca Oyun Akışları ve Bütünlük Testleri (15 Senaryo)', () 
         level: 303,
         diff: 'zor',
         timeElapsed: 40,
-        userBoard: gen2.puzzle,
+        userBoard: moved2,
         initialBoard: gen2.puzzle,
         currentSolution: gen2.solution,
         errors: 1
@@ -121,12 +137,14 @@ describe('Uçtan Uca Oyun Akışları ve Bütünlük Testleri (15 Senaryo)', () 
 
     it('5. K-3 Eski Cihaz Çöpü Temizliği: Birden fazla eski harita kaydı otomatik ayıklanmalı', () => {
       const gen = SudokuGen.generateVariant('basit', 'classic');
+      const moved = makeMovedBoard(gen);
+
       const recordData = JSON.stringify({
         variant: 'classic',
         level: 1,
         diff: 'basit',
         timeElapsed: 10,
-        userBoard: gen.puzzle,
+        userBoard: moved,
         initialBoard: gen.puzzle,
         currentSolution: gen.solution,
         errors: 0
@@ -147,6 +165,9 @@ describe('Uçtan Uca Oyun Akışları ve Bütünlük Testleri (15 Senaryo)', () 
       const genC = SudokuGen.generateVariant('basit', 'classic');
       const genI = SudokuGen.generateVariant('basit', 'irregular');
 
+      const movedC = makeMovedBoard(genC);
+      const movedI = makeMovedBoard(genI);
+
       saveActiveGameRecord({
         isMatchMode: false,
         isCustomGameMode: false,
@@ -154,7 +175,7 @@ describe('Uçtan Uca Oyun Akışları ve Bütünlük Testleri (15 Senaryo)', () 
         level: 1,
         diff: 'basit',
         timeElapsed: 10,
-        userBoard: genC.puzzle,
+        userBoard: movedC,
         initialBoard: genC.puzzle,
         currentSolution: genC.solution,
         errors: 0
@@ -167,7 +188,7 @@ describe('Uçtan Uca Oyun Akışları ve Bütünlük Testleri (15 Senaryo)', () 
         level: 5,
         diff: 'orta',
         timeElapsed: 20,
-        userBoard: genI.puzzle,
+        userBoard: movedI,
         initialBoard: genI.puzzle,
         currentSolution: genI.solution,
         errors: 0,
@@ -181,7 +202,7 @@ describe('Uçtan Uca Oyun Akışları ve Bütünlük Testleri (15 Senaryo)', () 
         level: 1,
         diff: 'basit',
         timeElapsed: 5,
-        userBoard: genC.puzzle,
+        userBoard: movedC,
         initialBoard: genC.puzzle,
         currentSolution: genC.solution,
         errors: 0
@@ -201,6 +222,8 @@ describe('Uçtan Uca Oyun Akışları ve Bütünlük Testleri (15 Senaryo)', () 
 
     it('7. Serbest Mod & Notlar/Variant Bütünlüğü: Killer ve Samurai alanları kayıpsız dönmeli', () => {
       const killerGen = SudokuGen.generateVariant('basit', 'killer');
+      const moved = makeMovedBoard(killerGen);
+
       saveActiveGameRecord({
         isMatchMode: false,
         isCustomGameMode: true,
@@ -208,7 +231,7 @@ describe('Uçtan Uca Oyun Akışları ve Bütünlük Testleri (15 Senaryo)', () 
         level: 1,
         diff: 'basit',
         timeElapsed: 15,
-        userBoard: killerGen.puzzle,
+        userBoard: moved,
         initialBoard: killerGen.puzzle,
         currentSolution: killerGen.solution,
         errors: 1,
@@ -224,6 +247,7 @@ describe('Uçtan Uca Oyun Akışları ve Bütünlük Testleri (15 Senaryo)', () 
 
     it('8. Ö-2 Süresiz Düello Yaşam Döngüsü: Kayıt edilip silindiğinde listeden kalkmalı', () => {
       const gen = SudokuGen.generateVariant('basit', 'classic');
+      const moved = makeMovedBoard(gen);
       const matchId = 'test_match_123';
 
       saveActiveGameRecord({
@@ -233,7 +257,7 @@ describe('Uçtan Uca Oyun Akışları ve Bütünlük Testleri (15 Senaryo)', () 
         level: 1,
         diff: 'basit',
         timeElapsed: 25,
-        userBoard: gen.puzzle,
+        userBoard: moved,
         initialBoard: gen.puzzle,
         currentSolution: gen.solution,
         errors: 0,
@@ -398,6 +422,109 @@ describe('Uçtan Uca Oyun Akışları ve Bütünlük Testleri (15 Senaryo)', () 
 
       const res2 = AchievementManager.checkAndUnlockBadges({ level: 10, gold: 100, lastTimeElapsed: 30, lastErrors: 0 });
       expect(res2.newlyUnlocked.length).toBe(0); // Mükerrer kilit açılmamalı
+    });
+  });
+
+  // ----------------------------------------------------
+  // Grup 6: Faz O5 - Kayıt & Level Bütünlüğü (6 test)
+  // ----------------------------------------------------
+  describe('Grup 6: Faz O5 - Kayıt & Level Bütünlüğü (6 test)', () => {
+    it('16. Yüksek Kayıt Kurtarma Testi (Wordoku 701 Senaryosu): Harita seviyesi düşükken yüksek kayıt varsa otomatik yükseltilmeli', () => {
+      mockLocalStorage.setItem('sudoku_level_wordoku', '1');
+      expect(UserManager.getVariantLevel('wordoku')).toBe(1);
+
+      const gen = SudokuGen.generateVariant('zor', 'wordoku');
+      const movedBoard = makeMovedBoard(gen);
+
+      const recordData = JSON.stringify({
+        variant: 'wordoku',
+        level: 701,
+        diff: 'zor',
+        timeElapsed: 120,
+        userBoard: movedBoard,
+        initialBoard: gen.puzzle,
+        currentSolution: gen.solution,
+        errors: 0
+      });
+
+      mockLocalStorage.setItem('sudoku_map_save_wordoku_701', recordData);
+
+      reconcileLevelsWithSavedGames();
+      expect(UserManager.getVariantLevel('wordoku')).toBe(701);
+    });
+
+    it('17. computeNextJourneyLevel Senaryoları', () => {
+      expect(computeNextJourneyLevel(701, 1)).toBe(702);
+      expect(computeNextJourneyLevel(2, 2)).toBe(3);
+      expect(computeNextJourneyLevel(2, 10)).toBe(10);
+    });
+
+    it('18. 0 Hamle (00:01) Boş Tahta Engeli: Hiç hamle yapılmamış tahta kaydedilmemeli', () => {
+      const gen = SudokuGen.generateVariant('basit', 'classic');
+
+      saveActiveGameRecord({
+        isMatchMode: false,
+        isCustomGameMode: false,
+        variant: 'classic',
+        level: 1,
+        diff: 'basit',
+        timeElapsed: 1,
+        userBoard: gen.puzzle,
+        initialBoard: gen.puzzle,
+        currentSolution: gen.solution,
+        errors: 0
+      });
+
+      const list = getSavedGamesList().filter(r => !r.isCustomMode && !r.isMatchMode);
+      expect(list.length).toBe(0);
+    });
+
+    it('19. Güvenli clearVariantJourneySaves(variant, maxLevel) Testi: Seviye 2 silinirken Seviye 303 korunmalı', () => {
+      const gen1 = SudokuGen.generateVariant('basit', 'classic');
+      const gen2 = SudokuGen.generateVariant('zor', 'classic');
+
+      const moved1 = makeMovedBoard(gen1);
+      const moved2 = makeMovedBoard(gen2);
+
+      mockLocalStorage.setItem('sudoku_map_save_classic_2', JSON.stringify({
+        variant: 'classic', level: 2, diff: 'basit', timeElapsed: 10,
+        userBoard: moved1, initialBoard: gen1.puzzle, currentSolution: gen1.solution, errors: 0
+      }));
+
+      mockLocalStorage.setItem('sudoku_map_save_classic_303', JSON.stringify({
+        variant: 'classic', level: 303, diff: 'zor', timeElapsed: 100,
+        userBoard: moved2, initialBoard: gen2.puzzle, currentSolution: gen2.solution, errors: 0
+      }));
+
+      clearVariantJourneySaves('classic', 2);
+
+      expect(mockLocalStorage.getItem('sudoku_map_save_classic_2')).toBeNull();
+      expect(mockLocalStorage.getItem('sudoku_map_save_classic_303')).not.toBeNull();
+    });
+
+    it('20. Yolculuk Kaydı Manuel Silme Testi: deleteSavedGameRecord ile saved_map_irregular_5 silinmeli', () => {
+      const gen = SudokuGen.generateVariant('basit', 'irregular');
+      const moved = makeMovedBoard(gen);
+
+      mockLocalStorage.setItem('sudoku_map_save_irregular_5', JSON.stringify({
+        variant: 'irregular', level: 5, diff: 'orta', timeElapsed: 30,
+        userBoard: moved, initialBoard: gen.puzzle, currentSolution: gen.solution, errors: 0, regionMap: gen.regionMap
+      }));
+
+      expect(mockLocalStorage.getItem('sudoku_map_save_irregular_5')).not.toBeNull();
+
+      deleteSavedGameRecord('saved_map_irregular_5');
+
+      expect(mockLocalStorage.getItem('sudoku_map_save_irregular_5')).toBeNull();
+    });
+
+    it('21. updateProgress Geri Çekme Koruması: Seviye 303teyken updateProgress(2, 150) seviyeyi düşürmemeli', async () => {
+      await UserManager.updateVariantLevel('classic', 303, 100);
+      expect(UserManager.getVariantLevel('classic')).toBe(303);
+
+      await UserManager.updateProgress(2, 150);
+      expect(UserManager.getVariantLevel('classic')).toBe(303);
+      expect(UserManager.getCurrentLevel()).toBe(303);
     });
   });
 });

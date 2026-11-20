@@ -64,6 +64,10 @@ export const VARIANT_MULTIPLIERS: Record<SudokuVariant, number> = {
   samurai: 2.5
 };
 
+export function computeNextJourneyLevel(completedLevel: number, currentVariantLevel: number): number {
+  return completedLevel >= currentVariantLevel ? completedLevel + 1 : currentVariantLevel;
+}
+
 export const UserManager = {
   calculatePlayerTitle(
     level: number = 1,
@@ -487,8 +491,10 @@ export const UserManager = {
   },
 
   async updateProgress(level: number, gold: number): Promise<void> {
+    const safeLevel = Math.max(this.getCurrentLevel(), this.getVariantLevel('classic'), level);
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('sudoku_level', level.toString());
+      localStorage.setItem('sudoku_level', safeLevel.toString());
+      localStorage.setItem('sudoku_level_classic', safeLevel.toString());
       localStorage.setItem('sudoku_gold', gold.toString());
     }
 
@@ -499,7 +505,8 @@ export const UserManager = {
         const uid = auth.currentUser.uid;
         const userDocRef = doc(db, 'leaderboard', uid);
         await setDoc(userDocRef, {
-          level,
+          level: safeLevel,
+          level_classic: safeLevel,
           gold,
           title: currentTitle,
           lastSeenMs: Date.now(),

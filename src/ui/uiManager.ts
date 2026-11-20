@@ -563,11 +563,11 @@ export const UIManager = {
       const isCustom = !!r.isCustomMode;
       const isMatch = !!r.isMatchMode;
 
-      const deleteBtnHTML = (isCustom || isMatch) ? `
+      const deleteBtnHTML = `
         <button data-record-id="${r.id}" class="delete-saved-game-btn bg-rose-950/60 border border-rose-500/40 text-rose-300 font-black text-xs p-1.5 rounded-xl active:scale-90 transition-transform">
           ✕
         </button>
-      ` : '';
+      `;
 
       let badgeHTML = `<span class="bg-[var(--accent-gold)] text-[var(--text-on-gold)] text-[8px] font-black px-1.5 py-0.5 rounded-md">${t('tag_map')}</span>`;
       let sublineHTML = `${t('label_level')} ${level} • ${diffStr} • ${timeSec > 0 ? `${m}:${s}` : t('label_ready')}`;

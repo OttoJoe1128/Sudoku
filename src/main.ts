@@ -10,7 +10,7 @@ import { MatchEngine } from './engine/matchEngine';
 import { sanitizeUsername } from './utils/sanitize';
 import { App } from '@capacitor/app';
 
-import { initSaveController, updateSavedGamesCountUI } from './controllers/saveController';
+import { initSaveController, updateSavedGamesCountUI, reconcileLevelsWithSavedGames } from './controllers/saveController';
 import { initMapController, getSelectedMapVariant, openMapAtLevel } from './controllers/mapController';
 import { initArenaController, getSelectedArenaVariant, handleIncomingChallenge, triggerExpertBotMatch } from './controllers/arenaController';
 import { initModalsController, getSelectedCustomVariant, getSelectedCustomTimeSec, openPlayerProfile } from './controllers/modalsController';
@@ -231,6 +231,7 @@ const startChallengeListeners = () => {
 // Kullanıcı Profil Giriş Akışı
 const checkUser = async () => {
   const user = await UserManager.initUser();
+  reconcileLevelsWithSavedGames();
   if (!user || !UserManager.getUsername()) {
     UIManager.toggleModal('username-modal', true);
   } else {
