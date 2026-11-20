@@ -47,7 +47,7 @@ export function hasPlayerMadeAnyMove(snapshotOrRecord: any): boolean {
     return false;
   }
 
-  if (Array.isArray(snapshotOrRecord.userBoard) && Array.isArray(snapshotOrRecord.initialBoard)) {
+  if (Array.isArray(snapshotOrRecord.userBoard) && snapshotOrRecord.userBoard.length === 9 && Array.isArray(snapshotOrRecord.initialBoard) && snapshotOrRecord.initialBoard.length === 9) {
     for (let r = 0; r < 9; r++) {
       for (let c = 0; c < 9; c++) {
         if (snapshotOrRecord.userBoard[r][c] !== snapshotOrRecord.initialBoard[r][c]) return true;
@@ -451,7 +451,7 @@ let activeSavedTab: 'journey' | 'custom' | 'duel' = 'journey';
 export function openSavedGamesModal(onPlaySavedGame: (record: SavedGameRecord) => void): void {
   UIManager.toggleModal('view-saved-games', true);
 
-  const renderCurrentTab = () => {
+  const renderCurrentTab = (autoSelectIfEmpty: boolean = false) => {
     const allRecords = getSavedGamesList();
     const journeyCount = allRecords.filter(r => !r.isCustomMode && !r.isMatchMode).length;
     const customCount = allRecords.filter(r => !!r.isCustomMode && !r.isMatchMode).length;
@@ -459,7 +459,7 @@ export function openSavedGamesModal(onPlaySavedGame: (record: SavedGameRecord) =
 
     let activeCount = activeSavedTab === 'journey' ? journeyCount : (activeSavedTab === 'custom' ? customCount : duelCount);
 
-    if (activeCount === 0) {
+    if (autoSelectIfEmpty && activeCount === 0) {
       if (journeyCount > 0) activeSavedTab = 'journey';
       else if (customCount > 0) activeSavedTab = 'custom';
       else if (duelCount > 0) activeSavedTab = 'duel';
@@ -508,7 +508,7 @@ export function openSavedGamesModal(onPlaySavedGame: (record: SavedGameRecord) =
       },
       (record) => {
         deleteSavedGameRecord(record.id);
-        renderCurrentTab();
+        renderCurrentTab(true);
         UIManager.showToast("🗑️ Kayıtlı oyun silindi.", "info");
       },
       emptyMsg
@@ -520,12 +520,12 @@ export function openSavedGamesModal(onPlaySavedGame: (record: SavedGameRecord) =
     if (btn) {
       btn.onclick = () => {
         activeSavedTab = tab as any;
-        renderCurrentTab();
+        renderCurrentTab(false);
       };
     }
   });
 
-  renderCurrentTab();
+  renderCurrentTab(true);
 }
 
 export function initSaveController(callbacks: { onPlaySavedGame: (record: SavedGameRecord) => void }): void {

@@ -65,7 +65,8 @@ export const VARIANT_MULTIPLIERS: Record<SudokuVariant, number> = {
 };
 
 export function computeNextJourneyLevel(completedLevel: number, currentVariantLevel: number): number {
-  return completedLevel >= currentVariantLevel ? completedLevel + 1 : currentVariantLevel;
+  const next = completedLevel >= currentVariantLevel ? completedLevel + 1 : currentVariantLevel;
+  return Math.min(1000, next);
 }
 
 export const UserManager = {
@@ -112,7 +113,7 @@ export const UserManager = {
 
   async updateVariantLevel(variant: SudokuVariant, newLevel: number, addedGold: number = 0): Promise<void> {
     const currentVariantLevel = this.getVariantLevel(variant);
-    const updatedLevel = Math.max(currentVariantLevel, newLevel);
+    const updatedLevel = Math.min(1000, Math.max(currentVariantLevel, newLevel));
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(`sudoku_level_${variant}`, updatedLevel.toString());
     }
@@ -127,7 +128,7 @@ export const UserManager = {
 
     if (variant === 'classic') {
       const currentClassicLevel = this.getCurrentLevel();
-      const updatedClassic = Math.max(currentClassicLevel, updatedLevel);
+      const updatedClassic = Math.min(1000, Math.max(currentClassicLevel, updatedLevel));
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem('sudoku_level', updatedClassic.toString());
       }
