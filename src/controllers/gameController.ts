@@ -42,6 +42,7 @@ let matchTotalEmpty = 30;
 let matchTimeRemaining = 180;
 
 let onUpdateGoldDisplayCallback: (() => void) | null = null;
+let onReturnToMapCallback: ((variant: SudokuVariant, unlockedLevel?: number) => void) | null = null;
 
 export function getGameRuntimeState(): { isMatchMode: boolean; isNotesMode: boolean } {
   return { isMatchMode, isNotesMode };
@@ -206,9 +207,8 @@ async function finishPlacementExam(completedAll: boolean): Promise<void> {
   if (primaryBtn) {
     primaryBtn.onclick = () => {
       UIManager.toggleModal('placement-result-modal', false);
-      const openMapBtn = document.getElementById('btn-open-map');
-      if (openMapBtn) {
-        openMapBtn.click();
+      if (onReturnToMapCallback) {
+        onReturnToMapCallback(config.variant, res.assignedLevel);
       } else {
         UIManager.navigate('map');
       }
@@ -855,8 +855,18 @@ export function startGame(
           lastErrors: errors
         });
 
-        UIManager.showToast(`🎉 Tebrikler, ${currentVariant.toUpperCase()} Seviye ${level} Tamamlandı! +${reward} 🪙`, "success");
-        UIManager.navigate('menu');
+        const isEn = getLang() === 'en';
+        const toastMsg = isEn
+          ? `🎉 Level ${level} Completed! Level ${nextLevel} Unlocked! +${reward} 🪙`
+          : `🎉 Seviye ${level} Tamamlandı! Seviye ${nextLevel} Açıldı! +${reward} 🪙`;
+
+        UIManager.showToast(toastMsg, "success");
+
+        if (onReturnToMapCallback) {
+          onReturnToMapCallback(currentVariant, nextLevel);
+        } else {
+          UIManager.navigate('map');
+        }
       },
       async (errCount) => {
         SoundManager.playError();
@@ -1103,8 +1113,18 @@ export function startGame(
             lastErrors: errors
           });
 
-          UIManager.showToast(`🎉 Tebrikler, Seviye ${currentLevelNumber} Tamamlandı! +${reward} 🪙`, "success");
-          UIManager.navigate('menu');
+          const isEn = getLang() === 'en';
+          const toastMsg = isEn
+            ? `🎉 Level ${currentLevelNumber} Completed! Level ${nextLevel} Unlocked! +${reward} 🪙`
+            : `🎉 Seviye ${currentLevelNumber} Tamamlandı! Seviye ${nextLevel} Açıldı! +${reward} 🪙`;
+
+          UIManager.showToast(toastMsg, "success");
+
+          if (onReturnToMapCallback) {
+            onReturnToMapCallback(currentVariant, nextLevel);
+          } else {
+            UIManager.navigate('map');
+          }
         }
       } else {
         UIManager.showToast("💡 İpucu yerleştirildi! (-10 🪙)", "success");
@@ -1115,8 +1135,14 @@ export function startGame(
   refresh();
 }
 
-export function initGameController(callbacks: { onUpdateGoldDisplay: () => void }): void {
+export function initGameController(callbacks: {
+  onUpdateGoldDisplay: () => void;
+  onReturnToMap?: (variant: SudokuVariant, unlockedLevel?: number) => void;
+}): void {
   onUpdateGoldDisplayCallback = callbacks.onUpdateGoldDisplay;
+  if (callbacks.onReturnToMap) {
+    onReturnToMapCallback = callbacks.onReturnToMap;
+  }
 
   document.getElementById('btn-back-menu')?.addEventListener('click', () => {
     handleExitGameRequest();

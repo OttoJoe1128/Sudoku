@@ -11,7 +11,7 @@ import { sanitizeUsername } from './utils/sanitize';
 import { App } from '@capacitor/app';
 
 import { initSaveController, updateSavedGamesCountUI } from './controllers/saveController';
-import { initMapController, getSelectedMapVariant } from './controllers/mapController';
+import { initMapController, getSelectedMapVariant, openMapAtLevel } from './controllers/mapController';
 import { initArenaController, getSelectedArenaVariant, handleIncomingChallenge, triggerExpertBotMatch } from './controllers/arenaController';
 import { initModalsController, getSelectedCustomVariant, getSelectedCustomTimeSec, openPlayerProfile } from './controllers/modalsController';
 import { initGameController, startGame, startPlacementExam, handleBotMatchProgress, handleExitGameRequest, getGameRuntimeState } from './controllers/gameController';
@@ -96,7 +96,8 @@ const updateLanguageUI = () => {
 // ----------------------------------------------------
 
 initGameController({
-  onUpdateGoldDisplay: updateGoldDisplay
+  onUpdateGoldDisplay: updateGoldDisplay,
+  onReturnToMap: (variant, unlockedLevel) => openMapAtLevel(variant, unlockedLevel)
 });
 
 initSaveController({

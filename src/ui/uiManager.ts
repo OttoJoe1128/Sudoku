@@ -998,6 +998,7 @@ export const UIManager = {
 
       const wrapper = document.createElement('div');
       wrapper.id = `map-node-${lvl}`;
+      wrapper.setAttribute('data-map-level', lvl.toString());
       wrapper.style.position = 'absolute';
       wrapper.style.top = `${index * ROW_H}px`;
       wrapper.style.left = '0px';
@@ -1101,6 +1102,21 @@ export const UIManager = {
           currentEl.scrollIntoView({ behavior: 'auto', block: 'center' });
         }
       }, 50);
+    }
+  },
+
+  animateMapLevelUnlock(newLevel: number) {
+    const nodeEl = document.querySelector(`[data-map-level="${newLevel}"]`) || document.getElementById(`map-node-${newLevel}`);
+    if (!nodeEl) return;
+
+    nodeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    const btn = nodeEl.querySelector('button') || nodeEl;
+    if (btn) {
+      btn.classList.add('ring-4', 'ring-emerald-400/80', 'scale-110', 'transition-transform', 'duration-500');
+      setTimeout(() => {
+        btn.classList.remove('ring-4', 'ring-emerald-400/80', 'scale-110', 'transition-transform', 'duration-500');
+      }, 1100);
     }
   },
 
