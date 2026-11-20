@@ -34,10 +34,10 @@
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
 
-        <!-- Google AdMob App ID (Yayin oncesi gercek AdMob App ID ile degistir) -->
+        <!-- Google AdMob App ID -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="ca-app-pub-9186685815420341~5238191171" />
     </application>
 
     <!-- Permissions -->

@@ -4,7 +4,7 @@ import { AdMob, RewardAdPluginEvents } from '@capacitor-community/admob';
 export const AD_CONFIG = {
   USE_TEST_ADS: true, // Play Store Uretim yayininda false yap ve gercek ID gir
   TEST_REWARDED_ANDROID_ID: 'ca-app-pub-3940256099942544/5224354917',
-  PROD_REWARDED_ANDROID_ID: 'BURAYA_GERCEK_ODULLU_REKLAM_ID_GELECEK',
+  PROD_REWARDED_ANDROID_ID: 'ca-app-pub-9186685815420341/4830997068',
   REVIVE_GOLD_COST: 50
 };
 
@@ -52,20 +52,25 @@ export const AdService = {
         ? AD_CONFIG.TEST_REWARDED_ANDROID_ID
         : AD_CONFIG.PROD_REWARDED_ANDROID_ID;
 
-      await AdMob.prepareRewardVideoAd({
+      // 15 sn timeout SADECE reklam hazirlama/yukleme (prepare) asamasi icin
+      const preparePromise = AdMob.prepareRewardVideoAd({
         adId,
         isTesting: AD_CONFIG.USE_TEST_ADS
       });
 
-      const showPromise = AdMob.showRewardVideoAd();
-      const timeoutPromise = new Promise<{ rewarded: boolean; reason: string }>((resolve) => {
-        timeoutId = setTimeout(() => resolve({ rewarded: false, reason: 'timeout' }), 15000);
+      const loadTimeoutPromise = new Promise<{ loadFailed: boolean }>((resolve) => {
+        timeoutId = setTimeout(() => resolve({ loadFailed: true }), 15000);
       });
 
-      const res = await Promise.race([showPromise, timeoutPromise]);
-      if (res && (res as any).reason === 'timeout') {
+      const prepResult = await Promise.race([preparePromise, loadTimeoutPromise]);
+      if (prepResult && (prepResult as any).loadFailed) {
         return { rewarded: false, reason: 'timeout' };
       }
+
+      if (timeoutId!) clearTimeout(timeoutId);
+
+      // Reklam yuklendikten sonra kullanicinin 30 sn videoyu izlemesi icin zaman asimsiz goster
+      await AdMob.showRewardVideoAd();
 
       return { rewarded: isRewarded };
     } catch (e) {
