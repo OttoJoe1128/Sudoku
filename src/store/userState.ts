@@ -350,6 +350,23 @@ export const UserManager = {
         const wins = typeof d.duel_wins === 'number' ? d.duel_wins : 0;
         const mmr = typeof d.duel_mmr === 'number' ? d.duel_mmr : 1000;
         const completed = typeof d.total_completed === 'number' ? d.total_completed : 0;
+
+        const variantLevels: Record<SudokuVariant, number> = {
+          classic: typeof d.level_classic === 'number' ? d.level_classic : level,
+          irregular: typeof d.level_irregular === 'number' ? d.level_irregular : 1,
+          killer: typeof d.level_killer === 'number' ? d.level_killer : 1,
+          wordoku: typeof d.level_wordoku === 'number' ? d.level_wordoku : 1,
+          samurai: typeof d.level_samurai === 'number' ? d.level_samurai : 1
+        };
+
+        const variantScores: Record<SudokuVariant, number> = {
+          classic: typeof d.score_classic === 'number' ? d.score_classic : 0,
+          irregular: typeof d.score_irregular === 'number' ? d.score_irregular : 0,
+          killer: typeof d.score_killer === 'number' ? d.score_killer : 0,
+          wordoku: typeof d.score_wordoku === 'number' ? d.score_wordoku : 0,
+          samurai: typeof d.score_samurai === 'number' ? d.score_samurai : 0
+        };
+
         return {
           uid: d.uid || username,
           username: d.username || username,
@@ -363,7 +380,9 @@ export const UserManager = {
           duel_wins: wins,
           duel_losses: d.duel_losses,
           onlineStatus: d.onlineStatus || 'available',
-          lastSeenMs: d.lastSeenMs
+          lastSeenMs: d.lastSeenMs,
+          variantLevels,
+          variantScores
         };
       }
 
@@ -375,6 +394,23 @@ export const UserManager = {
         const wins = typeof d.duel_wins === 'number' ? d.duel_wins : 0;
         const mmr = typeof d.duel_mmr === 'number' ? d.duel_mmr : 1000;
         const completed = typeof d.total_completed === 'number' ? d.total_completed : 0;
+
+        const variantLevels: Record<SudokuVariant, number> = {
+          classic: typeof d.level_classic === 'number' ? d.level_classic : level,
+          irregular: typeof d.level_irregular === 'number' ? d.level_irregular : 1,
+          killer: typeof d.level_killer === 'number' ? d.level_killer : 1,
+          wordoku: typeof d.level_wordoku === 'number' ? d.level_wordoku : 1,
+          samurai: typeof d.level_samurai === 'number' ? d.level_samurai : 1
+        };
+
+        const variantScores: Record<SudokuVariant, number> = {
+          classic: typeof d.score_classic === 'number' ? d.score_classic : 0,
+          irregular: typeof d.score_irregular === 'number' ? d.score_irregular : 0,
+          killer: typeof d.score_killer === 'number' ? d.score_killer : 0,
+          wordoku: typeof d.score_wordoku === 'number' ? d.score_wordoku : 0,
+          samurai: typeof d.score_samurai === 'number' ? d.score_samurai : 0
+        };
+
         return {
           uid: d.uid || snap.docs[0].id,
           username: d.username,
@@ -388,7 +424,9 @@ export const UserManager = {
           duel_wins: wins,
           duel_losses: d.duel_losses,
           onlineStatus: d.onlineStatus || 'available',
-          lastSeenMs: d.lastSeenMs
+          lastSeenMs: d.lastSeenMs,
+          variantLevels,
+          variantScores
         };
       }
     } catch {

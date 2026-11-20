@@ -84,7 +84,9 @@ export function getSavedGamesList(): SavedGameRecord[] {
     localStorage.removeItem('sudoku_saved_game');
   }
 
-  const mapList: SavedGameRecord[] = [];
+  const mapByVariant = new Map<SudokuVariant, SavedGameRecord>();
+  const mapKeysToDelete: string[] = [];
+
   try {
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
@@ -97,7 +99,7 @@ export function getSavedGamesList(): SavedGameRecord[] {
               const variant: SudokuVariant = p.variant || 'classic';
               const level = p.level || 1;
               const diff = p.diff || SudokuGen.getDifficulty(level);
-              mapList.push({
+              const rec: SavedGameRecord = {
                 id: `saved_map_${variant}_${level}`,
                 variant,
                 level,
@@ -114,19 +116,38 @@ export function getSavedGamesList(): SavedGameRecord[] {
                 activeSamuraiIndex: p.activeSamuraiIndex,
                 isCustomMode: false,
                 updatedAtMs: p.updatedAtMs || Date.now()
-              });
+              };
+
+              const existing = mapByVariant.get(variant);
+              if (!existing) {
+                mapByVariant.set(variant, rec);
+              } else {
+                let keepRec = rec;
+                let dropRec = existing;
+                if (existing.level > rec.level || (existing.level === rec.level && existing.updatedAtMs >= rec.updatedAtMs)) {
+                  keepRec = existing;
+                  dropRec = rec;
+                }
+                mapByVariant.set(variant, keepRec);
+                mapKeysToDelete.push(`sudoku_map_save_${dropRec.variant}_${dropRec.level}`);
+              }
             } else {
-              localStorage.removeItem(key);
+              mapKeysToDelete.push(key);
             }
           } catch {
-            localStorage.removeItem(key);
+            mapKeysToDelete.push(key);
           }
         }
       }
     }
+    mapKeysToDelete.forEach(k => {
+      try { localStorage.removeItem(k); } catch {}
+    });
   } catch {
     // ignore
   }
+
+  const mapList = Array.from(mapByVariant.values());
 
   return [...mapList, ...customList, ...duelList];
 }
@@ -138,6 +159,39 @@ export function updateSavedGamesCountUI(): void {
   if (countLabel) {
     countLabel.innerText = t('menu_active_games_count', { level: classicLvl, count: totalCount });
   }
+}
+
+export function clearVariantJourneySaves(variant: SudokuVariant): void {
+  try {
+    const prefix = `sudoku_map_save_${variant}_`;
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(prefix)) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+  } catch {
+    // ignore
+  }
+  updateSavedGamesCountUI();
+}
+
+export function clearDuelSavedGame(matchId: string): void {
+  try {
+    const raw = localStorage.getItem('sudoku_saved_duels_list');
+    if (raw) {
+      let list: SavedGameRecord[] = JSON.parse(raw);
+      if (Array.isArray(list)) {
+        list = list.filter(item => item && item.id !== `saved_duel_${matchId}` && item.matchData?.matchId !== matchId);
+        localStorage.setItem('sudoku_saved_duels_list', JSON.stringify(list));
+      }
+    }
+  } catch {
+    // ignore
+  }
+  updateSavedGamesCountUI();
 }
 
 export function saveActiveGameRecord(snapshot: ActiveGameSnapshot): void {
@@ -207,6 +261,21 @@ export function saveActiveGameRecord(snapshot: ActiveGameSnapshot): void {
     })) : undefined;
 
     if (!snapshot.isCustomGameMode) {
+      // Single Map slot per variant: clear other map saves for this variant
+      try {
+        const prefix = `sudoku_map_save_${snapshot.variant}_`;
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith(prefix) && key !== `sudoku_map_save_${snapshot.variant}_${snapshot.level}`) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k));
+      } catch {
+        // ignore
+      }
+
       localStorage.setItem(`sudoku_map_save_${snapshot.variant}_${snapshot.level}`, JSON.stringify({
         variant: snapshot.variant,
         level: snapshot.level,
@@ -277,9 +346,13 @@ export function deleteSavedGameRecord(gameId: string): void {
   updateSavedGamesCountUI();
 }
 
-export function clearSavedGame(variant: SudokuVariant, level: number): void {
+export function clearSavedGame(variant: SudokuVariant, level: number, matchId?: string): void {
   localStorage.removeItem(`sudoku_map_save_${variant}_${level}`);
   deleteSavedGameRecord(`saved_custom_${variant}_${level}`);
+  if (matchId) {
+    clearDuelSavedGame(matchId);
+  }
+  updateSavedGamesCountUI();
 }
 
 let activeSavedTab: 'journey' | 'custom' | 'duel' = 'journey';

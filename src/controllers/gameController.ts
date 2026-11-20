@@ -4,7 +4,7 @@ import { GameEngine } from '../engine/gameEngine';
 import { UserManager } from '../store/userState';
 import { MatchEngine, MatchState, calculateEloChange } from '../engine/matchEngine';
 import { AchievementManager } from '../engine/achievements';
-import { saveActiveGameRecord, clearSavedGame, updateSavedGamesCountUI } from './saveController';
+import { saveActiveGameRecord, clearSavedGame, updateSavedGamesCountUI, clearVariantJourneySaves, clearDuelSavedGame } from './saveController';
 import { validateSavedGameRecord } from '../engine/saveValidator';
 import { t, getLang } from '../i18n/translations';
 import { auth } from '../api/firebase';
@@ -166,6 +166,9 @@ async function finishPlacementExam(completedAll: boolean): Promise<void> {
 
   if (res.levelsGained > 0 || res.rewardGold > 0) {
     await UserManager.updateVariantLevel(config.variant, res.assignedLevel, res.rewardGold);
+    if (res.levelsGained > 0) {
+      clearVariantJourneySaves(config.variant);
+    }
     if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();
   }
 
@@ -244,7 +247,8 @@ const persistCurrentGame = () => {
 };
 
 const clearCurrentSavedGame = () => {
-  clearSavedGame(currentVariant, currentLevelNumber);
+  clearSavedGame(currentVariant, currentLevelNumber, activeMatch?.matchId);
+  updateSavedGamesCountUI();
 };
 
 const startTimer = (limitSeconds: number = 0) => {
@@ -828,6 +832,7 @@ export function startGame(
         const nextLevel = level === userLvl ? userLvl + 1 : userLvl;
 
         await UserManager.updateVariantLevel(currentVariant, nextLevel, reward);
+        clearVariantJourneySaves(currentVariant);
         const newGold = UserManager.getGold();
 
         await UserManager.recordGameCompletion({
