@@ -20,12 +20,59 @@ import { AdService } from './services/adService';
 // UI Binişi & Öz-Teşhis
 UIManager.mountUI();
 AdService.init();
-SudokuGen.runSelfDiagnostics();
+
+if (import.meta.env.DEV) {
+  SudokuGen.runSelfDiagnostics();
+}
+
+// Arka Plan Müzik Kontrolü Dinleyicileri (Native + Web/PWA)
+try {
+  App.addListener('appStateChange', ({ isActive }) => {
+    if (isActive) {
+      SoundManager.resumeFromBackground();
+    } else {
+      SoundManager.pauseForBackground();
+    }
+  });
+} catch {
+  // Capacitor App dinleyicisi web/test ortaminda yutulur
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      SoundManager.pauseForBackground();
+    } else {
+      SoundManager.resumeFromBackground();
+    }
+  });
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', () => {
+    SoundManager.pauseForBackground();
+  });
+}
 
 // Altın Göstergesi Güncelleme
 const updateGoldDisplay = () => {
   const gold = UserManager.getGold();
   UIManager.updateHeaderGold(gold);
+};
+
+// Profil UI Güncelleme Yardımcısı
+const updateProfileUI = (user: { username: string; title?: string; avatar?: string }) => {
+  const nameEl = document.getElementById('menu-player-name');
+  const titleEl = document.getElementById('menu-player-title');
+  const avatarBox = document.getElementById('menu-avatar-box');
+
+  if (nameEl) nameEl.innerText = user.username;
+  if (titleEl) titleEl.innerHTML = renderRankBadgeSVG(user.title || 'Çırak');
+  if (avatarBox) avatarBox.innerHTML = renderAvatarSVG(user.avatar || 'av_prism', 28);
+
+  updateLanguageUI();
+  updateGoldDisplay();
+  updateSavedGamesCountUI();
 };
 
 // Disiplin Kural Açıklaması Alıcı
@@ -230,34 +277,51 @@ const startChallengeListeners = () => {
   MatchEngine.listenIncomingChallenges((chal) => handleIncomingChallenge(chal, (level, diff, matchData, variant) => startGame(level, diff, matchData, undefined, variant)));
 };
 
-// Kullanıcı Profil Giriş Akışı
+// Kullanıcı Profil Giriş Akışı (Optimistic Local Boot)
 const checkUser = async () => {
-  const user = await UserManager.initUser();
-  reconcileLevelsWithSavedGames();
-  UserManager.validateAndRepairLocalState();
-  if (!user || !UserManager.getUsername()) {
-    UIManager.toggleModal('username-modal', true);
-  } else {
-    const nameEl = document.getElementById('menu-player-name');
-    const titleEl = document.getElementById('menu-player-title');
-    const avatarBox = document.getElementById('menu-avatar-box');
+  const existingUsername = UserManager.getUsername();
+  if (existingUsername) {
+    reconcileLevelsWithSavedGames();
+    UserManager.validateAndRepairLocalState();
 
-    if (nameEl) nameEl.innerText = user.username;
-    if (titleEl) titleEl.innerHTML = renderRankBadgeSVG(user.title || 'Çırak');
-    if (avatarBox) avatarBox.innerHTML = renderAvatarSVG(user.avatar || 'av_prism', 28);
+    const localUser = UserManager.getOfflineFallbackUser();
+    if (localUser) {
+      updateProfileUI(localUser);
+      UIManager.navigate('menu');
+    }
 
-    updateLanguageUI();
-    updateGoldDisplay();
-    updateSavedGamesCountUI();
-    UIManager.navigate('menu');
-
-    startChallengeListeners();
+    UserManager.initUser().then(syncedUser => {
+      if (syncedUser) {
+        updateProfileUI(syncedUser);
+        startChallengeListeners();
+      }
+    }).catch(e => {
+      console.warn("Bulut senkronizasyonu hatası:", e);
+    });
 
     setTimeout(() => {
       if (!UserManager.getNotificationsEnabled() && localStorage.getItem('sudoku_notify_prompted') !== '1') {
         UIManager.promptNotificationPermission('startup');
       }
     }, 1200);
+  } else {
+    const user = await UserManager.initUser();
+    reconcileLevelsWithSavedGames();
+    UserManager.validateAndRepairLocalState();
+    if (!user || !UserManager.getUsername()) {
+      UIManager.toggleModal('username-modal', true);
+    } else {
+      updateProfileUI(user);
+      UIManager.navigate('menu');
+
+      startChallengeListeners();
+
+      setTimeout(() => {
+        if (!UserManager.getNotificationsEnabled() && localStorage.getItem('sudoku_notify_prompted') !== '1') {
+          UIManager.promptNotificationPermission('startup');
+        }
+      }, 1200);
+    }
   }
 };
 
@@ -266,19 +330,10 @@ document.getElementById('save-username')?.addEventListener('click', async () => 
   const newName = sanitizeUsername(input?.value || '');
   if (newName.length >= 3) {
     const user = await UserManager.saveUser(newName);
-    const nameEl = document.getElementById('menu-player-name');
     const profileNameEl = document.getElementById('profile-username');
-    const titleEl = document.getElementById('menu-player-title');
-    const avatarBox = document.getElementById('menu-avatar-box');
-
-    if (nameEl) nameEl.innerText = user.username;
     if (profileNameEl) profileNameEl.innerText = user.username;
-    if (titleEl) titleEl.innerHTML = renderRankBadgeSVG(user.title || 'Çırak');
-    if (avatarBox) avatarBox.innerHTML = renderAvatarSVG(user.avatar || 'av_prism', 28);
 
-    updateLanguageUI();
-    updateGoldDisplay();
-    updateSavedGamesCountUI();
+    updateProfileUI(user);
     startChallengeListeners();
 
     UIManager.toggleModal('username-modal', false);

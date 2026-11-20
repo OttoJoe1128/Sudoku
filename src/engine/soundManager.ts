@@ -9,6 +9,7 @@ let audioCtx: AudioContext | null = null;
 let bgmAudio: HTMLAudioElement | null = null;
 let isBgmPlaying = false;
 let isInGame = false;
+let wasPlayingBeforeBackground = false;
 
 function getAudioContext(): AudioContext | null {
   if (typeof window === 'undefined') return null;
@@ -199,6 +200,58 @@ export const SoundManager = {
       }
     }
     isBgmPlaying = false;
+    wasPlayingBeforeBackground = false;
+  },
+
+  pauseForBackground(): void {
+    try {
+      if (isBgmPlaying || (bgmAudio && !bgmAudio.paused)) {
+        wasPlayingBeforeBackground = true;
+        if (bgmAudio) {
+          bgmAudio.pause();
+        }
+        isBgmPlaying = false;
+      } else {
+        wasPlayingBeforeBackground = false;
+      }
+
+      if (audioCtx && audioCtx.state === 'running' && typeof audioCtx.suspend === 'function') {
+        audioCtx.suspend().catch(() => {});
+      }
+    } catch {
+      // Node/Vitest safe
+    }
+  },
+
+  resumeFromBackground(): void {
+    try {
+      if (audioCtx && audioCtx.state === 'suspended' && typeof audioCtx.resume === 'function') {
+        audioCtx.resume().catch(() => {});
+      }
+
+      if (soundEnabled && wasPlayingBeforeBackground) {
+        wasPlayingBeforeBackground = false;
+        if (!isInGame && typeof window !== 'undefined') {
+          if (!bgmAudio) {
+            bgmAudio = new Audio('./audio/bgm.mp3');
+            bgmAudio.loop = true;
+            bgmAudio.volume = 0.28;
+          }
+          const playPromise = bgmAudio.play();
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => {
+                isBgmPlaying = true;
+              })
+              .catch(() => {
+                isBgmPlaying = false;
+              });
+          }
+        }
+      }
+    } catch {
+      // Node/Vitest safe
+    }
   },
 
   setInGame(inGame: boolean): void {
