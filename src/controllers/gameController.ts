@@ -10,6 +10,7 @@ import { t, getLang } from '../i18n/translations';
 import { auth } from '../api/firebase';
 import { ExamTier, PlacementExamConfig, getPlacementExamConfig, evaluatePlacementExam, calculateExamProgress } from '../engine/placementEngine';
 import { SoundManager } from '../engine/soundManager';
+import { canOfferSecondChance, tryGoldRevive, AdService } from '../services/adService';
 
 let currentSolution: number[][];
 let userBoard: number[][];
@@ -874,22 +875,106 @@ export function startGame(
         updateErrorUI();
         persistCurrentGame();
         if (errors >= 3) {
-          if (activePlacementExam) {
-            await finishPlacementExam(false);
+          if (!canOfferSecondChance({ isMatchMode, isPlacementExam: !!activePlacementExam })) {
+            if (activePlacementExam) {
+              await finishPlacementExam(false);
+              return;
+            }
+            if (timerInterval) clearInterval(timerInterval);
+            clearCurrentSavedGame();
+            if (isMatchMode) {
+              isMatchMode = false;
+              MatchEngine.clearActiveMatch();
+              UIManager.hideMatchHeader();
+              await UserManager.recordDuelResult(false);
+              showMatchResult(false, 0, activeMatch?.player2?.username || 'Rakip');
+            } else {
+              UIManager.showToast("❌ Oyun Bitti! 3 Hata Yaptınız.", "error");
+              UIManager.navigate('menu');
+            }
             return;
           }
+
+          // Journey Map or Custom Mode: Second Chance Flow
           if (timerInterval) clearInterval(timerInterval);
-          clearCurrentSavedGame();
-          if (isMatchMode) {
-            isMatchMode = false;
-            MatchEngine.clearActiveMatch();
-            UIManager.hideMatchHeader();
-            await UserManager.recordDuelResult(false);
-            showMatchResult(false, 0, activeMatch?.player2?.username || 'Rakip');
-          } else {
-            UIManager.showToast("❌ Oyun Bitti! 3 Hata Yaptınız.", "error");
-            UIManager.navigate('menu');
-          }
+
+          const promptSecondChance = () => {
+            const currentGold = UserManager.getGold();
+            const goldBalEl = document.getElementById('revive-gold-balance');
+            if (goldBalEl) {
+              const isEn = getLang() === 'en';
+              goldBalEl.innerText = isEn ? `Current Gold: ${currentGold}` : `Mevcut Altın: ${currentGold}`;
+            }
+
+            const btnGold = document.getElementById('btn-revive-gold');
+            const btnAd = document.getElementById('btn-revive-ad');
+            const btnGiveUp = document.getElementById('btn-revive-giveup');
+
+            if (btnGold) {
+              btnGold.onclick = async () => {
+                const res = tryGoldRevive(UserManager.getGold());
+                if (!res.success) {
+                  UIManager.showToast(t('sc_toast_gold_insufficient'), "error");
+                  return;
+                }
+
+                await UserManager.updateProgress(UserManager.getCurrentLevel(), res.newGold);
+                if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();
+
+                errors = res.newErrors;
+                updateErrorUI();
+                UIManager.toggleModal('second-chance-modal', false);
+                persistCurrentGame();
+                startTimer(currentTimeLimitSec);
+                UIManager.showToast(t('sc_toast_gold_success'), "success");
+              };
+            }
+
+            if (btnAd) {
+              btnAd.onclick = async () => {
+                const originalText = btnAd.innerHTML;
+                btnAd.innerHTML = `<span class="animate-pulse">${t('sc_ad_loading')}</span>`;
+                (btnAd as HTMLButtonElement).disabled = true;
+
+                const res = await AdService.showRewardedReviveAd();
+
+                btnAd.innerHTML = originalText;
+                (btnAd as HTMLButtonElement).disabled = false;
+
+                if (res.rewarded) {
+                  errors = 2;
+                  updateErrorUI();
+                  UIManager.toggleModal('second-chance-modal', false);
+                  persistCurrentGame();
+                  startTimer(currentTimeLimitSec);
+                  UIManager.showToast(t('sc_toast_ad_success'), "success");
+                } else {
+                  let msg = t('sc_toast_ad_failed');
+                  if (res.reason === 'offline') msg = t('sc_toast_ad_offline');
+                  else if (res.reason === 'dismissed') msg = t('sc_toast_ad_dismissed');
+
+                  UIManager.showToast(msg, "error");
+                }
+              };
+            }
+
+            if (btnGiveUp) {
+              btnGiveUp.onclick = () => {
+                UIManager.toggleModal('second-chance-modal', false);
+                clearCurrentSavedGame();
+                UIManager.showToast("❌ Oyun Bitti! 3 Hata Yaptınız.", "error");
+                if (onReturnToMapCallback) {
+                  onReturnToMapCallback(currentVariant);
+                } else {
+                  UIManager.navigate('menu');
+                }
+              };
+            }
+
+            UIManager.toggleModal('second-chance-modal', true);
+          };
+
+          promptSecondChance();
         }
       }
     );

@@ -6,6 +6,7 @@ import { GameEngine } from '../engine/gameEngine';
 import { SudokuGen } from '../engine/sudoku';
 import { ShopManager } from '../engine/shop';
 import { AchievementManager } from '../engine/achievements';
+import { canOfferSecondChance, tryGoldRevive, AdService } from '../services/adService';
 
 // In-Memory LocalStorage Mock
 const storageMap: Record<string, string> = {};
@@ -525,6 +526,49 @@ describe('Uçtan Uca Oyun Akışları ve Bütünlük Testleri (21 Senaryo)', () 
       await UserManager.updateProgress(2, 150);
       expect(UserManager.getVariantLevel('classic')).toBe(303);
       expect(UserManager.getCurrentLevel()).toBe(303);
+    });
+  });
+
+  // ----------------------------------------------------
+  // Grup 7: İkinci Şans (50 Altın & Ödüllü Reklam) Akışı (4 test)
+  // ----------------------------------------------------
+  describe('Grup 7: İkinci Şans (50 Altın & Ödüllü Reklam) Akışı', () => {
+    it('22. canOfferSecondChance Yolculuk ve Serbest Mod için true, Düello ve Sınav için false dönmeli', () => {
+      expect(canOfferSecondChance({ isMatchMode: false, isPlacementExam: false })).toBe(true);
+      expect(canOfferSecondChance({ isMatchMode: true, isPlacementExam: false })).toBe(false);
+      expect(canOfferSecondChance({ isMatchMode: false, isPlacementExam: true })).toBe(false);
+      expect(canOfferSecondChance({ isMatchMode: true, isPlacementExam: true })).toBe(false);
+    });
+
+    it('23. tryGoldRevive 70 altından 50 düşüp { success: true, newGold: 20, newErrors: 2 } dönmeli; 30 altında { success: false } dönmeli', () => {
+      const res1 = tryGoldRevive(70, 50);
+      expect(res1.success).toBe(true);
+      expect(res1.newGold).toBe(20);
+      expect(res1.newErrors).toBe(2);
+
+      const res2 = tryGoldRevive(30, 50);
+      expect(res2.success).toBe(false);
+      expect(res2.newGold).toBe(30);
+      expect(res2.newErrors).toBe(3);
+    });
+
+    it('24. 50 Altın ile can kurtarma sonrası UserManager.updateProgress çağrıldığında seviye asla düşmemeli', async () => {
+      mockLocalStorage.setItem('sudoku_gold', '100');
+      await UserManager.updateVariantLevel('classic', 5, 0);
+
+      const res = tryGoldRevive(UserManager.getGold());
+      expect(res.success).toBe(true);
+      expect(res.newGold).toBe(50);
+
+      await UserManager.updateProgress(UserManager.getCurrentLevel(), res.newGold);
+      expect(UserManager.getGold()).toBe(50);
+      expect(UserManager.getVariantLevel('classic')).toBe(5);
+    });
+
+    it('25. AdService.showRewardedReviveAd() Node/web/offline ortamda çökmeden { rewarded: false } dönmeli', async () => {
+      const res = await AdService.showRewardedReviveAd();
+      expect(res).toBeDefined();
+      expect(res.rewarded).toBe(false);
     });
   });
 });

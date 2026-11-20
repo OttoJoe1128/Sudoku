@@ -1,0 +1,81 @@
+import { Capacitor } from '@capacitor/core';
+import { AdMob, RewardAdPluginEvents } from '@capacitor-community/admob';
+
+export const AD_CONFIG = {
+  USE_TEST_ADS: true, // Play Store Uretim yayininda false yap ve gercek ID gir
+  TEST_REWARDED_ANDROID_ID: 'ca-app-pub-3940256099942544/5224354917',
+  PROD_REWARDED_ANDROID_ID: 'BURAYA_GERCEK_ODULLU_REKLAM_ID_GELECEK',
+  REVIVE_GOLD_COST: 50
+};
+
+export function canOfferSecondChance(opts: { isMatchMode: boolean; isPlacementExam: boolean }): boolean {
+  return !opts.isMatchMode && !opts.isPlacementExam;
+}
+
+export function tryGoldRevive(currentGold: number, cost: number = AD_CONFIG.REVIVE_GOLD_COST): { success: boolean; newGold: number; newErrors: number } {
+  if (currentGold >= cost) {
+    return { success: true, newGold: currentGold - cost, newErrors: 2 };
+  }
+  return { success: false, newGold: currentGold, newErrors: 3 };
+}
+
+export const AdService = {
+  async init(): Promise<void> {
+    try {
+      if (Capacitor.isNativePlatform()) {
+        await AdMob.initialize({ initializeForTesting: AD_CONFIG.USE_TEST_ADS });
+      }
+    } catch (e) {
+      console.warn("AdMob init uyarisi:", e);
+    }
+  },
+
+  async showRewardedReviveAd(): Promise<{ rewarded: boolean; reason?: string }> {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      return { rewarded: false, reason: 'offline' };
+    }
+
+    if (!Capacitor.isNativePlatform()) {
+      return { rewarded: false, reason: 'web_unsupported' };
+    }
+
+    let isRewarded = false;
+    let listener: any = null;
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    try {
+      listener = await AdMob.addListener(RewardAdPluginEvents.Rewarded, () => {
+        isRewarded = true;
+      });
+
+      const adId = AD_CONFIG.USE_TEST_ADS
+        ? AD_CONFIG.TEST_REWARDED_ANDROID_ID
+        : AD_CONFIG.PROD_REWARDED_ANDROID_ID;
+
+      await AdMob.prepareRewardVideoAd({
+        adId,
+        isTesting: AD_CONFIG.USE_TEST_ADS
+      });
+
+      const showPromise = AdMob.showRewardVideoAd();
+      const timeoutPromise = new Promise<{ rewarded: boolean; reason: string }>((resolve) => {
+        timeoutId = setTimeout(() => resolve({ rewarded: false, reason: 'timeout' }), 15000);
+      });
+
+      const res = await Promise.race([showPromise, timeoutPromise]);
+      if (res && (res as any).reason === 'timeout') {
+        return { rewarded: false, reason: 'timeout' };
+      }
+
+      return { rewarded: isRewarded };
+    } catch (e) {
+      console.warn("Ödüllü reklam gösterilemedi:", e);
+      return { rewarded: false, reason: 'load_failed' };
+    } finally {
+      if (timeoutId!) clearTimeout(timeoutId);
+      if (listener && typeof listener.remove === 'function') {
+        listener.remove();
+      }
+    }
+  }
+};

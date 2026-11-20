@@ -15,9 +15,11 @@ import { initMapController, getSelectedMapVariant, openMapAtLevel } from './cont
 import { initArenaController, getSelectedArenaVariant, handleIncomingChallenge, triggerExpertBotMatch } from './controllers/arenaController';
 import { initModalsController, getSelectedCustomVariant, getSelectedCustomTimeSec, openPlayerProfile } from './controllers/modalsController';
 import { initGameController, startGame, startPlacementExam, handleBotMatchProgress, handleExitGameRequest, getGameRuntimeState } from './controllers/gameController';
+import { AdService } from './services/adService';
 
 // UI Binişi & Öz-Teşhis
 UIManager.mountUI();
+AdService.init();
 SudokuGen.runSelfDiagnostics();
 
 // Altın Göstergesi Güncelleme

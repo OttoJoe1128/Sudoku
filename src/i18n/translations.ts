@@ -103,6 +103,21 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     label_you: 'Siz',
     label_rival: 'Rakip',
 
+    // İkinci Şans
+    sc_title: '3 Hata Doldu!',
+    sc_subtitle: 'İlerlemeni kaybetmeden +1 canla kaldığın yerden devam edebilirsin.',
+    sc_btn_gold: '🪙 50 Altın ile Devam Et',
+    sc_btn_ad: '🎬 Reklam İzle & Devam Et (Ücretsiz)',
+    sc_btn_giveup: 'Oyunu Bitir',
+    sc_gold_balance: 'Mevcut Altın: {gold}',
+    sc_ad_loading: 'Reklam yükleniyor...',
+    sc_toast_gold_success: '❤️ 1 Can eklendi! Oyun devam ediyor.',
+    sc_toast_ad_success: '🎉 Reklam izlendi! +1 Can eklendi.',
+    sc_toast_gold_insufficient: 'Altın yetersiz! 50 Altın gerekiyor.',
+    sc_toast_ad_offline: '📡 İnternet bağlantınız yok. 50 Altın seçebilir veya oyunu bitirebilirsiniz.',
+    sc_toast_ad_dismissed: 'Reklam sonuna kadar izlenmedi.',
+    sc_toast_ad_failed: 'Reklam yüklenemedi. 50 Altın ile devam edebilirsiniz.',
+
     // Modallar & Dinamik Listeler
     profile_title: 'Oyuncu Profili',
     profile_stats_header: 'Oyun & Düello İstatistikleri',
@@ -291,6 +306,21 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     label_claimed: 'Claimed ✓',
     label_you: 'You',
     label_rival: 'Rival',
+
+    // Second Chance
+    sc_title: '3 Mistakes Reached!',
+    sc_subtitle: 'Continue with +1 life without losing your progress.',
+    sc_btn_gold: '🪙 Continue for 50 Gold',
+    sc_btn_ad: '🎬 Watch Ad & Continue (Free)',
+    sc_btn_giveup: 'Give Up',
+    sc_gold_balance: 'Current Gold: {gold}',
+    sc_ad_loading: 'Loading Ad...',
+    sc_toast_gold_success: '❤️ +1 Life added! Game continues.',
+    sc_toast_ad_success: '🎉 Ad completed! +1 Life added.',
+    sc_toast_gold_insufficient: 'Insufficient Gold! Requires 50 Gold.',
+    sc_toast_ad_offline: '📡 Offline mode. You can use 50 Gold or give up.',
+    sc_toast_ad_dismissed: 'Ad was closed before completion.',
+    sc_toast_ad_failed: 'Failed to load ad. You can use 50 Gold to continue.',
 
     // Modals & Dynamic Lists
     profile_title: 'Player Profile',

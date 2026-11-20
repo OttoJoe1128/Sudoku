@@ -10,6 +10,7 @@ import { profileModalTemplate } from './templates/profileModal';
 import { matchModalTemplate } from './templates/matchModal';
 import { inboxModalTemplate } from './templates/inboxModal';
 import { savedGamesModalTemplate } from './templates/savedGamesModal';
+import { secondChanceModalTemplate } from './templates/secondChanceModal';
 import { getAmbientBackgroundHTML } from '../design/backgrounds';
 import { Icons, renderAvatarSVG, renderRankBadgeSVG, AVATAR_LIST } from '../design/icons';
 import { t, getLang } from '../i18n/translations';
@@ -216,6 +217,7 @@ export const UIManager = {
         ${inboxModalTemplate}
         ${savedGamesModalTemplate}
         ${usernameModalTemplate}
+        ${secondChanceModalTemplate}
         <div id="game-view" class="hidden flex-col items-center p-6 w-full h-full relative z-10">
             <!-- Düello Canlı İlerleme Çubuğu -->
             <div id="match-header-bar" class="hidden w-full bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-strong)] p-3 rounded-2xl mb-3 shadow-lg flex-col gap-2">
