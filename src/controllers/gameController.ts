@@ -1090,6 +1090,9 @@ export function startGame(
           const nextLevel = currentLevelNumber === userLvl ? userLvl + 1 : userLvl;
 
           await UserManager.updateVariantLevel(currentVariant, nextLevel, reward);
+          if (!isCustomGameMode) {
+            clearVariantJourneySaves(currentVariant);
+          }
           const finalGold = UserManager.getGold();
 
           if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();

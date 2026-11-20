@@ -153,6 +153,7 @@ export function getSavedGamesList(): SavedGameRecord[] {
 }
 
 export function updateSavedGamesCountUI(): void {
+  if (typeof document === 'undefined') return;
   const classicLvl = UserManager.getVariantLevel('classic');
   const totalCount = getSavedGamesList().length;
   const countLabel = document.getElementById('saved-games-count-label');
@@ -406,10 +407,13 @@ export function openSavedGamesModal(onPlaySavedGame: (record: SavedGameRecord) =
   };
 
   ['journey', 'custom', 'duel'].forEach(tab => {
-    document.getElementById(`tab-saved-${tab}`)?.addEventListener('click', () => {
-      activeSavedTab = tab as any;
-      renderCurrentTab();
-    });
+    const btn = document.getElementById(`tab-saved-${tab}`);
+    if (btn) {
+      btn.onclick = () => {
+        activeSavedTab = tab as any;
+        renderCurrentTab();
+      };
+    }
   });
 
   renderCurrentTab();
