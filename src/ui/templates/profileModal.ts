@@ -75,7 +75,7 @@ export const profileModalTemplate = `
         </div>
 
         <!-- Rozet Vitrini -->
-        <div class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl p-3 mb-3 flex flex-col gap-2 shadow-sm">
+        <div id="profile-badges-section" class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl p-3 mb-3 flex flex-col gap-2 shadow-sm">
             <div class="flex justify-between items-center">
                 <span class="text-xs font-black text-[var(--text-primary)]" data-i18n="profile_badges_showcase">Rozet Vitrini</span>
                 <span id="profile-badges-count" class="text-[11px] font-bold text-[var(--accent-gold)]">0 / 10 Rozet</span>

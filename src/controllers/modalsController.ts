@@ -6,9 +6,11 @@ import { AchievementManager } from '../engine/achievements';
 import { Leaderboard } from '../engine/leaderboard';
 import { Rewards } from '../engine/rewards';
 import { MatchEngine, ChallengeRequest } from '../engine/matchEngine';
-import { renderAvatarSVG } from '../design/icons';
+import { renderAvatarSVG, renderRankBadgeSVG } from '../design/icons';
 import { t, getLang } from '../i18n/translations';
 import { getPlacementExamConfig } from '../engine/placementEngine';
+import { auth } from '../api/firebase';
+import { formatDisplayName } from '../utils/sanitize';
 
 let selectedCustomVariant: SudokuVariant = 'classic';
 let selectedCustomTimeSec: number = 0;
@@ -28,25 +30,118 @@ export function getSelectedCustomTimeSec(): number {
 }
 
 export async function openPlayerProfile(targetData?: any): Promise<void> {
+  const nameEl = document.getElementById('profile-username');
+  const levelEl = document.getElementById('profile-level-badge');
+  const goldEl = document.getElementById('profile-gold-badge');
+  const avatarEl = document.getElementById('profile-avatar-display');
+  const titleEl = document.getElementById('profile-player-title');
+  const completedEl = document.getElementById('profile-stat-completed');
+  const duelEl = document.getElementById('profile-stat-duel');
+  const pvpMmrEl = document.getElementById('profile-stat-pvp-mmr');
+  const botMmrEl = document.getElementById('profile-stat-bot-mmr');
+  const basitEl = document.getElementById('profile-best-basit');
+  const ortaEl = document.getElementById('profile-best-orta');
+  const zorEl = document.getElementById('profile-best-zor');
+
+  if (nameEl) nameEl.innerText = '...';
+  if (levelEl) levelEl.innerText = `${t('label_level')} 1`;
+  if (goldEl) goldEl.innerText = `0 ${t('label_gold')}`;
+  if (avatarEl) avatarEl.innerHTML = renderAvatarSVG('av_prism', 36);
+  if (titleEl) titleEl.innerHTML = renderRankBadgeSVG('Çırak');
+  if (completedEl) completedEl.innerText = '0';
+  if (duelEl) duelEl.innerText = '0 G / 0 M';
+  if (pvpMmrEl) pvpMmrEl.innerText = '1000 MMR';
+  if (botMmrEl) botMmrEl.innerText = `1000 ${t('lb_tab_bot')}`;
+  if (basitEl) basitEl.innerText = '--:--';
+  if (ortaEl) ortaEl.innerText = '--:--';
+  if (zorEl) zorEl.innerText = '--:--';
+
   UIManager.toggleModal('view-profile', true);
   const currentUsername = UserManager.getUsername();
+  const currentUid = auth.currentUser ? auth.currentUser.uid : undefined;
 
   let isOwn = true;
-  let stats;
-
-  if (!targetData || targetData.username === currentUsername) {
-    stats = await UserManager.getUserProfileStats();
+  if (!targetData || (targetData.username && targetData.username === currentUsername) || (targetData.uid && currentUid && targetData.uid === currentUid)) {
     isOwn = true;
+    currentlyViewedTargetUid = currentUid || '';
+    currentlyViewedTargetUsername = currentUsername || 'Oyuncu';
   } else {
-    currentlyViewedTargetUid = targetData.uid || targetData.username || 'target';
-    currentlyViewedTargetUsername = targetData.username || 'Oyuncu';
-    stats = await UserManager.getUserProfileStats(currentlyViewedTargetUid);
-    stats.username = currentlyViewedTargetUsername;
-    stats.avatar = targetData.avatar || stats.avatar || 'av_prism';
     isOwn = false;
+    currentlyViewedTargetUid = targetData.uid || targetData.username || '';
+    currentlyViewedTargetUsername = formatDisplayName(targetData.username, targetData.uid);
   }
 
-  const badges = AchievementManager.getAllBadgesWithStatus(stats.level, stats.gold, stats.totalCompleted);
+  let stats: any;
+
+  if (isOwn) {
+    stats = await UserManager.getUserProfileStats();
+  } else {
+    const tLevel = typeof targetData.level === 'number' ? targetData.level : parseInt(targetData.level) || 1;
+    const tGold = typeof targetData.gold === 'number' ? targetData.gold : parseInt(targetData.gold) || 0;
+    const tWins = typeof targetData.duel_wins === 'number' ? targetData.duel_wins : 0;
+    const tLosses = typeof targetData.duel_losses === 'number' ? targetData.duel_losses : 0;
+    const tMmr = typeof targetData.duel_mmr === 'number' ? targetData.duel_mmr : 1000;
+    const tBotMmr = typeof targetData.bot_mmr === 'number' ? targetData.bot_mmr : 1000;
+    const tCompleted = typeof targetData.total_completed === 'number' ? targetData.total_completed : 0;
+    const tTitle = UserManager.calculatePlayerTitle(tLevel, tWins, tMmr, tCompleted);
+
+    const formatTime = (sec?: number) => {
+      if (typeof sec !== 'number' || sec <= 0) return '--:--';
+      const m = Math.floor(sec / 60).toString().padStart(2, '0');
+      const s = (sec % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    };
+
+    stats = {
+      username: currentlyViewedTargetUsername,
+      level: tLevel,
+      gold: tGold,
+      avatar: targetData.avatar || 'av_prism',
+      title: tTitle,
+      totalCompleted: tCompleted,
+      duelWins: tWins,
+      duelLosses: tLosses,
+      duelMmr: tMmr,
+      botMmr: tBotMmr,
+      bestBasit: targetData.best_basit,
+      bestOrta: targetData.best_orta,
+      bestZor: targetData.best_zor,
+      bestBasitFormatted: formatTime(targetData.best_basit),
+      bestOrtaFormatted: formatTime(targetData.best_orta),
+      bestZorFormatted: formatTime(targetData.best_zor),
+      notificationsEnabled: false,
+      dominantVariant: targetData.dominantVariant || 'classic',
+      variantScores: targetData.variantScores || { classic: 0, irregular: 0, killer: 0, wordoku: 0, samurai: 0 },
+      variantLevels: targetData.variantLevels || { classic: 1, irregular: 1, killer: 1, wordoku: 1, samurai: 1 }
+    };
+
+    if (targetData.uid) {
+      try {
+        const fetched = await UserManager.getUserProfileStats(targetData.uid);
+        if (fetched && fetched.hasRemoteDoc) {
+          stats.level = fetched.level || stats.level;
+          stats.gold = fetched.gold || stats.gold;
+          stats.avatar = fetched.avatar || stats.avatar;
+          stats.totalCompleted = fetched.totalCompleted || stats.totalCompleted;
+          stats.duelWins = fetched.duelWins || stats.duelWins;
+          stats.duelLosses = fetched.duelLosses || stats.duelLosses;
+          stats.duelMmr = fetched.duelMmr || stats.duelMmr;
+          stats.botMmr = fetched.botMmr || stats.botMmr;
+          stats.bestBasit = fetched.bestBasit ?? stats.bestBasit;
+          stats.bestOrta = fetched.bestOrta ?? stats.bestOrta;
+          stats.bestZor = fetched.bestZor ?? stats.bestZor;
+          stats.bestBasitFormatted = fetched.bestBasitFormatted || stats.bestBasitFormatted;
+          stats.bestOrtaFormatted = fetched.bestOrtaFormatted || stats.bestOrtaFormatted;
+          stats.bestZorFormatted = fetched.bestZorFormatted || stats.bestZorFormatted;
+          stats.title = UserManager.calculatePlayerTitle(stats.level, stats.duelWins, stats.duelMmr, stats.totalCompleted);
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  const badges = isOwn ? AchievementManager.getAllBadgesWithStatus(stats.level, stats.gold, stats.totalCompleted) : [];
   UIManager.renderProfileModal(stats, badges, isOwn);
 
   if (isOwn) {
@@ -83,6 +178,11 @@ export async function openPlayerProfile(targetData?: any): Promise<void> {
     const openGalleryBtn = document.getElementById('btn-open-avatar-gallery');
     if (openGalleryBtn) {
       openGalleryBtn.onclick = () => openGalleryModal();
+    }
+  } else {
+    const displayBox = document.getElementById('profile-avatar-display');
+    if (displayBox) {
+      displayBox.onclick = null;
     }
   }
 }

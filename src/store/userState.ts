@@ -2,6 +2,7 @@ import { signInAnonymously } from 'firebase/auth';
 import { doc, getDoc, setDoc, addDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../api/firebase';
 import { SudokuVariant } from '../engine/sudoku';
+import { formatDisplayName } from '../utils/sanitize';
 
 export interface GameCompletionDetails {
   level: number;
@@ -48,12 +49,16 @@ export interface ProfileStats {
   duelLosses: number;
   duelMmr: number;
   botMmr: number;
+  bestBasit?: number;
+  bestOrta?: number;
+  bestZor?: number;
   bestBasitFormatted: string;
   bestOrtaFormatted: string;
   bestZorFormatted: string;
   variantScores: Record<SudokuVariant, number>;
   variantLevels: Record<SudokuVariant, number>;
   dominantVariant: SudokuVariant;
+  hasRemoteDoc?: boolean;
 }
 
 export const VARIANT_MULTIPLIERS: Record<SudokuVariant, number> = {
@@ -716,14 +721,103 @@ export const UserManager = {
   },
 
   async getUserProfileStats(targetUid?: string): Promise<ProfileStats> {
-    const uid = targetUid || (auth.currentUser ? auth.currentUser.uid : undefined);
-    const username = this.getUsername() || 'Oyuncu';
-    const level = this.getCurrentLevel();
-    const gold = this.getGold();
-    const avatar = this.getAvatar();
-    const notificationsEnabled = this.getNotificationsEnabled();
+    const isSelf = !targetUid || (auth.currentUser && targetUid === auth.currentUser.uid);
 
-    let totalCompleted = this.getTotalCompleted();
+    if (isSelf) {
+      const level = this.getCurrentLevel();
+      const gold = this.getGold();
+      const avatar = this.getAvatar();
+      const username = this.getUsername() || 'Oyuncu';
+      const notificationsEnabled = this.getNotificationsEnabled();
+
+      let totalCompleted = this.getTotalCompleted();
+      let duelWins = 0;
+      let duelLosses = 0;
+      let duelMmr = 1000;
+      let botMmr = 1000;
+      let bestBasit: number | undefined;
+      let bestOrta: number | undefined;
+      let bestZor: number | undefined;
+
+      const variantScores: Record<SudokuVariant, number> = {
+        classic: this.getVariantScore('classic'),
+        irregular: this.getVariantScore('irregular'),
+        killer: this.getVariantScore('killer'),
+        wordoku: this.getVariantScore('wordoku'),
+        samurai: this.getVariantScore('samurai')
+      };
+
+      const variantLevels: Record<SudokuVariant, number> = {
+        classic: this.getVariantLevel('classic'),
+        irregular: this.getVariantLevel('irregular'),
+        killer: this.getVariantLevel('killer'),
+        wordoku: this.getVariantLevel('wordoku'),
+        samurai: this.getVariantLevel('samurai')
+      };
+
+      const uid = auth.currentUser ? auth.currentUser.uid : undefined;
+      if (uid) {
+        try {
+          const snap = await getDoc(doc(db, 'leaderboard', uid));
+          if (snap.exists()) {
+            const d = snap.data();
+            totalCompleted = Math.max(totalCompleted, typeof d.total_completed === 'number' ? d.total_completed : 0);
+            duelWins = typeof d.duel_wins === 'number' ? d.duel_wins : 0;
+            duelLosses = typeof d.duel_losses === 'number' ? d.duel_losses : 0;
+            duelMmr = typeof d.duel_mmr === 'number' ? d.duel_mmr : 1000;
+            botMmr = typeof d.bot_mmr === 'number' ? d.bot_mmr : 1000;
+            bestBasit = d.best_basit;
+            bestOrta = d.best_orta;
+            bestZor = d.best_zor;
+
+            (['classic', 'irregular', 'killer', 'wordoku', 'samurai'] as SudokuVariant[]).forEach(v => {
+              if (typeof d[`score_${v}`] === 'number') variantScores[v] = Math.max(variantScores[v], d[`score_${v}`]);
+              if (typeof d[`level_${v}`] === 'number') variantLevels[v] = Math.max(variantLevels[v], d[`level_${v}`]);
+            });
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      const title = this.calculatePlayerTitle(level, duelWins, duelMmr, totalCompleted);
+      let maxScore = -1;
+      let dominantVariant: SudokuVariant = 'classic';
+      (Object.keys(variantScores) as SudokuVariant[]).forEach(v => {
+        if (variantScores[v] > maxScore) {
+          maxScore = variantScores[v];
+          dominantVariant = v;
+        }
+      });
+
+      return {
+        uid,
+        username,
+        level,
+        gold,
+        avatar,
+        title,
+        notificationsEnabled,
+        totalCompleted,
+        duelWins,
+        duelLosses,
+        duelMmr,
+        botMmr,
+        bestBasitFormatted: this.formatTime(bestBasit),
+        bestOrtaFormatted: this.formatTime(bestOrta),
+        bestZorFormatted: this.formatTime(bestZor),
+        variantScores,
+        variantLevels,
+        dominantVariant
+      };
+    }
+
+    // HEDEF OYUNCU (BAŞKA OYUNCU PROFILI) - YEREL VERI SIZDIRILMAZ
+    let username = 'Oyuncu';
+    let level = 1;
+    let gold = 0;
+    let avatar = 'av_prism';
+    let totalCompleted = 0;
     let duelWins = 0;
     let duelLosses = 0;
     let duelMmr = 1000;
@@ -731,29 +825,22 @@ export const UserManager = {
     let bestBasit: number | undefined;
     let bestOrta: number | undefined;
     let bestZor: number | undefined;
+    let hasRemoteDoc = false;
 
-    const variantScores: Record<SudokuVariant, number> = {
-      classic: this.getVariantScore('classic'),
-      irregular: this.getVariantScore('irregular'),
-      killer: this.getVariantScore('killer'),
-      wordoku: this.getVariantScore('wordoku'),
-      samurai: this.getVariantScore('samurai')
-    };
+    const variantScores: Record<SudokuVariant, number> = { classic: 0, irregular: 0, killer: 0, wordoku: 0, samurai: 0 };
+    const variantLevels: Record<SudokuVariant, number> = { classic: 1, irregular: 1, killer: 1, wordoku: 1, samurai: 1 };
 
-    const variantLevels: Record<SudokuVariant, number> = {
-      classic: this.getVariantLevel('classic'),
-      irregular: this.getVariantLevel('irregular'),
-      killer: this.getVariantLevel('killer'),
-      wordoku: this.getVariantLevel('wordoku'),
-      samurai: this.getVariantLevel('samurai')
-    };
-
-    if (uid) {
+    if (targetUid) {
       try {
-        const snap = await getDoc(doc(db, 'leaderboard', uid));
+        const snap = await getDoc(doc(db, 'leaderboard', targetUid));
         if (snap.exists()) {
+          hasRemoteDoc = true;
           const d = snap.data();
-          totalCompleted = Math.max(totalCompleted, typeof d.total_completed === 'number' ? d.total_completed : 0);
+          username = formatDisplayName(d.username || targetUid, targetUid);
+          level = typeof d.level === 'number' ? d.level : parseInt(d.level) || 1;
+          gold = typeof d.gold === 'number' ? d.gold : parseInt(d.gold) || 0;
+          avatar = d.avatar || 'av_prism';
+          totalCompleted = typeof d.total_completed === 'number' ? d.total_completed : 0;
           duelWins = typeof d.duel_wins === 'number' ? d.duel_wins : 0;
           duelLosses = typeof d.duel_losses === 'number' ? d.duel_losses : 0;
           duelMmr = typeof d.duel_mmr === 'number' ? d.duel_mmr : 1000;
@@ -763,18 +850,16 @@ export const UserManager = {
           bestZor = d.best_zor;
 
           (['classic', 'irregular', 'killer', 'wordoku', 'samurai'] as SudokuVariant[]).forEach(v => {
-            if (typeof d[`score_${v}`] === 'number') variantScores[v] = Math.max(variantScores[v], d[`score_${v}`]);
-            if (typeof d[`level_${v}`] === 'number') variantLevels[v] = Math.max(variantLevels[v], d[`level_${v}`]);
+            if (typeof d[`score_${v}`] === 'number') variantScores[v] = d[`score_${v}`];
+            if (typeof d[`level_${v}`] === 'number') variantLevels[v] = d[`level_${v}`];
           });
         }
       } catch (e) {
-        console.warn("Profil istatistikleri çekilemedi:", e);
+        console.warn("Hedef oyuncu istatistikleri çekilemedi:", e);
       }
     }
 
     const title = this.calculatePlayerTitle(level, duelWins, duelMmr, totalCompleted);
-
-    // En baskın disiplin tespiti
     let maxScore = -1;
     let dominantVariant: SudokuVariant = 'classic';
     (Object.keys(variantScores) as SudokuVariant[]).forEach(v => {
@@ -785,13 +870,14 @@ export const UserManager = {
     });
 
     return {
-      uid,
+      uid: targetUid,
       username,
       level,
       gold,
       avatar,
       title,
-      notificationsEnabled,
+      hasRemoteDoc,
+      notificationsEnabled: false,
       totalCompleted,
       duelWins,
       duelLosses,

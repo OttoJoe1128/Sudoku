@@ -535,6 +535,24 @@ export const UIManager = {
       }
     }
 
+    const badgesSection = document.getElementById('profile-badges-section');
+    if (badgesSection) {
+      if (isOwnProfile) {
+        badgesSection.classList.remove('hidden');
+      } else {
+        badgesSection.classList.add('hidden');
+      }
+    }
+
+    const openAchievementsBtn = document.getElementById('btn-profile-open-achievements');
+    if (openAchievementsBtn) {
+      if (isOwnProfile) {
+        openAchievementsBtn.classList.remove('hidden');
+      } else {
+        openAchievementsBtn.classList.add('hidden');
+      }
+    }
+
     const unlockedBadges = badges.filter(b => b.isUnlocked);
     if (badgesCountEl) badgesCountEl.innerText = `${unlockedBadges.length} / ${badges.length} ${t('menu_badges')}`;
 
