@@ -5,6 +5,14 @@ export const usernameModalTemplate = `
     <div class="bg-[var(--bg-card)] text-[var(--text-primary)] rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl relative border border-[var(--border-strong)]">
         <button id="close-username-modal" class="absolute top-4 right-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-elevated)] p-2 rounded-full text-xs font-bold hidden transition-colors">✕</button>
 
+        <!-- Dil Seçici (TR | EN) -->
+        <div class="flex justify-center mb-3">
+            <div class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-1 rounded-2xl flex items-center gap-1 shadow-inner text-xs font-mono font-black">
+                <button id="welcome-lang-tr" class="px-3 py-1 rounded-xl transition-all bg-[var(--accent-gold)] text-[var(--text-on-gold)]">TR</button>
+                <button id="welcome-lang-en" class="px-3 py-1 rounded-xl transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)]">EN</button>
+            </div>
+        </div>
+
         <div class="w-16 h-16 bg-[var(--bg-elevated)] border border-[var(--border-strong)] text-[var(--accent-gold)] rounded-2xl p-2.5 mx-auto mb-4 shadow-lg flex items-center justify-center text-2xl">
             ${Icons.target}
         </div>

@@ -10,7 +10,7 @@ export const menuTemplate = `
             </div>
             <div class="truncate">
                 <p id="menu-player-title" class="text-[10px] text-[var(--accent-gold)] font-bold uppercase tracking-wider block truncate">Apprentice</p>
-                <p id="menu-player-name" class="font-black text-[var(--text-primary)] text-sm tracking-wide truncate" data-i18n="menu_guest">Guest</p>
+                <p id="menu-player-name" class="font-black text-[var(--text-primary)] text-sm tracking-wide truncate">Guest</p>
             </div>
         </div>
 

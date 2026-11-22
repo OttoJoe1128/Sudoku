@@ -189,7 +189,35 @@ export const AchievementManager = {
       }
     });
 
-    if (newlyUnlocked.length > 0) {
+    const claimed = new Set(this.getClaimedBadgeIds());
+    let modified = false;
+
+    if (params.totalCompleted !== undefined && params.totalCompleted < 10 && currentUnlocked.has('puzzle_machine') && !claimed.has('puzzle_machine')) {
+      currentUnlocked.delete('puzzle_machine');
+      modified = true;
+    }
+    if (params.level < 10 && currentUnlocked.has('level_10') && !claimed.has('level_10')) {
+      currentUnlocked.delete('level_10');
+      modified = true;
+    }
+    if (params.level < 50 && currentUnlocked.has('level_50') && !claimed.has('level_50')) {
+      currentUnlocked.delete('level_50');
+      modified = true;
+    }
+    if (params.level < 301 && currentUnlocked.has('medium_unlocked') && !claimed.has('medium_unlocked')) {
+      currentUnlocked.delete('medium_unlocked');
+      modified = true;
+    }
+    if (params.level < 701 && currentUnlocked.has('hard_unlocked') && !claimed.has('hard_unlocked')) {
+      currentUnlocked.delete('hard_unlocked');
+      modified = true;
+    }
+    if (params.gold < 500 && currentUnlocked.has('gold_hoarder') && !claimed.has('gold_hoarder')) {
+      currentUnlocked.delete('gold_hoarder');
+      modified = true;
+    }
+
+    if (modified || newlyUnlocked.length > 0) {
       localStorage.setItem('sudoku_unlocked_badges', JSON.stringify(Array.from(currentUnlocked)));
     }
 

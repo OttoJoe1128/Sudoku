@@ -721,6 +721,25 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
 
 let currentAppLang: AppLang = 'tr';
 
+export function initDefaultLang(): AppLang {
+  try {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('sudoku_lang') : null;
+    if (raw === 'en' || raw === 'tr') {
+      currentAppLang = raw;
+      return raw;
+    }
+    if (typeof navigator !== 'undefined' && navigator.language) {
+      const devLang = navigator.language.toLowerCase();
+      const detected: AppLang = devLang.startsWith('tr') ? 'tr' : 'en';
+      setLang(detected);
+      return detected;
+    }
+  } catch {
+    // ignore
+  }
+  return currentAppLang;
+}
+
 export function getLang(): AppLang {
   try {
     const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('sudoku_lang') : null;

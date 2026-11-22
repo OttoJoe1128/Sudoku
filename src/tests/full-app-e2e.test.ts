@@ -19,7 +19,6 @@ import { initGameController, startGame, startPlacementExam, handleExitGameReques
 import { initSaveController, openSavedGamesModal, getSavedGamesList, saveActiveGameRecord, createPlacementActiveGameSave, updateSavedGamesCountUI } from '../controllers/saveController';
 import { initArenaController, getSelectedArenaVariant } from '../controllers/arenaController';
 import { initModalsController, getSelectedCustomVariant, getSelectedCustomTimeSec } from '../controllers/modalsController';
-
 import { auth } from '../api/firebase';
 
 describe('Faz 2.4-QA2 Tam Uygulama İnteraktif E2E Test Paketi', () => {
@@ -470,13 +469,30 @@ describe('Faz 2.4-QA2 Tam Uygulama İnteraktif E2E Test Paketi', () => {
 
       const state = getGameRuntimeState();
       const solution = state.currentSolution;
-      const targetSolVal = solution[0][0];
+      const initialBoard = state.initialBoard;
+
+      let emptyR = -1;
+      let emptyC = -1;
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          if (initialBoard[r][c] === 0) {
+            emptyR = r;
+            emptyC = c;
+            break;
+          }
+        }
+        if (emptyR !== -1) break;
+      }
+
+      expect(emptyR).not.toBe(-1);
+      const targetSolVal = solution[emptyR][emptyC];
       const wrongVal = targetSolVal === 1 ? 2 : 1;
 
-      const cell00 = document.querySelectorAll('#sudoku-grid > div')[0] as HTMLElement;
-      cell00?.click();
+      const emptyCellEl = document.querySelectorAll('#sudoku-grid > div')[emptyR * 9 + emptyC] as HTMLElement;
+      emptyCellEl?.click();
 
-      const numBtns = document.querySelectorAll('#numpad-grid button');
+      const numpadGrid = document.getElementById('numpad-grid');
+      const numBtns = numpadGrid?.querySelectorAll('button');
       const wrongBtn = numBtns ? (numBtns[wrongVal - 1] as HTMLElement) : null;
 
       wrongBtn?.click();
@@ -490,6 +506,98 @@ describe('Faz 2.4-QA2 Tam Uygulama İnteraktif E2E Test Paketi', () => {
 
       const resultModal = document.getElementById('placement-result-modal');
       expect(resultModal?.classList.contains('hidden')).toBe(false);
+    });
+  });
+
+  describe('7. Giriş Yapmış Kullanıcı Adı Koruması (Otto vs Misafir)', () => {
+    it('giriş yapılmış kullanıcı adı dil değişiminde Misafir veya Guest olarak ezilmemeli', () => {
+      localStorage.setItem('sudoku_username', 'Otto');
+
+      const savedName = UserManager.getUsername();
+      const nameEl = document.getElementById('menu-player-name');
+      if (nameEl) nameEl.innerText = savedName ? savedName : t('menu_guest');
+
+      expect(nameEl?.innerText).toBe('Otto');
+
+      setLang('en');
+      applyStaticTranslations();
+      const nameEn = UserManager.getUsername();
+      if (nameEl) nameEl.innerText = nameEn ? nameEn : t('menu_guest');
+
+      expect(nameEl?.innerText).toBe('Otto');
+
+      setLang('tr');
+      applyStaticTranslations();
+      const nameTr = UserManager.getUsername();
+      if (nameEl) nameEl.innerText = nameTr ? nameTr : t('menu_guest');
+
+      expect(nameEl?.innerText).toBe('Otto');
+    });
+  });
+
+  describe('8. İlk Giriş Dil Seçimi & Seçilen Dilde Otomatik Spotlight Turu', () => {
+    it('#username-modal içinde #welcome-lang-tr ve #welcome-lang-en butonları bulunmalı ve EN seçilince tur İngilizce başlamalı', () => {
+      localStorage.clear();
+      document.body.innerHTML = '<div id="app"></div>';
+      UIManager.mountUI();
+
+      const trBtn = document.getElementById('welcome-lang-tr');
+      const enBtn = document.getElementById('welcome-lang-en');
+
+      expect(trBtn).not.toBeNull();
+      expect(enBtn).not.toBeNull();
+
+      setLang('en');
+      applyStaticTranslations();
+
+      const titleEl = document.querySelector('[data-i18n="welcome_title"]');
+      const phEl = document.querySelector('[data-i18n-ph="ph_enter_username"]');
+
+      expect(titleEl?.textContent).toBe('Welcome to SudokuMap!');
+      expect(phEl?.getAttribute('placeholder')).toBe('Enter username...');
+
+      startAppTour();
+
+      const tourTitle = document.getElementById('tour-step-title');
+      const tourSkip = document.getElementById('btn-tour-skip');
+
+      expect(tourTitle?.innerText).toBe('Sound Toggle');
+      expect(tourSkip?.innerText).toBe('Skip ✕');
+      finishAppTour();
+    });
+  });
+
+  describe('9. Eski Bozuk Profil & Yeni Profil puzzle_machine Tutarlılığı', () => {
+    it('eski bozuk profilde 4 bulmacada unlock görünen puzzle_machine otomatik onarılıp kilitlenmeli', () => {
+      localStorage.clear();
+      localStorage.setItem('sudoku_total_completed', '4');
+      localStorage.setItem('sudoku_unlocked_badges', JSON.stringify(['puzzle_machine']));
+      localStorage.setItem('sudoku_claimed_badges', JSON.stringify([]));
+
+      const badges = AchievementManager.getAllBadgesWithStatus(150, 125, 4);
+      const pmBadge = badges.find(b => b.id === 'puzzle_machine');
+
+      expect(pmBadge?.isUnlocked).toBe(false);
+      expect(AchievementManager.getUnlockedBadgeIds()).not.toContain('puzzle_machine');
+    });
+
+    it('0 dan başlayıp 4 bulmaca bitirildiğinde puzzle_machine kilitli, 10. bulmacada açık olmalı', () => {
+      localStorage.clear();
+
+      for (let i = 0; i < 3; i++) UserManager.incrementCompletedCategory('map');
+      UserManager.incrementCompletedCategory('custom');
+
+      expect(UserManager.getTotalCompleted()).toBe(4);
+      let badges = AchievementManager.getAllBadgesWithStatus(1, 100, UserManager.getTotalCompleted());
+      let pmBadge = badges.find(b => b.id === 'puzzle_machine');
+      expect(pmBadge?.isUnlocked).toBe(false);
+
+      for (let i = 0; i < 6; i++) UserManager.incrementCompletedCategory('custom');
+      expect(UserManager.getTotalCompleted()).toBe(10);
+
+      badges = AchievementManager.getAllBadgesWithStatus(1, 100, UserManager.getTotalCompleted());
+      pmBadge = badges.find(b => b.id === 'puzzle_machine');
+      expect(pmBadge?.isUnlocked).toBe(true);
     });
   });
 });

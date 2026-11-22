@@ -1,7 +1,7 @@
 import './design/tokens.css';
 import { UIManager } from './ui/uiManager';
 import { renderAvatarSVG, renderRankBadgeSVG, Icons } from './design/icons';
-import { getLang, setLang, t, applyStaticTranslations, translateRankName } from './i18n/translations';
+import { getLang, setLang, t, applyStaticTranslations, translateRankName, initDefaultLang } from './i18n/translations';
 import { SudokuGen, SudokuVariant } from './engine/sudoku';
 import { UserManager } from './store/userState';
 import { ShopManager } from './engine/shop';
@@ -103,10 +103,15 @@ const updateLanguageUI = () => {
   applyStaticTranslations();
   updateSavedGamesCountUI();
   refreshMapLanguageUI();
+  updateWelcomeLangUI();
 
   const currentTitle = UserManager.getTitle();
   const titleEl = document.getElementById('menu-player-title');
   if (titleEl) titleEl.innerHTML = renderRankBadgeSVG(translateRankName(currentTitle));
+
+  const savedName = UserManager.getUsername();
+  const nameEl = document.getElementById('menu-player-name');
+  if (nameEl) nameEl.innerText = savedName ? savedName : t('menu_guest');
 
   const mults: Record<SudokuVariant, string> = { classic: '1.0x', wordoku: '1.2x', irregular: '1.5x', killer: '1.8x', samurai: '2.5x' };
 
@@ -205,6 +210,31 @@ initModalsController({
 // ----------------------------------------------------
 // DİL DEĞİŞTİRME & KULLANICI GİRİŞ DİNLEYİCİLERİ
 // ----------------------------------------------------
+
+const updateWelcomeLangUI = () => {
+  const current = getLang();
+  const trBtn = document.getElementById('welcome-lang-tr');
+  const enBtn = document.getElementById('welcome-lang-en');
+  if (trBtn && enBtn) {
+    if (current === 'tr') {
+      trBtn.className = 'px-3 py-1 rounded-xl transition-all bg-[var(--accent-gold)] text-[var(--text-on-gold)]';
+      enBtn.className = 'px-3 py-1 rounded-xl transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)]';
+    } else {
+      enBtn.className = 'px-3 py-1 rounded-xl transition-all bg-[var(--accent-gold)] text-[var(--text-on-gold)]';
+      trBtn.className = 'px-3 py-1 rounded-xl transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)]';
+    }
+  }
+};
+
+document.getElementById('welcome-lang-tr')?.addEventListener('click', () => {
+  setLang('tr');
+  updateLanguageUI();
+});
+
+document.getElementById('welcome-lang-en')?.addEventListener('click', () => {
+  setLang('en');
+  updateLanguageUI();
+});
 
 document.getElementById('btn-lang-toggle')?.addEventListener('click', () => {
   const nextLang = getLang() === 'tr' ? 'en' : 'tr';
@@ -388,6 +418,8 @@ setInterval(() => {
 }, 30000);
 
 // Başlangıç Kontrolü
+initDefaultLang();
+updateLanguageUI();
 checkUser();
 
 // Android Donanım Geri Tuşu Mantığı (Capacitor)
