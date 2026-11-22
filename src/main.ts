@@ -1,7 +1,7 @@
 import './design/tokens.css';
 import { UIManager } from './ui/uiManager';
 import { renderAvatarSVG, renderRankBadgeSVG, Icons } from './design/icons';
-import { getLang, setLang, t, applyStaticTranslations } from './i18n/translations';
+import { getLang, setLang, t, applyStaticTranslations, translateRankName } from './i18n/translations';
 import { SudokuGen, SudokuVariant } from './engine/sudoku';
 import { UserManager } from './store/userState';
 import { ShopManager } from './engine/shop';
@@ -11,12 +11,13 @@ import { sanitizeUsername } from './utils/sanitize';
 import { App } from '@capacitor/app';
 
 import { initSaveController, updateSavedGamesCountUI, reconcileLevelsWithSavedGames, getSavedGamesList } from './controllers/saveController';
-import { initMapController, getSelectedMapVariant, openMapAtLevel } from './controllers/mapController';
+import { initMapController, getSelectedMapVariant, openMapAtLevel, refreshMapLanguageUI } from './controllers/mapController';
 import { initArenaController, getSelectedArenaVariant, handleIncomingChallenge, triggerExpertBotMatch } from './controllers/arenaController';
 import { initModalsController, getSelectedCustomVariant, getSelectedCustomTimeSec, openPlayerProfile } from './controllers/modalsController';
 import { initGameController, startGame, startPlacementExam, handleBotMatchProgress, handleExitGameRequest, getGameRuntimeState } from './controllers/gameController';
 import { AdService } from './services/adService';
 import { openOnboardingModal, isOnboardingDone } from './controllers/onboardingController';
+import { startAppTour, isAppTourDone } from './controllers/appTourController';
 
 // UI Binişi & Öz-Teşhis
 UIManager.mountUI();
@@ -101,10 +102,11 @@ const updateLanguageUI = () => {
 
   applyStaticTranslations();
   updateSavedGamesCountUI();
+  refreshMapLanguageUI();
 
   const currentTitle = UserManager.getTitle();
   const titleEl = document.getElementById('menu-player-title');
-  if (titleEl) titleEl.innerHTML = renderRankBadgeSVG(currentTitle);
+  if (titleEl) titleEl.innerHTML = renderRankBadgeSVG(translateRankName(currentTitle));
 
   const mults: Record<SudokuVariant, string> = { classic: '1.0x', wordoku: '1.2x', irregular: '1.5x', killer: '1.8x', samurai: '2.5x' };
 
@@ -358,7 +360,9 @@ document.getElementById('save-username')?.addEventListener('click', async () => 
     UIManager.showToast(t('toast_username_updated', { username: user.username }), 'success');
 
     setTimeout(() => {
-      if (!isOnboardingDone()) {
+      if (!isAppTourDone()) {
+        startAppTour();
+      } else if (!isOnboardingDone()) {
         openOnboardingModal();
       } else if (!UserManager.getNotificationsEnabled() && localStorage.getItem('sudoku_notify_prompted') !== '1') {
         UIManager.promptNotificationPermission('startup');

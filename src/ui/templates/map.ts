@@ -10,7 +10,7 @@ export const mapTemplate = `
                 <svg class="w-4 h-4 text-[var(--accent-gold)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
                 <span data-i18n="btn_menu">Menü</span>
             </button>
-            <h2 id="map-biome-title" class="text-sm font-black text-[var(--accent-gold)] uppercase tracking-wider">ZÜMRÜT VADİ</h2>
+            <h2 id="map-biome-title" class="text-sm font-black text-[var(--accent-gold)] uppercase tracking-wider" data-i18n="biome_emerald">ZÜMRÜT VADİ</h2>
             <button id="btn-map-focus-current" title="Güncel Seviyeye Odaklan" data-i18n-title="tooltip_focus_level" class="bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-strong)] p-1.5 rounded-xl text-xs text-[var(--accent-gold)] font-black transition-transform active:scale-95 shadow">
                 ${Icons.target}
             </button>
@@ -19,28 +19,28 @@ export const mapTemplate = `
         <!-- 5 Sudoku Disiplini Seçici Bar -->
         <div class="w-full mb-2 shrink-0">
             <div class="grid grid-cols-5 gap-1.5 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-1.5 rounded-2xl mb-1.5 shadow-inner">
-                <button id="map-variant-classic" data-variant="classic" class="map-variant-btn p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-strong)] text-[var(--text-primary)] shadow flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Klasik">
+                <button id="map-variant-classic" data-variant="classic" class="map-variant-btn p-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-strong)] text-[var(--text-primary)] shadow flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Klasik" data-i18n-title="var_classic">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-gold)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
                     <span class="text-[9px] font-black leading-none" data-i18n="var_classic">Klasik</span>
                 </button>
-                <button id="map-variant-irregular" data-variant="irregular" class="map-variant-btn p-1.5 rounded-xl bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-card)] flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Parçalı">
+                <button id="map-variant-irregular" data-variant="irregular" class="map-variant-btn p-1.5 rounded-xl bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-card)] flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Parçalı" data-i18n-title="var_irregular">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6v6H4zM10 10h6v6h-6zM14 4h6v6H4z"/></svg>
                     <span class="text-[9px] font-bold leading-none" data-i18n="var_irregular">Parçalı</span>
                 </button>
-                <button id="map-variant-killer" data-variant="killer" class="map-variant-btn p-1.5 rounded-xl bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-card)] flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Hesap">
+                <button id="map-variant-killer" data-variant="killer" class="map-variant-btn p-1.5 rounded-xl bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-card)] flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Hesap" data-i18n-title="var_killer">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke-dasharray="2 2" d="M3 3h18v18H3z"/><path d="M7 7h10L10 12l7 5H7"/></svg>
                     <span class="text-[9px] font-bold leading-none" data-i18n="var_killer">Hesap</span>
                 </button>
-                <button id="map-variant-wordoku" data-variant="wordoku" class="map-variant-btn p-1.5 rounded-xl bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-card)] flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Harfli">
+                <button id="map-variant-wordoku" data-variant="wordoku" class="map-variant-btn p-1.5 rounded-xl bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-card)] flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Harfli" data-i18n-title="var_wordoku">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7l-4 10h8M9 13h6"/></svg>
                     <span class="text-[9px] font-bold leading-none" data-i18n="var_wordoku">Harfli</span>
                 </button>
-                <button id="map-variant-samurai" data-variant="samurai" class="map-variant-btn p-1.5 rounded-xl bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-card)] flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Samurai">
+                <button id="map-variant-samurai" data-variant="samurai" class="map-variant-btn p-1.5 rounded-xl bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-card)] flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Samurai" data-i18n-title="var_samurai">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="8" height="8" rx="1"/><rect x="2" y="2" width="6" height="6" rx="1"/><rect x="16" y="2" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="16" y="16" width="6" height="6" rx="1"/></svg>
                     <span class="text-[9px] font-bold leading-none" data-i18n="var_samurai">Samurai</span>
                 </button>
             </div>
-            <div id="map-variant-rule-desc" class="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-2 text-left text-[10px] font-medium text-[var(--text-primary)] leading-snug">
+            <div id="map-variant-rule-desc" class="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-2 text-left text-[10px] font-medium text-[var(--text-primary)] leading-snug" data-i18n="rule_classic">
                 Her satır, sütun ve 3x3 karede 1-9 rakamları birer kez yer almalıdır.
             </div>
         </div>
@@ -50,7 +50,7 @@ export const mapTemplate = `
             <div id="map-tier-progress" class="absolute bottom-0 left-0 h-1 bg-[var(--accent-cyan)] transition-all" style="width: 10%"></div>
             <div class="text-left">
                 <span class="text-[10px] font-black uppercase text-[var(--accent-gold)] tracking-wider block" data-i18n="target_hud">GÜNCEL SİHİRDAR HEDEFİ</span>
-                <span id="map-target-label" class="text-sm font-black text-[var(--text-primary)] block">Seviye 1 • Basit</span>
+                <span id="map-target-label" class="text-sm font-black text-[var(--text-primary)] block">Level 1 • Easy</span>
             </div>
             <button id="btn-map-start-current" class="bg-[var(--accent-gold)] hover:bg-[var(--accent-gold-bright)] text-[var(--text-on-gold)] font-black px-4 py-2 rounded-xl text-xs shadow-md active:scale-95 transition-transform flex items-center gap-1.5 border border-[var(--accent-gold)]">
                 <span>${Icons.sword}</span>

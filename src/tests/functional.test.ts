@@ -10,6 +10,7 @@ import { SudokuGen } from '../engine/sudoku';
 import { setLang, getLang, t, applyStaticTranslations, TRANSLATIONS } from '../i18n/translations';
 import { formatDisplayName, sanitizeUsername } from '../utils/sanitize';
 import { isOnboardingDone, closeOnboardingModal } from '../controllers/onboardingController';
+import { APP_TOUR_STEPS, isAppTourDone, finishAppTour } from '../controllers/appTourController';
 import {
   getSavedGamesList,
   saveActiveGameRecord,
@@ -228,6 +229,90 @@ describe('Faz 2.3b İşlevsel & DOM Entegrasyon Test Paketi', () => {
       closeOnboardingModal();
       expect(isOnboardingDone()).toBe(true);
       expect(localStorage.getItem('sudoku_onboarding_done')).toBe('1');
+    });
+  });
+
+  describe('8. 4-Kategorili Tek Merkezli Oyun Sayacı & Rozet Senkronizasyonu', () => {
+    it('4 kategorinin (map, custom, pvp, ai) bağımsız arttığını ve getTotalCompleted() sonucunun bunların tam toplamı olduğunu doğrula', () => {
+      mockLocalStorage.clear();
+
+      UserManager.incrementCompletedCategory('map');
+      UserManager.incrementCompletedCategory('map');
+      UserManager.incrementCompletedCategory('custom');
+      UserManager.incrementCompletedCategory('pvp');
+      UserManager.incrementCompletedCategory('ai');
+
+      const cats = UserManager.getCompletedByCategory();
+      expect(cats.map).toBe(2);
+      expect(cats.custom).toBe(1);
+      expect(cats.pvp).toBe(1);
+      expect(cats.ai).toBe(1);
+      expect(UserManager.getTotalCompleted()).toBe(5);
+    });
+
+    it('eski sudoku_total_completed değerinin kaybolmadan korunduğunu doğrula', () => {
+      mockLocalStorage.clear();
+      localStorage.setItem('sudoku_total_completed', '15');
+
+      const cats = UserManager.getCompletedByCategory();
+      expect(cats.map).toBe(15);
+      expect(UserManager.getTotalCompleted()).toBe(15);
+    });
+
+    it('4 bulmacada puzzle_machine rozetinin açılmadığını, 10 tamamlamada açıldığını doğrula', () => {
+      mockLocalStorage.clear();
+
+      for (let i = 0; i < 3; i++) UserManager.incrementCompletedCategory('map');
+      UserManager.incrementCompletedCategory('custom');
+
+      expect(UserManager.getTotalCompleted()).toBe(4);
+      AchievementManager.checkAndUnlockBadges({
+        level: 1,
+        gold: 100,
+        totalCompleted: UserManager.getTotalCompleted()
+      });
+      const unlockedIds4 = AchievementManager.getUnlockedBadgeIds();
+      expect(unlockedIds4).not.toContain('puzzle_machine');
+
+      for (let i = 0; i < 2; i++) UserManager.incrementCompletedCategory('custom');
+      for (let i = 0; i < 2; i++) UserManager.incrementCompletedCategory('pvp');
+      for (let i = 0; i < 2; i++) UserManager.incrementCompletedCategory('ai');
+
+      expect(UserManager.getTotalCompleted()).toBe(10);
+      AchievementManager.checkAndUnlockBadges({
+        level: 1,
+        gold: 100,
+        totalCompleted: UserManager.getTotalCompleted()
+      });
+      const unlockedIds10 = AchievementManager.getUnlockedBadgeIds();
+      expect(unlockedIds10).toContain('puzzle_machine');
+    });
+  });
+
+  describe('9. Spotlight Uygulama Turu & Bayrak Yönetimi', () => {
+    it('APP_TOUR_STEPS 16 adımı eksiksiz içermeli ve tüm çeviri anahtarları tanımlı olmalı', () => {
+      expect(APP_TOUR_STEPS.length).toBe(16);
+
+      setLang('tr');
+      APP_TOUR_STEPS.forEach(step => {
+        expect(t(step.titleKey)).not.toBe(step.titleKey);
+        expect(t(step.descKey)).not.toBe(step.descKey);
+      });
+
+      setLang('en');
+      APP_TOUR_STEPS.forEach(step => {
+        expect(t(step.titleKey)).not.toBe(step.titleKey);
+        expect(t(step.descKey)).not.toBe(step.descKey);
+      });
+    });
+
+    it('finishAppTour sudoku_app_tour_done bayrağını 1 olarak kaydetmeli', () => {
+      mockLocalStorage.clear();
+      expect(isAppTourDone()).toBe(false);
+
+      finishAppTour();
+      expect(isAppTourDone()).toBe(true);
+      expect(localStorage.getItem('sudoku_app_tour_done')).toBe('1');
     });
   });
 });

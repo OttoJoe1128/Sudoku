@@ -4,6 +4,15 @@ import { auth, db } from '../api/firebase';
 import { SudokuVariant } from '../engine/sudoku';
 import { formatDisplayName } from '../utils/sanitize';
 
+export type GameCategory = 'map' | 'custom' | 'pvp' | 'ai';
+
+export interface CompletedByCategory {
+  map: number;
+  custom: number;
+  pvp: number;
+  ai: number;
+}
+
 export interface GameCompletionDetails {
   level: number;
   difficulty: 'basit' | 'orta' | 'zor';
@@ -12,6 +21,7 @@ export interface GameCompletionDetails {
   timeFormatted: string;
   errors: number;
   hintsUsed: number;
+  category?: GameCategory;
 }
 
 export interface UserData {
@@ -503,7 +513,70 @@ export const UserManager = {
   getUsername(): string | null { if (typeof localStorage === 'undefined') return null; return localStorage.getItem('sudoku_username'); },
   getGold(): number { if (typeof localStorage === 'undefined') return 100; return parseInt(localStorage.getItem('sudoku_gold') || '100'); },
   getCurrentLevel(): number { if (typeof localStorage === 'undefined') return 1; return parseInt(localStorage.getItem('sudoku_level') || '1'); },
-  getTotalCompleted(): number { if (typeof localStorage === 'undefined') return 0; return parseInt(localStorage.getItem('sudoku_total_completed') || '0'); },
+
+  getCompletedByCategory(): CompletedByCategory {
+    const fallback: CompletedByCategory = { map: 0, custom: 0, pvp: 0, ai: 0 };
+    if (typeof localStorage === 'undefined') return fallback;
+
+    let catData: CompletedByCategory = fallback;
+    const rawCat = localStorage.getItem('sudoku_completed_by_category');
+    if (rawCat) {
+      try {
+        const parsed = JSON.parse(rawCat);
+        if (parsed && typeof parsed === 'object') {
+          catData = {
+            map: typeof parsed.map === 'number' ? parsed.map : 0,
+            custom: typeof parsed.custom === 'number' ? parsed.custom : 0,
+            pvp: typeof parsed.pvp === 'number' ? parsed.pvp : 0,
+            ai: typeof parsed.ai === 'number' ? parsed.ai : 0
+          };
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    const legacyTotal = parseInt(localStorage.getItem('sudoku_total_completed') || '0');
+    const catSum = catData.map + catData.custom + catData.pvp + catData.ai;
+
+    if (legacyTotal > catSum) {
+      catData.map += (legacyTotal - catSum);
+      try {
+        localStorage.setItem('sudoku_completed_by_category', JSON.stringify(catData));
+      } catch {
+        // ignore
+      }
+    }
+
+    return catData;
+  },
+
+  incrementCompletedCategory(category: GameCategory = 'map'): number {
+    const cats = this.getCompletedByCategory();
+    cats[category] = (cats[category] || 0) + 1;
+    const newTotal = cats.map + cats.custom + cats.pvp + cats.ai;
+
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem('sudoku_completed_by_category', JSON.stringify(cats));
+        const legacyTotal = parseInt(localStorage.getItem('sudoku_total_completed') || '0');
+        const safeTotal = Math.max(legacyTotal, newTotal);
+        localStorage.setItem('sudoku_total_completed', safeTotal.toString());
+      } catch {
+        // ignore
+      }
+    }
+
+    return newTotal;
+  },
+
+  getTotalCompleted(): number {
+    const cats = this.getCompletedByCategory();
+    const sum = cats.map + cats.custom + cats.pvp + cats.ai;
+    if (typeof localStorage === 'undefined') return sum;
+    const legacyTotal = parseInt(localStorage.getItem('sudoku_total_completed') || '0');
+    return Math.max(legacyTotal, sum);
+  },
   getAvatar(): string { if (typeof localStorage === 'undefined') return '🎮'; return localStorage.getItem('sudoku_avatar') || '🎮'; },
   getTitle(): string {
     const level = this.getCurrentLevel();
@@ -601,6 +674,10 @@ export const UserManager = {
 
   async recordDuelResult(isWin: boolean, isBot: boolean = false, mmrChange: number = 0, rewardGold: number = 0) {
     try {
+      if (isWin) {
+        this.incrementCompletedCategory(isBot ? 'ai' : 'pvp');
+      }
+
       const currentGold = this.getGold();
       const newGold = Math.max(0, currentGold + rewardGold);
       if (typeof localStorage !== 'undefined') {
@@ -616,24 +693,32 @@ export const UserManager = {
         const level = typeof currentData.level === 'number' ? currentData.level : this.getCurrentLevel();
         const wins = (typeof currentData.duel_wins === 'number' ? currentData.duel_wins : 0) + (isWin ? 1 : 0);
         const losses = (typeof currentData.duel_losses === 'number' ? currentData.duel_losses : 0) + (isWin ? 0 : 1);
-        const completed = typeof currentData.total_completed === 'number' ? currentData.total_completed : this.getTotalCompleted();
+        const localTotal = this.getTotalCompleted();
+        const remoteTotal = typeof currentData.total_completed === 'number' ? currentData.total_completed : 0;
+        const finalTotal = Math.max(localTotal, remoteTotal);
 
         const currentPvpMmr = typeof currentData.duel_mmr === 'number' ? currentData.duel_mmr : 1000;
         const currentBotMmr = typeof currentData.bot_mmr === 'number' ? currentData.bot_mmr : 1000;
 
         const effectiveMmrChange = mmrChange !== 0 ? mmrChange : (isWin ? 25 : -20);
         const updatedMmr = isBot ? currentPvpMmr : Math.max(100, currentPvpMmr + effectiveMmrChange);
-        const newTitle = this.calculatePlayerTitle(level, wins, updatedMmr, completed);
+        const newTitle = this.calculatePlayerTitle(level, wins, updatedMmr, finalTotal);
 
         if (typeof localStorage !== 'undefined') {
           localStorage.setItem('sudoku_title', newTitle);
         }
 
+        const cats = this.getCompletedByCategory();
         const updates: any = {
           gold: newGold,
           duel_wins: wins,
           duel_losses: losses,
           title: newTitle,
+          total_completed: finalTotal,
+          completed_map: Math.max(cats.map, typeof currentData.completed_map === 'number' ? currentData.completed_map : 0),
+          completed_custom: Math.max(cats.custom, typeof currentData.completed_custom === 'number' ? currentData.completed_custom : 0),
+          completed_pvp: Math.max(cats.pvp, typeof currentData.completed_pvp === 'number' ? currentData.completed_pvp : 0),
+          completed_ai: Math.max(cats.ai, typeof currentData.completed_ai === 'number' ? currentData.completed_ai : 0),
           lastSeenMs: Date.now(),
           updatedAt: serverTimestamp()
         };
@@ -653,6 +738,10 @@ export const UserManager = {
 
   async recordGameCompletion(details: GameCompletionDetails): Promise<void> {
     try {
+      const category = details.category || 'map';
+      const safeTotal = this.incrementCompletedCategory(category);
+      const cats = this.getCompletedByCategory();
+
       const cred = auth.currentUser ? { user: auth.currentUser } : await signInAnonymously(auth);
       const uid = cred.user.uid;
       const username = this.getUsername() || 'Oyuncu';
@@ -666,6 +755,7 @@ export const UserManager = {
         level: details.level,
         difficulty: details.difficulty,
         variant: details.variant || 'classic',
+        category,
         timeElapsed: details.timeElapsed,
         timeFormatted: details.timeFormatted,
         errors: details.errors,
@@ -682,14 +772,10 @@ export const UserManager = {
       const wins = typeof currentData.duel_wins === 'number' ? currentData.duel_wins : 0;
       const mmr = typeof currentData.duel_mmr === 'number' ? currentData.duel_mmr : 1000;
 
-      const localTotal = this.getTotalCompleted();
-      const totalCompleted = (typeof currentData.total_completed === 'number' ? currentData.total_completed : 0) + 1;
-      const safeTotal = Math.max(localTotal, totalCompleted);
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('sudoku_total_completed', safeTotal.toString());
-      }
+      const remoteTotal = typeof currentData.total_completed === 'number' ? currentData.total_completed : 0;
+      const finalTotal = Math.max(safeTotal, remoteTotal);
 
-      const calcTitle = this.calculatePlayerTitle(level, wins, mmr, safeTotal);
+      const calcTitle = this.calculatePlayerTitle(level, wins, mmr, finalTotal);
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem('sudoku_title', calcTitle);
       }
@@ -700,7 +786,11 @@ export const UserManager = {
         title: calcTitle,
         lastSeenMs: Date.now(),
         updatedAt: serverTimestamp(),
-        total_completed: safeTotal
+        total_completed: finalTotal,
+        completed_map: Math.max(cats.map, typeof currentData.completed_map === 'number' ? currentData.completed_map : 0),
+        completed_custom: Math.max(cats.custom, typeof currentData.completed_custom === 'number' ? currentData.completed_custom : 0),
+        completed_pvp: Math.max(cats.pvp, typeof currentData.completed_pvp === 'number' ? currentData.completed_pvp : 0),
+        completed_ai: Math.max(cats.ai, typeof currentData.completed_ai === 'number' ? currentData.completed_ai : 0)
       };
 
       const diffKey = details.difficulty === 'basit' ? 'best_basit' : details.difficulty === 'orta' ? 'best_orta' : 'best_zor';

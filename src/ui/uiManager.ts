@@ -14,7 +14,7 @@ import { secondChanceModalTemplate } from './templates/secondChanceModal';
 import { onboardingModalTemplate } from './templates/onboardingModal';
 import { getAmbientBackgroundHTML } from '../design/backgrounds';
 import { Icons, renderAvatarSVG, renderRankBadgeSVG, AVATAR_LIST } from '../design/icons';
-import { t, getLang } from '../i18n/translations';
+import { t, getLang, translateRankName } from '../i18n/translations';
 import { Player, SpeedRecord } from '../engine/leaderboard';
 import { ShopItems, ShopManager } from '../engine/shop';
 import { BadgeStatus } from '../engine/achievements';
@@ -228,9 +228,9 @@ export const UIManager = {
             <!-- Düello Canlı İlerleme Çubuğu -->
             <div id="match-header-bar" class="hidden w-full bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-strong)] p-3 rounded-2xl mb-3 shadow-lg flex-col gap-2">
                 <div class="flex justify-between items-center text-xs font-black">
-                    <span id="match-user-name">Siz (%0)</span>
+                    <span id="match-user-name">You (%0)</span>
                     <span class="text-[var(--accent-gold)] font-extrabold text-sm">VS</span>
-                    <span id="match-enemy-name">Rakip (%0)</span>
+                    <span id="match-enemy-name">Rival (%0)</span>
                 </div>
                 <div class="w-full bg-[var(--bg-elevated)] h-2.5 rounded-full overflow-hidden flex border border-[var(--border-subtle)]">
                     <div id="match-user-bar" class="bg-[var(--accent-cyan)] h-full transition-all duration-300" style="width: 0%"></div>
@@ -247,14 +247,14 @@ export const UIManager = {
                     ${Icons.coin}
                     <span id="game-gold" class="font-mono font-black text-[var(--text-primary)]">100</span>
                 </div>
-                <div id="game-errors" class="text-rose-400 font-bold text-[11px] sm:text-sm whitespace-nowrap shrink-0">Hata: 0/3</div>
+                <div id="game-errors" class="text-rose-400 font-bold text-[11px] sm:text-sm whitespace-nowrap shrink-0">Errors: 0/3</div>
                 <div id="game-timer" class="font-mono font-bold text-xs sm:text-lg text-[var(--text-primary)] whitespace-nowrap shrink-0">00:00</div>
             </div>
 
             <!-- Disiplin Vektör Amblem Rozeti -->
             <div id="game-variant-badge-box" class="w-full mb-2 flex justify-between items-center bg-[var(--bg-card)] px-3 py-1.5 rounded-xl border border-[var(--border-subtle)] text-xs font-black text-[var(--text-primary)]">
-                <span id="game-variant-title" class="flex items-center gap-1.5">Klasik Sudoku</span>
-                <span id="game-variant-multiplier" class="text-[10px] font-extrabold text-[var(--accent-gold)] bg-[var(--bg-elevated)] px-2 py-0.5 rounded-md border border-[var(--border-strong)]">1.0x Puan</span>
+                <span id="game-variant-title" class="flex items-center gap-1.5" data-i18n="var_classic_full">Classic Sudoku</span>
+                <span id="game-variant-multiplier" class="text-[10px] font-extrabold text-[var(--accent-gold)] bg-[var(--bg-elevated)] px-2 py-0.5 rounded-md border border-[var(--border-strong)]">1.0x Pts</span>
             </div>
 
             <!-- Samurai 5-Grid Mini-Radar Seçici Bar -->
@@ -507,7 +507,7 @@ export const UIManager = {
     if (levelEl) levelEl.innerText = `${t('label_level')} ${stats.level}`;
     if (goldEl) goldEl.innerText = `${stats.gold} ${t('label_gold')}`;
     if (avatarEl) avatarEl.innerHTML = renderAvatarSVG(stats.avatar || 'av_prism', 36);
-    if (titleEl) titleEl.innerHTML = renderRankBadgeSVG(stats.title || 'Çırak');
+    if (titleEl) titleEl.innerHTML = renderRankBadgeSVG(translateRankName(stats.title || 'Çırak'));
     if (completedEl) completedEl.innerText = stats.totalCompleted.toString();
     if (duelEl) duelEl.innerText = t('duel_wl', { w: stats.duelWins, l: stats.duelLosses });
     if (pvpMmrEl) pvpMmrEl.innerText = `${stats.duelMmr} MMR`;
@@ -999,7 +999,9 @@ export const UIManager = {
 
     const diff = SudokuGen.getDifficulty(currentLevel);
     if (targetLabel) {
-      targetLabel.innerText = `${t('label_level')} ${currentLevel} • ${t('diff_' + diff).toUpperCase()}`;
+      const currentLang = getLang();
+      const diffUpper = currentLang === 'tr' ? t('diff_' + diff).toLocaleUpperCase('tr-TR') : t('diff_' + diff).toUpperCase();
+      targetLabel.innerText = `${t('label_level')} ${currentLevel} • ${diffUpper}`;
     }
 
     if (biomeTitle) {

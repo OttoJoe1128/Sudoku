@@ -62,7 +62,7 @@ export const leaderboardTemplate = `
             <span id="lb-header-right" data-i18n="lb_tab_level">Seviye</span>
         </div>
         <div id="leaderboard-list" class="flex-1 overflow-y-auto space-y-2 pr-1 hidden-scrollbar">
-            <div class="text-center text-[var(--text-secondary)] py-10 font-bold animate-pulse">Liderler yükleniyor...</div>
+            <div class="text-center text-[var(--text-secondary)] py-10 font-bold animate-pulse" data-i18n="lb_loading">Liderler yükleniyor...</div>
         </div>
     </div>
 </div>

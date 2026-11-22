@@ -521,7 +521,8 @@ export function initModalsController(callbacks: {
   const openAndRenderAchievements = () => {
     const badges = AchievementManager.getAllBadgesWithStatus(
       UserManager.getCurrentLevel(),
-      UserManager.getGold()
+      UserManager.getGold(),
+      UserManager.getTotalCompleted()
     );
 
     const unclaimedCount = badges.filter(b => b.isUnlocked && !b.isClaimed).length;

@@ -12,12 +12,29 @@ export function getSelectedMapVariant(): SudokuVariant {
   return selectedMapVariant;
 }
 
+export function refreshMapLanguageUI(): void {
+  const mapContainer = document.getElementById('view-map');
+  if (!mapContainer || mapContainer.classList.contains('hidden')) return;
+
+  if (storedGetRuleDescription) {
+    const descEl = document.getElementById('map-variant-rule-desc');
+    if (descEl) descEl.innerText = storedGetRuleDescription(selectedMapVariant);
+  }
+
+  if (storedOnStartLevel) {
+    renderMapPathUI(storedOnStartLevel, false);
+  }
+}
+
 export function openMapAtLevel(
   variant: SudokuVariant,
   highlightLevel?: number,
   onStartLevel?: (level: number, diff: 'basit' | 'orta' | 'zor', variant: SudokuVariant) => void
 ): void {
-  const startFn = onStartLevel || storedOnStartLevel;
+  if (onStartLevel) {
+    storedOnStartLevel = onStartLevel;
+  }
+  const startFn = storedOnStartLevel;
   if (!startFn) return;
 
   selectedMapVariant = variant;

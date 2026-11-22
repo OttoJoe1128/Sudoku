@@ -1,6 +1,7 @@
 import { UIManager } from '../ui/uiManager';
 import { SoundManager } from '../engine/soundManager';
 import { t } from '../i18n/translations';
+import { startAppTour } from './appTourController';
 
 let currentStep = 1;
 
@@ -182,7 +183,16 @@ export function openOnboardingModal(): void {
   UIManager.toggleModal('onboarding-modal', true);
   renderOnboardingStep(1);
 
-  document.getElementById('btn-onboarding-skip')?.addEventListener('click', () => {
-    closeOnboardingModal();
-  });
+  const skipBtn = document.getElementById('btn-onboarding-skip');
+  if (skipBtn) {
+    skipBtn.onclick = () => closeOnboardingModal();
+  }
+
+  const tourBtn = document.getElementById('btn-start-app-tour');
+  if (tourBtn) {
+    tourBtn.onclick = () => {
+      closeOnboardingModal();
+      startAppTour();
+    };
+  }
 }

@@ -19,7 +19,7 @@ export const secondChanceModalTemplate = `
     <div class="w-full flex flex-col gap-2.5 mt-1">
       <button id="btn-revive-gold" class="w-full bg-[var(--bg-elevated)] hover:bg-[var(--bg-card-hover)] border-2 border-[var(--accent-gold)] text-[var(--text-primary)] font-black py-3 px-4 rounded-2xl shadow-md active:scale-95 transition-all text-xs flex flex-col items-center justify-center">
         <span data-i18n="sc_btn_gold">🪙 50 Altın ile Devam Et</span>
-        <span id="revive-gold-balance" class="text-[10px] text-[var(--accent-gold)] font-bold mt-0.5 opacity-90">Mevcut Altın: 100</span>
+        <span id="revive-gold-balance" class="text-[10px] text-[var(--accent-gold)] font-bold mt-0.5 opacity-90">🪙 100</span>
       </button>
 
       <button id="btn-revive-ad" class="w-full bg-[var(--accent-gold)] hover:brightness-110 text-[var(--text-on-gold)] font-black py-3.5 px-4 rounded-2xl shadow-md active:scale-95 transition-all text-xs flex items-center justify-center gap-2">

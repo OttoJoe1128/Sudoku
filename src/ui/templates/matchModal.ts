@@ -21,32 +21,32 @@ export const matchModalTemplate = `
         <div class="mb-2.5 w-full">
             <p class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-wider text-left mb-1 flex justify-between items-center">
                 <span data-i18n="select_discipline">Oyun Disiplini</span>
-                <span id="arena-variant-multiplier-badge" class="text-[var(--accent-gold)] font-bold">1.0x Puan</span>
+                <span id="arena-variant-multiplier-badge" class="text-[var(--accent-gold)] font-bold">1.0x Pts</span>
             </p>
             <div class="grid grid-cols-5 gap-1.5 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-1.5 rounded-2xl mb-1.5">
-                <button id="arena-variant-classic" data-variant="classic" class="arena-variant-btn p-1.5 rounded-xl bg-[var(--bg-card)] text-[var(--accent-gold)] border border-[var(--border-strong)] shadow-sm flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Klasik">
+                <button id="arena-variant-classic" data-variant="classic" class="arena-variant-btn p-1.5 rounded-xl bg-[var(--bg-card)] text-[var(--accent-gold)] border border-[var(--border-strong)] shadow-sm flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Klasik Sudoku" data-i18n-title="var_classic_full">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
                     <span class="text-[9px] font-black leading-none" data-i18n="var_classic">Klasik</span>
                 </button>
-                <button id="arena-variant-irregular" data-variant="irregular" class="arena-variant-btn p-1.5 rounded-xl bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-card)] flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Parçalı">
+                <button id="arena-variant-irregular" data-variant="irregular" class="arena-variant-btn p-1.5 rounded-xl bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-card)] flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Parçalı Sudoku" data-i18n-title="var_irregular_full">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6v6H4zM10 10h6v6h-6zM14 4h6v6H4z"/></svg>
                     <span class="text-[9px] font-bold leading-none" data-i18n="var_irregular">Parçalı</span>
                 </button>
-                <button id="arena-variant-killer" data-variant="killer" class="arena-variant-btn p-1.5 rounded-xl bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-card)] flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Hesap">
+                <button id="arena-variant-killer" data-variant="killer" class="arena-variant-btn p-1.5 rounded-xl bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-card)] flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Hesap Sudoku" data-i18n-title="var_killer_full">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke-dasharray="2 2" d="M3 3h18v18H3z"/><path d="M7 7h10L10 12l7 5H7"/></svg>
                     <span class="text-[9px] font-bold leading-none" data-i18n="var_killer">Hesap</span>
                 </button>
-                <button id="arena-variant-wordoku" data-variant="wordoku" class="arena-variant-btn p-1.5 rounded-xl bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-card)] flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Harfli">
+                <button id="arena-variant-wordoku" data-variant="wordoku" class="arena-variant-btn p-1.5 rounded-xl bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-card)] flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Harfli Sudoku" data-i18n-title="var_wordoku_full">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7l-4 10h8M9 13h6"/></svg>
                     <span class="text-[9px] font-bold leading-none" data-i18n="var_wordoku">Harfli</span>
                 </button>
-                <button id="arena-variant-samurai" data-variant="samurai" class="arena-variant-btn p-1.5 rounded-xl bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-card)] flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Samurai">
+                <button id="arena-variant-samurai" data-variant="samurai" class="arena-variant-btn p-1.5 rounded-xl bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-card)] flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-transform" title="Samurai 5-Grid" data-i18n-title="var_samurai_full">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="8" height="8" rx="1"/><rect x="2" y="2" width="6" height="6" rx="1"/><rect x="16" y="2" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="16" y="16" width="6" height="6" rx="1"/></svg>
                     <span class="text-[9px] font-bold leading-none" data-i18n="var_samurai">Samurai</span>
                 </button>
             </div>
             <!-- Sade Kural Açıklama Kutusu -->
-            <div id="arena-variant-rule-desc" class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl p-2 text-left text-[10px] font-medium text-[var(--text-primary)] leading-snug">
+            <div id="arena-variant-rule-desc" class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl p-2 text-left text-[10px] font-medium text-[var(--text-primary)] leading-snug" data-i18n="rule_classic">
                 Her satır, sütun ve 3x3 karede 1-9 rakamları birer kez yer almalıdır.
             </div>
         </div>
@@ -119,7 +119,7 @@ export const matchModalTemplate = `
         <!-- Arama Durum Göstergesi -->
         <div id="match-search-status-box" class="hidden flex-col items-center gap-2 py-3 bg-[var(--bg-elevated)] border border-[var(--border-strong)] rounded-2xl mt-2">
             <div class="w-6 h-6 border-2 border-[var(--accent-gold)] border-t-transparent rounded-full animate-spin"></div>
-            <p id="match-search-status-text" class="text-xs font-bold text-[var(--accent-gold)] animate-pulse">Açık maçlar taranıyor...</p>
+            <p id="match-search-status-text" class="text-xs font-bold text-[var(--accent-gold)] animate-pulse" data-i18n="match_searching">Searching open matches...</p>
         </div>
     </div>
 </div>

@@ -9,8 +9,8 @@ export const menuTemplate = `
                 ${renderAvatarSVG('av_prism', 24)}
             </div>
             <div class="truncate">
-                <p id="menu-player-title" class="text-[10px] text-[var(--accent-gold)] font-bold uppercase tracking-wider block truncate">Çırak</p>
-                <p id="menu-player-name" class="font-black text-[var(--text-primary)] text-sm tracking-wide truncate">Misafir</p>
+                <p id="menu-player-title" class="text-[10px] text-[var(--accent-gold)] font-bold uppercase tracking-wider block truncate">Apprentice</p>
+                <p id="menu-player-name" class="font-black text-[var(--text-primary)] text-sm tracking-wide truncate" data-i18n="menu_guest">Guest</p>
             </div>
         </div>
 
@@ -28,7 +28,7 @@ export const menuTemplate = `
             </button>
 
             <!-- Altın Kapsülü -->
-            <div class="bg-[var(--bg-elevated)] text-[var(--accent-gold)] font-black px-2.5 py-1.5 rounded-xl text-xs border border-[var(--border-strong)] shadow-sm flex items-center gap-1 shrink-0">
+            <div id="menu-gold-capsule" class="bg-[var(--bg-elevated)] text-[var(--accent-gold)] font-black px-2.5 py-1.5 rounded-xl text-xs border border-[var(--border-strong)] shadow-sm flex items-center gap-1 shrink-0">
                 ${Icons.coin}
                 <span id="menu-gold" class="font-mono font-black text-xs sm:text-sm text-[var(--text-primary)]">100</span>
             </div>
@@ -56,7 +56,7 @@ export const menuTemplate = `
 
     <!-- Başparmak Bölgesi Ana Aksiyonlar -->
     <div class="flex flex-col gap-3 w-full mt-1">
-        <!-- Birincil Aksiyon: HIZLI OYNA / DEVAM ET (Ekrandaki TEK Dolu Altın Buton) -->
+        <!-- 1. Birincil Aksiyon: HIZLI OYNA / DEVAM ET (Ekrandaki TEK Dolu Altın Buton) -->
         <button id="btn-quick-play" class="w-full bg-[var(--accent-gold)] text-[var(--text-on-gold)] rounded-3xl px-5 py-4 shadow-lg active:scale-[0.98] transition-all flex items-center justify-between cursor-pointer group">
             <div class="text-left">
                 <span id="quick-play-title" class="text-xl font-black block leading-tight tracking-wide uppercase">OYNA</span>
@@ -67,7 +67,7 @@ export const menuTemplate = `
             </div>
         </button>
 
-        <!-- İkincil Aksiyon: Yeni Oyun (Çerçeveli Sade Kart) -->
+        <!-- 2. İkincil Aksiyon: Yeni Oyun (Çerçeveli Sade Kart) -->
         <button id="btn-new-game" class="w-full bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] rounded-2xl px-5 py-3.5 border border-[var(--border-strong)] shadow-sm active:scale-[0.98] transition-all flex items-center justify-between group">
             <div class="text-left">
                 <span class="text-sm font-black block text-[var(--text-primary)]" data-i18n="menu_new_game_title">+ Yeni Oyun</span>
@@ -76,37 +76,43 @@ export const menuTemplate = `
             <span class="text-sm text-[var(--accent-gold)] group-hover:translate-x-1 transition-transform">➔</span>
         </button>
 
-        <!-- Koşullu Kayıtlı Oyunlar Şeridi (Yalnızca Yarım Kalan Oyun Varsa Görünür) -->
-        <button id="btn-open-saved-games" class="hidden w-full bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-2xl p-3 justify-between items-center shadow-sm text-xs font-black transition-all active:scale-[0.98]">
-            <div class="flex items-center gap-2">
-                <span class="text-base text-[var(--accent-gold)]">${Icons.target}</span>
-                <span id="saved-games-count-label" data-i18n="menu_active_games_title">Aktif Oyunlarım</span>
+        <!-- 3. Üçüncül Aksiyon: Düello Arenası (Hafif Altın Parıltılı Nötr Kart) -->
+        <button id="btn-open-match" class="w-full bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] rounded-2xl px-5 py-3.5 border border-[var(--border-strong)] ring-1 ring-[var(--accent-gold)]/45 shadow-md active:scale-[0.98] transition-all flex items-center justify-between group relative overflow-hidden">
+            <span class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[var(--accent-gold)] to-transparent animate-pulse opacity-75"></span>
+            <div class="text-left">
+                <span class="text-sm font-black block text-[var(--text-primary)] flex items-center gap-1.5" data-i18n="menu_duel_arena">Düello Arenası</span>
+                <span class="text-[11px] font-medium text-[var(--accent-gold)] block mt-0.5" data-i18n="menu_arena_sub">Canlı PvP • YZ Rakipler</span>
             </div>
-            <span class="text-[var(--text-secondary)] font-bold text-xs">➔</span>
+            <span class="text-sm text-[var(--accent-gold)] group-hover:translate-x-1 transition-transform flex items-center gap-1">${Icons.sword} ➔</span>
+        </button>
+
+        <!-- 4. Koşullu Kayıtlı Oyunlar Şeridi (Yalnızca Yarım Kalan Oyun Varsa Görünür) -->
+        <button id="btn-open-saved-games" class="hidden w-full bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-2xl p-3.5 justify-between items-center shadow-sm text-xs font-black transition-all active:scale-[0.98]">
+            <div class="flex items-center gap-2 shrink-0">
+                <span class="text-base text-[var(--accent-gold)] shrink-0">${Icons.target}</span>
+                <span id="saved-games-count-label" data-i18n="menu_active_games_title" class="truncate">Aktif Oyunlarım</span>
+            </div>
+            <span class="text-[var(--text-secondary)] font-bold text-xs shrink-0">➔</span>
         </button>
     </div>
 
-    <!-- Floating Bottom Dock (Ekranın En Altındaki Alt Bar: 5 Eşit Sekme) -->
+    <!-- Floating Bottom Dock (Ekranın En Altındaki Alt Bar: 4 Eşit Sekme) -->
     <div class="fixed bottom-3 left-1/2 -translate-x-1/2 w-full max-w-[440px] px-4 z-40">
-        <div class="bg-[var(--bg-elevated)]/90 backdrop-blur-md border border-[var(--border-strong)] p-1.5 rounded-3xl shadow-2xl grid grid-cols-5 gap-1">
-            <button id="btn-open-map" class="hover:bg-[var(--bg-card-hover)] p-2 rounded-2xl text-center font-bold text-xs flex flex-col items-center gap-0.5 active:scale-95 transition-transform text-[var(--text-primary)] min-w-0">
+        <div class="bg-[var(--bg-elevated)]/90 backdrop-blur-md border border-[var(--border-strong)] p-1.5 rounded-3xl shadow-2xl grid grid-cols-4 gap-1.5">
+            <button id="btn-open-map" class="hover:bg-[var(--bg-card-hover)] p-2.5 rounded-2xl text-center font-bold text-xs flex flex-col items-center gap-0.5 active:scale-95 transition-transform text-[var(--text-primary)] min-w-0">
                 <span class="text-base text-[var(--accent-gold)] shrink-0">${Icons.map}</span>
                 <span class="text-[10px] truncate max-w-full" data-i18n="tag_map">Harita</span>
             </button>
-            <button id="btn-open-match" class="hover:bg-[var(--bg-card-hover)] p-2 rounded-2xl text-center font-bold text-xs flex flex-col items-center gap-0.5 active:scale-95 transition-transform text-[var(--text-primary)] min-w-0">
-                <span class="text-base text-[var(--accent-gold)] shrink-0">${Icons.sword}</span>
-                <span class="text-[10px] truncate max-w-full" data-i18n="nav_arena">Arena</span>
-            </button>
-            <button id="btn-leaderboard" class="hover:bg-[var(--bg-card-hover)] p-2 rounded-2xl text-center font-bold text-xs flex flex-col items-center gap-0.5 active:scale-95 transition-transform text-[var(--text-primary)] min-w-0">
+            <button id="btn-leaderboard" class="hover:bg-[var(--bg-card-hover)] p-2.5 rounded-2xl text-center font-bold text-xs flex flex-col items-center gap-0.5 active:scale-95 transition-transform text-[var(--text-primary)] min-w-0">
                 <span class="text-base text-[var(--accent-gold)] shrink-0">${Icons.trophy}</span>
                 <span class="text-[10px] truncate max-w-full" data-i18n="nav_rank">Sıralama</span>
             </button>
-            <button id="btn-achievements" class="hover:bg-[var(--bg-card-hover)] p-2 rounded-2xl text-center font-bold text-xs flex flex-col items-center gap-0.5 active:scale-95 transition-transform text-[var(--text-primary)] relative min-w-0">
+            <button id="btn-achievements" class="hover:bg-[var(--bg-card-hover)] p-2.5 rounded-2xl text-center font-bold text-xs flex flex-col items-center gap-0.5 active:scale-95 transition-transform text-[var(--text-primary)] relative min-w-0">
                 <span class="text-base text-[var(--accent-gold)] shrink-0">${Icons.crown}</span>
                 <span class="text-[10px] truncate max-w-full" data-i18n="menu_badges">Rozetler</span>
                 <span id="badge-notify-dot" class="hidden absolute top-1.5 right-3 w-2 h-2 rounded-full bg-rose-500"></span>
             </button>
-            <button id="btn-shop" class="hover:bg-[var(--bg-card-hover)] p-2 rounded-2xl text-center font-bold text-xs flex flex-col items-center gap-0.5 active:scale-95 transition-transform text-[var(--text-primary)] min-w-0">
+            <button id="btn-shop" class="hover:bg-[var(--bg-card-hover)] p-2.5 rounded-2xl text-center font-bold text-xs flex flex-col items-center gap-0.5 active:scale-95 transition-transform text-[var(--text-primary)] min-w-0">
                 <span class="text-base text-[var(--accent-cyan)] shrink-0">${Icons.dice}</span>
                 <span class="text-[10px] truncate max-w-full" data-i18n="menu_shop">Mağaza</span>
             </button>

@@ -2,6 +2,7 @@ import { collection, doc, setDoc, updateDoc, onSnapshot, getDocs, query, where, 
 import { auth, db } from '../api/firebase';
 import { SudokuGen, SudokuVariant } from './sudoku';
 import { UserManager } from '../store/userState';
+import { t } from '../i18n/translations';
 
 export interface MatchPlayer {
   uid: string;
@@ -492,7 +493,7 @@ export const MatchEngine = {
     const currentUsername = UserManager.getUsername() || 'Oyuncu';
     const currentUid = auth.currentUser ? auth.currentUser.uid : `user_${Date.now()}`;
 
-    if (onStatusUpdate) onStatusUpdate("Açık maçlar taranıyor...");
+    if (onStatusUpdate) onStatusUpdate(t('match_searching'));
 
     try {
       const q = query(

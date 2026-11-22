@@ -45,8 +45,14 @@ let matchTimeRemaining = 180;
 let onUpdateGoldDisplayCallback: (() => void) | null = null;
 let onReturnToMapCallback: ((variant: SudokuVariant, unlockedLevel?: number) => void) | null = null;
 
-export function getGameRuntimeState(): { isMatchMode: boolean; isNotesMode: boolean } {
-  return { isMatchMode, isNotesMode };
+export function getGameRuntimeState(): {
+  isMatchMode: boolean;
+  isNotesMode: boolean;
+  currentSolution: number[][];
+  initialBoard: number[][];
+  userBoard: number[][];
+} {
+  return { isMatchMode, isNotesMode, currentSolution, initialBoard, userBoard };
 }
 
 const getSamuraiCompletionStatuses = () => {
@@ -175,6 +181,17 @@ async function finishPlacementExam(completedAll: boolean): Promise<void> {
       }
     }
     if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();
+  }
+
+  if (completedAll) {
+    UserManager.incrementCompletedCategory('map');
+    AchievementManager.checkAndUnlockBadges({
+      level: res.assignedLevel,
+      gold: UserManager.getGold(),
+      totalCompleted: UserManager.getTotalCompleted(),
+      lastTimeElapsed: timeElapsed,
+      lastErrors: errors
+    });
   }
 
   const iconEl = document.getElementById('placement-result-icon');
@@ -798,7 +815,16 @@ export function startGame(
           }
 
           await UserManager.recordDuelResult(true, isBot, gainedMmr, reward);
+          const finalGold = UserManager.getGold();
           if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();
+
+          AchievementManager.checkAndUnlockBadges({
+            level: UserManager.getCurrentLevel(),
+            gold: finalGold,
+            totalCompleted: UserManager.getTotalCompleted(),
+            lastTimeElapsed: timeElapsed,
+            lastErrors: errors
+          });
 
           isMatchMode = false;
           MatchEngine.clearActiveMatch();
@@ -819,10 +845,19 @@ export function startGame(
             level,
             difficulty: diff,
             variant: currentVariant,
+            category: 'custom',
             timeElapsed,
             timeFormatted: `${Math.floor(timeElapsed / 60).toString().padStart(2, '0')}:${(timeElapsed % 60).toString().padStart(2, '0')}`,
             errors,
             hintsUsed
+          });
+
+          AchievementManager.checkAndUnlockBadges({
+            level: UserManager.getCurrentLevel(),
+            gold: newGold,
+            totalCompleted: UserManager.getTotalCompleted(),
+            lastTimeElapsed: timeElapsed,
+            lastErrors: errors
           });
 
           if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();
@@ -843,6 +878,7 @@ export function startGame(
           level,
           difficulty: diff,
           variant: currentVariant,
+          category: 'map',
           timeElapsed,
           timeFormatted: `${Math.floor(timeElapsed / 60).toString().padStart(2, '0')}:${(timeElapsed % 60).toString().padStart(2, '0')}`,
           errors,
@@ -854,6 +890,7 @@ export function startGame(
         AchievementManager.checkAndUnlockBadges({
           level: nextLevel,
           gold: newGold,
+          totalCompleted: UserManager.getTotalCompleted(),
           lastTimeElapsed: timeElapsed,
           lastErrors: errors
         });
@@ -1161,8 +1198,16 @@ export function startGame(
           const reward = currentDifficulty === 'basit' ? 50 : currentDifficulty === 'orta' ? 100 : 200;
           const finalGold = UserManager.getGold() + reward;
           await UserManager.updateProgress(UserManager.getCurrentLevel(), finalGold);
-          await UserManager.recordDuelResult(true);
+          await UserManager.recordDuelResult(true, !!activeMatch?.player2?.isBot, 25, reward);
           if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();
+
+          AchievementManager.checkAndUnlockBadges({
+            level: UserManager.getCurrentLevel(),
+            gold: finalGold,
+            totalCompleted: UserManager.getTotalCompleted(),
+            lastTimeElapsed: timeElapsed,
+            lastErrors: errors
+          });
 
           isMatchMode = false;
           MatchEngine.clearActiveMatch();
@@ -1183,10 +1228,12 @@ export function startGame(
 
           const minutes = Math.floor(timeElapsed / 60).toString().padStart(2, '0');
           const seconds = (timeElapsed % 60).toString().padStart(2, '0');
+          const category = isCustomGameMode ? 'custom' : 'map';
           await UserManager.recordGameCompletion({
             level: currentLevelNumber,
             difficulty: currentDifficulty,
             variant: currentVariant,
+            category,
             timeElapsed,
             timeFormatted: `${minutes}:${seconds}`,
             errors,
@@ -1194,8 +1241,9 @@ export function startGame(
           });
 
           AchievementManager.checkAndUnlockBadges({
-            level: nextLevel,
+            level: isCustomGameMode ? userLvl : nextLevel,
             gold: finalGold,
+            totalCompleted: UserManager.getTotalCompleted(),
             lastTimeElapsed: timeElapsed,
             lastErrors: errors
           });
