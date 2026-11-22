@@ -271,6 +271,7 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     tooltip_zoom_in: 'Yakınlaş',
     tooltip_zoom_out: 'Uzaklaş',
     tooltip_fit_samurai: 'Tümünü Gör (21x21)',
+    tooltip_how_to_play: 'Nasıl Oynanır?',
 
     // Dynamic Modals
     bot_prompt_title: 'SudokuMap Uzmanı ile Düello',
@@ -291,7 +292,25 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     badge_already_claimed: 'Bu rozetin ödülü zaten alındı.',
     shop_item_not_found: 'Ürün bulunamadı.',
     match_result_loss_sub: '{enemy} maçı sizden önce tamamladı.',
-    btn_view_all: 'Tümünü Gör ➔'
+    btn_view_all: 'Tümünü Gör ➔',
+
+    // Faz 2.4 İnteraktif Rehber (Onboarding) Anahtarları
+    btn_skip: 'Atla ✕',
+    onboarding_step1_title: 'Satır & Sütun Kuralı',
+    onboarding_step1_desc: 'Her satır ve sütunda 1\'den 9\'a kadar rakamlar yalnızca bir kez yer alır. Boş hücreye gelmesi gereken eksik rakamı seç!',
+    onboarding_step2_title: '3x3 Kutu Kuralı',
+    onboarding_step2_desc: 'Her 3x3 kutuda da 1\'den 9\'a rakamlar tekrar etmeden yer almalıdır. Ortadaki eksik rakamı bul!',
+    onboarding_step3_title: 'SudokuMap\'e Hazırsın!',
+    onboarding_correct_toast: '🎉 Doğru! 2. Adıma geçiliyor...',
+    onboarding_correct_step2_toast: '🎉 Harika! 3x3 Kutu Tamamlandı.',
+    onboarding_wrong_toast: '❌ Yanlış rakam! Tekrar deneyin.',
+    onboarding_summary_1_title: 'OYNA / DEVAM ET',
+    onboarding_summary_1_desc: 'Tek dokunuşla kaldığın yerden veya sıradaki seviyeden başla.',
+    onboarding_summary_2_title: '+ Yeni Oyun',
+    onboarding_summary_2_desc: 'İstediğin zaman Kolay/Orta/Zor veya 5 farklı Sudoku modunda antrenman yap.',
+    onboarding_summary_3_title: 'Not (Kalem) Modu',
+    onboarding_summary_3_desc: 'Emin olmadığın hücrelere küçük aday rakamlar not al.',
+    btn_start_playing: 'Hemen Başla ➔'
   },
   en: {
     // Main Menu
@@ -563,6 +582,7 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     tooltip_zoom_in: 'Zoom In',
     tooltip_zoom_out: 'Zoom Out',
     tooltip_fit_samurai: 'Fit All (21x21)',
+    tooltip_how_to_play: 'How to Play',
 
     // Dynamic Modals
     bot_prompt_title: 'Duel with SudokuMap Expert',
@@ -583,7 +603,25 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     badge_already_claimed: 'Reward already claimed.',
     shop_item_not_found: 'Item not found.',
     match_result_loss_sub: '{enemy} finished the puzzle before you.',
-    btn_view_all: 'View All ➔'
+    btn_view_all: 'View All ➔',
+
+    // Faz 2.4 Interactive Onboarding Keys
+    btn_skip: 'Skip ✕',
+    onboarding_step1_title: 'Row & Column Rule',
+    onboarding_step1_desc: 'Each row and column must contain numbers 1-9 without duplicates. Select the missing number!',
+    onboarding_step2_title: '3x3 Box Rule',
+    onboarding_step2_desc: 'Each 3x3 box must contain numbers 1-9 without duplicates. Find the missing center number!',
+    onboarding_step3_title: 'You\'re Ready for SudokuMap!',
+    onboarding_correct_toast: '🎉 Correct! Moving to Step 2...',
+    onboarding_correct_step2_toast: '🎉 Great! 3x3 Box Completed.',
+    onboarding_wrong_toast: '❌ Wrong number! Try again.',
+    onboarding_summary_1_title: 'PLAY / CONTINUE',
+    onboarding_summary_1_desc: 'One-tap resume or start your next journey level.',
+    onboarding_summary_2_title: '+ New Game',
+    onboarding_summary_2_desc: 'Practice anytime in Easy/Medium/Hard or 5 Sudoku variants.',
+    onboarding_summary_3_title: 'Notes (Pencil) Mode',
+    onboarding_summary_3_desc: 'Take small candidate notes in uncertain cells.',
+    btn_start_playing: 'Start Playing ➔'
   }
 };
 

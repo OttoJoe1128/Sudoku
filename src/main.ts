@@ -16,6 +16,7 @@ import { initArenaController, getSelectedArenaVariant, handleIncomingChallenge, 
 import { initModalsController, getSelectedCustomVariant, getSelectedCustomTimeSec, openPlayerProfile } from './controllers/modalsController';
 import { initGameController, startGame, startPlacementExam, handleBotMatchProgress, handleExitGameRequest, getGameRuntimeState } from './controllers/gameController';
 import { AdService } from './services/adService';
+import { openOnboardingModal, isOnboardingDone } from './controllers/onboardingController';
 
 // UI Binişi & Öz-Teşhis
 UIManager.mountUI();
@@ -256,6 +257,10 @@ document.getElementById('btn-sound-toggle')?.addEventListener('click', () => {
   UIManager.showToast(isNowEnabled ? t('toast_sound_on') : t('toast_sound_off'), 'info');
 });
 
+document.getElementById('btn-open-help')?.addEventListener('click', () => {
+  openOnboardingModal();
+});
+
 document.addEventListener('pointerdown', () => {
   SoundManager.startBgm();
 }, { once: true });
@@ -353,7 +358,9 @@ document.getElementById('save-username')?.addEventListener('click', async () => 
     UIManager.showToast(t('toast_username_updated', { username: user.username }), 'success');
 
     setTimeout(() => {
-      if (!UserManager.getNotificationsEnabled() && localStorage.getItem('sudoku_notify_prompted') !== '1') {
+      if (!isOnboardingDone()) {
+        openOnboardingModal();
+      } else if (!UserManager.getNotificationsEnabled() && localStorage.getItem('sudoku_notify_prompted') !== '1') {
         UIManager.promptNotificationPermission('startup');
       }
     }, 1200);

@@ -250,11 +250,17 @@ export function updateSavedGamesCountUI(): void {
   }
 
   if (totalCount === 0) {
-    if (savedGamesBtn) savedGamesBtn.classList.add('hidden');
+    if (savedGamesBtn) {
+      savedGamesBtn.classList.add('hidden');
+      savedGamesBtn.classList.remove('flex');
+    }
     if (quickTitle) quickTitle.innerText = t('menu_quick_play');
     if (quickSub) quickSub.innerText = `${t('label_level')} ${classicLvl} • ${t('var_classic')}`;
   } else {
-    if (savedGamesBtn) savedGamesBtn.classList.remove('hidden');
+    if (savedGamesBtn) {
+      savedGamesBtn.classList.remove('hidden');
+      savedGamesBtn.classList.add('flex');
+    }
     if (countLabel) countLabel.innerText = t('menu_active_games_list_label', { count: totalCount });
 
     const sorted = [...savedList].sort((a, b) => (b.updatedAtMs || 0) - (a.updatedAtMs || 0));

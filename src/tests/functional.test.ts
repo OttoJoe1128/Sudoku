@@ -9,6 +9,7 @@ import { Leaderboard } from '../engine/leaderboard';
 import { SudokuGen } from '../engine/sudoku';
 import { setLang, getLang, t, applyStaticTranslations, TRANSLATIONS } from '../i18n/translations';
 import { formatDisplayName, sanitizeUsername } from '../utils/sanitize';
+import { isOnboardingDone, closeOnboardingModal } from '../controllers/onboardingController';
 import {
   getSavedGamesList,
   saveActiveGameRecord,
@@ -52,7 +53,22 @@ describe('Faz 2.3b İşlevsel & DOM Entegrasyon Test Paketi', () => {
       mockLocalStorage.clear();
 
       createPlacementActiveGameSave('classic', 5);
+      const key1 = 'sudoku_map_save_classic_5';
+      const raw1 = mockLocalStorage.getItem(key1);
+      if (raw1) {
+        const item1 = JSON.parse(raw1);
+        item1.updatedAtMs = 1000;
+        mockLocalStorage.setItem(key1, JSON.stringify(item1));
+      }
+
       createPlacementActiveGameSave('irregular', 20);
+      const key2 = 'sudoku_map_save_irregular_20';
+      const raw2 = mockLocalStorage.getItem(key2);
+      if (raw2) {
+        const item2 = JSON.parse(raw2);
+        item2.updatedAtMs = 5000;
+        mockLocalStorage.setItem(key2, JSON.stringify(item2));
+      }
 
       const list = getSavedGamesList();
       expect(list.length).toBeGreaterThanOrEqual(1);
@@ -173,6 +189,45 @@ describe('Faz 2.3b İşlevsel & DOM Entegrasyon Test Paketi', () => {
       const toggled = SoundManager.toggle();
       expect(toggled).toBe(!current);
       expect(localStorage.getItem('sudoku_sound_enabled')).toBe(toggled ? 'true' : 'false');
+    });
+  });
+
+  describe('7. İnteraktif Rehber (Onboarding) & Bayrak Yönetimi', () => {
+    it('onboarding çeviri anahtarları hem tr hem en tarafında eksiksiz tanımlanmalı', () => {
+      const keys = [
+        'tooltip_how_to_play',
+        'btn_skip',
+        'onboarding_step1_title',
+        'onboarding_step1_desc',
+        'onboarding_step2_title',
+        'onboarding_step2_desc',
+        'onboarding_step3_title',
+        'onboarding_correct_toast',
+        'onboarding_correct_step2_toast',
+        'onboarding_wrong_toast',
+        'onboarding_summary_1_title',
+        'onboarding_summary_1_desc',
+        'onboarding_summary_2_title',
+        'onboarding_summary_2_desc',
+        'onboarding_summary_3_title',
+        'onboarding_summary_3_desc',
+        'btn_start_playing'
+      ];
+
+      setLang('tr');
+      keys.forEach(k => expect(t(k)).not.toBe(k));
+
+      setLang('en');
+      keys.forEach(k => expect(t(k)).not.toBe(k));
+    });
+
+    it('closeOnboardingModal sudoku_onboarding_done bayrağını 1 olarak yazmalı', () => {
+      mockLocalStorage.clear();
+      expect(isOnboardingDone()).toBe(false);
+
+      closeOnboardingModal();
+      expect(isOnboardingDone()).toBe(true);
+      expect(localStorage.getItem('sudoku_onboarding_done')).toBe('1');
     });
   });
 });
