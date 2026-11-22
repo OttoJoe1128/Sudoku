@@ -1,35 +1,12 @@
 import { UIManager } from '../ui/uiManager';
-
-let audioCtx: AudioContext | null = null;
-function getAudioContext(): AudioContext | null {
-  if (typeof window === 'undefined') return null;
-  if (!audioCtx) {
-    const AudioCtxClass = window.AudioContext || (window as any).webkitAudioContext;
-    if (AudioCtxClass) {
-      audioCtx = new AudioCtxClass();
-    }
-  }
-  if (audioCtx && audioCtx.state === 'suspended') {
-    audioCtx.resume();
-  }
-  return audioCtx;
-}
+import { SoundManager } from './soundManager';
 
 export const GameEngine = {
   playSound(type: 'tap' | 'error' | 'win') {
     try {
-      const ctx = getAudioContext();
-      if (!ctx) return;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      if (type === 'tap') osc.frequency.value = 600;
-      else if (type === 'error') osc.frequency.value = 180;
-      else osc.frequency.value = 880;
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.15);
+      if (type === 'tap') SoundManager.playNumber();
+      else if (type === 'error') SoundManager.playError();
+      else if (type === 'win') SoundManager.playWin();
     } catch {
       // ignore audio errors
     }

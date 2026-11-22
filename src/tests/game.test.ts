@@ -34,8 +34,8 @@ describe('XSS Security & Input Sanitization', () => {
     const clean = sanitizeUsername(raw);
     expect(clean).not.toContain('<');
     expect(clean).not.toContain('>');
-    expect(clean).toBe('bOttob is a very lon');
-    expect(clean.length).toBeLessThanOrEqual(20);
+    expect(clean).toBe('bOttobisaver');
+    expect(clean.length).toBeLessThanOrEqual(12);
   });
 });
 

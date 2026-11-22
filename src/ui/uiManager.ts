@@ -23,7 +23,7 @@ import { BotCharacter } from '../engine/botData';
 import { SudokuVariant, KillerCage, SudokuGen } from '../engine/sudoku';
 import { SamuraiViewport, renderSamuraiBoard, SamuraiBoardData } from './samuraiViewport';
 import { SoundManager } from '../engine/soundManager';
-import { escapeHTML } from '../utils/sanitize';
+import { escapeHTML, formatDisplayName } from '../utils/sanitize';
 
 export interface SavedGameRecord {
   id: string;
@@ -232,17 +232,17 @@ export const UIManager = {
                 </div>
             </div>
 
-            <div class="w-full flex justify-between items-center mb-3">
-                <button id="btn-back-menu" class="bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] px-3.5 py-1.5 rounded-xl font-bold text-xs text-[var(--text-primary)] transition-colors flex items-center gap-1">
-                    <svg class="w-4 h-4 text-[var(--accent-gold)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+            <div class="w-full flex flex-nowrap justify-between items-center gap-1 sm:gap-2 mb-3 min-w-0">
+                <button id="btn-back-menu" class="bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] px-2 sm:px-3.5 py-1 sm:py-1.5 rounded-xl font-bold text-[11px] sm:text-xs text-[var(--text-primary)] transition-colors flex items-center gap-1 whitespace-nowrap shrink-0">
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--accent-gold)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
                     <span data-i18n="btn_menu">Menü</span>
                 </button>
-                <div class="bg-[var(--bg-card)] text-[var(--accent-gold)] px-3 py-1 rounded-xl font-black text-xs border border-[var(--border-strong)] shadow-sm flex items-center gap-1.5">
+                <div class="bg-[var(--bg-card)] text-[var(--accent-gold)] px-2 sm:px-3 py-0.5 sm:py-1 rounded-xl font-black text-[11px] sm:text-xs border border-[var(--border-strong)] shadow-sm flex items-center gap-1 whitespace-nowrap shrink-0">
                     ${Icons.coin}
                     <span id="game-gold" class="font-mono font-black text-[var(--text-primary)]">100</span>
                 </div>
-                <div id="game-errors" class="text-rose-400 font-bold text-xs sm:text-sm">Hata: 0/3</div>
-                <div id="game-timer" class="font-mono font-bold text-base sm:text-lg text-[var(--text-primary)]">00:00</div>
+                <div id="game-errors" class="text-rose-400 font-bold text-[11px] sm:text-sm whitespace-nowrap shrink-0">Hata: 0/3</div>
+                <div id="game-timer" class="font-mono font-bold text-xs sm:text-lg text-[var(--text-primary)] whitespace-nowrap shrink-0">00:00</div>
             </div>
 
             <!-- Disiplin Vektör Amblem Rozeti -->
@@ -255,7 +255,7 @@ export const UIManager = {
             <div id="samurai-radar-bar" class="hidden w-full grid-cols-5 gap-1 mb-2"></div>
 
             <!-- Sudoku Grid -->
-            <div id="sudoku-grid" class="grid grid-cols-9 gap-[1px] bg-[var(--board-bg)] p-[2px] rounded-2xl shadow-2xl mb-3 border-2 border-[var(--border-strong)] relative"></div>
+            <div id="sudoku-grid" class="grid grid-cols-9 grid-rows-9 gap-0 bg-[var(--board-bg)] p-[2px] rounded-2xl shadow-2xl mb-3 border-2 border-[var(--border-strong)] relative overflow-hidden w-full max-w-[380px] aspect-square"></div>
 
             <!-- Samurai 21x21 Uzay Boşluğu Viewport -->
             <div id="samurai-viewport" class="hidden w-full flex-1 min-h-[320px] max-h-[430px] rounded-2xl bg-[var(--board-bg)] border-2 border-[var(--border-strong)] shadow-2xl mb-3 relative overflow-hidden"></div>
@@ -1219,16 +1219,18 @@ export const UIManager = {
         rowBorderClass = "border-amber-700/40";
       }
 
+      const displayName = formatDisplayName(p.username, p.uid);
+
       return `
-        <div data-lb-index="${i}" class="leaderboard-row-item flex justify-between items-center p-3 bg-[var(--bg-card)] border ${rowBorderClass} rounded-xl shadow-sm cursor-pointer active:scale-[0.98] transition-all">
-          <div class="flex items-center gap-2">
-            <span class="w-6 h-6 rounded-full flex items-center justify-center font-black text-xs ${rankBadgeClass}">${i + 1}</span>
-            <div>
-              <p class="font-bold text-[var(--text-primary)] text-sm leading-tight">${escapeHTML(p.username)}</p>
-              <p class="text-[9px] font-black text-[var(--accent-gold)]">${renderRankBadgeSVG(calculatedTitle)}</p>
+        <div data-lb-index="${i}" class="leaderboard-row-item flex justify-between items-center p-3 bg-[var(--bg-card)] border ${rowBorderClass} rounded-xl shadow-sm cursor-pointer active:scale-[0.98] transition-all gap-2 min-w-0">
+          <div class="flex items-center gap-2 min-w-0 flex-1">
+            <span class="w-6 h-6 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${rankBadgeClass}">${i + 1}</span>
+            <div class="min-w-0 flex-1">
+              <p class="font-bold text-[var(--text-primary)] text-sm leading-tight truncate">${escapeHTML(displayName)}</p>
+              <p class="text-[9px] font-black text-[var(--accent-gold)] truncate">${renderRankBadgeSVG(calculatedTitle)}</p>
             </div>
           </div>
-          <span class="font-black text-[var(--accent-gold)] text-xs">${rightVal}</span>
+          <span class="font-black text-[var(--accent-gold)] text-xs shrink-0 whitespace-nowrap ml-2">${rightVal}</span>
         </div>
       `;
     }).join('');
@@ -1565,17 +1567,17 @@ export const UIManager = {
         if (variant === 'irregular' && regionMap) {
           const currentRegion = regionMap[r][c];
           if (c < 8 && regionMap[r][c + 1] !== currentRegion) {
-            borderRight = 'border-r-[3px] border-r-[var(--accent-gold)]';
+            borderRight = '!border-r-[3px] !border-r-[var(--accent-gold)]';
           }
           if (r < 8 && regionMap[r + 1][c] !== currentRegion) {
-            borderBottom = 'border-b-[3px] border-b-[var(--accent-gold)]';
+            borderBottom = '!border-b-[3px] !border-b-[var(--accent-gold)]';
           }
         } else {
-          if (c === 2 || c === 5) borderRight = 'border-r-4 border-r-[var(--accent-gold)]';
-          if (r === 2 || r === 5) borderBottom = 'border-b-4 border-b-[var(--accent-gold)]';
+          if (c === 2 || c === 5) borderRight = '!border-r-[3px] !border-r-[var(--accent-gold)]';
+          if (r === 2 || r === 5) borderBottom = '!border-b-[3px] !border-b-[var(--accent-gold)]';
         }
 
-        cell.className = `w-9 h-9 sm:w-11 sm:h-11 aspect-square border border-[var(--border-subtle)] flex items-center justify-center text-lg select-none cursor-pointer active:scale-95 transition-all relative ${stateClass} ${borderRight} ${borderBottom}`;
+        cell.className = `w-full h-full min-w-0 min-h-0 box-border border border-[var(--border-subtle)] flex items-center justify-center text-lg select-none cursor-pointer active:scale-95 transition-all relative ${stateClass} ${borderRight} ${borderBottom}`;
 
         // Killer Sudoku Dış Sınır Kafes Çerçevesi
         if (variant === 'killer' && cages) {

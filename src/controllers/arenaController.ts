@@ -4,7 +4,7 @@ import { UserManager } from '../store/userState';
 import { MatchEngine, MatchState, ChallengeRequest } from '../engine/matchEngine';
 import { t } from '../i18n/translations';
 import { BotCharacters, BotCharacter } from '../engine/botData';
-import { Player, SIMULATED_LOBBY_PLAYERS } from '../engine/leaderboard';
+import { Player } from '../engine/leaderboard';
 import { collection, query, limit, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../api/firebase';
 
@@ -170,63 +170,46 @@ export function loadArenaLobbyPlayers(
         }
       });
 
-      SIMULATED_LOBBY_PLAYERS.forEach(sim => {
-        if (!list.some(p => p.username === sim.username)) {
-          const title = UserManager.calculatePlayerTitle(sim.level, sim.duel_wins || 0, sim.duel_mmr || 1000, sim.total_completed || 0);
-          list.push({ ...sim, title, isSimulated: true });
-        }
-      });
-
       UIManager.renderLobbyPlayers(list, async (targetPlayer) => {
-        if (targetPlayer.isSimulated) {
-          const modeText = selectedMatchTimeSec > 0 ? `${Math.floor(selectedMatchTimeSec / 60)} Dk` : 'Süresiz';
-          UIManager.showToast(`📩 ${targetPlayer.username} davetini inceliyor (${modeText})...`, 'info');
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+          UIManager.showToast('📡 İnternet bağlantınız yok. Canlı düello daveti için çevrimiçi olmalısınız.', 'error');
+          return;
+        }
 
-          setTimeout(() => {
-            UIManager.showToast(`⚔️ ${targetPlayer.username} davetini kabul etti! Düello başlıyor...`, 'success');
-            startSimulatedMatch(targetPlayer, onStartMatchGame, onBotMatchProgress);
-          }, 1800);
-        } else {
-          if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-            UIManager.showToast('📡 İnternet bağlantınız yok. Canlı düello daveti için çevrimiçi olmalısınız.', 'error');
-            return;
-          }
+        if (!UserManager.getNotificationsEnabled()) {
+          await UIManager.promptNotificationPermission('duel');
+        }
 
-          if (!UserManager.getNotificationsEnabled()) {
-            await UIManager.promptNotificationPermission('duel');
-          }
+        try {
+          let timeoutId: ReturnType<typeof setTimeout>;
+          const sendPromise = MatchEngine.sendDirectChallenge(
+            targetPlayer.uid || targetPlayer.username,
+            targetPlayer.username,
+            currentArenaDiff,
+            selectedMatchTimeSec,
+            selectedArenaVariant
+          ).catch((e) => { throw e; });
+
+          const timeoutPromise = new Promise((_, reject) => {
+            timeoutId = setTimeout(() => reject(new Error('TIMEOUT')), 5000);
+          });
 
           try {
-            let timeoutId: ReturnType<typeof setTimeout>;
-            const sendPromise = MatchEngine.sendDirectChallenge(
-              targetPlayer.uid || targetPlayer.username,
-              targetPlayer.username,
-              currentArenaDiff,
-              selectedMatchTimeSec,
-              selectedArenaVariant
-            ).catch((e) => { throw e; });
+            await Promise.race([sendPromise, timeoutPromise]);
+          } finally {
+            clearTimeout(timeoutId!);
+          }
 
-            const timeoutPromise = new Promise((_, reject) => {
-              timeoutId = setTimeout(() => reject(new Error('TIMEOUT')), 5000);
-            });
-
-            try {
-              await Promise.race([sendPromise, timeoutPromise]);
-            } finally {
-              clearTimeout(timeoutId!);
-            }
-
-            const modeText = selectedMatchTimeSec > 0 ? `${Math.floor(selectedMatchTimeSec / 60)} Dk` : 'Süresiz';
-            UIManager.showToast(`📩 ${targetPlayer.username} adlı oyuncuya gerçek düello daveti gönderildi (${modeText})! Kabul etmesi bekleniyor...`, 'success');
-          } catch (err: any) {
-            console.warn('Düello daveti gönderilemedi:', err);
-            if (err.message === 'PENDING_EXISTS') {
-              UIManager.showToast('Bu oyuncuya zaten bekleyen bir davetiniz var.', 'info');
-            } else if (err.message === 'TIMEOUT') {
-              UIManager.showToast('Zaman aşımı: Bağlantı yavaş veya koptu. Tekrar deneyin.', 'error');
-            } else {
-              UIManager.showToast('Düello daveti gönderilemedi. Bağlantınızı kontrol edin.', 'error');
-            }
+          const modeText = selectedMatchTimeSec > 0 ? `${Math.floor(selectedMatchTimeSec / 60)} Dk` : 'Süresiz';
+          UIManager.showToast(`📩 ${targetPlayer.username} adlı oyuncuya gerçek düello daveti gönderildi (${modeText})! Kabul etmesi bekleniyor...`, 'success');
+        } catch (err: any) {
+          console.warn('Düello daveti gönderilemedi:', err);
+          if (err.message === 'PENDING_EXISTS') {
+            UIManager.showToast('Bu oyuncuya zaten bekleyen bir davetiniz var.', 'info');
+          } else if (err.message === 'TIMEOUT') {
+            UIManager.showToast('Zaman aşımı: Bağlantı yavaş veya koptu. Tekrar deneyin.', 'error');
+          } else {
+            UIManager.showToast('Düello daveti gönderilemedi. Bağlantınızı kontrol edin.', 'error');
           }
         }
       });

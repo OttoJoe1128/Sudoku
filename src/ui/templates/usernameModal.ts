@@ -13,7 +13,7 @@ export const usernameModalTemplate = `
         <p class="text-xs text-[var(--text-secondary)] mb-5 font-medium leading-relaxed" data-i18n="welcome_desc">Oyuncu profilini oluştur veya eski kullanıcı adını girerek tüm ilerlemeni anında geri getir.</p>
 
         <div class="relative w-full mb-4">
-            <input type="text" id="username-input" class="w-full bg-[var(--bg-elevated)] border-2 border-[var(--border-subtle)] rounded-2xl px-4 py-4 text-center text-lg font-black text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-[var(--accent-gold)] transition-all shadow-inner" placeholder="Kullanıcı adını yaz..." data-i18n-ph="ph_enter_username" maxlength="15">
+            <input type="text" id="username-input" class="w-full bg-[var(--bg-elevated)] border-2 border-[var(--border-subtle)] rounded-2xl px-4 py-4 text-center text-lg font-black text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-[var(--accent-gold)] transition-all shadow-inner" placeholder="Kullanıcı adını yaz..." data-i18n-ph="ph_enter_username" maxlength="12">
         </div>
 
         <button id="save-username" class="w-full bg-[var(--accent-gold)] text-[var(--text-on-gold)] font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all text-sm tracking-wide hover:brightness-110">

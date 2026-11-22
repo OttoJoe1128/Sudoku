@@ -4,7 +4,7 @@ import { GameEngine } from '../engine/gameEngine';
 import { UserManager, computeNextJourneyLevel } from '../store/userState';
 import { MatchEngine, MatchState, calculateEloChange } from '../engine/matchEngine';
 import { AchievementManager } from '../engine/achievements';
-import { saveActiveGameRecord, clearSavedGame, updateSavedGamesCountUI, clearVariantJourneySaves, clearDuelSavedGame } from './saveController';
+import { saveActiveGameRecord, clearSavedGame, updateSavedGamesCountUI, clearVariantJourneySaves, clearDuelSavedGame, createPlacementActiveGameSave } from './saveController';
 import { validateSavedGameRecord } from '../engine/saveValidator';
 import { t, getLang } from '../i18n/translations';
 import { auth } from '../api/firebase';
@@ -170,6 +170,9 @@ async function finishPlacementExam(completedAll: boolean): Promise<void> {
     await UserManager.updateVariantLevel(config.variant, res.assignedLevel, res.rewardGold);
     if (res.levelsGained > 0) {
       clearVariantJourneySaves(config.variant, res.assignedLevel - 1);
+      if (res.assignedLevel > 0) {
+        createPlacementActiveGameSave(config.variant, res.assignedLevel);
+      }
     }
     if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();
   }
@@ -847,7 +850,6 @@ export function startGame(
         });
 
         if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();
-        SoundManager.playWin();
 
         AchievementManager.checkAndUnlockBadges({
           level: nextLevel,
@@ -870,7 +872,6 @@ export function startGame(
         }
       },
       async (errCount) => {
-        SoundManager.playError();
         errors += errCount;
         updateErrorUI();
         persistCurrentGame();
@@ -980,7 +981,6 @@ export function startGame(
     );
 
     if (success) {
-      SoundManager.playNumber();
       notesBoard[r][c].clear();
 
       if (currentVariant === 'irregular' && currentRegionMap) {

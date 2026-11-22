@@ -65,7 +65,7 @@ export function hasPlayerMadeAnyMove(snapshotOrRecord: any): boolean {
 }
 
 export function isWorthKeepingSave(rec: any): boolean {
-  return hasPlayerMadeAnyMove(rec) || (typeof rec?.timeElapsed === 'number' && rec.timeElapsed >= 5);
+  return hasPlayerMadeAnyMove(rec) || (typeof rec?.timeElapsed === 'number' && rec.timeElapsed >= 5) || Boolean(rec?.isPlacementSeed);
 }
 
 export function getSavedGamesList(): SavedGameRecord[] {
@@ -407,6 +407,48 @@ export function saveActiveGameRecord(snapshot: ActiveGameSnapshot): void {
     updateSavedGamesCountUI();
   } catch (e) {
     console.error("Aktif oyun kaydı saklanamadı:", e);
+  }
+}
+
+export function createPlacementActiveGameSave(variant: SudokuVariant, level: number): void {
+  try {
+    const key = `sudoku_map_save_${variant}_${level}`;
+    if (localStorage.getItem(key)) {
+      updateSavedGamesCountUI();
+      return;
+    }
+
+    const diff = SudokuGen.getDifficulty(level);
+    const generated = SudokuGen.generateVariant(diff, variant);
+
+    const safeSamuraiBoards = variant === 'samurai' && generated.samuraiGrids ? generated.samuraiGrids.map((g: any) => ({
+      userBoard: g.puzzle.map((row: number[]) => [...row]),
+      initialBoard: g.puzzle,
+      solution: g.solution,
+      notesBoard: Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => []))
+    })) : undefined;
+
+    const saveObject = {
+      variant,
+      level,
+      diff,
+      timeElapsed: 0,
+      isPlacementSeed: true,
+      userBoard: generated.puzzle.map((row: number[]) => [...row]),
+      initialBoard: generated.puzzle,
+      currentSolution: generated.solution,
+      errors: 0,
+      notesBoard: Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => [])),
+      regionMap: generated.regionMap,
+      cages: generated.cages,
+      samuraiBoards: safeSamuraiBoards,
+      updatedAtMs: Date.now()
+    };
+
+    localStorage.setItem(key, JSON.stringify(saveObject));
+    updateSavedGamesCountUI();
+  } catch (e) {
+    console.error("Sınav sonrası aktif oyun kaydı oluşturulamadı:", e);
   }
 }
 
