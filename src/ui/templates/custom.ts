@@ -10,7 +10,7 @@ export const customModeTemplate = `
         </button>
         <div class="flex items-center gap-1.5">
             <h2 class="text-base font-black text-[var(--text-primary)]" data-i18n="menu_custom_mode_tag">Serbest Mod</h2>
-            <button id="btn-custom-info" title="Puan & Ödül Bilgisi" class="text-[var(--accent-gold)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] p-1.5 rounded-xl border border-[var(--border-strong)] text-xs font-black transition-colors">
+            <button id="btn-custom-info" title="Puan & Ödül Bilgisi" data-i18n-title="tooltip_info_rewards" class="text-[var(--accent-gold)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] p-1.5 rounded-xl border border-[var(--border-strong)] text-xs font-black transition-colors">
                 ${Icons.info}
             </button>
         </div>

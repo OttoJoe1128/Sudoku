@@ -11,7 +11,7 @@ export const mapTemplate = `
                 <span data-i18n="btn_menu">Menü</span>
             </button>
             <h2 id="map-biome-title" class="text-sm font-black text-[var(--accent-gold)] uppercase tracking-wider">ZÜMRÜT VADİ</h2>
-            <button id="btn-map-focus-current" title="Güncel Seviyeye Odaklan" class="bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-strong)] p-1.5 rounded-xl text-xs text-[var(--accent-gold)] font-black transition-transform active:scale-95 shadow">
+            <button id="btn-map-focus-current" title="Güncel Seviyeye Odaklan" data-i18n-title="tooltip_focus_level" class="bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-strong)] p-1.5 rounded-xl text-xs text-[var(--accent-gold)] font-black transition-transform active:scale-95 shadow">
                 ${Icons.target}
             </button>
         </div>

@@ -302,8 +302,8 @@ const showMatchResult = (isWin: boolean, rewardGold: number, enemyName: string) 
   const seconds = (timeElapsed % 60).toString().padStart(2, '0');
 
   if (iconEl) iconEl.innerText = isWin ? "🏆" : "💔";
-  if (titleEl) titleEl.innerText = isWin ? t('match_result_win') : "MAĞLUBİYET";
-  if (subtitleEl) subtitleEl.innerText = isWin ? `${enemyName} ${t('match_result_sub')}` : `${enemyName} rakibiniz maçı sizden önce tamamladı.`;
+  if (titleEl) titleEl.innerText = isWin ? t('match_result_win') : t('match_result_loss');
+  if (subtitleEl) subtitleEl.innerText = isWin ? `${enemyName} ${t('match_result_sub')}` : t('match_result_loss_sub', { enemy: enemyName });
   if (timeEl) timeEl.innerText = `${minutes}:${seconds}`;
   if (errorsEl) errorsEl.innerText = `${errors} / 3`;
   if (rewardEl) rewardEl.innerText = isWin ? `+${rewardGold} 🪙` : "0 🪙";
@@ -335,7 +335,7 @@ const handleMatchTimeExpired = async () => {
       await UserManager.recordDuelResult(false);
       showMatchResult(false, 0, enemyName);
     } else {
-      UIManager.showToast("⏱️ Süre Doldu! Her iki taraf da eşit sayıda hücre çözdü.", "info");
+      UIManager.showToast(t('toast_tie_time'), "info");
       UIManager.navigate('menu');
     }
   } else if (isCustomGameMode) {
@@ -377,7 +377,7 @@ export async function handleExitGameRequest(): Promise<boolean> {
     if (timerInterval) clearInterval(timerInterval);
     UIManager.hideSamuraiSpace();
     UIManager.navigate('menu');
-    UIManager.showToast("▶ Süresiz düellodan çıkıldı (ilerleme kaydedildi).", "info");
+    UIManager.showToast(t('toast_exit_unlimited_duel'), "info");
     return true;
   }
 
@@ -412,7 +412,7 @@ export async function handleExitGameRequest(): Promise<boolean> {
           MatchEngine.clearActiveMatch();
           UIManager.hideMatchHeader();
           UIManager.navigate('menu');
-          UIManager.showToast("Düellodan çekildiniz (-50 🪙 & -30 MMR)", "error");
+          UIManager.showToast(t('toast_forfeit_duel'), "error");
           resolve(true);
         };
       }
@@ -631,7 +631,7 @@ export function startGame(
             const gainedMmr = 30;
             await UserManager.recordDuelResult(true, false, gainedMmr, rewardGold);
             if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();
-            UIManager.showToast(`🏆 Rakip oyunu terk etti! Zafer sizin! (+${rewardGold} 🪙 & +30 MMR)`, "success");
+            UIManager.showToast(t('toast_enemy_forfeit', { gold: rewardGold }), "success");
             showMatchResult(true, rewardGold, updatedMatch.player1.uid === myUid ? (updatedMatch.player2?.username || 'Rakip') : updatedMatch.player1.username);
             return;
           }
@@ -669,11 +669,11 @@ export function startGame(
   const title = document.getElementById('game-title');
   if (title) {
     if (isMatchMode) {
-      title.innerText = `⚔️ Düello (${diff.toUpperCase()})`;
+      title.innerText = t('duel_diff_title', { diff: t('diff_' + diff).toUpperCase() });
     } else if (isCustomGameMode) {
       title.innerText = t('diff_' + diff);
     } else {
-      title.innerText = `Seviye ${level}`;
+      title.innerText = `${t('label_level')} ${level}`;
     }
   }
 
@@ -826,7 +826,7 @@ export function startGame(
           });
 
           if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();
-          UIManager.showToast(`🎉 Tebrikler, SERBEST MOD (${currentVariant.toUpperCase()}) Tamamlandı! +${baseReward} 🪙`, "success");
+          UIManager.showToast(t('toast_custom_complete', { variant: currentVariant.toUpperCase(), reward: baseReward }), "success");
           UIManager.navigate('menu');
           return;
         }
@@ -890,7 +890,7 @@ export function startGame(
               await UserManager.recordDuelResult(false);
               showMatchResult(false, 0, activeMatch?.player2?.username || 'Rakip');
             } else {
-              UIManager.showToast("❌ Oyun Bitti! 3 Hata Yaptınız.", "error");
+              UIManager.showToast(t('toast_game_over'), "error");
               UIManager.navigate('menu');
             }
             return;
@@ -903,8 +903,7 @@ export function startGame(
             const currentGold = UserManager.getGold();
             const goldBalEl = document.getElementById('revive-gold-balance');
             if (goldBalEl) {
-              const isEn = getLang() === 'en';
-              goldBalEl.innerText = isEn ? `Current Gold: ${currentGold}` : `Mevcut Altın: ${currentGold}`;
+              goldBalEl.innerText = t('sc_gold_balance', { gold: currentGold });
             }
 
             const btnGold = document.getElementById('btn-revive-gold');
@@ -963,7 +962,7 @@ export function startGame(
               btnGiveUp.onclick = () => {
                 UIManager.toggleModal('second-chance-modal', false);
                 clearCurrentSavedGame();
-                UIManager.showToast("❌ Oyun Bitti! 3 Hata Yaptınız.", "error");
+                UIManager.showToast(t('toast_game_over'), "error");
                 if (onReturnToMapCallback) {
                   onReturnToMapCallback(currentVariant);
                 } else {
@@ -1058,10 +1057,10 @@ export function startGame(
     hintBtn.onclick = async () => {
       const currentGold = UserManager.getGold();
       if (currentGold < 10) {
-        return UIManager.showToast("Yetersiz altın! İpucu için en az 10 🪙 gerekiyor.", "error");
+        return UIManager.showToast(t('toast_insufficient_gold_hint'), "error");
       }
       if (hintsUsed >= 5) {
-        return UIManager.showToast("İpucu sınırı doldu (Max 5/oyun)!", "error");
+        return UIManager.showToast(t('toast_hint_limit_reached'), "error");
       }
 
       let targetR = -1;
@@ -1084,7 +1083,7 @@ export function startGame(
       }
 
       if (targetR === -1 || targetC === -1) {
-        return UIManager.showToast("Tahtada doldurulacak boş hücre kalmadı!", "info");
+        return UIManager.showToast(t('toast_no_empty_cells'), "info");
       }
 
       const newGold = currentGold - 10;
@@ -1215,7 +1214,7 @@ export function startGame(
           }
         }
       } else {
-        UIManager.showToast("💡 İpucu yerleştirildi! (-10 🪙)", "success");
+        UIManager.showToast(t('toast_hint_placed'), "success");
       }
     };
   }

@@ -14,7 +14,7 @@ export const leaderboardTemplate = `
                 </p>
             </div>
             <div class="flex items-center gap-1.5">
-                <button id="refresh-leaderboard" title="Yenile" class="text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-full p-2 text-xs font-bold transition-colors">
+                <button id="refresh-leaderboard" title="Yenile" data-i18n-title="tooltip_refresh" class="text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-full p-2 text-xs font-bold transition-colors">
                     ↻
                 </button>
                 <button id="close-leaderboard" class="text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-full p-2 transition-colors">

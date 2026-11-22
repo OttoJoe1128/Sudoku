@@ -1,4 +1,5 @@
 import { UserManager } from '../store/userState';
+import { t, getLang } from '../i18n/translations';
 
 export interface ShopItem {
   id: string;
@@ -53,17 +54,20 @@ export const ShopManager = {
 
   async buyItem(itemId: string): Promise<{ success: boolean; msg: string }> {
     const item = ShopItems.find(i => i.id === itemId);
-    if (!item) return { success: false, msg: "Ürün bulunamadı." };
+    if (!item) return { success: false, msg: t('shop_item_not_found') };
+
+    const isEn = getLang() === 'en';
+    const itemName = isEn && item.nameEn ? item.nameEn : item.name;
 
     const purchased = this.getPurchasedThemes();
     if (purchased.includes(itemId)) {
       this.setActiveTheme(itemId);
-      return { success: true, msg: "Tema aktifleştirildi!" };
+      return { success: true, msg: t('shop_theme_selected', { name: itemName }) };
     }
 
     const currentGold = UserManager.getGold();
     if (currentGold < item.price) {
-      return { success: false, msg: `Altın yetersiz! Bu tema için ${item.price} Altın gerekiyor.` };
+      return { success: false, msg: t('shop_buy_insufficient', { cost: item.price }) };
     }
 
     const newGold = currentGold - item.price;
@@ -73,6 +77,6 @@ export const ShopManager = {
     localStorage.setItem('sudoku_purchased_themes', JSON.stringify(purchased));
     localStorage.setItem('sudoku_active_theme', itemId);
 
-    return { success: true, msg: `Tebrikler! "${item.name}" temasını satın aldınız.` };
+    return { success: true, msg: t('shop_theme_bought', { name: itemName }) };
   }
 };

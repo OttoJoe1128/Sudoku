@@ -2,6 +2,7 @@ import { SavedGameRecord, UIManager } from '../ui/uiManager';
 import { validateSavedGameRecord } from '../engine/saveValidator';
 import { SudokuVariant, SudokuGen, KillerCage } from '../engine/sudoku';
 import { UserManager } from '../store/userState';
+import { Rewards } from '../engine/rewards';
 import { t } from '../i18n/translations';
 
 export interface ActiveGameSnapshot {
@@ -223,10 +224,53 @@ export function reconcileLevelsWithSavedGames(): void {
 export function updateSavedGamesCountUI(): void {
   if (typeof document === 'undefined') return;
   const classicLvl = UserManager.getVariantLevel('classic');
-  const totalCount = getSavedGamesList().length;
+  const savedList = getSavedGamesList();
+  const totalCount = savedList.length;
+
+  const savedGamesBtn = document.getElementById('btn-open-saved-games');
   const countLabel = document.getElementById('saved-games-count-label');
-  if (countLabel) {
-    countLabel.innerText = t('menu_active_games_count', { level: classicLvl, count: totalCount });
+  const quickTitle = document.getElementById('quick-play-title');
+  const quickSub = document.getElementById('quick-play-subtitle');
+  const pillText = document.getElementById('menu-progress-pill-text');
+  const btnDaily = document.getElementById('btn-daily-reward');
+  const dailyDot = document.getElementById('daily-reward-dot');
+
+  if (pillText) {
+    pillText.innerText = `${t('label_level')} ${classicLvl} • ${t('var_classic')}`;
+  }
+
+  if (btnDaily && dailyDot) {
+    if (Rewards.isClaimedToday()) {
+      btnDaily.className = "relative bg-[var(--bg-elevated)] text-[var(--text-secondary)] opacity-60 p-2 rounded-xl active:scale-95 transition-all border border-[var(--border-subtle)] flex items-center justify-center text-sm";
+      dailyDot.classList.add('hidden');
+    } else {
+      btnDaily.className = "relative bg-[var(--bg-elevated)] text-[var(--accent-gold)] p-2 rounded-xl active:scale-95 transition-all border border-[var(--border-strong)] flex items-center justify-center text-sm shadow-sm";
+      dailyDot.classList.remove('hidden');
+    }
+  }
+
+  if (totalCount === 0) {
+    if (savedGamesBtn) savedGamesBtn.classList.add('hidden');
+    if (quickTitle) quickTitle.innerText = t('menu_quick_play');
+    if (quickSub) quickSub.innerText = `${t('label_level')} ${classicLvl} • ${t('var_classic')}`;
+  } else {
+    if (savedGamesBtn) savedGamesBtn.classList.remove('hidden');
+    if (countLabel) countLabel.innerText = t('menu_active_games_list_label', { count: totalCount });
+
+    const sorted = [...savedList].sort((a, b) => (b.updatedAtMs || 0) - (a.updatedAtMs || 0));
+    const latest = sorted[0];
+
+    if (quickTitle) quickTitle.innerText = t('menu_quick_continue');
+    if (quickSub && latest) {
+      const formatTime = (sec?: number) => {
+        if (typeof sec !== 'number' || sec <= 0) return '00:00';
+        const m = Math.floor(sec / 60).toString().padStart(2, '0');
+        const s = (sec % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+      };
+      const varName = t('var_' + (latest.variant || 'classic'));
+      quickSub.innerText = `${t('label_level')} ${latest.level} • ${varName} • ${formatTime(latest.timeElapsed)}`;
+    }
   }
 }
 
@@ -551,7 +595,7 @@ export function openSavedGamesModal(onPlaySavedGame: (record: SavedGameRecord) =
       (record) => {
         deleteSavedGameRecord(record.id);
         renderCurrentTab(true);
-        UIManager.showToast("🗑️ Kayıtlı oyun silindi.", "info");
+        UIManager.showToast(t('toast_save_deleted'), "info");
       },
       emptyMsg
     );

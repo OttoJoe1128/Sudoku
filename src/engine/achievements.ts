@@ -1,3 +1,5 @@
+import { t, getLang } from '../i18n/translations';
+
 export interface Badge {
   id: string;
   title: string;
@@ -210,26 +212,29 @@ export const AchievementManager = {
   claimBadgeReward(badgeId: string): { success: boolean; goldAdded: number; message: string } {
     const badge = BADGES.find((b) => b.id === badgeId);
     if (!badge) {
-      return { success: false, goldAdded: 0, message: "Rozet bulunamadı." };
+      return { success: false, goldAdded: 0, message: t('badge_not_found') };
     }
 
     const unlocked = new Set(this.getUnlockedBadgeIds());
     if (!unlocked.has(badgeId)) {
-      return { success: false, goldAdded: 0, message: "Bu rozet henüz kilitli!" };
+      return { success: false, goldAdded: 0, message: t('badge_locked') };
     }
 
     const claimed = new Set(this.getClaimedBadgeIds());
     if (claimed.has(badgeId)) {
-      return { success: false, goldAdded: 0, message: "Bu rozetin ödülü zaten alındı." };
+      return { success: false, goldAdded: 0, message: t('badge_already_claimed') };
     }
 
     claimed.add(badgeId);
     localStorage.setItem('sudoku_claimed_badges', JSON.stringify(Array.from(claimed)));
 
+    const isEn = getLang() === 'en';
+    const badgeTitle = isEn && badge.titleEn ? badge.titleEn : badge.title;
+
     return {
       success: true,
       goldAdded: badge.rewardGold,
-      message: `Tebrikler! "${badge.title}" rozeti için +${badge.rewardGold} 🪙 kazandınız!`
+      message: t('badge_claimed_msg', { title: badgeTitle, gold: badge.rewardGold })
     };
   }
 };

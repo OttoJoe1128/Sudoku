@@ -10,7 +10,7 @@ import { MatchEngine } from './engine/matchEngine';
 import { sanitizeUsername } from './utils/sanitize';
 import { App } from '@capacitor/app';
 
-import { initSaveController, updateSavedGamesCountUI, reconcileLevelsWithSavedGames } from './controllers/saveController';
+import { initSaveController, updateSavedGamesCountUI, reconcileLevelsWithSavedGames, getSavedGamesList } from './controllers/saveController';
 import { initMapController, getSelectedMapVariant, openMapAtLevel } from './controllers/mapController';
 import { initArenaController, getSelectedArenaVariant, handleIncomingChallenge, triggerExpertBotMatch } from './controllers/arenaController';
 import { initModalsController, getSelectedCustomVariant, getSelectedCustomTimeSec, openPlayerProfile } from './controllers/modalsController';
@@ -152,7 +152,7 @@ initGameController({
 initSaveController({
   onPlaySavedGame: (record) => {
     startGame(record.level, record.diff, undefined, record, record.variant, !!record.isCustomMode);
-    UIManager.showToast(`▶ Kayıtlı ${record.variant.toUpperCase()} oyununa devam ediliyor!`, "success");
+    UIManager.showToast(t('toast_switching_saved_game', { variant: record.variant.toUpperCase() }), "success");
   }
 });
 
@@ -207,7 +207,24 @@ document.getElementById('btn-lang-toggle')?.addEventListener('click', () => {
   const nextLang = getLang() === 'tr' ? 'en' : 'tr';
   setLang(nextLang);
   updateLanguageUI();
-  UIManager.showToast(nextLang === 'en' ? 'Language switched to English' : 'Dil Türkçe olarak ayarlandı', 'info');
+  UIManager.showToast(nextLang === 'en' ? t('toast_lang_en') : t('toast_lang_tr'), 'info');
+});
+
+document.getElementById('btn-quick-play')?.addEventListener('click', () => {
+  const savedList = getSavedGamesList();
+  if (savedList.length > 0) {
+    const sorted = [...savedList].sort((a, b) => (b.updatedAtMs || 0) - (a.updatedAtMs || 0));
+    const latest = sorted[0];
+    startGame(latest.level, latest.diff, latest.matchData, latest, latest.variant || 'classic', !!latest.isCustomMode);
+  } else {
+    const classicLvl = UserManager.getVariantLevel('classic');
+    const diff = SudokuGen.getDifficulty(classicLvl);
+    startGame(classicLvl, diff, undefined, undefined, 'classic');
+  }
+});
+
+document.getElementById('btn-menu-progress-pill')?.addEventListener('click', () => {
+  openMapAtLevel(getSelectedMapVariant());
 });
 
 document.getElementById('btn-theme-toggle')?.addEventListener('click', () => {
@@ -215,10 +232,7 @@ document.getElementById('btn-theme-toggle')?.addEventListener('click', () => {
   const nextTheme = active === 'theme-ivory' ? 'theme-obsidian' : 'theme-ivory';
   ShopManager.setActiveTheme(nextTheme);
   UIManager.applyTheme(nextTheme);
-  const isEn = getLang() === 'en';
-  const msg = nextTheme === 'theme-ivory'
-    ? (isEn ? 'Daylight Theme (Ivory & Marble)' : 'Gündüz Teması (Fildişi & Mermer)')
-    : (isEn ? 'Night Theme (Obsidian & Gold)' : 'Gece Teması (Obsidyen & Altın)');
+  const msg = nextTheme === 'theme-ivory' ? t('toast_theme_day') : t('toast_theme_night');
   UIManager.showToast(msg, 'info');
 });
 
@@ -239,8 +253,7 @@ updateSoundButtonUI();
 document.getElementById('btn-sound-toggle')?.addEventListener('click', () => {
   const isNowEnabled = SoundManager.toggle();
   updateSoundButtonUI();
-  const isEn = getLang() === 'en';
-  UIManager.showToast(isNowEnabled ? (isEn ? 'Sound Enabled' : 'Ses Açıldı') : (isEn ? 'Sound Disabled' : 'Ses Kapatıldı'), 'info');
+  UIManager.showToast(isNowEnabled ? t('toast_sound_on') : t('toast_sound_off'), 'info');
 });
 
 document.addEventListener('pointerdown', () => {
@@ -269,7 +282,7 @@ const startChallengeListeners = () => {
 
   MatchEngine.listenOutgoingChallenges((acceptedChal) => {
     if (acceptedChal.matchData) {
-      UIManager.showToast(`⚔️ ${acceptedChal.targetUsername || 'Rakip'} davetinizi kabul etti! Maç başlıyor...`, 'success');
+      UIManager.showToast(t('toast_challenge_accepted', { username: acceptedChal.targetUsername || 'Rakip' }), 'success');
       startGame(1, acceptedChal.difficulty, acceptedChal.matchData);
     }
   });
@@ -337,7 +350,7 @@ document.getElementById('save-username')?.addEventListener('click', async () => 
     startChallengeListeners();
 
     UIManager.toggleModal('username-modal', false);
-    UIManager.showToast(`Kullanıcı adı güncellendi: ${user.username}`, 'success');
+    UIManager.showToast(t('toast_username_updated', { username: user.username }), 'success');
 
     setTimeout(() => {
       if (!UserManager.getNotificationsEnabled() && localStorage.getItem('sudoku_notify_prompted') !== '1') {
@@ -345,7 +358,7 @@ document.getElementById('save-username')?.addEventListener('click', async () => 
       }
     }, 1200);
   } else {
-    UIManager.showToast("Lütfen en az 3 karakterden oluşan bir isim giriniz!", "error");
+    UIManager.showToast(t('toast_username_min_chars'), "error");
   }
 });
 

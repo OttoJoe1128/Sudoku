@@ -182,22 +182,22 @@ export const UIManager = {
     app.innerHTML = `
       <div id="container" class="w-full max-w-[480px] h-[100dvh] bg-[var(--bg-app)] text-[var(--text-primary)] flex flex-col relative overflow-hidden transition-colors duration-300 font-sans">
         <!-- Sabit Global Üst Kontrol Çubuğu (Tüm Ekranlarda Görünür) -->
-        <div id="global-utility-bar" class="w-full bg-[var(--bg-card)]/90 backdrop-blur-md border-b border-[var(--border-subtle)] px-4 py-1.5 flex justify-between items-center z-50 shrink-0 h-10">
+        <div id="global-utility-bar" class="w-full bg-[var(--bg-card)]/90 backdrop-blur-md border-b border-[var(--border-subtle)] px-4 py-1.5 flex justify-between items-center z-50 shrink-0 min-h-10 box-border" style="padding-top: max(env(safe-area-inset-top, 0px), 0.375rem);">
             <div class="flex items-center gap-2">
                 <!-- Ses Aç / Kapa Düğmesi -->
-                <button id="btn-sound-toggle" title="Ses Aç / Kapa" class="bg-[var(--bg-elevated)] text-[var(--accent-gold)] px-2.5 py-1 rounded-xl active:scale-95 transition-transform border border-[var(--border-subtle)] flex items-center justify-center text-xs">
+                <button id="btn-sound-toggle" title="Ses Aç / Kapa" data-i18n-title="tooltip_sound_toggle" class="bg-[var(--bg-elevated)] text-[var(--accent-gold)] px-2.5 py-1 rounded-xl active:scale-95 transition-transform border border-[var(--border-subtle)] flex items-center justify-center text-xs">
                     ${Icons.volumeOn}
                 </button>
             </div>
             <div class="flex items-center gap-2">
                 <!-- Dil Seçici (TR | EN) -->
-                <button id="btn-lang-toggle" title="Dil / Language" class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] px-2 py-1 rounded-xl text-[10px] font-mono font-black tracking-wider flex items-center justify-center gap-1 active:scale-95 transition-all">
+                <button id="btn-lang-toggle" title="Dil / Language" data-i18n-title="tooltip_lang_toggle" class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] px-2 py-1 rounded-xl text-[10px] font-mono font-black tracking-wider flex items-center justify-center gap-1 active:scale-95 transition-all">
                     <span id="lang-opt-tr" class="text-[var(--accent-gold)]">TR</span>
                     <span class="text-[var(--text-secondary)] opacity-50">|</span>
                     <span id="lang-opt-en" class="text-[var(--text-secondary)]">EN</span>
                 </button>
                 <!-- Tema Seçici (Gündüz | Gece) -->
-                <button id="btn-theme-toggle" title="Gündüz / Gece Teması" class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] px-2.5 py-1 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-all text-xs">
+                <button id="btn-theme-toggle" title="Gündüz / Gece Teması" data-i18n-title="tooltip_theme_toggle" class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] px-2.5 py-1 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-all text-xs">
                     <span id="theme-opt-day" class="text-[var(--accent-gold)] flex items-center">${Icons.sun}</span>
                     <span class="text-[var(--text-secondary)] opacity-40 text-[9px]">|</span>
                     <span id="theme-opt-night" class="text-[var(--text-secondary)] opacity-50 flex items-center">${Icons.moon}</span>
@@ -785,20 +785,20 @@ export const UIManager = {
     modal.className = "fixed inset-0 bg-slate-900/80 z-[95] flex items-center justify-center p-4 backdrop-blur-md";
 
     modal.innerHTML = `
-      <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl relative border border-slate-100 animate-in fade-in zoom-in duration-200">
-        <div class="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl flex items-center justify-center text-3xl mx-auto mb-3 shadow-lg shadow-indigo-200">
+      <div class="bg-[var(--bg-card)] rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl relative border border-[var(--border-strong)]">
+        <div class="w-16 h-16 bg-[var(--bg-elevated)] text-[var(--accent-gold)] rounded-2xl flex items-center justify-center text-3xl mx-auto mb-3 border border-[var(--border-subtle)] shadow-inner">
           🤖
         </div>
-        <h3 class="text-xl font-black text-slate-800 mb-2">SudokuMap Uzmanı ile Düello</h3>
-        <p class="text-xs text-slate-500 font-medium mb-5 leading-relaxed">
-          Rakip şu an çevrimdışı. Yapay Zekâ <strong>SudokuMap Uzmanı</strong> ile düello oynamak ister misiniz?
+        <h3 class="text-xl font-black text-[var(--text-primary)] mb-2">${t('bot_prompt_title')}</h3>
+        <p class="text-xs text-[var(--text-secondary)] font-medium mb-5 leading-relaxed">
+          ${t('bot_prompt_desc')}
         </p>
         <div class="flex flex-col gap-2.5 w-full">
-          <button id="btn-accept-bot-prompt" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-black py-3.5 rounded-2xl shadow-lg active:scale-95 transition-all text-xs tracking-wide">
-            ⚔️ Evet, Düelloya Başla
+          <button id="btn-accept-bot-prompt" class="w-full bg-[var(--accent-gold)] text-[var(--text-on-gold)] font-black py-3.5 rounded-2xl shadow-lg active:scale-95 transition-all text-xs tracking-wide hover:brightness-110">
+            ${t('btn_accept_bot_prompt')}
           </button>
-          <button id="btn-cancel-bot-prompt" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-2xl active:scale-95 transition-all text-xs">
-            İptal (Ana Menüye Dön)
+          <button id="btn-cancel-bot-prompt" class="w-full bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)] font-bold py-3 rounded-2xl active:scale-95 transition-all text-xs hover:bg-[var(--bg-card-hover)]">
+            ${t('btn_cancel_bot_prompt')}
           </button>
         </div>
       </div>
@@ -826,28 +826,28 @@ export const UIManager = {
     modal.className = "fixed inset-0 bg-slate-900/80 z-[95] flex items-center justify-center p-4 backdrop-blur-md";
 
     modal.innerHTML = `
-      <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl relative border border-slate-100 animate-in fade-in zoom-in duration-200">
-        <button id="close-duration-modal" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 text-sm">✕</button>
-        <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-3 shadow-inner">
+      <div class="bg-[var(--bg-card)] rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl relative border border-[var(--border-strong)]">
+        <button id="close-duration-modal" class="absolute top-4 right-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] p-1 text-sm">✕</button>
+        <div class="w-14 h-14 bg-[var(--bg-elevated)] text-[var(--accent-gold)] rounded-2xl flex items-center justify-center text-3xl mx-auto mb-3 shadow-inner border border-[var(--border-subtle)]">
           ⚔️
         </div>
-        <h3 class="text-xl font-black text-slate-800 mb-1">Düello Daveti Gönder</h3>
-        <p class="text-xs text-slate-500 font-medium mb-4">
-          <strong class="text-slate-800 font-black">${targetUsername}</strong> adlı oyuncuya davet göndermeden önce <strong>Süre Modunu</strong> seçin:
+        <h3 class="text-xl font-black text-[var(--text-primary)] mb-1">${t('challenge_modal_title')}</h3>
+        <p class="text-xs text-[var(--text-secondary)] font-medium mb-4">
+          ${t('challenge_modal_desc', { username: escapeHTML(targetUsername) })}
         </p>
 
         <div class="flex flex-col gap-2.5 w-full mb-1">
-          <button data-sec="180" class="select-duration-btn w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-black py-3 rounded-2xl shadow-sm active:scale-95 transition-transform text-xs flex justify-between items-center px-4">
-            <span>⚡ 3 Dakika (Blitz)</span>
-            <span class="bg-white/20 px-2 py-0.5 rounded-lg text-[10px]">Hızlı</span>
+          <button data-sec="180" class="select-duration-btn w-full bg-[var(--accent-gold)] text-[var(--text-on-gold)] font-black py-3 rounded-2xl shadow-sm active:scale-95 transition-transform text-xs flex justify-between items-center px-4 hover:brightness-110">
+            <span>⚡ ${t('time_3m_short')}</span>
+            <span class="bg-[var(--bg-app)]/30 text-[var(--text-on-gold)] px-2 py-0.5 rounded-lg text-[10px] font-bold">${t('tag_fast')}</span>
           </button>
-          <button data-sec="420" class="select-duration-btn w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 rounded-2xl active:scale-95 transition-transform text-xs flex justify-between items-center px-4">
-            <span>⏱️ 7 Dakika (Standard)</span>
-            <span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-lg text-[10px]">Dengeli</span>
+          <button data-sec="420" class="select-duration-btn w-full bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)] font-bold py-3 rounded-2xl active:scale-95 transition-transform text-xs flex justify-between items-center px-4 hover:bg-[var(--bg-card-hover)]">
+            <span>⏱️ ${t('time_7m_short')}</span>
+            <span class="bg-[var(--bg-card)] text-[var(--accent-gold)] px-2 py-0.5 rounded-lg text-[10px] font-bold">${t('tag_balanced')}</span>
           </button>
-          <button data-sec="0" class="select-duration-btn w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 rounded-2xl active:scale-95 transition-transform text-xs flex justify-between items-center px-4">
-            <span>♾️ Süresiz (No Limit)</span>
-            <span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-lg text-[10px]">Serbest</span>
+          <button data-sec="0" class="select-duration-btn w-full bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)] font-bold py-3 rounded-2xl active:scale-95 transition-transform text-xs flex justify-between items-center px-4 hover:bg-[var(--bg-card-hover)]">
+            <span>♾️ ${t('time_unlimited')}</span>
+            <span class="bg-[var(--bg-card)] text-[var(--accent-cyan)] px-2 py-0.5 rounded-lg text-[10px] font-bold">${t('tag_free')}</span>
           </button>
         </div>
       </div>

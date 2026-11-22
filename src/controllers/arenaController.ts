@@ -2,7 +2,7 @@ import { SudokuVariant, SudokuGen } from '../engine/sudoku';
 import { UIManager } from '../ui/uiManager';
 import { UserManager } from '../store/userState';
 import { MatchEngine, MatchState, ChallengeRequest } from '../engine/matchEngine';
-import { t } from '../i18n/translations';
+import { t, getLang } from '../i18n/translations';
 import { BotCharacters, BotCharacter } from '../engine/botData';
 import { Player } from '../engine/leaderboard';
 import { collection, query, limit, onSnapshot } from 'firebase/firestore';
@@ -172,7 +172,7 @@ export function loadArenaLobbyPlayers(
 
       UIManager.renderLobbyPlayers(list, async (targetPlayer) => {
         if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-          UIManager.showToast('📡 İnternet bağlantınız yok. Canlı düello daveti için çevrimiçi olmalısınız.', 'error');
+          UIManager.showToast(t('toast_offline_duel'), 'error');
           return;
         }
 
@@ -200,16 +200,17 @@ export function loadArenaLobbyPlayers(
             clearTimeout(timeoutId!);
           }
 
-          const modeText = selectedMatchTimeSec > 0 ? `${Math.floor(selectedMatchTimeSec / 60)} Dk` : 'Süresiz';
-          UIManager.showToast(`📩 ${targetPlayer.username} adlı oyuncuya gerçek düello daveti gönderildi (${modeText})! Kabul etmesi bekleniyor...`, 'success');
+          const isEn = getLang() === 'en';
+          const modeText = selectedMatchTimeSec > 0 ? (isEn ? `${Math.floor(selectedMatchTimeSec / 60)} Min` : `${Math.floor(selectedMatchTimeSec / 60)} Dk`) : t('time_unlimited');
+          UIManager.showToast(t('toast_challenge_sent', { username: targetPlayer.username, mode: modeText }), 'success');
         } catch (err: any) {
           console.warn('Düello daveti gönderilemedi:', err);
           if (err.message === 'PENDING_EXISTS') {
-            UIManager.showToast('Bu oyuncuya zaten bekleyen bir davetiniz var.', 'info');
+            UIManager.showToast(t('toast_pending_exists'), 'info');
           } else if (err.message === 'TIMEOUT') {
-            UIManager.showToast('Zaman aşımı: Bağlantı yavaş veya koptu. Tekrar deneyin.', 'error');
+            UIManager.showToast(t('toast_timeout_slow'), 'error');
           } else {
-            UIManager.showToast('Düello daveti gönderilemedi. Bağlantınızı kontrol edin.', 'error');
+            UIManager.showToast(t('toast_challenge_failed'), 'error');
           }
         }
       });
@@ -299,13 +300,13 @@ export function handleIncomingChallenge(
     async () => {
       const match = await MatchEngine.respondToChallenge(challenge.challengeId, true, challenge);
       if (match) {
-        UIManager.showToast('⚔️ Düello başladı!', 'success');
+        UIManager.showToast(t('toast_match_started'), 'success');
         onStartMatchGame(1, challenge.difficulty, match, challenge.variant || 'classic');
       }
     },
     async () => {
       await MatchEngine.respondToChallenge(challenge.challengeId, false, challenge);
-      UIManager.showToast('Düello daveti reddedildi.', 'info');
+      UIManager.showToast(t('toast_challenge_declined'), 'info');
     }
   );
 }
@@ -320,13 +321,13 @@ export function loadInboxData(
         const match = await MatchEngine.respondToChallenge(challenge.challengeId, true, challenge);
         if (match) {
           UIManager.toggleModal('view-inbox', false);
-          UIManager.showToast(`⚔️ ${challenge.fromUsername} ile düello başladı!`, 'success');
+          UIManager.showToast(t('toast_challenge_accepted_with', { username: challenge.fromUsername }), 'success');
           onStartMatchGame(1, challenge.difficulty, match, challenge.variant || 'classic');
         }
       },
       async (challenge) => {
         await MatchEngine.respondToChallenge(challenge.challengeId, false, challenge);
-        UIManager.showToast('Düello daveti reddedildi.', 'info');
+        UIManager.showToast(t('toast_challenge_declined'), 'info');
         loadInboxData(onStartMatchGame);
       }
     );

@@ -11,7 +11,7 @@ export const matchModalTemplate = `
         </div>
         <div class="flex items-center justify-center gap-1.5 mb-0.5">
             <h3 class="text-xl font-black text-[var(--text-primary)]" data-i18n="arena_modal_title">Düello Arenası</h3>
-            <button id="btn-arena-info" title="Puan & Ödül Bilgisi" class="text-[var(--accent-gold)] bg-[var(--bg-elevated)] p-1 rounded-xl border border-[var(--border-subtle)] text-xs font-black transition-colors">
+            <button id="btn-arena-info" title="Puan & Ödül Bilgisi" data-i18n-title="tooltip_info_rewards" class="text-[var(--accent-gold)] bg-[var(--bg-elevated)] p-1 rounded-xl border border-[var(--border-subtle)] text-xs font-black transition-colors">
                 ${Icons.info}
             </button>
         </div>

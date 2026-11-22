@@ -16,7 +16,7 @@ export const profileModalTemplate = `
 
         <!-- Profil Üst Kartı -->
         <div class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl p-4 mb-3 flex flex-col items-center text-center shadow-inner relative">
-            <div id="profile-avatar-display" title="Avatar Galerisini Aç" class="w-16 h-16 rounded-2xl bg-[var(--bg-card)] border-2 border-[var(--border-strong)] flex items-center justify-center text-3xl shadow-sm mb-2 relative group cursor-pointer">
+            <div id="profile-avatar-display" title="Avatar Galerisini Aç" data-i18n-title="tooltip_avatar_gallery" class="w-16 h-16 rounded-2xl bg-[var(--bg-card)] border-2 border-[var(--border-strong)] flex items-center justify-center text-3xl shadow-sm mb-2 relative group cursor-pointer">
                 ${renderAvatarSVG('av_prism', 40)}
                 <span class="absolute -bottom-1 -right-1 bg-[var(--accent-gold)] text-[var(--text-on-gold)] p-1 rounded-full text-[10px] shadow border border-[var(--border-strong)] flex items-center justify-center">
                     ${Icons.pen}
@@ -27,7 +27,7 @@ export const profileModalTemplate = `
 
             <div class="flex items-center gap-1.5 mb-2">
                 <span id="profile-username" class="font-black text-[var(--text-primary)] text-lg">Oyuncu</span>
-                <button id="btn-profile-edit-name" title="Kullanıcı Adını Düzenle" class="text-[var(--text-secondary)] hover:text-[var(--accent-gold)] p-1 rounded-lg hover:bg-[var(--bg-card-hover)] transition-colors">
+                <button id="btn-profile-edit-name" title="Kullanıcı Adını Düzenle" data-i18n-title="tooltip_edit_name" class="text-[var(--text-secondary)] hover:text-[var(--accent-gold)] p-1 rounded-lg hover:bg-[var(--bg-card-hover)] transition-colors">
                     ${Icons.pen}
                 </button>
             </div>
@@ -95,7 +95,7 @@ export const profileModalTemplate = `
                 <div class="flex justify-between items-center mb-2">
                     <p class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-wider" data-i18n="profile_avatar_select">Avatar Seç</p>
                     <button id="btn-open-avatar-gallery" class="text-[10px] font-black text-[var(--accent-gold)] hover:underline flex items-center gap-0.5">
-                        <span>Tümünü Gör ➔</span>
+                        <span data-i18n="btn_view_all">Tümünü Gör ➔</span>
                     </button>
                 </div>
                 <div id="profile-avatar-selector" class="grid grid-cols-4 gap-2">

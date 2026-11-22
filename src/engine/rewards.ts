@@ -1,4 +1,5 @@
 import { UserManager } from '../store/userState';
+import { t } from '../i18n/translations';
 
 export const Rewards = {
   getTodayKey(): string {
@@ -17,7 +18,7 @@ export const Rewards = {
       return {
         success: false,
         amount: 0,
-        message: "Bugünkü günlük ödülünüzü zaten aldınız. Yeni ödül için lütfen yarın tekrar gelin!"
+        message: t('daily_reward_already_claimed')
       };
     }
 
@@ -31,7 +32,7 @@ export const Rewards = {
     return {
       success: true,
       amount: 50,
-      message: "Tebrikler! Günlük 50 🪙 ödülünüz hesabınıza tanımlandı."
+      message: t('daily_reward_success', { gold: 50 })
     };
   }
 };

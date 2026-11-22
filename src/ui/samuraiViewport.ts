@@ -353,13 +353,13 @@ export function renderSamuraiBoard(
 
       <!-- Yüzen Kamera Kontrol Hapı -->
       <div class="absolute bottom-3 right-3 z-30 flex items-center gap-1 bg-[var(--bg-card)] border border-[var(--border-strong)] p-1 rounded-2xl shadow-xl">
-        <button id="btn-samurai-zoom-out" title="Uzaklaş" class="w-8 h-8 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] hover:text-[var(--accent-gold)] font-black text-sm flex items-center justify-center active:scale-90 transition-transform">
+        <button id="btn-samurai-zoom-out" title="Uzaklaş" data-i18n-title="tooltip_zoom_out" class="w-8 h-8 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] hover:text-[var(--accent-gold)] font-black text-sm flex items-center justify-center active:scale-90 transition-transform">
           −
         </button>
-        <button id="btn-samurai-fit" title="Tümünü Gör (21x21)" class="px-2.5 h-8 rounded-xl bg-[var(--accent-gold)] text-[var(--text-on-gold)] font-black text-[10px] uppercase tracking-wider flex items-center justify-center active:scale-90 transition-transform hover:brightness-110">
+        <button id="btn-samurai-fit" title="Tümünü Gör (21x21)" data-i18n-title="tooltip_fit_samurai" class="px-2.5 h-8 rounded-xl bg-[var(--accent-gold)] text-[var(--text-on-gold)] font-black text-[10px] uppercase tracking-wider flex items-center justify-center active:scale-90 transition-transform hover:brightness-110">
           21×21
         </button>
-        <button id="btn-samurai-zoom-in" title="Yakınlaş" class="w-8 h-8 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] hover:text-[var(--accent-gold)] font-black text-sm flex items-center justify-center active:scale-90 transition-transform">
+        <button id="btn-samurai-zoom-in" title="Yakınlaş" data-i18n-title="tooltip_zoom_in" class="w-8 h-8 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] hover:text-[var(--accent-gold)] font-black text-sm flex items-center justify-center active:scale-90 transition-transform">
           +
         </button>
       </div>

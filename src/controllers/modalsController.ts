@@ -152,7 +152,7 @@ export async function openPlayerProfile(targetData?: any): Promise<void> {
           await UserManager.updateProfileCustomization(newAvatar, UserManager.getTitle());
           const avatarBox = document.getElementById('menu-avatar-box');
           if (avatarBox) avatarBox.innerHTML = renderAvatarSVG(newAvatar, 28);
-          UIManager.showToast("Avatar güncellendi!", "success");
+          UIManager.showToast(t('toast_avatar_updated'), "success");
           openPlayerProfile();
         }
       };
@@ -165,7 +165,7 @@ export async function openPlayerProfile(targetData?: any): Promise<void> {
         const avatarBox = document.getElementById('menu-avatar-box');
         if (avatarBox) avatarBox.innerHTML = renderAvatarSVG(newAvatar, 28);
         UIManager.toggleModal('avatar-gallery-modal', false);
-        UIManager.showToast("Avatar güncellendi!", "success");
+        UIManager.showToast(t('toast_avatar_updated'), "success");
         openPlayerProfile();
       });
     };
@@ -360,20 +360,20 @@ export function initModalsController(callbacks: {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
           UserManager.saveNotificationsEnabled(true);
-          UIManager.showToast('🔔 Canlı düello bildirimleri açıldı!', 'success');
+          UIManager.showToast(t('toast_alerts_on'), 'success');
           MatchEngine.listenIncomingChallenges((chal) => onHandleIncomingChallenge(chal));
         } else {
           (e.target as HTMLInputElement).checked = false;
           UserManager.saveNotificationsEnabled(false);
-          UIManager.showToast('⚠️ Bildirim izni verilmedi.', 'error');
+          UIManager.showToast(t('toast_no_alert_permission'), 'error');
         }
       } else {
         UserManager.saveNotificationsEnabled(true);
-        UIManager.showToast('🔔 Düello bildirimleri aktif!', 'success');
+        UIManager.showToast(t('toast_alerts_active'), 'success');
       }
     } else {
       UserManager.saveNotificationsEnabled(false);
-      UIManager.showToast('🔕 Bildirimler kapatıldı.', 'info');
+      UIManager.showToast(t('toast_alerts_off'), 'info');
     }
   });
 
@@ -382,15 +382,16 @@ export function initModalsController(callbacks: {
     const targetUid = currentlyViewedTargetUid || targetUsername;
 
     if (!targetUid || targetUsername === UserManager.getUsername()) {
-      return UIManager.showToast("Kendi profilinize davet gönderemezsiniz.", "info");
+      return UIManager.showToast(t('toast_self_invite_err'), "info");
     }
 
     UIManager.renderChallengeDurationSelectModal(targetUsername, async (durationSec) => {
       try {
         const arenaVariant = getSelectedArenaVariant();
         await MatchEngine.sendDirectChallenge(targetUid, targetUsername, 'basit', durationSec, arenaVariant);
-        const modeText = durationSec > 0 ? `${Math.floor(durationSec / 60)} Dk` : 'Süresiz';
-        UIManager.showToast(`⚔️ Düello daveti (${modeText}) ${targetUsername} adlı oyuncunun gelen kutusuna gönderildi!`, 'success');
+        const isEn = getLang() === 'en';
+        const modeText = durationSec > 0 ? (isEn ? `${Math.floor(durationSec / 60)} Min` : `${Math.floor(durationSec / 60)} Dk`) : t('time_unlimited');
+        UIManager.showToast(t('toast_challenge_sent_inbox', { username: targetUsername, mode: modeText }), 'success');
         UIManager.toggleModal('view-profile', false);
       } catch (e: any) {
         console.warn("Düello davet gönderme yetki hatası:", e);
@@ -553,6 +554,7 @@ export function initModalsController(callbacks: {
     UIManager.showToast(result.message, result.success ? "success" : "info");
     if (result.success) {
       onUpdateGoldDisplay();
+      onUpdateSavedGamesUI();
       AchievementManager.checkAndUnlockBadges({
         level: UserManager.getCurrentLevel(),
         gold: UserManager.getGold(),

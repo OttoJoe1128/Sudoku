@@ -1,5 +1,6 @@
 import { UIManager } from '../ui/uiManager';
 import { SoundManager } from './soundManager';
+import { t } from '../i18n/translations';
 
 export const GameEngine = {
   playSound(type: 'tap' | 'error' | 'win') {
@@ -30,9 +31,8 @@ export const GameEngine = {
     onWin: () => void,
     onError: (count: number) => void
   ): boolean {
-    // 1. Hücre kilit kontrolü: Zaten doğru çözülmüş veya başlangıçta verilmiş olan dolu hücreler değiştirilemez
     if (userBoard && userBoard[r] && userBoard[r][c] !== 0) {
-      UIManager.showToast("Bu hücre tamamlanmıştır, değiştirilemez.", "info");
+      UIManager.showToast(t('cell_completed_toast'), "info");
       return false;
     }
 
@@ -49,7 +49,7 @@ export const GameEngine = {
       this.playSound('error');
       this.doVibrate();
       UIManager.showError(r, c);
-      UIManager.showToast("❌ Hatalı hamle!", "error");
+      UIManager.showToast(t('error_move_toast'), "error");
       onError(1);
       return false;
     }
@@ -57,7 +57,6 @@ export const GameEngine = {
     userBoard[r][c] = num;
     this.playSound('tap');
 
-    // Kazandık mı kontrol et
     const isWin = userBoard.every((row, ri) =>
       row.every((val, ci) => val === solution[ri][ci])
     );
