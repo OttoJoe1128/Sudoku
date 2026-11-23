@@ -76,23 +76,22 @@ export const menuTemplate = `
             <span class="text-sm text-[var(--accent-gold)] group-hover:translate-x-1 transition-transform">➔</span>
         </button>
 
-        <!-- 3. Üçüncül Aksiyon: Düello Arenası (Hafif Altın Parıltılı Nötr Kart) -->
-        <button id="btn-open-match" class="w-full bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] rounded-2xl px-5 py-3.5 border border-[var(--border-strong)] ring-1 ring-[var(--accent-gold)]/45 shadow-md active:scale-[0.98] transition-all flex items-center justify-between group relative overflow-hidden">
-            <span class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[var(--accent-gold)] to-transparent animate-pulse opacity-75"></span>
-            <div class="text-left">
-                <span class="text-sm font-black block text-[var(--text-primary)] flex items-center gap-1.5" data-i18n="menu_duel_arena">Düello Arenası</span>
-                <span class="text-[11px] font-medium text-[var(--accent-gold)] block mt-0.5" data-i18n="menu_arena_sub">Canlı PvP • YZ Rakipler</span>
-            </div>
-            <span class="text-sm text-[var(--accent-gold)] group-hover:translate-x-1 transition-transform flex items-center gap-1">${Icons.sword} ➔</span>
-        </button>
-
-        <!-- 4. Koşullu Kayıtlı Oyunlar Şeridi (Yalnızca Yarım Kalan Oyun Varsa Görünür) -->
+        <!-- 3. Koşullu Kayıtlı Oyunlar Şeridi (Yalnızca Yarım Kalan Oyun Varsa Görünür) -->
         <button id="btn-open-saved-games" class="hidden w-full bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-2xl p-3.5 justify-between items-center shadow-sm text-xs font-black transition-all active:scale-[0.98]">
             <div class="flex items-center gap-2 shrink-0">
                 <span class="text-base text-[var(--accent-gold)] shrink-0">${Icons.target}</span>
                 <span id="saved-games-count-label" data-i18n="menu_active_games_title" class="truncate">Aktif Oyunlarım</span>
             </div>
             <span class="text-[var(--text-secondary)] font-bold text-xs shrink-0">➔</span>
+        </button>
+
+        <!-- 4. Düello Arenası (Sıcak Bronz Kalkan Kartı - En Altta) -->
+        <button id="btn-open-match" style="background: linear-gradient(180deg, #d7b48a 0%, #b88b5a 65%, #9a6e42 100%); clip-path: polygon(50% 0%, 96% 12%, 96% 62%, 50% 100%, 4% 62%, 4% 12%);" class="w-full text-amber-950 rounded-2xl px-6 py-4 shadow-lg active:scale-[0.98] transition-all flex items-center justify-between group relative border border-amber-300 cursor-pointer">
+            <div class="text-left">
+                <span class="text-sm font-black block text-amber-950 flex items-center gap-1.5 drop-shadow-sm" data-i18n="menu_duel_arena">Düello Arenası</span>
+                <span class="text-[11px] font-extrabold text-amber-900 block mt-0.5" data-i18n="menu_arena_sub">Canlı PvP • YZ Rakipler</span>
+            </div>
+            <span class="text-sm font-black text-amber-950 group-hover:translate-x-1 transition-transform flex items-center gap-1">${Icons.shield} ➔</span>
         </button>
     </div>
 

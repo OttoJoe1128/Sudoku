@@ -89,14 +89,21 @@ export function renderMapPathUI(
     mapWindowEnd,
     (lvl) => {
       const diff = SudokuGen.getDifficulty(lvl);
-      openLevelPrepModal({
-        level: lvl,
-        diff,
-        variant: selectedMapVariant,
-        onConfirmStart: (selectedAbilities) => {
-          onStartLevel(lvl, diff, selectedMapVariant, selectedAbilities);
-        }
-      });
+      const saveKey = `sudoku_map_save_${selectedMapVariant}_${lvl}`;
+      const hasSave = typeof localStorage !== 'undefined' && Boolean(localStorage.getItem(saveKey));
+
+      if (hasSave) {
+        onStartLevel(lvl, diff, selectedMapVariant);
+      } else {
+        openLevelPrepModal({
+          level: lvl,
+          diff,
+          variant: selectedMapVariant,
+          onConfirmStart: (selectedAbilities) => {
+            onStartLevel(lvl, diff, selectedMapVariant, selectedAbilities);
+          }
+        });
+      }
     },
     autoScrollToCurrent,
     selectedMapVariant,
@@ -194,16 +201,25 @@ export function initMapController(callbacks: {
   document.getElementById('btn-map-start-current')?.addEventListener('click', () => {
     const userLvl = UserManager.getVariantLevel(selectedMapVariant);
     const diff = SudokuGen.getDifficulty(userLvl);
-    openLevelPrepModal({
-      level: userLvl,
-      diff,
-      variant: selectedMapVariant,
-      onConfirmStart: (selectedAbilities) => {
-        if (storedOnStartLevel) {
-          storedOnStartLevel(userLvl, diff, selectedMapVariant, selectedAbilities);
-        }
+    const saveKey = `sudoku_map_save_${selectedMapVariant}_${userLvl}`;
+    const hasSave = typeof localStorage !== 'undefined' && Boolean(localStorage.getItem(saveKey));
+
+    if (hasSave) {
+      if (storedOnStartLevel) {
+        storedOnStartLevel(userLvl, diff, selectedMapVariant);
       }
-    });
+    } else {
+      openLevelPrepModal({
+        level: userLvl,
+        diff,
+        variant: selectedMapVariant,
+        onConfirmStart: (selectedAbilities) => {
+          if (storedOnStartLevel) {
+            storedOnStartLevel(userLvl, diff, selectedMapVariant, selectedAbilities);
+          }
+        }
+      });
+    }
   });
 
   document.getElementById('btn-back-map')?.addEventListener('click', () => {

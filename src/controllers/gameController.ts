@@ -491,6 +491,7 @@ const persistCurrentGame = () => {
     cages: currentCages,
     samuraiBoards: samuraiBoards.length === 5 ? samuraiBoards : undefined,
     activeSamuraiIndex: currentVariant === 'samurai' ? activeSamuraiIndex : undefined,
+    equippedAbilities: activeEquippedAbilities,
     matchData: activeMatch,
     enemyName: activeMatch?.player2?.username
   });
@@ -747,6 +748,10 @@ export function startGame(
   );
 
   if (isValidRestored) {
+    if (Array.isArray(resolvedRestoredState.equippedAbilities) && resolvedRestoredState.equippedAbilities.length > 0) {
+      equippedAbilities = resolvedRestoredState.equippedAbilities;
+      activeEquippedAbilities = equippedAbilities;
+    }
     currentVariant = resolvedRestoredState.variant || variant;
     currentLevelNumber = resolvedRestoredState.level || level;
     currentDifficulty = resolvedRestoredState.diff || diff;

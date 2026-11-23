@@ -23,7 +23,7 @@ import { Icons, renderAvatarSVG, renderRankBadgeSVG, AVATAR_LIST } from '../desi
 import { t, getLang, translateRankName } from '../i18n/translations';
 import { getLevelConfig, getRegionForLevel } from '../engine/rhythmConfig';
 import { BoardMechanicsState, SpecialCellRuntime } from '../engine/boardMechanics';
-import { getAbilityDef } from '../engine/abilities';
+import { getAbilityDef, AbilityId } from '../engine/abilities';
 import { Player, SpeedRecord } from '../engine/leaderboard';
 import { ShopItems, ShopManager } from '../engine/shop';
 import { BadgeStatus } from '../engine/achievements';
@@ -53,6 +53,7 @@ export interface SavedGameRecord {
   isCustomMode?: boolean;
   isMatchMode?: boolean;
   matchData?: any;
+  equippedAbilities?: AbilityId[];
   enemyName?: string;
   updatedAtMs: number;
 }
@@ -1834,9 +1835,7 @@ export const UIManager = {
 
         let bgStyle = 'bg-[var(--cell-bg)]';
         if (specCell?.kind === 'seal' && specCell.state === 'active') {
-          bgStyle = 'bg-rose-950/30 ring-2 ring-rose-500/60';
-        } else if (specCell?.kind === 'crystal' && specCell.state === 'active') {
-          bgStyle = 'bg-[var(--accent-cyan)]/10 ring-1 ring-[var(--accent-cyan)]/40';
+          bgStyle = 'bg-[var(--cell-bg)] ring-1 ring-rose-400/70';
         } else if (isHintTarget) {
           bgStyle = 'bg-[var(--accent-gold)]/20 ring-2 ring-[var(--accent-gold)] z-10';
         } else if (isHintRelated) {

@@ -19,6 +19,7 @@ import {
 } from '../controllers/levelPrepController';
 import { initAbilitiesController } from '../controllers/abilitiesController';
 import { initGameController, startGame, getGameRuntimeState, handleExitGameRequest } from '../controllers/gameController';
+import { initMapController } from '../controllers/mapController';
 
 describe('Faz 3c Tahta İçi Özel Hücreler & 5 Yeteneğin Gerçek Oyun İçi Etkileri Test Paketi', () => {
   beforeEach(() => {
@@ -363,6 +364,71 @@ describe('Faz 3c Tahta İçi Özel Hücreler & 5 Yeteneğin Gerçek Oyun İçi E
 
       const oracleBtn = document.querySelector('[data-game-ability="oracle_eye"]');
       expect(oracleBtn).not.toBeNull();
+    });
+  });
+
+  describe('9. Faz 3e Görsel Cila & Akış Düzeltmeleri Test Paketi', () => {
+    it('Kayıtlı oyunda hazırlık modalı atlanıp doğrudan oyuna başlanmalı', async () => {
+      let started = false;
+      initMapController({
+        onStartLevel: () => { started = true; },
+        onBackToMenu: () => {},
+        getRuleDescription: () => 'Rule'
+      });
+
+      const savedRecord = {
+        id: 'saved_map_classic_151',
+        variant: 'classic',
+        level: 151,
+        diff: 'basit',
+        userBoard: Array.from({ length: 9 }, () => Array(9).fill(0)),
+        initialBoard: Array.from({ length: 9 }, () => Array(9).fill(0)),
+        currentSolution: Array.from({ length: 9 }, () => Array(9).fill(1)),
+        errors: 0
+      };
+      localStorage.setItem('sudoku_map_save_classic_151', JSON.stringify(savedRecord));
+      await UserManager.updateVariantLevel('classic', 151, 0);
+
+      const startBtn = document.getElementById('btn-map-start-current');
+      startBtn?.click();
+
+      const modal = document.getElementById('level-prep-modal');
+      expect(modal?.classList.contains('hidden')).toBe(true);
+      expect(started).toBe(true);
+
+      // Kaydı silince hazırlık modalı açılmalı
+      localStorage.removeItem('sudoku_map_save_classic_151');
+      startBtn?.click();
+      expect(modal?.classList.contains('hidden')).toBe(false);
+
+      closeLevelPrepModal();
+    });
+
+    it('Kristal hücresi bg-[var(--accent-cyan)]/10 koyu dolgu sınıfı içermemeli', () => {
+      startGame(1, 'basit', undefined, undefined, 'classic', false);
+
+      const crystalCell = document.querySelector('[data-special-cell="crystal"]');
+      expect(crystalCell).not.toBeNull();
+      if (crystalCell) {
+        expect(crystalCell.classList.contains('bg-[var(--accent-cyan)]/10')).toBe(false);
+        expect(crystalCell.innerHTML).toContain('💎');
+      }
+    });
+
+    it('#btn-open-match kalkan butonu DOMda tekil olmalı ve #btn-open-saved-games sonrasında yer almalı', () => {
+      const matchBtns = document.querySelectorAll('#btn-open-match');
+      expect(matchBtns.length).toBe(1);
+
+      const matchBtn = matchBtns[0] as HTMLElement;
+      expect(matchBtn.style.clipPath).toContain('polygon');
+
+      const savedGamesBtn = document.getElementById('btn-open-saved-games');
+      expect(savedGamesBtn).not.toBeNull();
+
+      if (savedGamesBtn) {
+        const compare = savedGamesBtn.compareDocumentPosition(matchBtn);
+        expect(compare & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      }
     });
   });
 });

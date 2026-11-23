@@ -4,6 +4,7 @@ import { SudokuVariant, SudokuGen, KillerCage } from '../engine/sudoku';
 import { UserManager } from '../store/userState';
 import { Rewards } from '../engine/rewards';
 import { t } from '../i18n/translations';
+import { AbilityId } from '../engine/abilities';
 
 export interface ActiveGameSnapshot {
   isMatchMode: boolean;
@@ -23,6 +24,7 @@ export interface ActiveGameSnapshot {
   activeSamuraiIndex?: number;
   matchData?: any;
   enemyName?: string;
+  equippedAbilities?: AbilityId[];
 }
 
 export function hasPlayerMadeAnyMove(snapshotOrRecord: any): boolean {
@@ -166,6 +168,7 @@ export function getSavedGamesList(): SavedGameRecord[] {
                   cages: p.cages,
                   samuraiBoards: p.samuraiBoards,
                   activeSamuraiIndex: p.activeSamuraiIndex,
+                  equippedAbilities: p.equippedAbilities,
                   isCustomMode: false,
                   updatedAtMs: p.updatedAtMs || Date.now()
                 };
@@ -420,6 +423,7 @@ export function saveActiveGameRecord(snapshot: ActiveGameSnapshot): void {
         cages: snapshot.cages,
         samuraiBoards: safeSamuraiBoards,
         activeSamuraiIndex: snapshot.variant === 'samurai' ? snapshot.activeSamuraiIndex : undefined,
+        equippedAbilities: snapshot.equippedAbilities,
         updatedAtMs: Date.now()
       }));
     } else {
@@ -440,6 +444,7 @@ export function saveActiveGameRecord(snapshot: ActiveGameSnapshot): void {
         cages: snapshot.cages,
         samuraiBoards: safeSamuraiBoards,
         activeSamuraiIndex: snapshot.variant === 'samurai' ? snapshot.activeSamuraiIndex : undefined,
+        equippedAbilities: snapshot.equippedAbilities,
         isCustomMode: true,
         updatedAtMs: Date.now()
       };
