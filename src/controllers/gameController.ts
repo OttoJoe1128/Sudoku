@@ -9,8 +9,13 @@ import { validateSavedGameRecord } from '../engine/saveValidator';
 import { t, getLang } from '../i18n/translations';
 import { auth } from '../api/firebase';
 import { ExamTier, PlacementExamConfig, getPlacementExamConfig, evaluatePlacementExam, calculateExamProgress } from '../engine/placementEngine';
+import { getLevelConfig } from '../engine/rhythmConfig';
 import { SoundManager } from '../engine/soundManager';
 import { canOfferSecondChance, tryGoldRevive, AdService } from '../services/adService';
+import { maybeShowRegionIntroLesson } from './academyController';
+import { findSmartHint, SmartHint, formatHintSymbol } from '../engine/hintSolver';
+
+let pendingSmartHint: SmartHint | null = null;
 
 let currentSolution: number[][];
 let userBoard: number[][];
@@ -62,6 +67,190 @@ const getSamuraiCompletionStatuses = () => {
     const completed = remaining === 0 && b.userBoard.every((row, ri) => row.every((val, ci) => val === b.solution[ri][ci]));
     return { completed, remaining };
   });
+};
+
+const applyPendingSmartHint = async (hint: SmartHint) => {
+  const currentGold = UserManager.getGold();
+  if (currentGold < 10) {
+    return UIManager.showToast(t('toast_insufficient_gold_hint'), "error");
+  }
+
+  const newGold = currentGold - 10;
+  await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
+  if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();
+
+  const targetR = hint.row;
+  const targetC = hint.col;
+  const correctNum = hint.digit;
+
+  userBoard[targetR][targetC] = correctNum;
+  selectedCell = { r: targetR, c: targetC };
+  hintsUsed++;
+
+  notesBoard[targetR][targetC].clear();
+
+  if (currentVariant === 'irregular' && currentRegionMap) {
+    const currentRegionId = currentRegionMap[targetR][targetC];
+    for (let i = 0; i < 9; i++) {
+      for (let j = 0; j < 9; j++) {
+        if (i === targetR || j === targetC || currentRegionMap[i][j] === currentRegionId) {
+          notesBoard[i][j].delete(correctNum);
+        }
+      }
+    }
+  } else {
+    const boxR = Math.floor(targetR / 3) * 3;
+    const boxC = Math.floor(targetC / 3) * 3;
+    for (let i = 0; i < 9; i++) {
+      notesBoard[targetR][i].delete(correctNum);
+      notesBoard[i][targetC].delete(correctNum);
+    }
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        notesBoard[boxR + i][boxC + j].delete(correctNum);
+      }
+    }
+  }
+
+  if (currentVariant === 'samurai') {
+    syncSamuraiCell(activeSamuraiIndex, targetR, targetC, correctNum);
+  }
+
+  if (isMatchMode && activeMatch) {
+    matchUserFilled++;
+    const isP1 = activeMatch.player1.uid === (auth.currentUser ? auth.currentUser.uid : '');
+    MatchEngine.updateProgress(activeMatch.matchId, isP1, matchUserFilled, errors);
+    const enemyName = activeMatch?.player2?.username || 'Rakip';
+    UIManager.renderMatchProgress(matchUserFilled, matchEnemyFilled, enemyName, matchTotalEmpty);
+  }
+
+  pendingSmartHint = null;
+  UIManager.hideSmartHintBanner();
+
+  persistCurrentGame();
+  if (activeRefreshFn) activeRefreshFn();
+
+  let isWin = false;
+  if (currentVariant === 'samurai') {
+    const currentDone = userBoard.every((row, ri) => row.every((val, ci) => val === currentSolution[ri][ci]));
+    const allDone = samuraiBoards.every(b => b.userBoard.every((row, ri) => row.every((val, ci) => val === b.solution[ri][ci])));
+
+    if (!allDone) {
+      if (currentDone) {
+        UIManager.showToast(t('samurai_board_done_toast'), "success");
+      }
+      persistCurrentGame();
+      if (activeRefreshFn) activeRefreshFn();
+      return;
+    }
+    isWin = true;
+  } else {
+    isWin = userBoard.every((row, ri) => row.every((val, ci) => val === currentSolution[ri][ci]));
+  }
+
+  if (!isWin) {
+    UIManager.showToast(t('toast_hint_placed'), "success");
+  } else {
+    if (timerInterval) clearInterval(timerInterval);
+    clearCurrentSavedGame();
+
+    if (isMatchMode) {
+      const reward = currentDifficulty === 'basit' ? 50 : currentDifficulty === 'orta' ? 100 : 200;
+      const finalGold = UserManager.getGold() + reward;
+      await UserManager.updateProgress(UserManager.getCurrentLevel(), finalGold);
+      await UserManager.recordDuelResult(true, !!activeMatch?.player2?.isBot, 25, reward);
+      if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();
+
+      AchievementManager.checkAndUnlockBadges({
+        level: UserManager.getCurrentLevel(),
+        gold: finalGold,
+        totalCompleted: UserManager.getTotalCompleted(),
+        lastTimeElapsed: timeElapsed,
+        lastErrors: errors
+      });
+
+      isMatchMode = false;
+      MatchEngine.clearActiveMatch();
+      UIManager.hideMatchHeader();
+      showMatchResult(true, reward, activeMatch?.player2?.username || 'Rakip');
+    } else if (isCustomGameMode) {
+      let baseReward = currentDifficulty === 'basit' ? 10 : currentDifficulty === 'orta' ? 20 : 35;
+      if (currentTimeLimitSec === 180) {
+        baseReward = Math.round(baseReward * 1.5);
+      }
+      const newGold = UserManager.getGold() + baseReward;
+
+      await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
+      await UserManager.recordGameCompletion({
+        level: currentLevelNumber,
+        difficulty: currentDifficulty,
+        variant: currentVariant,
+        category: 'custom',
+        timeElapsed,
+        timeFormatted: `${Math.floor(timeElapsed / 60).toString().padStart(2, '0')}:${(timeElapsed % 60).toString().padStart(2, '0')}`,
+        errors,
+        hintsUsed
+      });
+
+      AchievementManager.checkAndUnlockBadges({
+        level: UserManager.getCurrentLevel(),
+        gold: newGold,
+        totalCompleted: UserManager.getTotalCompleted(),
+        lastTimeElapsed: timeElapsed,
+        lastErrors: errors
+      });
+
+      if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();
+      UIManager.showToast(t('toast_custom_complete', { variant: currentVariant.toUpperCase(), reward: baseReward }), "success");
+      UIManager.navigate('menu');
+    } else {
+      const baseReward = currentDifficulty === 'basit' ? 10 : currentDifficulty === 'orta' ? 20 : 35;
+      const mult = getLevelConfig(currentLevelNumber, currentVariant).rewardMultiplier;
+      const reward = Math.round(baseReward * mult);
+      const userLvl = UserManager.getVariantLevel(currentVariant);
+      const nextLevel = computeNextJourneyLevel(currentLevelNumber, userLvl);
+
+      await UserManager.updateVariantLevel(currentVariant, nextLevel, reward);
+      clearVariantJourneySaves(currentVariant, nextLevel - 1);
+      const finalGold = UserManager.getGold();
+
+      if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();
+
+      const minutes = Math.floor(timeElapsed / 60).toString().padStart(2, '0');
+      const seconds = (timeElapsed % 60).toString().padStart(2, '0');
+      await UserManager.recordGameCompletion({
+        level: currentLevelNumber,
+        difficulty: currentDifficulty,
+        variant: currentVariant,
+        category: 'map',
+        timeElapsed,
+        timeFormatted: `${minutes}:${seconds}`,
+        errors,
+        hintsUsed
+      });
+
+      AchievementManager.checkAndUnlockBadges({
+        level: nextLevel,
+        gold: finalGold,
+        totalCompleted: UserManager.getTotalCompleted(),
+        lastTimeElapsed: timeElapsed,
+        lastErrors: errors
+      });
+
+      const isEn = getLang() === 'en';
+      const toastMsg = isEn
+        ? `🎉 Level ${currentLevelNumber} Completed! Level ${nextLevel} Unlocked! +${reward} 🪙`
+        : `🎉 Seviye ${currentLevelNumber} Tamamlandı! Seviye ${nextLevel} Açıldı! +${reward} 🪙`;
+
+      UIManager.showToast(toastMsg, "success");
+
+      if (onReturnToMapCallback) {
+        onReturnToMapCallback(currentVariant, nextLevel);
+      } else {
+        UIManager.navigate('map');
+      }
+    }
+  }
 };
 
 const syncSamuraiCell = (gridIdx: number, r: number, c: number, val: number) => {
@@ -378,6 +567,9 @@ export async function handleBotMatchProgress(botProgress: number, enemyName: str
 }
 
 export async function handleExitGameRequest(): Promise<boolean> {
+  pendingSmartHint = null;
+  UIManager.hideSmartHintBanner();
+
   if (activePlacementExam) {
     await finishPlacementExam(false);
     UIManager.hideSamuraiSpace();
@@ -465,6 +657,9 @@ export function startGame(
 ) {
   if (timerInterval) clearInterval(timerInterval);
   UIManager.hideSamuraiSpace();
+
+  pendingSmartHint = null;
+  UIManager.hideSmartHintBanner();
 
   isMatchMode = !!matchData;
   activeMatch = matchData || null;
@@ -568,7 +763,11 @@ export function startGame(
       activeGeneratedSudoku = null;
       samuraiBoards = [];
     } else {
-      const generated = SudokuGen.generateVariant(diff, currentVariant);
+      const isJourneyMode = !isMatchMode && !isCustomGameMode && !activePlacementExam;
+      const generated = isJourneyMode
+        ? SudokuGen.generateForLevel(currentLevelNumber, currentVariant)
+        : SudokuGen.generateVariant(diff, currentVariant);
+
       activeGeneratedSudoku = generated;
       currentRegionMap = generated.regionMap;
       currentCages = generated.cages;
@@ -736,7 +935,8 @@ export function startGame(
         currentVariant,
         currentRegionMap,
         currentCages,
-        undefined
+        undefined,
+        pendingSmartHint
       );
       UIManager.hideSamuraiRadar();
     }
@@ -751,6 +951,8 @@ export function startGame(
 
   const handleNumpadInput = (num: number) => {
     if (!selectedCell) return;
+    pendingSmartHint = null;
+    UIManager.hideSmartHintBanner();
     const { r, c } = selectedCell;
 
     if (userBoard[r][c] !== 0) {
@@ -866,7 +1068,9 @@ export function startGame(
           return;
         }
 
-        const reward = diff === 'basit' ? 10 : diff === 'orta' ? 20 : 35;
+        const baseReward = diff === 'basit' ? 10 : diff === 'orta' ? 20 : 35;
+        const mult = getLevelConfig(level, currentVariant).rewardMultiplier;
+        const reward = Math.round(baseReward * mult);
         const userLvl = UserManager.getVariantLevel(currentVariant);
         const nextLevel = computeNextJourneyLevel(level, userLvl);
 
@@ -1091,183 +1295,69 @@ export function startGame(
 
   const hintBtn = document.getElementById('btn-hint');
   if (hintBtn) {
+    if (activePlacementExam) {
+      hintBtn.classList.add('hidden');
+    } else {
+      hintBtn.classList.remove('hidden');
+    }
+
     hintBtn.onclick = async () => {
-      const currentGold = UserManager.getGold();
-      if (currentGold < 10) {
-        return UIManager.showToast(t('toast_insufficient_gold_hint'), "error");
+      if (pendingSmartHint) {
+        await applyPendingSmartHint(pendingSmartHint);
+        return;
       }
+
       if (hintsUsed >= 5) {
         return UIManager.showToast(t('toast_hint_limit_reached'), "error");
       }
 
-      let targetR = -1;
-      let targetC = -1;
+      const hint = findSmartHint(userBoard, currentSolution, {
+        preferredCell: selectedCell,
+        regionMap: currentRegionMap
+      });
 
-      if (selectedCell && userBoard[selectedCell.r][selectedCell.c] === 0) {
-        targetR = selectedCell.r;
-        targetC = selectedCell.c;
-      } else {
-        for (let r = 0; r < 9; r++) {
-          for (let c = 0; c < 9; c++) {
-            if (userBoard[r][c] === 0) {
-              targetR = r;
-              targetC = c;
-              break;
-            }
-          }
-          if (targetR !== -1) break;
-        }
-      }
-
-      if (targetR === -1 || targetC === -1) {
+      if (!hint) {
         return UIManager.showToast(t('toast_no_empty_cells'), "info");
       }
 
-      const newGold = currentGold - 10;
-      await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
-      if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();
+      pendingSmartHint = hint;
+      selectedCell = { r: hint.row, c: hint.col };
 
-      const correctNum = currentSolution[targetR][targetC];
-      userBoard[targetR][targetC] = correctNum;
-      selectedCell = { r: targetR, c: targetC };
-      hintsUsed++;
+      let techKey = 'academy_title';
+      if (hint.technique === 'naked_single') techKey = 'tech_naked_single';
+      else if (hint.technique === 'hidden_single_row') techKey = 'tech_hidden_single';
+      else if (hint.technique === 'hidden_single_col') techKey = 'tech_hidden_single';
+      else if (hint.technique === 'hidden_single_box') techKey = 'tech_hidden_single';
+      else if (hint.technique === 'pointing_deduction') techKey = 'tech_pointing_pairs';
+      else techKey = 'tech_crosshatching';
 
-      notesBoard[targetR][targetC].clear();
+      const techLabel = t(techKey);
+      const symbol = formatHintSymbol(hint.digit, currentVariant);
+      let reasonText = '';
 
-      if (currentVariant === 'irregular' && currentRegionMap) {
-        const currentRegionId = currentRegionMap[targetR][targetC];
-        for (let i = 0; i < 9; i++) {
-          for (let j = 0; j < 9; j++) {
-            if (i === targetR || j === targetC || currentRegionMap[i][j] === currentRegionId) {
-              notesBoard[i][j].delete(correctNum);
-            }
-          }
-        }
+      if (hint.technique === 'naked_single') {
+        reasonText = t('hint_explain_naked_single', { row: hint.row + 1, col: hint.col + 1, val: symbol });
+      } else if (hint.technique === 'hidden_single_row') {
+        reasonText = t('hint_explain_hidden_single_row', { row: hint.row + 1, val: symbol });
+      } else if (hint.technique === 'hidden_single_col') {
+        reasonText = t('hint_explain_hidden_single_col', { col: hint.col + 1, val: symbol });
+      } else if (hint.technique === 'hidden_single_box') {
+        reasonText = t('hint_explain_hidden_single_box', { box: hint.unitIndex + 1, val: symbol });
       } else {
-        const boxR = Math.floor(targetR / 3) * 3;
-        const boxC = Math.floor(targetC / 3) * 3;
-        for (let i = 0; i < 9; i++) {
-          notesBoard[targetR][i].delete(correctNum);
-          notesBoard[i][targetC].delete(correctNum);
-        }
-        for (let i = 0; i < 3; i++) {
-          for (let j = 0; j < 3; j++) {
-            notesBoard[boxR + i][boxC + j].delete(correctNum);
-          }
-        }
+        reasonText = t('hint_explain_fallback', { val: symbol });
       }
 
-      if (currentVariant === 'samurai') {
-        syncSamuraiCell(activeSamuraiIndex, targetR, targetC, correctNum);
-      }
-
-      if (isMatchMode && activeMatch) {
-        matchUserFilled++;
-        const isP1 = activeMatch.player1.uid === (auth.currentUser ? auth.currentUser.uid : '');
-        MatchEngine.updateProgress(activeMatch.matchId, isP1, matchUserFilled, errors);
-        const enemyName = activeMatch?.player2?.username || 'Rakip';
-        UIManager.renderMatchProgress(matchUserFilled, matchEnemyFilled, enemyName, matchTotalEmpty);
-      }
-
-      persistCurrentGame();
+      UIManager.showSmartHintBanner(techLabel, reasonText);
+      UIManager.showToast(t('hint_step1_toast'), "info");
       refresh();
-
-      let isWin = false;
-      if (currentVariant === 'samurai') {
-        const currentDone = userBoard.every((row, ri) => row.every((val, ci) => val === currentSolution[ri][ci]));
-        const allDone = samuraiBoards.every(b => b.userBoard.every((row, ri) => row.every((val, ci) => val === b.solution[ri][ci])));
-
-        if (!allDone) {
-          if (currentDone) {
-            UIManager.showToast(t('samurai_board_done_toast'), "success");
-          }
-          persistCurrentGame();
-          refresh();
-          return;
-        }
-        isWin = true;
-      } else {
-        isWin = userBoard.every((row, ri) => row.every((val, ci) => val === currentSolution[ri][ci]));
-      }
-
-      if (isWin) {
-        if (timerInterval) clearInterval(timerInterval);
-        clearCurrentSavedGame();
-
-        if (isMatchMode) {
-          const reward = currentDifficulty === 'basit' ? 50 : currentDifficulty === 'orta' ? 100 : 200;
-          const finalGold = UserManager.getGold() + reward;
-          await UserManager.updateProgress(UserManager.getCurrentLevel(), finalGold);
-          await UserManager.recordDuelResult(true, !!activeMatch?.player2?.isBot, 25, reward);
-          if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();
-
-          AchievementManager.checkAndUnlockBadges({
-            level: UserManager.getCurrentLevel(),
-            gold: finalGold,
-            totalCompleted: UserManager.getTotalCompleted(),
-            lastTimeElapsed: timeElapsed,
-            lastErrors: errors
-          });
-
-          isMatchMode = false;
-          MatchEngine.clearActiveMatch();
-          UIManager.hideMatchHeader();
-          showMatchResult(true, reward, activeMatch?.player2?.username || 'Rakip');
-        } else {
-          const reward = currentDifficulty === 'basit' ? 10 : currentDifficulty === 'orta' ? 20 : 35;
-          const userLvl = UserManager.getVariantLevel(currentVariant);
-          const nextLevel = computeNextJourneyLevel(currentLevelNumber, userLvl);
-
-          await UserManager.updateVariantLevel(currentVariant, nextLevel, reward);
-          if (!isCustomGameMode) {
-            clearVariantJourneySaves(currentVariant, nextLevel - 1);
-          }
-          const finalGold = UserManager.getGold();
-
-          if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();
-
-          const minutes = Math.floor(timeElapsed / 60).toString().padStart(2, '0');
-          const seconds = (timeElapsed % 60).toString().padStart(2, '0');
-          const category = isCustomGameMode ? 'custom' : 'map';
-          await UserManager.recordGameCompletion({
-            level: currentLevelNumber,
-            difficulty: currentDifficulty,
-            variant: currentVariant,
-            category,
-            timeElapsed,
-            timeFormatted: `${minutes}:${seconds}`,
-            errors,
-            hintsUsed
-          });
-
-          AchievementManager.checkAndUnlockBadges({
-            level: isCustomGameMode ? userLvl : nextLevel,
-            gold: finalGold,
-            totalCompleted: UserManager.getTotalCompleted(),
-            lastTimeElapsed: timeElapsed,
-            lastErrors: errors
-          });
-
-          const isEn = getLang() === 'en';
-          const toastMsg = isEn
-            ? `🎉 Level ${currentLevelNumber} Completed! Level ${nextLevel} Unlocked! +${reward} 🪙`
-            : `🎉 Seviye ${currentLevelNumber} Tamamlandı! Seviye ${nextLevel} Açıldı! +${reward} 🪙`;
-
-          UIManager.showToast(toastMsg, "success");
-
-          if (onReturnToMapCallback) {
-            onReturnToMapCallback(currentVariant, nextLevel);
-          } else {
-            UIManager.navigate('map');
-          }
-        }
-      } else {
-        UIManager.showToast(t('toast_hint_placed'), "success");
-      }
     };
   }
 
   refresh();
+
+  if (!isValidRestored && !isMatchMode && !isCustomGameMode && !activePlacementExam) {
+    maybeShowRegionIntroLesson(currentLevelNumber);
+  }
 }
 
 export function initGameController(callbacks: {
@@ -1286,5 +1376,17 @@ export function initGameController(callbacks: {
   document.getElementById('btn-close-match-result')?.addEventListener('click', () => {
     UIManager.toggleModal('match-result-modal', false);
     UIManager.navigate('menu');
+  });
+
+  document.getElementById('btn-apply-smart-hint')?.addEventListener('click', async () => {
+    if (pendingSmartHint) {
+      await applyPendingSmartHint(pendingSmartHint);
+    }
+  });
+
+  document.getElementById('btn-dismiss-smart-hint')?.addEventListener('click', () => {
+    pendingSmartHint = null;
+    UIManager.hideSmartHintBanner();
+    if (activeRefreshFn) activeRefreshFn();
   });
 }

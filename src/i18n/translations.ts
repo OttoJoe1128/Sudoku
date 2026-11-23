@@ -357,7 +357,146 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     btn_view_on_map: 'Haritada Gör ➔',
     placement_target_basit: 'Hedef: Basit (Seviye 150)',
     placement_target_orta: 'Hedef: Orta (Seviye 301)',
-    placement_target_zor: 'Hedef: Zor (Seviye 701)'
+    placement_target_zor: 'Hedef: Zor (Seviye 701)',
+
+    // Faz 2.5b — 20 Bölge Adı
+    region_1: 'Zümrüt Eşiğinde',
+    region_2: 'Kuzey Patikası',
+    region_3: 'Yosunlu Geçit',
+    region_4: 'Berrak Pınar',
+    region_5: 'Gümüş Koru',
+    region_6: 'Vadi Kapısı',
+    region_7: 'Hextech Avlusu',
+    region_8: 'Çarklı Kule',
+    region_9: 'Rün Laboratuvarı',
+    region_10: 'Büyük Kütüphane',
+    region_11: 'Enerji Mahzeni',
+    region_12: 'Prizma Galerisi',
+    region_13: 'Muhafız Salonu',
+    region_14: 'Hextech Surları',
+    region_15: 'Kızıl Etekler',
+    region_16: 'Ejderha Geçidi',
+    region_17: 'Obsidyen Krater',
+    region_18: 'Lav Tapınağı',
+    region_19: 'Alev Tahtı',
+    region_20: 'Kızıl Zirve Tapınağı',
+
+    // 20 Akademi Tekniği
+    tech_row_col_scan: 'Satır-Sütun Tarama',
+    tech_box_elimination: 'Kutu Eleme',
+    tech_naked_single: 'Çıplak Tekli',
+    tech_hidden_single: 'Gizli Tekli',
+    tech_pencil_marks: 'Not Kalemi',
+    tech_crosshatching: 'Çapraz Çizgileme',
+    tech_pointing_pairs: 'İşaretçi İkililer',
+    tech_box_line_reduction: 'Kutu-Çizgi İndirgeme',
+    tech_naked_pairs: 'Çıplak İkililer',
+    tech_hidden_pairs: 'Gizli İkililer',
+    tech_naked_triples: 'Çıplak Üçlüler',
+    tech_hidden_triples: 'Gizli Üçlüler',
+    tech_locked_candidates: 'Kilitli Adaylar',
+    tech_skyscraper: 'Gökdelen',
+    tech_x_wing: 'X-Kanadı',
+    tech_y_wing: 'Y-Kanadı',
+    tech_swordfish: 'Kılıçbalığı',
+    tech_xy_chain: 'XY-Zinciri',
+    tech_unique_rectangle: 'Benzersiz Dörtgen',
+    tech_grandmaster_synthesis: 'Büyükusta Sentezi',
+
+    // Ritim & Bölge Etiketleri
+    rhythm_warmup: 'Isınma',
+    rhythm_balance: 'Denge',
+    rhythm_tension: 'Gerilim',
+    rhythm_sprint: 'Depar',
+    rhythm_milestone: 'Kilometre Taşı',
+    rhythm_guardian: 'Bölge Muhafızı',
+    map_region_label: 'Bölge {id} / 20',
+    map_region_progress: '{current} / 50 Bölüm',
+    map_region_focus: 'Odak Teknik',
+    map_milestone_tag: '2× Altın',
+    map_guardian_tag: 'Muhafız · 2.5×',
+
+    // Faz 2.5c — Akademi Etiketleri
+    academy_title: 'Sudoku Akademisi',
+    academy_subtitle: '20 Bölge · 20 Ustalık Tekniği',
+    academy_btn_open: 'Akademi',
+    academy_got_it: 'Anladım, Devam Et',
+    academy_unlocked_count: '{unlocked} / 20 Teknik Açık',
+    academy_locked_hint: 'Seviye {level} ile açılır',
+    academy_how_to_spot: 'Nasıl Görülür?',
+    academy_new_region_badge: 'YENİ BÖLGE DERSİ',
+    academy_back_list: '← Tüm Teknikler',
+
+    // 20 Teknik İçin Özet & İpucu
+    academy_summary_row_col_scan: 'Boş hücrenin yer aldığı satır ve sütundaki dolu rakamları tarayarak eksik tek seçeneği bul.',
+    academy_tip_row_col_scan: '1\'den 9\'a kadar eksik olan tek rakamı tespit etmek için kesişen çizgileri takip et.',
+
+    academy_summary_box_elimination: '3x3 kutu içerisindeki boş hücrelerden komşu satır veya sütunlarca engellenenleri ele.',
+    academy_tip_box_elimination: 'Aynı rakamın komşu bloklardaki hizasını kontrol ederek kutudaki tek geçerli yeri seç.',
+
+    academy_summary_naked_single: 'Bir hücrenin adayları incelendiğinde sadece 1 olası rakamın kaldığını gör.',
+    academy_tip_naked_single: 'Not modunu kullanarak tek seçeneği kalan hücreyi doğrudan doldur.',
+
+    academy_summary_hidden_single: 'Bir rakamın bir satır, sütun veya kutuda yer alabileceği tek bir hücre kaldığını tespit et.',
+    academy_tip_hidden_single: 'Diğer adaylar olsa bile o rakam için başka yer yoksa hücreye o rakamı yaz.',
+
+    academy_summary_pencil_marks: 'Kararsız kaldığın boş hücrelere küçük aday notları yazarak olasılıkları küçült.',
+    academy_tip_pencil_marks: 'Zorlaşan bölümlerde Not modunu açarak 2-3 adaylı hücreleri işaretle.',
+
+    academy_summary_crosshatching: 'Bir rakamın tahtadaki tüm konumlarını çapraz çizgilerle tarayarak boşlukları kısıtla.',
+    academy_tip_crosshatching: 'Tahtada en çok tekrar eden rakamı seçip tüm kutularda çapraz tarama yap.',
+
+    academy_summary_pointing_pairs: 'Bir kutudaki aday rakamlar aynı hat üzerinde hizalandığında o hat üzerindeki dış adayları sil.',
+    academy_tip_pointing_pairs: 'Kutu içi hizalanan ikilileri fark ettiğinde hattın devamındaki adayları temizle.',
+
+    academy_summary_box_line_reduction: 'Bir hatta yer alan adaylar tek kutuya kısıtlandığında kutudaki diğer adayları sil.',
+    academy_tip_box_line_reduction: 'Çizgi üzerindeki kısıtlamayı kutu içine yansıtarak aday sayısını azalt.',
+
+    academy_summary_naked_pairs: 'Aynı iki hücrede sadece aynı iki aday rakam olduğunda gruptaki diğer hücrelerden bu adayları sil.',
+    academy_tip_naked_pairs: 'İki hücrede kilitlenen ikiliyi bulduğunda gruptaki diğer adaylardan bu iki rakamı çıkar.',
+
+    academy_summary_hidden_pairs: 'Bir grupta sadece iki hücrede beliren iki özel adayı kilitleyerek diğer fazlalık adayları sil.',
+    academy_tip_hidden_pairs: 'Gizli ikiliyi yakaladığında o iki hücredeki diğer gereksiz notları temizle.',
+
+    academy_summary_naked_triples: 'Üç hücrede toplam 3 aday rakam kilitlendiğinde gruptan bu 3 rakamı temizle.',
+    academy_tip_naked_triples: 'Üçlü kombinasyonları tespit edip kalan hücreleri rahatlat.',
+
+    academy_summary_hidden_triples: 'Grubun sadece 3 hücresinde yaşayan 3 özel adayı bularak o hücrelerdeki diğer adayları ele.',
+    academy_tip_hidden_triples: 'Gizlenmiş üçlü grubu bulunca hücrelerin diğer karmaşık notlarını kaldır.',
+
+    academy_summary_locked_candidates: 'Kutu ve çizgi etkileşimiyle kilitlenen adayları saptayarak gereksiz seçenekleri sil.',
+    academy_tip_locked_candidates: 'Kilitli aday zincirini takip ederek tahta genelinde aday temizliği yap.',
+
+    academy_summary_skyscraper: 'İki paralel hatta yükselen kule adaylarının taban ve çatı bağlantısıyla eleme yap.',
+    academy_tip_skyscraper: 'Çatı hücrelerinin ortak gördüğü dış hücrelerden hedef adayı sil.',
+
+    academy_summary_x_wing: 'İki satırda aynı iki sütuna hizalanan 4 kilit noktayla sütunlardaki diğer adayları ele.',
+    academy_tip_x_wing: 'Dikdörtgen oluşturan 4 köşeyi gör ve dikey hatlardaki fazlalık adayları temizle.',
+
+    academy_summary_y_wing: 'Üç menteşe hücrenin AB-BC-AC aday ilişkisiyle ortak kesişimdeki adayları sil.',
+    academy_tip_y_wing: 'Menteşe ve iki kanat hücresinin ortak gördüğü alandan hedef adayı kaldır.',
+
+    academy_summary_swordfish: 'Üç satır ve üç sütunda ızgara oluşturan aday yapı ile tüm kesişim çizgilerini temizle.',
+    academy_tip_swordfish: '3x3 desenini yakalayıp dik hatlardaki adayları yok et.',
+
+    academy_summary_xy_chain: 'İkili aday hücrelerden oluşan zincirleme mantık yoluyla uçların kesişimini temizle.',
+    academy_tip_xy_chain: 'Zincirin başı ve sonunun aynı anda gördüğü hücreden ortak adayı sil.',
+
+    academy_summary_unique_rectangle: 'Bulmacanın tek çözümlü yapısını korumak için 4 köşeli ölümcül deseni kır.',
+    academy_tip_unique_rectangle: 'Çift çözümlü kilit döngüsünü engelleyen ekstra adayı hedef olarak seç.',
+
+    academy_summary_grandmaster_synthesis: 'Tüm gelişmiş teknikleri harmanlayarak en zorlu bulmacaları çöz.',
+    academy_tip_grandmaster_synthesis: 'Derin eleme, not takibi ve desen kombinasyonlarıyla zafere ulaş.',
+
+    // Faz 2.5d — Akıllı İpucu Anahtarları
+    hint_banner_title: 'Akademi İpucu',
+    hint_btn_apply: 'Yerleştir (-10 🪙)',
+    hint_explain_naked_single: '{row}. satır {col}. sütundaki bu hücreye yalnızca {val} gelebilir.',
+    hint_explain_hidden_single_row: '{row}. satırda {val} yalnızca bu hücreye yerleşebilir.',
+    hint_explain_hidden_single_col: '{col}. sütunda {val} yalnızca bu hücreye yerleşebilir.',
+    hint_explain_hidden_single_box: '{box}. kutuda {val} yalnızca bu hücreye yerleşebilir.',
+    hint_explain_fallback: 'Bu hücrenin doğru değeri {val}; çapraz elemeyle doğrulanabilir.',
+    hint_step1_toast: '💡 Mantık gösterildi! Yerleştirmek için İpucu veya Yerleştir butonuna dokun.'
   },
   en: {
     // Main Menu
@@ -715,7 +854,146 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     btn_view_on_map: 'View on Map ➔',
     placement_target_basit: 'Target: Easy (Level 150)',
     placement_target_orta: 'Target: Medium (Level 301)',
-    placement_target_zor: 'Target: Hard (Level 701)'
+    placement_target_zor: 'Target: Hard (Level 701)',
+
+    // Faz 2.5b — 20 Region Names
+    region_1: 'Emerald Threshold',
+    region_2: 'Northern Trail',
+    region_3: 'Mossy Pass',
+    region_4: 'Crystal Spring',
+    region_5: 'Silver Grove',
+    region_6: 'Valley Gate',
+    region_7: 'Hextech Courtyard',
+    region_8: 'Cogwheel Tower',
+    region_9: 'Rune Laboratory',
+    region_10: 'Grand Library',
+    region_11: 'Energy Vault',
+    region_12: 'Prism Gallery',
+    region_13: 'Guardian Hall',
+    region_14: 'Hextech Ramparts',
+    region_15: 'Crimson Slopes',
+    region_16: 'Dragon Pass',
+    region_17: 'Obsidian Crater',
+    region_18: 'Lava Temple',
+    region_19: 'Flame Throne',
+    region_20: 'Crimson Zenith',
+
+    // 20 Academy Techniques
+    tech_row_col_scan: 'Row-Column Scanning',
+    tech_box_elimination: 'Box Elimination',
+    tech_naked_single: 'Naked Single',
+    tech_hidden_single: 'Hidden Single',
+    tech_pencil_marks: 'Pencil Marks',
+    tech_crosshatching: 'Crosshatching',
+    tech_pointing_pairs: 'Pointing Pairs',
+    tech_box_line_reduction: 'Box-Line Reduction',
+    tech_naked_pairs: 'Naked Pairs',
+    tech_hidden_pairs: 'Hidden Pairs',
+    tech_naked_triples: 'Naked Triples',
+    tech_hidden_triples: 'Hidden Triples',
+    tech_locked_candidates: 'Locked Candidates',
+    tech_skyscraper: 'Skyscraper',
+    tech_x_wing: 'X-Wing',
+    tech_y_wing: 'Y-Wing',
+    tech_swordfish: 'Swordfish',
+    tech_xy_chain: 'XY-Chain',
+    tech_unique_rectangle: 'Unique Rectangle',
+    tech_grandmaster_synthesis: 'Grandmaster Synthesis',
+
+    // Rhythm & Region Labels
+    rhythm_warmup: 'Warmup',
+    rhythm_balance: 'Balance',
+    rhythm_tension: 'Tension',
+    rhythm_sprint: 'Sprint',
+    rhythm_milestone: 'Milestone',
+    rhythm_guardian: 'Region Guardian',
+    map_region_label: 'Region {id} / 20',
+    map_region_progress: '{current} / 50 Levels',
+    map_region_focus: 'Focus Technique',
+    map_milestone_tag: '2× Gold',
+    map_guardian_tag: 'Guardian · 2.5×',
+
+    // Faz 2.5c — Academy Labels
+    academy_title: 'Sudoku Academy',
+    academy_subtitle: '20 Regions · 20 Mastery Techniques',
+    academy_btn_open: 'Academy',
+    academy_got_it: 'Got It, Continue',
+    academy_unlocked_count: '{unlocked} / 20 Techniques Unlocked',
+    academy_locked_hint: 'Unlocks at Level {level}',
+    academy_how_to_spot: 'How to Spot',
+    academy_new_region_badge: 'NEW REGION LESSON',
+    academy_back_list: '← All Techniques',
+
+    // 20 Technique Summaries & Tips
+    academy_summary_row_col_scan: 'Scan filled numbers in row and column to deduce the remaining single option.',
+    academy_tip_row_col_scan: 'Trace intersecting lines to identify the only missing number from 1 to 9.',
+
+    academy_summary_box_elimination: 'Eliminate empty cells in a 3x3 box blocked by adjacent rows or columns.',
+    academy_tip_box_elimination: 'Check alignment of same digit in neighboring blocks to pinpoint its box placement.',
+
+    academy_summary_naked_single: 'A cell has only 1 possible candidate remaining after evaluating all constraints.',
+    academy_tip_naked_single: 'Use notes mode to instantly spot and fill cells reduced to a single candidate.',
+
+    academy_summary_hidden_single: 'A digit can fit in only one cell within a specific row, column, or box.',
+    academy_tip_hidden_single: 'Even if other notes exist, place the digit if no other cell in the group can hold it.',
+
+    academy_summary_pencil_marks: 'Write small candidate notes in empty cells to systematically filter possibilities.',
+    academy_tip_pencil_marks: 'Enable Notes mode in tougher levels to mark cells with 2-3 candidates.',
+
+    academy_summary_crosshatching: 'Project grid-wide lines from existing digits to isolate empty placements.',
+    academy_tip_crosshatching: 'Select the most frequent number on the board and crosshatch across all boxes.',
+
+    academy_summary_pointing_pairs: 'When candidates in a box align in one row/column, eliminate them from the rest of that line.',
+    academy_tip_pointing_pairs: 'Spotted aligned pairs inside a box? Clear that digit from the rest of the line.',
+
+    academy_summary_box_line_reduction: 'When a digit in a line is confined to one box, clear it from other cells in that box.',
+    academy_tip_box_line_reduction: 'Project line constraints inward to purge extra candidates inside the box.',
+
+    academy_summary_naked_pairs: 'Two cells in a group sharing the exact same 2 candidates exclude those digits from other cells.',
+    academy_tip_naked_pairs: 'Locking two candidates in two cells lets you purge them from surrounding cells.',
+
+    academy_summary_hidden_pairs: 'Two candidates appearing exclusively in two cells of a group lock those cells.',
+    academy_tip_hidden_pairs: 'Upon catching a hidden pair, wipe away all other extra candidates in those two cells.',
+
+    academy_summary_naked_triples: 'Three cells in a group restricted to 3 total candidates eliminate them elsewhere.',
+    academy_tip_naked_triples: 'Spot triple combinations to unclutter candidates in the remaining group.',
+
+    academy_summary_hidden_triples: 'Three digits found in only 3 cells of a group isolate those cells completely.',
+    academy_tip_hidden_triples: 'Isolate hidden triples and clear all other competing notes in those 3 cells.',
+
+    academy_summary_locked_candidates: 'Inter-box and line locks eliminate redundant candidate choices across regions.',
+    academy_tip_locked_candidates: 'Follow locked candidate chains to clean notes across the board.',
+
+    academy_summary_skyscraper: 'Two parallel lines with tower candidates eliminate shared sightline notes.',
+    academy_tip_skyscraper: 'Eliminate target candidates seen simultaneously by both tower roof cells.',
+
+    academy_summary_x_wing: 'Four cells forming a rectangle across 2 rows and 2 columns purge column candidates.',
+    academy_tip_x_wing: 'Spot the 4 corner rectangle and purge redundant notes along the vertical lines.',
+
+    academy_summary_y_wing: 'A 3-cell Y-Wing structure with AB-BC-AC candidates eliminates C from shared cells.',
+    academy_tip_y_wing: 'Remove the target candidate from cells seen by both wing endpoints.',
+
+    academy_summary_swordfish: 'A 3x3 grid pattern across 3 rows and 3 columns eliminates column candidates.',
+    academy_tip_swordfish: 'Identify the 3x3 swordfish matrix to clear vertical candidate lines.',
+
+    academy_summary_xy_chain: 'A chain of bi-value cells connects endpoints to eliminate candidates in shared cells.',
+    academy_tip_xy_chain: 'Clear common candidates seen by both start and end cells of the chain.',
+
+    academy_summary_unique_rectangle: 'Break 4-corner deadly patterns to preserve unique Sudoku solvability.',
+    academy_tip_unique_rectangle: 'Select the extra candidate that prevents an invalid dual-solution loop.',
+
+    academy_summary_grandmaster_synthesis: 'Synthesize all advanced Sudoku techniques to master top-tier puzzles.',
+    academy_tip_grandmaster_synthesis: 'Combine deep elimination, note tracking, and pattern synthesis for victory.',
+
+    // Faz 2.5d — Smart Hint Keys
+    hint_banner_title: 'Academy Hint',
+    hint_btn_apply: 'Place (-10 🪙)',
+    hint_explain_naked_single: 'Only {val} can fit in Row {row}, Column {col}.',
+    hint_explain_hidden_single_row: 'In Row {row}, {val} can only be placed in this cell.',
+    hint_explain_hidden_single_col: 'In Column {col}, {val} can only be placed in this cell.',
+    hint_explain_hidden_single_box: 'In Box {box}, {val} can only be placed in this cell.',
+    hint_explain_fallback: 'The verified value for this cell is {val} by elimination.',
+    hint_step1_toast: '💡 Logic shown! Tap Hint again or Place to fill it.'
   }
 };
 

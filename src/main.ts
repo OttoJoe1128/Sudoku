@@ -18,6 +18,7 @@ import { initGameController, startGame, startPlacementExam, handleBotMatchProgre
 import { AdService } from './services/adService';
 import { openOnboardingModal, isOnboardingDone } from './controllers/onboardingController';
 import { startAppTour, isAppTourDone } from './controllers/appTourController';
+import { initAcademyController, refreshAcademyLanguageUI } from './controllers/academyController';
 
 // UI Binişi & Öz-Teşhis
 UIManager.mountUI();
@@ -103,6 +104,7 @@ const updateLanguageUI = () => {
   applyStaticTranslations();
   updateSavedGamesCountUI();
   refreshMapLanguageUI();
+  refreshAcademyLanguageUI();
   updateWelcomeLangUI();
 
   const currentTitle = UserManager.getTitle();
@@ -206,6 +208,8 @@ initModalsController({
   getRuleDescription,
   onHandleIncomingChallenge: (chal) => handleIncomingChallenge(chal, (level, diff, matchData, variant) => startGame(level, diff, matchData, undefined, variant))
 });
+
+initAcademyController();
 
 // ----------------------------------------------------
 // DİL DEĞİŞTİRME & KULLANICI GİRİŞ DİNLEYİCİLERİ

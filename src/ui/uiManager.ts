@@ -12,9 +12,11 @@ import { inboxModalTemplate } from './templates/inboxModal';
 import { savedGamesModalTemplate } from './templates/savedGamesModal';
 import { secondChanceModalTemplate } from './templates/secondChanceModal';
 import { onboardingModalTemplate } from './templates/onboardingModal';
+import { academyModalTemplate } from './templates/academyModal';
 import { getAmbientBackgroundHTML } from '../design/backgrounds';
 import { Icons, renderAvatarSVG, renderRankBadgeSVG, AVATAR_LIST } from '../design/icons';
 import { t, getLang, translateRankName } from '../i18n/translations';
+import { getLevelConfig, getRegionForLevel } from '../engine/rhythmConfig';
 import { Player, SpeedRecord } from '../engine/leaderboard';
 import { ShopItems, ShopManager } from '../engine/shop';
 import { BadgeStatus } from '../engine/achievements';
@@ -224,6 +226,7 @@ export const UIManager = {
         ${usernameModalTemplate}
         ${secondChanceModalTemplate}
         ${onboardingModalTemplate}
+        ${academyModalTemplate}
         <div id="game-view" class="hidden flex-col items-center p-6 w-full h-full relative z-10">
             <!-- Düello Canlı İlerleme Çubuğu -->
             <div id="match-header-bar" class="hidden w-full bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-strong)] p-3 rounded-2xl mb-3 shadow-lg flex-col gap-2">
@@ -255,6 +258,19 @@ export const UIManager = {
             <div id="game-variant-badge-box" class="w-full mb-2 flex justify-between items-center bg-[var(--bg-card)] px-3 py-1.5 rounded-xl border border-[var(--border-subtle)] text-xs font-black text-[var(--text-primary)]">
                 <span id="game-variant-title" class="flex items-center gap-1.5" data-i18n="var_classic_full">Classic Sudoku</span>
                 <span id="game-variant-multiplier" class="text-[10px] font-extrabold text-[var(--accent-gold)] bg-[var(--bg-elevated)] px-2 py-0.5 rounded-md border border-[var(--border-strong)]">1.0x Pts</span>
+            </div>
+
+            <!-- Akıllı İpucu Şeridi -->
+            <div id="smart-hint-banner" class="hidden w-full max-w-[380px] bg-[var(--bg-card)] border-2 border-[var(--accent-gold)] text-[var(--text-primary)] rounded-2xl p-3 shadow-xl flex-col gap-1.5 mb-2 relative transition-all z-20">
+                <button id="btn-dismiss-smart-hint" class="absolute top-2 right-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-bold p-1 cursor-pointer">✕</button>
+                <div class="flex items-center gap-1.5 text-xs font-black text-[var(--accent-gold)]">
+                    <span>💡</span>
+                    <span id="smart-hint-tech" data-i18n="hint_banner_title">Akademi İpucu</span>
+                </div>
+                <p id="smart-hint-text" class="text-xs text-[var(--text-primary)] font-medium leading-relaxed text-left pr-4"></p>
+                <button id="btn-apply-smart-hint" class="w-full bg-[var(--accent-gold)] hover:brightness-110 text-[var(--text-on-gold)] font-black py-2 rounded-xl text-xs shadow active:scale-95 transition-all cursor-pointer mt-1">
+                    <span data-i18n="hint_btn_apply">Yerleştir (-10 🪙)</span>
+                </button>
             </div>
 
             <!-- Samurai 5-Grid Mini-Radar Seçici Bar -->
@@ -988,7 +1004,8 @@ export const UIManager = {
     windowStart: number,
     windowEnd: number,
     onNodeClick: (level: number) => void,
-    autoScrollToCurrent: boolean = false
+    autoScrollToCurrent: boolean = false,
+    variant: SudokuVariant = 'classic'
   ) {
     const container = document.getElementById('map-path-container');
     const targetLabel = document.getElementById('map-target-label');
@@ -1015,6 +1032,31 @@ export const UIManager = {
       tierProgress.style.width = `${pct}%`;
     }
 
+    // 20 Bölge × 50 Bölüm Kartı Güncellemesi
+    const currentRegion = getRegionForLevel(currentLevel);
+    const rhythmCfg = getLevelConfig(currentLevel, variant);
+    const regionBanner = document.getElementById('map-region-banner');
+    const regionBadge = document.getElementById('map-region-badge');
+    const regionTitle = document.getElementById('map-region-title');
+    const regionTech = document.getElementById('map-region-tech');
+    const regionProgressText = document.getElementById('map-region-progress-text');
+    const regionProgressBar = document.getElementById('map-region-progress-bar');
+
+    if (regionBanner && regionBadge && regionTitle && regionTech && regionProgressText && regionProgressBar) {
+      regionBadge.innerText = t('map_region_label', { id: currentRegion.id });
+      regionTitle.innerText = t(currentRegion.key);
+      regionTech.innerText = t('tech_' + currentRegion.techniqueId);
+      regionProgressText.innerText = t('map_region_progress', { current: rhythmCfg.levelInRegion });
+      const pct = Math.min(100, Math.max(2, (rhythmCfg.levelInRegion / 50) * 100));
+      regionProgressBar.style.width = `${pct}%`;
+
+      let borderColor = 'var(--border-strong)';
+      if (currentRegion.biome === 'emerald') borderColor = 'rgba(16, 185, 129, 0.4)';
+      else if (currentRegion.biome === 'hextech') borderColor = 'rgba(6, 182, 212, 0.4)';
+      else if (currentRegion.biome === 'crimson') borderColor = 'rgba(244, 63, 94, 0.4)';
+      regionBanner.style.borderColor = borderColor;
+    }
+
     const startLvl = Math.max(1, windowStart);
     const endLvl = Math.min(1000, Math.max(startLvl + 5, windowEnd));
     const totalLevels = endLvl - startLvl + 1;
@@ -1039,7 +1081,7 @@ export const UIManager = {
     for (let lvl = endLvl; lvl >= startLvl; lvl--) {
       const isCompleted = lvl < currentLevel;
       const isCurrent = lvl === currentLevel;
-      const isMilestone = lvl % 10 === 0;
+      const nodeRhythm = getLevelConfig(lvl, variant);
 
       const offsetX = Math.round(Math.sin(lvl * 0.85) * 76);
       const cx = 160 + offsetX;
@@ -1061,7 +1103,12 @@ export const UIManager = {
       innerBox.className = 'relative flex flex-col items-center justify-center group';
       innerBox.style.transform = `translateX(${offsetX}px)`;
 
-      const milestoneBadge = isMilestone ? `<span class="absolute -top-3 text-xs z-30 pointer-events-none">${Icons.crown}</span>` : '';
+      let milestoneBadge = '';
+      if (nodeRhythm.isRegionGuardian) {
+        milestoneBadge = `<div class="absolute -top-3.5 z-30 pointer-events-none bg-rose-600/90 text-white font-black text-[9px] px-1.5 py-0.5 rounded-full border border-rose-400 shadow flex items-center gap-0.5"><span>👑</span><span>${t('map_guardian_tag')}</span></div>`;
+      } else if (nodeRhythm.isMilestone) {
+        milestoneBadge = `<div class="absolute -top-3.5 z-30 pointer-events-none bg-amber-500/90 text-amber-950 font-black text-[9px] px-1.5 py-0.5 rounded-full border border-amber-300 shadow flex items-center gap-0.5"><span>⭐</span><span>${t('map_milestone_tag')}</span></div>`;
+      }
 
       if (isCurrent) {
         innerBox.innerHTML = `
@@ -1093,9 +1140,12 @@ export const UIManager = {
         `;
       }
 
-      const btn = innerBox.querySelector('button[data-level]');
+      const btn = innerBox.querySelector('button');
       if (btn) {
-        btn.addEventListener('click', () => onNodeClick(lvl));
+        btn.setAttribute('data-rhythm', nodeRhythm.rhythmPhase);
+        if (btn.hasAttribute('data-level')) {
+          btn.addEventListener('click', () => onNodeClick(lvl));
+        }
       }
 
       wrapper.appendChild(innerBox);
@@ -1500,6 +1550,28 @@ export const UIManager = {
     });
   },
 
+  showSmartHintBanner(techLabel: string, reasonText: string) {
+    const banner = document.getElementById('smart-hint-banner');
+    const techEl = document.getElementById('smart-hint-tech');
+    const textEl = document.getElementById('smart-hint-text');
+
+    if (techEl) techEl.innerText = techLabel;
+    if (textEl) textEl.innerText = reasonText;
+
+    if (banner) {
+      banner.classList.remove('hidden');
+      banner.classList.add('flex');
+    }
+  },
+
+  hideSmartHintBanner() {
+    const banner = document.getElementById('smart-hint-banner');
+    if (banner) {
+      banner.classList.add('hidden');
+      banner.classList.remove('flex');
+    }
+  },
+
   showError(r: number, c: number) {
     const boardEl = document.getElementById('sudoku-grid');
     if (!boardEl) return;
@@ -1523,7 +1595,8 @@ export const UIManager = {
     variant: SudokuVariant = 'classic',
     regionMap?: number[][],
     cages?: KillerCage[],
-    samuraiGridIndex?: number
+    samuraiGridIndex?: number,
+    smartHint?: { row: number; col: number; relatedCells: { r: number; c: number }[] } | null
   ) {
     const boardEl = document.getElementById('sudoku-grid');
     if (!boardEl) return;
@@ -1567,8 +1640,18 @@ export const UIManager = {
           else if (samuraiGridIndex === 4) isSamuraiCorner = r < 3 && c < 3;
         }
 
+        const isHintTarget = !!(smartHint && smartHint.row === r && smartHint.col === c);
+        const isHintRelated = !!(smartHint && !isHintTarget && smartHint.relatedCells.some(rc => rc.r === r && rc.c === c));
+
+        if (isHintTarget) cell.setAttribute('data-hint-target', 'true');
+        if (isHintRelated) cell.setAttribute('data-hint-related', 'true');
+
         let bgStyle = 'bg-[var(--cell-bg)]';
-        if (isMatchingValue) {
+        if (isHintTarget) {
+          bgStyle = 'bg-[var(--accent-gold)]/20 ring-2 ring-[var(--accent-gold)] z-10';
+        } else if (isHintRelated) {
+          bgStyle = 'bg-[var(--accent-cyan)]/10';
+        } else if (isMatchingValue) {
           bgStyle = 'bg-[var(--cell-match-bg)] ring-1 ring-[var(--accent-gold)]/50 z-1';
         } else if (isRelatedGroup) {
           bgStyle = 'bg-[var(--cell-related-bg)]';

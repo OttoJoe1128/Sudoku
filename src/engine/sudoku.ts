@@ -1,3 +1,6 @@
+import { createSeededRng, seededShuffle } from './seededRandom';
+import { getLevelConfig, LevelRhythmConfig } from './rhythmConfig';
+
 export type SudokuVariant = 'classic' | 'irregular' | 'killer' | 'wordoku' | 'samurai';
 
 export interface KillerCage {
@@ -12,6 +15,7 @@ export interface GeneratedSudoku {
   regionMap?: number[][];
   cages?: KillerCage[];
   samuraiGrids?: { puzzle: number[][]; solution: number[][] }[];
+  rhythmConfig?: LevelRhythmConfig;
 }
 
 // 3 Adet %100 Doğrulanmış Gerçek Düzensiz (Jigsaw) Şablon
@@ -192,14 +196,20 @@ export class SudokuGen {
   }
 
   // 0.01 Saniyede Anında Geçerli Çözüm Üretici (Rakam Permütasyonu)
-  static generateSolutionFast(): number[][] {
-    const perm = [1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5);
+  static generateSolutionFast(rng: () => number = Math.random): number[][] {
+    const perm = seededShuffle([1, 2, 3, 4, 5, 6, 7, 8, 9], rng);
     return BASE_SUDOKU_SOLUTION.map(row => row.map(num => perm[num - 1]));
   }
 
-  static generateVariant(difficulty: string, variant: SudokuVariant = 'classic'): GeneratedSudoku {
+  static generateVariant(
+    difficulty: string,
+    variant: SudokuVariant = 'classic',
+    options?: { seed?: string | number; targetClues?: number }
+  ): GeneratedSudoku {
+    const rng = options?.seed !== undefined ? createSeededRng(options.seed) : Math.random;
+
     if (variant === 'samurai') {
-      const perm = [1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5);
+      const perm = seededShuffle([1, 2, 3, 4, 5, 6, 7, 8, 9], rng);
       const targetRemoves = difficulty === 'basit' ? 24 : difficulty === 'orta' ? 34 : 44;
 
       const samuraiGrids = BASE_SAMURAI_SOLUTIONS.map(baseSol => {
@@ -212,9 +222,9 @@ export class SudokuGen {
             positions.push({ r, c });
           }
         }
-        positions.sort(() => Math.random() - 0.5);
-        for (let i = 0; i < targetRemoves && i < positions.length; i++) {
-          const { r, c } = positions[i];
+        const shuffledPositions = seededShuffle(positions, rng);
+        for (let i = 0; i < targetRemoves && i < shuffledPositions.length; i++) {
+          const { r, c } = shuffledPositions[i];
           puzzle[r][c] = 0;
         }
 
@@ -246,30 +256,35 @@ export class SudokuGen {
     }
 
     if (variant === 'irregular') {
-      const template = IRREGULAR_TEMPLATES[Math.floor(Math.random() * IRREGULAR_TEMPLATES.length)];
+      const templateIdx = Math.floor(rng() * IRREGULAR_TEMPLATES.length);
+      const template = IRREGULAR_TEMPLATES[templateIdx];
       let regionMap = template.regionMap.map(r => [...r]);
       let baseSolution = template.solution.map(r => [...r]);
 
-      const rotations = Math.floor(Math.random() * 4);
+      const rotations = Math.floor(rng() * 4);
       for (let i = 0; i < rotations; i++) {
         regionMap = this.rotate90(regionMap);
         baseSolution = this.rotate90(baseSolution);
       }
 
-      const perm = [1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5);
+      const perm = seededShuffle([1, 2, 3, 4, 5, 6, 7, 8, 9], rng);
       const solution = baseSolution.map(row => row.map(num => perm[num - 1]));
       const puzzle = solution.map(row => [...row]);
 
-      const targetRemoves = difficulty === 'basit' ? 32 : difficulty === 'orta' ? 44 : 54;
+      let targetRemoves = difficulty === 'basit' ? 32 : difficulty === 'orta' ? 44 : 54;
+      if (options?.targetClues !== undefined) {
+        targetRemoves = Math.max(0, Math.min(81, 81 - options.targetClues));
+      }
+
       const positions: { r: number; c: number }[] = [];
       for (let r = 0; r < 9; r++) {
         for (let c = 0; c < 9; c++) {
           positions.push({ r, c });
         }
       }
-      positions.sort(() => Math.random() - 0.5);
-      for (let i = 0; i < targetRemoves && i < positions.length; i++) {
-        const { r, c } = positions[i];
+      const shuffledPositions = seededShuffle(positions, rng);
+      for (let i = 0; i < targetRemoves && i < shuffledPositions.length; i++) {
+        const { r, c } = shuffledPositions[i];
         puzzle[r][c] = 0;
       }
 
@@ -281,11 +296,11 @@ export class SudokuGen {
       };
     }
 
-    const gen = this.generate(difficulty);
+    const gen = this.generate(difficulty, options);
     let cages: KillerCage[] | undefined = undefined;
 
     if (variant === 'killer') {
-      cages = this.generateKillerCages(gen.solution);
+      cages = this.generateKillerCages(gen.solution, rng);
     }
 
     return {
@@ -296,11 +311,19 @@ export class SudokuGen {
     };
   }
 
-  static generate(difficulty: string): { puzzle: number[][]; solution: number[][] } {
-    const solution = this.generateSolutionFast();
+  static generate(
+    difficulty: string,
+    options?: { seed?: string | number; targetClues?: number }
+  ): { puzzle: number[][]; solution: number[][] } {
+    const rng = options?.seed !== undefined ? createSeededRng(options.seed) : Math.random;
+    const solution = this.generateSolutionFast(rng);
     const puzzle = solution.map(row => [...row]);
 
-    const targetRemoves = difficulty === 'basit' ? 30 : difficulty === 'orta' ? 42 : 52;
+    let targetRemoves = difficulty === 'basit' ? 30 : difficulty === 'orta' ? 42 : 52;
+    if (options?.targetClues !== undefined) {
+      targetRemoves = Math.max(0, Math.min(81, 81 - options.targetClues));
+    }
+
     const positions: { r: number; c: number }[] = [];
     for (let r = 0; r < 9; r++) {
       for (let c = 0; c < 9; c++) {
@@ -308,23 +331,38 @@ export class SudokuGen {
       }
     }
 
-    positions.sort(() => Math.random() - 0.5);
-    for (let i = 0; i < targetRemoves && i < positions.length; i++) {
-      const { r, c } = positions[i];
+    const shuffledPositions = seededShuffle(positions, rng);
+    for (let i = 0; i < targetRemoves && i < shuffledPositions.length; i++) {
+      const { r, c } = shuffledPositions[i];
       puzzle[r][c] = 0;
     }
 
     return { puzzle, solution };
   }
 
-  private static generateKillerCages(solution: number[][]): KillerCage[] {
+  static generateForLevel(
+    level: number,
+    variant: SudokuVariant = 'classic'
+  ): GeneratedSudoku & { rhythmConfig: LevelRhythmConfig } {
+    const config = getLevelConfig(level, variant);
+    const generated = this.generateVariant(config.region.difficulty, variant, {
+      seed: config.seedKey,
+      targetClues: config.targetClues
+    });
+    return {
+      ...generated,
+      rhythmConfig: config
+    };
+  }
+
+  private static generateKillerCages(solution: number[][], rng: () => number = Math.random): KillerCage[] {
     const visited = Array.from({ length: 9 }, () => Array(9).fill(false));
     const cages: KillerCage[] = [];
 
     for (let r = 0; r < 9; r++) {
       for (let c = 0; c < 9; c++) {
         if (!visited[r][c]) {
-          const targetCageSize = Math.floor(Math.random() * 3) + 2;
+          const targetCageSize = Math.floor(rng() * 3) + 2;
           const cells: { r: number; c: number }[] = [{ r, c }];
           const usedDigits = new Set<number>([solution[r][c]]);
           visited[r][c] = true;
@@ -357,7 +395,7 @@ export class SudokuGen {
           while (cells.length < targetCageSize && failSafe-- > 0) {
             const availableNeighbors = getNeighbors(cells);
             if (availableNeighbors.length === 0) break;
-            const nextIdx = Math.floor(Math.random() * availableNeighbors.length);
+            const nextIdx = Math.floor(rng() * availableNeighbors.length);
             const next = availableNeighbors[nextIdx];
             visited[next.r][next.c] = true;
             cells.push(next);

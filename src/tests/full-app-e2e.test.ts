@@ -200,18 +200,24 @@ describe('Faz 2.4-QA2 Tam Uygulama İnteraktif E2E Test Paketi', () => {
       state = getGameRuntimeState();
       expect(state.isNotesMode).toBe(false);
 
-      // İpucu al -> altın 100 den 90 a inmeli
+      // İpucu al -> 1. tıkta şerit açılmalı, altın 100 kalmalı. 2. tıkta yerleştirilip altın 90 a inmeli
       const hintBtn = document.getElementById('btn-hint');
+      hintBtn?.click();
+      expect(UserManager.getGold()).toBe(100);
+
       hintBtn?.click();
       expect(UserManager.getGold()).toBe(90);
 
-      // Altını 5 e düşür ve ipucu almayı dene -> reddedilmeli, altın 5 kalmalı
+      // Altını 5 e düşür ve ipucu yerleştirmeyi dene -> reddedilmeli, altın 5 kalmalı
       localStorage.setItem('sudoku_gold', '5');
       hintBtn?.click();
       expect(UserManager.getGold()).toBe(5);
+      hintBtn?.click();
+      expect(UserManager.getGold()).toBe(5);
 
-      // Altını 100 yap
+      // Altını 100 yap ve ipucunu temizle
       localStorage.setItem('sudoku_gold', '100');
+      document.getElementById('btn-dismiss-smart-hint')?.click();
 
       // 3 hata yap -> second-chance-modal açılmalı
       state = getGameRuntimeState();

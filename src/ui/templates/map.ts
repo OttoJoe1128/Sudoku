@@ -58,6 +58,27 @@ export const mapTemplate = `
             </button>
         </div>
 
+        <!-- Bölge Bilgi Kartı (20 Bölge × 50 Bölüm) -->
+        <div id="map-region-banner" class="w-full border border-[var(--border-strong)] bg-[var(--bg-card)] text-[var(--text-primary)] rounded-2xl p-2.5 shadow-md flex flex-col gap-1 mt-1 mb-1 transition-all relative overflow-hidden shrink-0">
+            <div id="map-region-progress-bar" class="absolute bottom-0 left-0 h-1 bg-[var(--accent-gold)] transition-all duration-300" style="width: 0%"></div>
+            <div class="flex justify-between items-center text-xs">
+                <span id="map-region-badge" class="font-black text-[var(--accent-gold)] tracking-wider text-[10px] uppercase">Region 1 / 20</span>
+                <span id="map-region-progress-text" class="font-mono font-bold text-[10px] text-[var(--text-secondary)]">0 / 50 Levels</span>
+            </div>
+            <div class="flex justify-between items-end">
+                <div class="text-left">
+                    <h3 id="map-region-title" class="text-xs sm:text-sm font-black text-[var(--text-primary)] leading-tight">Emerald Threshold</h3>
+                    <p class="text-[10px] text-[var(--text-secondary)] font-medium mt-0.5">
+                        <span data-i18n="map_region_focus">Focus Technique</span>: <span id="map-region-tech" class="font-bold text-[var(--text-primary)]">Row-Column Scanning</span>
+                    </p>
+                </div>
+                <button id="btn-open-academy" class="bg-[var(--bg-elevated)] hover:bg-[var(--bg-card-hover)] text-[var(--accent-gold)] border border-[var(--border-strong)] px-2.5 py-1 rounded-xl text-[10px] font-black active:scale-95 transition-all flex items-center gap-1 shadow-sm shrink-0">
+                    <span>📖</span>
+                    <span data-i18n="academy_btn_open">Academy</span>
+                </button>
+            </div>
+        </div>
+
         <!-- Seviye Atlama Sınavı Şerit Butonu -->
         <button id="btn-map-open-placement" class="w-full bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] rounded-xl px-3 py-2 flex justify-between items-center shadow-sm active:scale-[0.98] transition-all mt-1.5 mb-1">
             <div class="flex items-center gap-2">

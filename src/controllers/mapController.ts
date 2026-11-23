@@ -85,7 +85,8 @@ export function renderMapPathUI(
       const diff = SudokuGen.getDifficulty(lvl);
       onStartLevel(lvl, diff, selectedMapVariant);
     },
-    autoScrollToCurrent
+    autoScrollToCurrent,
+    selectedMapVariant
   );
 }
 
