@@ -85,13 +85,20 @@ export const menuTemplate = `
             <span class="text-[var(--text-secondary)] font-bold text-xs shrink-0">➔</span>
         </button>
 
-        <!-- 4. Düello Arenası (Sıcak Bronz Kalkan Kartı - En Altta) -->
-        <button id="btn-open-match" style="background: linear-gradient(180deg, #d7b48a 0%, #b88b5a 65%, #9a6e42 100%); clip-path: polygon(50% 0%, 96% 12%, 96% 62%, 50% 100%, 4% 62%, 4% 12%);" class="w-full text-amber-950 rounded-2xl px-6 py-4 shadow-lg active:scale-[0.98] transition-all flex items-center justify-between group relative border border-amber-300 cursor-pointer">
-            <div class="text-left">
-                <span class="text-sm font-black block text-amber-950 flex items-center gap-1.5 drop-shadow-sm" data-i18n="menu_duel_arena">Düello Arenası</span>
-                <span class="text-[11px] font-extrabold text-amber-900 block mt-0.5" data-i18n="menu_arena_sub">Canlı PvP • YZ Rakipler</span>
-            </div>
-            <span class="text-sm font-black text-amber-950 group-hover:translate-x-1 transition-transform flex items-center gap-1">${Icons.shield} ➔</span>
+        <!-- 4. Düello Arenası (Gerçek Kalkan Formu - Sadece ARENA) -->
+        <button id="btn-open-match" class="mx-auto mt-1 w-28 h-28 relative flex items-center justify-center bg-transparent border-0 p-0 cursor-pointer active:scale-95 transition-transform drop-shadow-md group">
+            <svg viewBox="0 0 100 110" class="absolute inset-0 w-full h-full pointer-events-none">
+                <defs>
+                    <linearGradient id="arenaShieldGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#e2c097"/>
+                        <stop offset="60%" stop-color="#be8f5d"/>
+                        <stop offset="100%" stop-color="#96693c"/>
+                    </linearGradient>
+                </defs>
+                <path d="M50 4 C75 4 92 14 92 24 C92 70 68 96 50 106 C32 96 8 70 8 24 C8 14 25 4 50 4 Z" fill="url(#arenaShieldGrad)" stroke="#f5e2c8" stroke-width="3" stroke-linejoin="round"/>
+                <path d="M50 10 C70 10 85 18 85 27 C85 66 63 89 50 98 C37 89 15 66 15 27 C15 18 30 10 50 10 Z" fill="none" stroke="#faebd7" stroke-opacity="0.4" stroke-width="1.5"/>
+            </svg>
+            <span class="relative z-10 text-sm font-black tracking-[0.18em] uppercase text-amber-950 drop-shadow-sm font-mono">ARENA</span>
         </button>
     </div>
 

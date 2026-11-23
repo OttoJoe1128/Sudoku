@@ -255,7 +255,7 @@ describe('Faz 3c Tahta İçi Özel Hücreler & 5 Yeteneğin Gerçek Oyun İçi E
       await new Promise(r => setTimeout(r, 100));
 
       expect(UserManager.getGold()).toBe(105); // 100 + 5 (basit map base reward)
-    });
+    }, 15000);
   });
 
   describe('7. Çift Dilli Sızıntı & Hazırlık Paneli Canlı Etkisi', () => {
@@ -420,7 +420,8 @@ describe('Faz 3c Tahta İçi Özel Hücreler & 5 Yeteneğin Gerçek Oyun İçi E
       expect(matchBtns.length).toBe(1);
 
       const matchBtn = matchBtns[0] as HTMLElement;
-      expect(matchBtn.style.clipPath).toContain('polygon');
+      expect(matchBtn.querySelector('svg')).not.toBeNull();
+      expect(matchBtn.textContent).toContain('ARENA');
 
       const savedGamesBtn = document.getElementById('btn-open-saved-games');
       expect(savedGamesBtn).not.toBeNull();

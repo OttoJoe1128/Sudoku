@@ -23,6 +23,7 @@ export function closeOnboardingModal(): void {
 }
 
 export function renderOnboardingStep(step: number): void {
+  if (typeof document === 'undefined') return;
   currentStep = step;
   const indicator = document.getElementById('onboarding-step-indicator');
   const content = document.getElementById('onboarding-content');
