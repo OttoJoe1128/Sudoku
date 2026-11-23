@@ -13,10 +13,17 @@ import { savedGamesModalTemplate } from './templates/savedGamesModal';
 import { secondChanceModalTemplate } from './templates/secondChanceModal';
 import { onboardingModalTemplate } from './templates/onboardingModal';
 import { academyModalTemplate } from './templates/academyModal';
+import { abilitiesModalTemplate } from './templates/abilitiesModal';
+import { levelPrepModalTemplate } from './templates/levelPrepModal';
+import { crystalRepairModalTemplate } from './templates/crystalRepairModal';
+import { getLevelModifierProfile } from '../engine/levelModifiers';
+import { getMapGateDef } from '../engine/mapGates';
 import { getAmbientBackgroundHTML } from '../design/backgrounds';
 import { Icons, renderAvatarSVG, renderRankBadgeSVG, AVATAR_LIST } from '../design/icons';
 import { t, getLang, translateRankName } from '../i18n/translations';
 import { getLevelConfig, getRegionForLevel } from '../engine/rhythmConfig';
+import { BoardMechanicsState, SpecialCellRuntime } from '../engine/boardMechanics';
+import { getAbilityDef } from '../engine/abilities';
 import { Player, SpeedRecord } from '../engine/leaderboard';
 import { ShopItems, ShopManager } from '../engine/shop';
 import { BadgeStatus } from '../engine/achievements';
@@ -227,6 +234,9 @@ export const UIManager = {
         ${secondChanceModalTemplate}
         ${onboardingModalTemplate}
         ${academyModalTemplate}
+        ${abilitiesModalTemplate}
+        ${levelPrepModalTemplate}
+        ${crystalRepairModalTemplate}
         <div id="game-view" class="hidden flex-col items-center p-6 w-full h-full relative z-10">
             <!-- Düello Canlı İlerleme Çubuğu -->
             <div id="match-header-bar" class="hidden w-full bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-strong)] p-3 rounded-2xl mb-3 shadow-lg flex-col gap-2">
@@ -258,6 +268,16 @@ export const UIManager = {
             <div id="game-variant-badge-box" class="w-full mb-2 flex justify-between items-center bg-[var(--bg-card)] px-3 py-1.5 rounded-xl border border-[var(--border-subtle)] text-xs font-black text-[var(--text-primary)]">
                 <span id="game-variant-title" class="flex items-center gap-1.5" data-i18n="var_classic_full">Classic Sudoku</span>
                 <span id="game-variant-multiplier" class="text-[10px] font-extrabold text-[var(--accent-gold)] bg-[var(--bg-elevated)] px-2 py-0.5 rounded-md border border-[var(--border-strong)]">1.0x Pts</span>
+            </div>
+
+            <!-- Tahta İçi Mekanik & Yetenek Çubuğu -->
+            <div id="game-mechanics-bar" class="hidden w-full mb-2 justify-between items-center bg-[var(--bg-card)] px-3 py-1.5 rounded-xl border border-[var(--border-strong)] text-xs font-black text-[var(--text-primary)] shadow-sm">
+                <div class="flex items-center gap-2">
+                    <span id="game-energy-pill" class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] px-2 py-0.5 rounded-lg text-[10px] font-black text-[var(--accent-gold)] flex items-center gap-1 shadow-inner"></span>
+                    <span id="game-crystal-counter" class="text-[10px] font-mono font-black text-[var(--accent-cyan)] flex items-center gap-0.5"></span>
+                    <span id="game-momentum-pill" class="hidden bg-amber-500/20 text-amber-300 border border-amber-400/40 px-1.5 py-0.5 rounded-md text-[9px] font-mono font-black animate-pulse"></span>
+                </div>
+                <div id="game-equipped-abilities" class="flex items-center gap-1.5"></div>
             </div>
 
             <!-- Akıllı İpucu Şeridi -->
@@ -1005,7 +1025,8 @@ export const UIManager = {
     windowEnd: number,
     onNodeClick: (level: number) => void,
     autoScrollToCurrent: boolean = false,
-    variant: SudokuVariant = 'classic'
+    variant: SudokuVariant = 'classic',
+    onGateClick?: (gateLevel: number) => void
   ) {
     const container = document.getElementById('map-path-container');
     const targetLabel = document.getElementById('map-target-label');
@@ -1110,42 +1131,97 @@ export const UIManager = {
         milestoneBadge = `<div class="absolute -top-3.5 z-30 pointer-events-none bg-amber-500/90 text-amber-950 font-black text-[9px] px-1.5 py-0.5 rounded-full border border-amber-300 shadow flex items-center gap-0.5"><span>⭐</span><span>${t('map_milestone_tag')}</span></div>`;
       }
 
+      const modProfile = getLevelModifierProfile(lvl, variant);
+      const collectedCrystals = UserManager.getLevelCollectedCrystals(variant, lvl);
+      const energyBadgeHTML = `<span class="absolute -bottom-1.5 -right-1.5 text-[11px] bg-[var(--bg-app)] border border-[var(--border-subtle)] rounded-full w-5 h-5 flex items-center justify-center shadow z-20 pointer-events-none">${modProfile.icon}</span>`;
+      const crystalCounterHTML = (isCompleted || isCurrent)
+        ? `<div data-node-crystals="${lvl}" class="absolute -bottom-5 text-[9px] font-mono font-black text-[var(--accent-cyan)] pointer-events-none z-20">${collectedCrystals}/${modProfile.maxCollectibleCrystals}💎</div>`
+        : '';
+
+      let gateBadgeHTML = '';
+      if (lvl % 10 === 0) {
+        const gateDef = getMapGateDef(lvl, variant);
+        if (gateDef) {
+          const isClaimed = UserManager.isMapGateClaimed(variant, lvl);
+          const collectedBlock = UserManager.getBlockCollectedCrystals(variant, gateDef.startLevel, gateDef.endLevel);
+          const isReady = collectedBlock >= gateDef.requiredCrystals;
+
+          let status = 'locked';
+          let statusClasses = 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-secondary)] opacity-70';
+          let label = `🔒 ${collectedBlock}/${gateDef.requiredCrystals}💎`;
+
+          if (isClaimed) {
+            status = 'claimed';
+            statusClasses = 'bg-emerald-950/60 border-emerald-500/50 text-emerald-300';
+            label = `✅ ${t('gate_btn_claimed')}`;
+          } else if (isReady) {
+            status = 'ready';
+            statusClasses = 'bg-amber-500/30 border-amber-400 text-amber-200 animate-pulse';
+            label = `🎁 ${t('gate_btn_open')}`;
+          }
+
+          gateBadgeHTML = `
+            <button data-map-gate="${lvl}" data-gate-status="${status}" class="absolute -left-20 top-1/2 -translate-y-1/2 border font-mono font-black text-[9px] px-2 py-1 rounded-xl shadow-md flex items-center gap-1 active:scale-95 transition-all z-20 cursor-pointer ${statusClasses}">
+              <span>${label}</span>
+            </button>
+          `;
+        }
+      }
+
       if (isCurrent) {
         innerBox.innerHTML = `
           ${milestoneBadge}
+          ${gateBadgeHTML}
           <div class="absolute -top-7 bg-[var(--bg-app)] border border-[var(--accent-gold)] text-[var(--accent-gold-bright)] font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-md flex items-center gap-1 z-30">
             <span>${renderAvatarSVG(avatar, 14)}</span>
             <span>${t('label_level').toUpperCase()} ${lvl}</span>
           </div>
-          <button data-level="${lvl}" class="w-24 h-24 rounded-3xl bg-[var(--bg-card)] border-2 border-[var(--border-strong)] ring-4 ring-[var(--accent-cyan)]/60 text-[var(--text-primary)] shadow-2xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-transform">
+          <button data-level="${lvl}" class="w-24 h-24 rounded-3xl bg-[var(--bg-card)] border-2 border-[var(--border-strong)] ring-4 ring-[var(--accent-cyan)]/60 text-[var(--text-primary)] shadow-2xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-transform relative">
             <span class="text-xl font-mono font-black leading-none text-[var(--accent-gold)]">${lvl}</span>
             <span class="text-[9px] font-black text-[var(--accent-gold-bright)] tracking-widest mt-1">${t('btn_play')}</span>
+            ${energyBadgeHTML}
           </button>
+          ${crystalCounterHTML}
         `;
       } else if (isCompleted) {
         innerBox.innerHTML = `
           ${milestoneBadge}
-          <button data-level="${lvl}" class="w-16 h-16 rounded-2xl bg-[var(--bg-card)] border-2 border-[var(--accent-cyan)] text-[var(--text-primary)] shadow-md flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-transform">
+          ${gateBadgeHTML}
+          <button data-level="${lvl}" class="w-16 h-16 rounded-2xl bg-[var(--bg-card)] border-2 border-[var(--accent-cyan)] text-[var(--text-primary)] shadow-md flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-transform relative">
             <span class="text-base font-mono font-black leading-none">${lvl}</span>
             <span class="mt-0.5">${Icons.check}</span>
+            ${energyBadgeHTML}
           </button>
+          ${crystalCounterHTML}
         `;
       } else {
         innerBox.innerHTML = `
           ${milestoneBadge}
-          <button disabled class="w-16 h-16 rounded-2xl bg-[var(--bg-elevated)] border-2 border-[var(--border-subtle)] text-[var(--text-secondary)] flex flex-col items-center justify-center cursor-not-allowed opacity-60">
+          ${gateBadgeHTML}
+          <button disabled class="w-16 h-16 rounded-2xl bg-[var(--bg-elevated)] border-2 border-[var(--border-subtle)] text-[var(--text-secondary)] flex flex-col items-center justify-center cursor-not-allowed opacity-60 relative">
             <span class="text-sm font-mono font-black leading-none">${lvl}</span>
             <span class="mt-0.5">${Icons.lock}</span>
+            ${energyBadgeHTML}
           </button>
         `;
       }
 
       const btn = innerBox.querySelector('button');
       if (btn) {
+        const modProfile = getLevelModifierProfile(lvl, variant);
         btn.setAttribute('data-rhythm', nodeRhythm.rhythmPhase);
+        btn.setAttribute('data-energy', modProfile.energyId);
         if (btn.hasAttribute('data-level')) {
           btn.addEventListener('click', () => onNodeClick(lvl));
         }
+      }
+
+      const gateBtn = innerBox.querySelector('[data-map-gate]');
+      if (gateBtn && onGateClick) {
+        gateBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          onGateClick(lvl);
+        });
       }
 
       wrapper.appendChild(innerBox);
@@ -1207,6 +1283,7 @@ export const UIManager = {
   },
 
   animateMapLevelUnlock(newLevel: number) {
+    if (typeof document === 'undefined') return;
     const nodeEl = document.querySelector(`[data-map-level="${newLevel}"]`) || document.getElementById(`map-node-${newLevel}`);
     if (!nodeEl) return;
 
@@ -1550,6 +1627,88 @@ export const UIManager = {
     });
   },
 
+  renderGameMechanicsBar(
+    state: BoardMechanicsState | null,
+    handlers: { onUseOracle: () => void; onUseSealBreaker: () => void }
+  ) {
+    const bar = document.getElementById('game-mechanics-bar');
+    const energyPill = document.getElementById('game-energy-pill');
+    const crystalCounter = document.getElementById('game-crystal-counter');
+    const momentumPill = document.getElementById('game-momentum-pill');
+    const abilitiesContainer = document.getElementById('game-equipped-abilities');
+
+    if (!bar || !state) {
+      if (bar) { bar.classList.add('hidden'); bar.classList.remove('flex'); }
+      return;
+    }
+
+    bar.classList.remove('hidden');
+    bar.classList.add('flex');
+
+    if (energyPill) energyPill.innerHTML = `${state.profile.icon} <span>${t('energy_name_' + state.profile.energyId)}</span>`;
+    if (crystalCounter) crystalCounter.innerText = `${state.crystalsEarnedInRun}/${state.profile.maxCollectibleCrystals}💎`;
+
+    const isSparkActive = Date.now() < state.sparkFlowEndsAtMs;
+    if (momentumPill) {
+      if (isSparkActive) {
+        momentumPill.classList.remove('hidden');
+        momentumPill.innerText = `⚡ x${state.sparkCombo}`;
+      } else {
+        momentumPill.classList.add('hidden');
+      }
+    }
+
+    if (abilitiesContainer) {
+      abilitiesContainer.innerHTML = '';
+      state.equippedAbilities.forEach(id => {
+        const def = getAbilityDef(id);
+        let charges = 0;
+        if (id === 'oracle_eye') charges = state.oracleChargesLeft;
+        if (id === 'seal_breaker') charges = state.sealBreakerChargesLeft;
+        if (id === 'crystal_shield') charges = state.shieldChargesLeft;
+
+        const btn = document.createElement('button');
+        let btnClasses = 'px-2 py-1 rounded-xl font-extrabold text-[10px] border shadow-sm flex items-center gap-1 transition-all active:scale-95 ';
+
+        if (def.triggerType === 'active') {
+          if (charges > 0) {
+            btnClasses += 'bg-[var(--accent-gold)] text-[var(--text-on-gold)] border-[var(--accent-gold-bright)] cursor-pointer';
+          } else {
+            btnClasses += 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] border-[var(--border-subtle)] opacity-50 cursor-not-allowed';
+          }
+        } else {
+          btnClasses += 'bg-[var(--bg-elevated)] text-[var(--accent-gold)] border-[var(--border-subtle)] cursor-default';
+        }
+
+        btn.className = btnClasses;
+        btn.setAttribute('data-game-ability', id);
+
+        const chargesBadge = (def.triggerType === 'active' || id === 'crystal_shield')
+          ? `<span class="text-[9px] font-mono font-black opacity-90">(${charges})</span>`
+          : '';
+
+        btn.innerHTML = `<span>${def.icon}</span>${chargesBadge}`;
+
+        if (def.triggerType === 'active' && charges > 0) {
+          btn.onclick = () => {
+            if (id === 'oracle_eye') handlers.onUseOracle();
+            if (id === 'seal_breaker') handlers.onUseSealBreaker();
+          };
+        }
+
+        abilitiesContainer.appendChild(btn);
+      });
+
+      if (state.crackedCrystals.length > 0) {
+        const repairBtn = document.createElement('button');
+        repairBtn.id = 'btn-open-crystal-repair';
+        repairBtn.className = 'px-2 py-1 rounded-xl font-extrabold text-[10px] bg-rose-950/80 text-rose-300 border border-rose-500/50 shadow-sm flex items-center gap-1 transition-all active:scale-95 cursor-pointer animate-pulse';
+        repairBtn.innerHTML = `<span>${t('repair_btn_open')}</span>`;
+        abilitiesContainer.appendChild(repairBtn);
+      }
+    }
+  },
+
   showSmartHintBanner(techLabel: string, reasonText: string) {
     const banner = document.getElementById('smart-hint-banner');
     const techEl = document.getElementById('smart-hint-tech');
@@ -1596,7 +1755,8 @@ export const UIManager = {
     regionMap?: number[][],
     cages?: KillerCage[],
     samuraiGridIndex?: number,
-    smartHint?: { row: number; col: number; relatedCells: { r: number; c: number }[] } | null
+    smartHint?: { row: number; col: number; relatedCells: { r: number; c: number }[] } | null,
+    specialCells?: SpecialCellRuntime[]
   ) {
     const boardEl = document.getElementById('sudoku-grid');
     if (!boardEl) return;
@@ -1646,8 +1806,38 @@ export const UIManager = {
         if (isHintTarget) cell.setAttribute('data-hint-target', 'true');
         if (isHintRelated) cell.setAttribute('data-hint-related', 'true');
 
+        const specCell = specialCells ? specialCells.find(sc => sc.r === r && sc.c === c) : undefined;
+        let specialBadgeHTML = '';
+
+        if (specCell) {
+          if (specCell.kind === 'crystal' && specCell.state === 'active') {
+            cell.setAttribute('data-special-cell', 'crystal');
+            specialBadgeHTML = `<span class="absolute top-0.5 right-0.5 text-[10px] pointer-events-none drop-shadow z-2">💎</span>`;
+          } else if (specCell.kind === 'crystal' && specCell.state === 'cracked') {
+            cell.setAttribute('data-special-cell', 'cracked');
+            specialBadgeHTML = `<span class="absolute top-0.5 right-0.5 text-[10px] opacity-60 pointer-events-none drop-shadow z-2">💔</span>`;
+          } else if (specCell.kind === 'key' && specCell.state === 'active') {
+            cell.setAttribute('data-special-cell', 'key');
+            specialBadgeHTML = `<span class="absolute top-0.5 right-0.5 text-[10px] pointer-events-none drop-shadow z-2">🗝️</span>`;
+          } else if (specCell.kind === 'seal' && specCell.state === 'active') {
+            cell.setAttribute('data-special-cell', 'seal');
+            cell.setAttribute('data-sealed', 'true');
+            specialBadgeHTML = `<span class="absolute top-0.5 right-0.5 text-[10px] pointer-events-none drop-shadow z-2">🔒</span>`;
+          } else if (specCell.kind === 'spark' && specCell.state === 'active') {
+            cell.setAttribute('data-special-cell', 'spark');
+            specialBadgeHTML = `<span class="absolute top-0.5 right-0.5 text-[10px] pointer-events-none drop-shadow z-2">⚡</span>`;
+          } else if (specCell.kind === 'treasure' && specCell.state === 'active') {
+            cell.setAttribute('data-special-cell', 'treasure');
+            specialBadgeHTML = `<span class="absolute top-0.5 right-0.5 text-[10px] pointer-events-none drop-shadow z-2">🎁</span>`;
+          }
+        }
+
         let bgStyle = 'bg-[var(--cell-bg)]';
-        if (isHintTarget) {
+        if (specCell?.kind === 'seal' && specCell.state === 'active') {
+          bgStyle = 'bg-rose-950/30 ring-2 ring-rose-500/60';
+        } else if (specCell?.kind === 'crystal' && specCell.state === 'active') {
+          bgStyle = 'bg-[var(--accent-cyan)]/10 ring-1 ring-[var(--accent-cyan)]/40';
+        } else if (isHintTarget) {
           bgStyle = 'bg-[var(--accent-gold)]/20 ring-2 ring-[var(--accent-gold)] z-10';
         } else if (isHintRelated) {
           bgStyle = 'bg-[var(--accent-cyan)]/10';
@@ -1672,6 +1862,25 @@ export const UIManager = {
 
         let borderRight = '';
         let borderBottom = '';
+
+        if (variant === 'irregular' && regionMap) {
+          const currentRegion = regionMap[r][c];
+          if (c < 8 && regionMap[r][c + 1] !== currentRegion) {
+            borderRight = '!border-r-[3px] !border-r-[var(--accent-gold)]';
+          }
+          if (r < 8 && regionMap[r + 1][c] !== currentRegion) {
+            borderBottom = '!border-b-[3px] !border-b-[var(--accent-gold)]';
+          }
+        } else {
+          if (c === 2 || c === 5) borderRight = '!border-r-[3px] !border-r-[var(--accent-gold)]';
+          if (r === 2 || r === 5) borderBottom = '!border-b-[3px] !border-b-[var(--accent-gold)]';
+        }
+
+        cell.className = `w-full h-full min-w-0 min-h-0 box-border border border-[var(--border-subtle)] flex items-center justify-center text-lg select-none cursor-pointer active:scale-95 transition-all relative ${stateClass} ${borderRight} ${borderBottom}`;
+
+        if (specialBadgeHTML) {
+          cell.insertAdjacentHTML('beforeend', specialBadgeHTML);
+        }
 
         if (variant === 'irregular' && regionMap) {
           const currentRegion = regionMap[r][c];

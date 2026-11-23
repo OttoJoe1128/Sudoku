@@ -1,11 +1,17 @@
 import { SudokuVariant, SudokuGen } from '../engine/sudoku';
 import { UIManager } from '../ui/uiManager';
 import { UserManager } from '../store/userState';
+import { openLevelPrepModal } from './levelPrepController';
+import { AbilityId } from '../engine/abilities';
+import { getMapGateDef } from '../engine/mapGates';
+import { updateCrystalDisplays } from './abilitiesController';
+import { SoundManager } from '../engine/soundManager';
+import { t } from '../i18n/translations';
 
 let selectedMapVariant: SudokuVariant = 'classic';
 let mapWindowStart = 1;
 let mapWindowEnd = 25;
-let storedOnStartLevel: ((level: number, diff: 'basit' | 'orta' | 'zor', variant: SudokuVariant) => void) | null = null;
+let storedOnStartLevel: ((level: number, diff: 'basit' | 'orta' | 'zor', variant: SudokuVariant, selectedAbilities?: AbilityId[]) => void) | null = null;
 let storedGetRuleDescription: ((variant: SudokuVariant) => string) | null = null;
 
 export function getSelectedMapVariant(): SudokuVariant {
@@ -73,7 +79,7 @@ export function openMapAtLevel(
 }
 
 export function renderMapPathUI(
-  onStartLevel: (level: number, diff: 'basit' | 'orta' | 'zor', variant: SudokuVariant) => void,
+  onStartLevel: (level: number, diff: 'basit' | 'orta' | 'zor', variant: SudokuVariant, selectedAbilities?: any) => void,
   autoScrollToCurrent: boolean = false
 ): void {
   const userLvl = UserManager.getVariantLevel(selectedMapVariant);
@@ -83,10 +89,33 @@ export function renderMapPathUI(
     mapWindowEnd,
     (lvl) => {
       const diff = SudokuGen.getDifficulty(lvl);
-      onStartLevel(lvl, diff, selectedMapVariant);
+      openLevelPrepModal({
+        level: lvl,
+        diff,
+        variant: selectedMapVariant,
+        onConfirmStart: (selectedAbilities) => {
+          onStartLevel(lvl, diff, selectedMapVariant, selectedAbilities);
+        }
+      });
     },
     autoScrollToCurrent,
-    selectedMapVariant
+    selectedMapVariant,
+    async (gateLevel) => {
+      const gateDef = getMapGateDef(gateLevel, selectedMapVariant);
+      if (!gateDef) return;
+
+      const res = await UserManager.claimMapGate(selectedMapVariant, gateLevel);
+      if (res.ok) {
+        SoundManager.playWin();
+        UIManager.showToast(t('gate_toast_claimed', { gold: res.rewardGold || 0, crystals: res.rewardCrystals || 0 }), "success");
+        updateCrystalDisplays();
+        renderMapPathUI(onStartLevel, false);
+      } else if (res.reason === 'insufficient_crystals') {
+        const collected = UserManager.getBlockCollectedCrystals(selectedMapVariant, gateDef.startLevel, gateDef.endLevel);
+        const missing = gateDef.requiredCrystals - collected;
+        UIManager.showToast(t('gate_toast_locked', { missing }), "info");
+      }
+    }
   );
 }
 
@@ -114,7 +143,7 @@ export function setupMapScrollListener(
 }
 
 export function initMapController(callbacks: {
-  onStartLevel: (level: number, diff: 'basit' | 'orta' | 'zor', variant: SudokuVariant) => void;
+  onStartLevel: (level: number, diff: 'basit' | 'orta' | 'zor', variant: SudokuVariant, selectedAbilities?: AbilityId[]) => void;
   onBackToMenu: () => void;
   getRuleDescription: (variant: SudokuVariant) => string;
 }): void {
@@ -165,7 +194,16 @@ export function initMapController(callbacks: {
   document.getElementById('btn-map-start-current')?.addEventListener('click', () => {
     const userLvl = UserManager.getVariantLevel(selectedMapVariant);
     const diff = SudokuGen.getDifficulty(userLvl);
-    onStartLevel(userLvl, diff, selectedMapVariant);
+    openLevelPrepModal({
+      level: userLvl,
+      diff,
+      variant: selectedMapVariant,
+      onConfirmStart: (selectedAbilities) => {
+        if (storedOnStartLevel) {
+          storedOnStartLevel(userLvl, diff, selectedMapVariant, selectedAbilities);
+        }
+      }
+    });
   });
 
   document.getElementById('btn-back-map')?.addEventListener('click', () => {

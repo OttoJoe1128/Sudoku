@@ -72,10 +72,20 @@ export const mapTemplate = `
                         <span data-i18n="map_region_focus">Focus Technique</span>: <span id="map-region-tech" class="font-bold text-[var(--text-primary)]">Row-Column Scanning</span>
                     </p>
                 </div>
-                <button id="btn-open-academy" class="bg-[var(--bg-elevated)] hover:bg-[var(--bg-card-hover)] text-[var(--accent-gold)] border border-[var(--border-strong)] px-2.5 py-1 rounded-xl text-[10px] font-black active:scale-95 transition-all flex items-center gap-1 shadow-sm shrink-0">
-                    <span>📖</span>
-                    <span data-i18n="academy_btn_open">Academy</span>
-                </button>
+                <div class="flex items-center gap-1 shrink-0">
+                    <div class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] px-2 py-1 rounded-xl text-[10px] font-mono font-black text-[var(--accent-cyan)] flex items-center gap-0.5 shadow-sm">
+                        <span>💎</span>
+                        <span id="map-crystal-balance">0</span>
+                    </div>
+                    <button id="btn-open-academy" class="bg-[var(--bg-elevated)] hover:bg-[var(--bg-card-hover)] text-[var(--accent-gold)] border border-[var(--border-strong)] px-2.5 py-1 rounded-xl text-[10px] font-black active:scale-95 transition-all flex items-center gap-1 shadow-sm shrink-0">
+                        <span>📖</span>
+                        <span data-i18n="academy_btn_open">Academy</span>
+                    </button>
+                    <button id="btn-open-abilities" class="bg-[var(--bg-elevated)] hover:bg-[var(--bg-card-hover)] text-[var(--accent-gold)] border border-[var(--border-strong)] px-2 py-1 rounded-xl text-[10px] font-black active:scale-95 transition-all flex items-center gap-1 shadow-sm shrink-0">
+                        <span>⚡</span>
+                        <span data-i18n="abilities_btn_open">Abilities</span>
+                    </button>
+                </div>
             </div>
         </div>
 

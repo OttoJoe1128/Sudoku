@@ -3,6 +3,17 @@ import { doc, getDoc, setDoc, addDoc, collection, query, where, getDocs, serverT
 import { auth, db } from '../api/firebase';
 import { SudokuVariant } from '../engine/sudoku';
 import { formatDisplayName } from '../utils/sanitize';
+import {
+  AbilityId,
+  AbilityProgress,
+  ECONOMY_CONFIG,
+  createDefaultAbilitiesState,
+  getAbilityDef,
+  getAbilityCooldownMs,
+  getUpgradeCost,
+  computeLevelCrystalDelta
+} from '../engine/abilities';
+import { getMapGateDef, getMapGateKey } from '../engine/mapGates';
 
 export type GameCategory = 'map' | 'custom' | 'pvp' | 'ai';
 
@@ -987,5 +998,254 @@ export const UserManager = {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
     const s = (seconds % 60).toString().padStart(2, '0');
     return `${m}:${s}`;
+  },
+
+  getCrystals(): number {
+    if (typeof localStorage === 'undefined') return 0;
+    const raw = localStorage.getItem('sudoku_crystals');
+    const parsed = raw ? parseInt(raw) : 0;
+    return isNaN(parsed) || parsed < 0 ? 0 : parsed;
+  },
+
+  async addCrystals(amount: number): Promise<number> {
+    if (amount <= 0) return this.getCrystals();
+    const newTotal = this.getCrystals() + amount;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('sudoku_crystals', newTotal.toString());
+    }
+    try {
+      if (auth.currentUser) {
+        await setDoc(doc(db, 'leaderboard', auth.currentUser.uid), {
+          crystals: newTotal,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      }
+    } catch (e) {
+      console.warn("Firestore kristal güncellenemedi:", e);
+    }
+    return newTotal;
+  },
+
+  async spendCrystals(amount: number): Promise<boolean> {
+    if (amount <= 0) return true;
+    const current = this.getCrystals();
+    if (current < amount) return false;
+    const newTotal = current - amount;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('sudoku_crystals', newTotal.toString());
+    }
+    try {
+      if (auth.currentUser) {
+        await setDoc(doc(db, 'leaderboard', auth.currentUser.uid), {
+          crystals: newTotal,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      }
+    } catch (e) {
+      console.warn("Firestore kristal güncellenemedi:", e);
+    }
+    return true;
+  },
+
+  getLevelCollectedCrystalsMap(): Record<string, number> {
+    try {
+      if (typeof localStorage === 'undefined') return {};
+      const raw = localStorage.getItem('sudoku_level_crystals');
+      if (!raw) return {};
+      const obj = JSON.parse(raw);
+      return typeof obj === 'object' && obj !== null ? obj : {};
+    } catch {
+      return {};
+    }
+  },
+
+  getLevelCollectedCrystals(variant: SudokuVariant, level: number): number {
+    const map = this.getLevelCollectedCrystalsMap();
+    return Math.max(0, Math.floor(map[`${variant}_${level}`] || 0));
+  },
+
+  async recordLevelCrystals(
+    variant: SudokuVariant,
+    level: number,
+    earnedInRun: number,
+    maxLevelCrystals: number
+  ): Promise<{ delta: number; bestCollected: number; totalCrystals: number }> {
+    const map = this.getLevelCollectedCrystalsMap();
+    const { key, delta, bestCollected } = computeLevelCrystalDelta(variant, level, earnedInRun, maxLevelCrystals, map);
+    if (delta > 0) {
+      map[key] = bestCollected;
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('sudoku_level_crystals', JSON.stringify(map));
+      }
+      await this.addCrystals(delta);
+    }
+    return { delta, bestCollected, totalCrystals: this.getCrystals() };
+  },
+
+  getAbilitiesState(): Record<AbilityId, AbilityProgress> {
+    try {
+      if (typeof localStorage === 'undefined') return createDefaultAbilitiesState();
+      const raw = localStorage.getItem('sudoku_abilities');
+      const defaults = createDefaultAbilitiesState();
+      if (!raw) return defaults;
+      const parsed = JSON.parse(raw);
+      if (typeof parsed !== 'object' || parsed === null) return defaults;
+      Object.keys(defaults).forEach(k => {
+        const id = k as AbilityId;
+        if (!parsed[id] || typeof parsed[id].level !== 'number') {
+          parsed[id] = defaults[id];
+        } else {
+          parsed[id].cooldownEndsAtMs = typeof parsed[id].cooldownEndsAtMs === 'number' ? parsed[id].cooldownEndsAtMs : 0;
+        }
+      });
+      return parsed;
+    } catch {
+      return createDefaultAbilitiesState();
+    }
+  },
+
+  getAbilityProgress(id: AbilityId): AbilityProgress {
+    const state = this.getAbilitiesState();
+    return state[id] || { level: 0, cooldownEndsAtMs: 0 };
+  },
+
+  async saveAbilitiesState(state: Record<AbilityId, AbilityProgress>): Promise<void> {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('sudoku_abilities', JSON.stringify(state));
+    }
+    try {
+      if (auth.currentUser) {
+        await setDoc(doc(db, 'leaderboard', auth.currentUser.uid), {
+          abilities: state,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      }
+    } catch (e) {
+      console.warn("Firestore yetenekler güncellenemedi:", e);
+    }
+  },
+
+  triggerAbilityCooldown(id: AbilityId, nowMs: number = Date.now()): AbilityProgress {
+    const state = this.getAbilitiesState();
+    const prog = state[id];
+    if (prog && prog.level >= 1) {
+      const cdMs = getAbilityCooldownMs(id, prog.level);
+      prog.cooldownEndsAtMs = nowMs + cdMs;
+      this.saveAbilitiesState(state);
+    }
+    return prog || { level: 0, cooldownEndsAtMs: 0 };
+  },
+
+  async upgradeAbility(id: AbilityId): Promise<{ ok: boolean; reason?: 'max_level' | 'insufficient_crystals' | 'insufficient_gold'; newLevel?: number }> {
+    const state = this.getAbilitiesState();
+    const prog = state[id] || { level: 0, cooldownEndsAtMs: 0 };
+    if (prog.level >= 5) return { ok: false, reason: 'max_level' };
+    const cost = getUpgradeCost(prog.level);
+    if (!cost) return { ok: false, reason: 'max_level' };
+
+    const currentCrystals = this.getCrystals();
+    const currentGold = this.getGold();
+
+    if (currentCrystals < cost.crystals) return { ok: false, reason: 'insufficient_crystals' };
+    if (currentGold < cost.gold) return { ok: false, reason: 'insufficient_gold' };
+
+    await this.spendCrystals(cost.crystals);
+    const newGold = currentGold - cost.gold;
+    await this.updateProgress(this.getCurrentLevel(), newGold);
+
+    prog.level += 1;
+    state[id] = prog;
+    await this.saveAbilitiesState(state);
+    return { ok: true, newLevel: prog.level };
+  },
+
+  async rechargeAbilityWithGold(id: AbilityId, nowMs: number = Date.now()): Promise<{ ok: boolean; reason?: 'locked' | 'not_on_cooldown' | 'insufficient_gold' }> {
+    const state = this.getAbilitiesState();
+    const prog = state[id];
+    if (!prog || prog.level < 1) return { ok: false, reason: 'locked' };
+    if (prog.cooldownEndsAtMs <= nowMs) return { ok: false, reason: 'not_on_cooldown' };
+
+    const cost = ECONOMY_CONFIG.abilityRechargeGoldCost;
+    const currentGold = this.getGold();
+    if (currentGold < cost) return { ok: false, reason: 'insufficient_gold' };
+
+    const newGold = currentGold - cost;
+    await this.updateProgress(this.getCurrentLevel(), newGold);
+    prog.cooldownEndsAtMs = 0;
+    state[id] = prog;
+    await this.saveAbilitiesState(state);
+    return { ok: true };
+  },
+
+  async rechargeAbilityWithAd(id: AbilityId, nowMs: number = Date.now()): Promise<{ ok: boolean; reason?: 'locked' | 'not_on_cooldown' }> {
+    const state = this.getAbilitiesState();
+    const prog = state[id];
+    if (!prog || prog.level < 1) return { ok: false, reason: 'locked' };
+    if (prog.cooldownEndsAtMs <= nowMs) return { ok: false, reason: 'not_on_cooldown' };
+
+    prog.cooldownEndsAtMs = 0;
+    state[id] = prog;
+    await this.saveAbilitiesState(state);
+    return { ok: true };
+  },
+
+  getClaimedMapGates(): string[] {
+    try {
+      if (typeof localStorage === 'undefined') return [];
+      const raw = localStorage.getItem('sudoku_claimed_gates');
+      if (!raw) return [];
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    } catch {
+      return [];
+    }
+  },
+
+  isMapGateClaimed(variant: SudokuVariant, gateLevel: number): boolean {
+    const key = getMapGateKey(variant, gateLevel);
+    return this.getClaimedMapGates().includes(key);
+  },
+
+  getBlockCollectedCrystals(variant: SudokuVariant, startLevel: number, endLevel: number): number {
+    let total = 0;
+    for (let lvl = startLevel; lvl <= endLevel; lvl++) {
+      total += this.getLevelCollectedCrystals(variant, lvl);
+    }
+    return total;
+  },
+
+  async claimMapGate(
+    variant: SudokuVariant,
+    gateLevel: number
+  ): Promise<{ ok: boolean; reason?: 'invalid_gate' | 'already_claimed' | 'insufficient_crystals'; rewardGold?: number; rewardCrystals?: number }> {
+    const gate = getMapGateDef(gateLevel, variant);
+    if (!gate) return { ok: false, reason: 'invalid_gate' };
+    if (this.isMapGateClaimed(variant, gateLevel)) return { ok: false, reason: 'already_claimed' };
+
+    const collected = this.getBlockCollectedCrystals(variant, gate.startLevel, gate.endLevel);
+    if (collected < gate.requiredCrystals) return { ok: false, reason: 'insufficient_crystals' };
+
+    const claimed = this.getClaimedMapGates();
+    claimed.push(getMapGateKey(variant, gateLevel));
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('sudoku_claimed_gates', JSON.stringify(claimed));
+    }
+
+    await this.addCrystals(gate.rewardCrystals);
+    const currentGold = this.getGold();
+    await this.updateProgress(this.getCurrentLevel(), currentGold + gate.rewardGold);
+
+    try {
+      if (auth.currentUser) {
+        await setDoc(doc(db, 'leaderboard', auth.currentUser.uid), {
+          claimed_gates: claimed,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      }
+    } catch (e) {
+      console.warn("Firestore kapı güncellenemedi:", e);
+    }
+
+    return { ok: true, rewardGold: gate.rewardGold, rewardCrystals: gate.rewardCrystals };
   }
 };

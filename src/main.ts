@@ -19,6 +19,9 @@ import { AdService } from './services/adService';
 import { openOnboardingModal, isOnboardingDone } from './controllers/onboardingController';
 import { startAppTour, isAppTourDone } from './controllers/appTourController';
 import { initAcademyController, refreshAcademyLanguageUI } from './controllers/academyController';
+import { initAbilitiesController, refreshAbilitiesLanguageUI, updateCrystalDisplays } from './controllers/abilitiesController';
+import { initLevelPrepController, refreshLevelPrepLanguageUI } from './controllers/levelPrepController';
+import { AbilityId } from './engine/abilities';
 
 // UI Binişi & Öz-Teşhis
 UIManager.mountUI();
@@ -105,6 +108,9 @@ const updateLanguageUI = () => {
   updateSavedGamesCountUI();
   refreshMapLanguageUI();
   refreshAcademyLanguageUI();
+  refreshAbilitiesLanguageUI();
+  refreshLevelPrepLanguageUI();
+  updateCrystalDisplays();
   updateWelcomeLangUI();
 
   const currentTitle = UserManager.getTitle();
@@ -167,8 +173,8 @@ initSaveController({
 });
 
 initMapController({
-  onStartLevel: (level, diff, variant) => {
-    startGame(level, diff, undefined, undefined, variant);
+  onStartLevel: (level: number, diff: 'basit' | 'orta' | 'zor', variant: SudokuVariant, selectedAbilities?: AbilityId[]) => {
+    startGame(level, diff, undefined, undefined, variant, false, 0, selectedAbilities || []);
   },
   onBackToMenu: () => {
     updateSavedGamesCountUI();
@@ -210,6 +216,9 @@ initModalsController({
 });
 
 initAcademyController();
+initAbilitiesController();
+initLevelPrepController();
+updateCrystalDisplays();
 
 // ----------------------------------------------------
 // DİL DEĞİŞTİRME & KULLANICI GİRİŞ DİNLEYİCİLERİ

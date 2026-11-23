@@ -14,8 +14,22 @@ import { SoundManager } from '../engine/soundManager';
 import { canOfferSecondChance, tryGoldRevive, AdService } from '../services/adService';
 import { maybeShowRegionIntroLesson } from './academyController';
 import { findSmartHint, SmartHint, formatHintSymbol } from '../engine/hintSolver';
+import { AbilityId, ECONOMY_CONFIG } from '../engine/abilities';
+import {
+  BoardMechanicsState,
+  createBoardMechanicsState,
+  isCellSealed,
+  applyValidMoveMechanics,
+  applyMistakeMechanics,
+  activateOracleEye,
+  activateSealBreaker,
+  computeFinalRunCrystals,
+  repairLastCrackedCrystal
+} from '../engine/boardMechanics';
+import { updateCrystalDisplays } from './abilitiesController';
 
 let pendingSmartHint: SmartHint | null = null;
+let activeBoardMechanics: BoardMechanicsState | null = null;
 
 let currentSolution: number[][];
 let userBoard: number[][];
@@ -50,14 +64,18 @@ let matchTimeRemaining = 180;
 let onUpdateGoldDisplayCallback: (() => void) | null = null;
 let onReturnToMapCallback: ((variant: SudokuVariant, unlockedLevel?: number) => void) | null = null;
 
+let activeEquippedAbilities: AbilityId[] = [];
+
 export function getGameRuntimeState(): {
   isMatchMode: boolean;
   isNotesMode: boolean;
   currentSolution: number[][];
   initialBoard: number[][];
   userBoard: number[][];
+  equippedAbilities: AbilityId[];
+  boardMechanics: BoardMechanicsState | null;
 } {
-  return { isMatchMode, isNotesMode, currentSolution, initialBoard, userBoard };
+  return { isMatchMode, isNotesMode, currentSolution, initialBoard, userBoard, equippedAbilities: activeEquippedAbilities, boardMechanics: activeBoardMechanics };
 }
 
 const getSamuraiCompletionStatuses = () => {
@@ -70,14 +88,19 @@ const getSamuraiCompletionStatuses = () => {
 };
 
 const applyPendingSmartHint = async (hint: SmartHint) => {
-  const currentGold = UserManager.getGold();
-  if (currentGold < 10) {
-    return UIManager.showToast(t('toast_insufficient_gold_hint'), "error");
-  }
+  const isFreeHintFromTreasure = activeBoardMechanics && activeBoardMechanics.freeHintsGranted > 0;
+  if (isFreeHintFromTreasure && activeBoardMechanics) {
+    activeBoardMechanics.freeHintsGranted -= 1;
+  } else {
+    const currentGold = UserManager.getGold();
+    if (currentGold < 10) {
+      return UIManager.showToast(t('toast_insufficient_gold_hint'), "error");
+    }
 
-  const newGold = currentGold - 10;
-  await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
-  if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();
+    const newGold = currentGold - 10;
+    await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
+    if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();
+  }
 
   const targetR = hint.row;
   const targetC = hint.col;
@@ -88,6 +111,13 @@ const applyPendingSmartHint = async (hint: SmartHint) => {
   hintsUsed++;
 
   notesBoard[targetR][targetC].clear();
+
+  if (activeBoardMechanics) {
+    const mechRes = applyValidMoveMechanics(activeBoardMechanics, targetR, targetC);
+    for (const abId of mechRes.newlyConsumedAbilities) {
+      await UserManager.triggerAbilityCooldown(abId);
+    }
+  }
 
   if (currentVariant === 'irregular' && currentRegionMap) {
     const currentRegionId = currentRegionMap[targetR][targetC];
@@ -204,9 +234,19 @@ const applyPendingSmartHint = async (hint: SmartHint) => {
       UIManager.showToast(t('toast_custom_complete', { variant: currentVariant.toUpperCase(), reward: baseReward }), "success");
       UIManager.navigate('menu');
     } else {
-      const baseReward = currentDifficulty === 'basit' ? 10 : currentDifficulty === 'orta' ? 20 : 35;
+      let baseReward = ECONOMY_CONFIG.mapBaseReward[currentDifficulty];
       const mult = getLevelConfig(currentLevelNumber, currentVariant).rewardMultiplier;
-      const reward = Math.round(baseReward * mult);
+      let reward = Math.round(baseReward * mult);
+
+      if (activeBoardMechanics) {
+        const finalCrystals = computeFinalRunCrystals(activeBoardMechanics, errors, timeElapsed);
+        await UserManager.recordLevelCrystals(currentVariant, currentLevelNumber, finalCrystals, activeBoardMechanics.profile.maxCollectibleCrystals);
+        if (activeBoardMechanics.sparkBonusGold > 0) {
+          reward += activeBoardMechanics.sparkBonusGold;
+        }
+        updateCrystalDisplays();
+      }
+
       const userLvl = UserManager.getVariantLevel(currentVariant);
       const nextLevel = computeNextJourneyLevel(currentLevelNumber, userLvl);
 
@@ -640,6 +680,8 @@ export async function handleExitGameRequest(): Promise<boolean> {
   }
 
   activeRefreshFn = null;
+  activeBoardMechanics = null;
+  UIManager.renderGameMechanicsBar(null, { onUseOracle: () => {}, onUseSealBreaker: () => {} });
   if (timerInterval) clearInterval(timerInterval);
   UIManager.hideSamuraiSpace();
   UIManager.navigate('menu');
@@ -653,8 +695,10 @@ export function startGame(
   restoredState?: any,
   variant: SudokuVariant = 'classic',
   isCustom: boolean = false,
-  customTimeLimitSec: number = 0
+  customTimeLimitSec: number = 0,
+  equippedAbilities: AbilityId[] = []
 ) {
+  activeEquippedAbilities = equippedAbilities;
   if (timerInterval) clearInterval(timerInterval);
   UIManager.hideSamuraiSpace();
 
@@ -801,6 +845,18 @@ export function startGame(
     }
   }
 
+  if (!isValidRestored && !isMatchMode && !isCustomGameMode && !activePlacementExam) {
+    activeBoardMechanics = createBoardMechanicsState(
+      initialBoard || [],
+      currentLevelNumber,
+      currentVariant,
+      equippedAbilities,
+      UserManager.getAbilitiesState()
+    );
+  } else {
+    activeBoardMechanics = null;
+  }
+
   const variantTitleEl = document.getElementById('game-variant-title');
   const variantMultEl = document.getElementById('game-variant-multiplier');
   if (variantTitleEl) {
@@ -895,7 +951,8 @@ export function startGame(
 
   const updateErrorUI = () => {
     const errorEl = document.getElementById('game-errors');
-    if (errorEl) errorEl.innerText = t('game_errors', { count: errors });
+    const maxMistakes = activeBoardMechanics ? activeBoardMechanics.profile.maxMistakes : 3;
+    if (errorEl) errorEl.innerText = t('game_errors_dynamic', { count: errors, max: maxMistakes });
   };
   updateErrorUI();
 
@@ -936,9 +993,43 @@ export function startGame(
         currentRegionMap,
         currentCages,
         undefined,
-        pendingSmartHint
+        pendingSmartHint,
+        activeBoardMechanics?.cells
       );
       UIManager.hideSamuraiRadar();
+      UIManager.renderGameMechanicsBar(activeBoardMechanics, {
+        onUseOracle: async () => {
+          if (!activeBoardMechanics) return;
+          const res = activateOracleEye(activeBoardMechanics, userBoard, selectedCell, currentRegionMap);
+          if (!res.ok) {
+            UIManager.showToast(t('toast_ability_no_charges'), "info");
+            return;
+          }
+          if (res.newlyConsumed) {
+            await UserManager.triggerAbilityCooldown('oracle_eye');
+          }
+          res.scannedCells.forEach(sc => {
+            notesBoard[sc.r][sc.c] = new Set(sc.candidates);
+          });
+          UIManager.showToast(t('toast_oracle_scanned'), "success");
+          persistCurrentGame();
+          refresh();
+        },
+        onUseSealBreaker: async () => {
+          if (!activeBoardMechanics) return;
+          const res = activateSealBreaker(activeBoardMechanics, selectedCell);
+          if (!res.ok) {
+            UIManager.showToast(t('toast_no_seal_to_break'), "info");
+            return;
+          }
+          if (res.newlyConsumed) {
+            await UserManager.triggerAbilityCooldown('seal_breaker');
+          }
+          UIManager.showToast(t('toast_seal_unlocked'), "success");
+          persistCurrentGame();
+          refresh();
+        }
+      });
     }
 
     UIManager.renderNumpad(
@@ -949,11 +1040,16 @@ export function startGame(
   };
   activeRefreshFn = refresh;
 
-  const handleNumpadInput = (num: number) => {
+  const handleNumpadInput = async (num: number) => {
     if (!selectedCell) return;
     pendingSmartHint = null;
     UIManager.hideSmartHintBanner();
     const { r, c } = selectedCell;
+
+    if (activeBoardMechanics && isCellSealed(activeBoardMechanics, r, c)) {
+      UIManager.showToast(t('toast_cell_sealed'), "info");
+      return;
+    }
 
     if (userBoard[r][c] !== 0) {
       UIManager.showToast(t('cell_locked_toast'), "info");
@@ -971,6 +1067,18 @@ export function startGame(
         refresh();
       }
       return;
+    }
+
+    if (activeBoardMechanics && num === currentSolution[r][c]) {
+      const mechRes = applyValidMoveMechanics(activeBoardMechanics, r, c);
+      for (const abId of mechRes.newlyConsumedAbilities) {
+        await UserManager.triggerAbilityCooldown(abId);
+      }
+      if (mechRes.crystalCollected) UIManager.showToast(t('toast_crystal_collected'), "success");
+      if (mechRes.unlockedSeal) UIManager.showToast(t('toast_seal_unlocked'), "success");
+      if (mechRes.sparkTriggered) UIManager.showToast(t('toast_spark_flow_active'), "info");
+      if (mechRes.treasureReward === 'free_hint') UIManager.showToast(t('toast_treasure_free_hint'), "success");
+      if (mechRes.treasureReward === 'error_shield') UIManager.showToast(t('toast_treasure_error_shield'), "success");
     }
 
     const success = GameEngine.processInput(
@@ -1068,9 +1176,19 @@ export function startGame(
           return;
         }
 
-        const baseReward = diff === 'basit' ? 10 : diff === 'orta' ? 20 : 35;
+        let baseReward = ECONOMY_CONFIG.mapBaseReward[diff];
         const mult = getLevelConfig(level, currentVariant).rewardMultiplier;
-        const reward = Math.round(baseReward * mult);
+        let reward = Math.round(baseReward * mult);
+
+        if (activeBoardMechanics) {
+          const finalCrystals = computeFinalRunCrystals(activeBoardMechanics, errors, timeElapsed);
+          await UserManager.recordLevelCrystals(currentVariant, currentLevelNumber, finalCrystals, activeBoardMechanics.profile.maxCollectibleCrystals);
+          if (activeBoardMechanics.sparkBonusGold > 0) {
+            reward += activeBoardMechanics.sparkBonusGold;
+          }
+          updateCrystalDisplays();
+        }
+
         const userLvl = UserManager.getVariantLevel(currentVariant);
         const nextLevel = computeNextJourneyLevel(level, userLvl);
 
@@ -1113,10 +1231,29 @@ export function startGame(
         }
       },
       async (errCount) => {
+        if (activeBoardMechanics) {
+          const mistakeRes = applyMistakeMechanics(activeBoardMechanics, r, c);
+          for (const abId of mistakeRes.newlyConsumedAbilities) {
+            await UserManager.triggerAbilityCooldown(abId);
+          }
+          if (mistakeRes.crystalProtectedByShield) {
+            UIManager.showToast(t('toast_crystal_shield_saved'), "info");
+          } else if (mistakeRes.crystalCracked) {
+            UIManager.showToast(t('toast_crystal_cracked'), "error");
+          }
+
+          if (mistakeRes.absorbMistake) {
+            persistCurrentGame();
+            refresh();
+            return;
+          }
+        }
+
         errors += errCount;
         updateErrorUI();
         persistCurrentGame();
-        if (errors >= 3) {
+        const maxMistakes = activeBoardMechanics ? activeBoardMechanics.profile.maxMistakes : 3;
+        if (errors >= maxMistakes) {
           if (!canOfferSecondChance({ isMatchMode, isPlacementExam: !!activePlacementExam })) {
             if (activePlacementExam) {
               await finishPlacementExam(false);
@@ -1162,7 +1299,8 @@ export function startGame(
                 await UserManager.updateProgress(UserManager.getCurrentLevel(), res.newGold);
                 if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();
 
-                errors = res.newErrors;
+                const maxMistakes = activeBoardMechanics ? activeBoardMechanics.profile.maxMistakes : 3;
+                errors = Math.max(0, maxMistakes - 1);
                 updateErrorUI();
                 UIManager.toggleModal('second-chance-modal', false);
                 persistCurrentGame();
@@ -1183,7 +1321,8 @@ export function startGame(
                 (btnAd as HTMLButtonElement).disabled = false;
 
                 if (res.rewarded) {
-                  errors = 2;
+                  const maxMistakes = activeBoardMechanics ? activeBoardMechanics.profile.maxMistakes : 3;
+                  errors = Math.max(0, maxMistakes - 1);
                   updateErrorUI();
                   UIManager.toggleModal('second-chance-modal', false);
                   persistCurrentGame();
@@ -1360,12 +1499,36 @@ export function startGame(
   }
 }
 
-export function initGameController(callbacks: {
-  onUpdateGoldDisplay: () => void;
+export async function repairActiveCrystalWithGold(): Promise<boolean> {
+  if (!activeBoardMechanics || activeBoardMechanics.crackedCrystals.length === 0) return false;
+  const currentGold = UserManager.getGold();
+  if (currentGold < 15) {
+    UIManager.showToast(t('repair_toast_no_gold'), "error");
+    return false;
+  }
+  const newGold = currentGold - 15;
+  await UserManager.updateProgress(UserManager.getCurrentLevel(), newGold);
+  if (onUpdateGoldDisplayCallback) onUpdateGoldDisplayCallback();
+  repairLastCrackedCrystal(activeBoardMechanics, userBoard);
+  UIManager.showToast(t('repair_toast_success'), "success");
+  return true;
+}
+
+export function repairActiveCrystalWithAd(): boolean {
+  if (!activeBoardMechanics || activeBoardMechanics.crackedCrystals.length === 0) return false;
+  repairLastCrackedCrystal(activeBoardMechanics, userBoard);
+  UIManager.showToast(t('repair_toast_success'), "success");
+  return true;
+}
+
+export function initGameController(callbacks?: {
+  onUpdateGoldDisplay?: () => void;
   onReturnToMap?: (variant: SudokuVariant, unlockedLevel?: number) => void;
 }): void {
-  onUpdateGoldDisplayCallback = callbacks.onUpdateGoldDisplay;
-  if (callbacks.onReturnToMap) {
+  if (callbacks?.onUpdateGoldDisplay) {
+    onUpdateGoldDisplayCallback = callbacks.onUpdateGoldDisplay;
+  }
+  if (callbacks?.onReturnToMap) {
     onReturnToMapCallback = callbacks.onReturnToMap;
   }
 
@@ -1388,5 +1551,28 @@ export function initGameController(callbacks: {
     pendingSmartHint = null;
     UIManager.hideSmartHintBanner();
     if (activeRefreshFn) activeRefreshFn();
+  });
+
+  document.getElementById('btn-close-crystal-repair')?.addEventListener('click', () => {
+    UIManager.toggleModal('crystal-repair-modal', false);
+  });
+
+  document.getElementById('btn-repair-crystal-gold')?.addEventListener('click', async () => {
+    const ok = await repairActiveCrystalWithGold();
+    if (ok) {
+      UIManager.toggleModal('crystal-repair-modal', false);
+      if (activeRefreshFn) activeRefreshFn();
+    }
+  });
+
+  document.getElementById('btn-repair-crystal-ad')?.addEventListener('click', async () => {
+    const res = await AdService.showRewardedReviveAd();
+    if (res.rewarded) {
+      repairActiveCrystalWithAd();
+      UIManager.toggleModal('crystal-repair-modal', false);
+      if (activeRefreshFn) activeRefreshFn();
+    } else {
+      UIManager.showToast(t('toast_ad_failed'), "error");
+    }
   });
 }
