@@ -302,4 +302,67 @@ describe('Faz 3c Tahta İçi Özel Hücreler & 5 Yeteneğin Gerçek Oyun İçi E
       expect(forbiddenEnWords.test(textTr)).toBe(false);
     });
   });
+
+  describe('8. Kayıtlı Oyun Mekanik & Yetenek Çubuğu Entegrasyonu (Regresyon)', () => {
+    it('Kayıtlı bir harita bölümünden devam edildiğinde activeBoardMechanics ve #game-mechanics-bar aktif olmalı', async () => {
+      localStorage.setItem('sudoku_crystals', '999');
+      localStorage.setItem('sudoku_gold', '9999');
+      await UserManager.upgradeAbility('oracle_eye');
+
+      const savedGameRecord = {
+        id: 'saved_map_classic_151',
+        variant: 'classic',
+        level: 151,
+        diff: 'basit',
+        timeElapsed: 45,
+        userBoard: [
+          [0, 2, 3, 4, 5, 6, 7, 8, 9],
+          [4, 5, 6, 7, 8, 9, 1, 2, 3],
+          [7, 8, 9, 1, 2, 3, 4, 5, 6],
+          [2, 3, 1, 5, 6, 4, 8, 9, 7],
+          [5, 6, 4, 8, 9, 7, 2, 3, 1],
+          [8, 9, 7, 2, 3, 1, 5, 6, 4],
+          [3, 1, 2, 6, 4, 5, 9, 7, 8],
+          [6, 4, 5, 9, 7, 8, 3, 1, 2],
+          [9, 7, 8, 3, 1, 2, 6, 4, 5]
+        ],
+        initialBoard: [
+          [0, 2, 3, 4, 5, 6, 7, 8, 9],
+          [4, 5, 6, 7, 8, 9, 1, 2, 3],
+          [7, 8, 9, 1, 2, 3, 4, 5, 6],
+          [2, 3, 1, 5, 6, 4, 8, 9, 7],
+          [5, 6, 4, 8, 9, 7, 2, 3, 1],
+          [8, 9, 7, 2, 3, 1, 5, 6, 4],
+          [3, 1, 2, 6, 4, 5, 9, 7, 8],
+          [6, 4, 5, 9, 7, 8, 3, 1, 2],
+          [9, 7, 8, 3, 1, 2, 6, 4, 5]
+        ],
+        currentSolution: [
+          [1, 2, 3, 4, 5, 6, 7, 8, 9],
+          [4, 5, 6, 7, 8, 9, 1, 2, 3],
+          [7, 8, 9, 1, 2, 3, 4, 5, 6],
+          [2, 3, 1, 5, 6, 4, 8, 9, 7],
+          [5, 6, 4, 8, 9, 7, 2, 3, 1],
+          [8, 9, 7, 2, 3, 1, 5, 6, 4],
+          [3, 1, 2, 6, 4, 5, 9, 7, 8],
+          [6, 4, 5, 9, 7, 8, 3, 1, 2],
+          [9, 7, 8, 3, 1, 2, 6, 4, 5]
+        ],
+        errors: 0
+      };
+
+      localStorage.setItem('sudoku_map_save_classic_151', JSON.stringify(savedGameRecord));
+
+      startGame(151, 'basit', undefined, savedGameRecord, 'classic', false, 0, ['oracle_eye']);
+
+      const state = getGameRuntimeState().boardMechanics;
+      expect(state).not.toBeNull();
+
+      const bar = document.getElementById('game-mechanics-bar');
+      expect(bar?.classList.contains('hidden')).toBe(false);
+
+      const oracleBtn = document.querySelector('[data-game-ability="oracle_eye"]');
+      expect(oracleBtn).not.toBeNull();
+    });
+  });
 });

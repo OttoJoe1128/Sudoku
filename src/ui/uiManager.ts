@@ -1082,7 +1082,7 @@ export const UIManager = {
     const endLvl = Math.min(1000, Math.max(startLvl + 5, windowEnd));
     const totalLevels = endLvl - startLvl + 1;
 
-    const ROW_H = 104;
+    const ROW_H = 116;
     const totalHeight = totalLevels * ROW_H;
     container.style.height = `${totalHeight}px`;
 
@@ -1126,16 +1126,16 @@ export const UIManager = {
 
       let milestoneBadge = '';
       if (nodeRhythm.isRegionGuardian) {
-        milestoneBadge = `<div class="absolute -top-3.5 z-30 pointer-events-none bg-rose-600/90 text-white font-black text-[9px] px-1.5 py-0.5 rounded-full border border-rose-400 shadow flex items-center gap-0.5"><span>👑</span><span>${t('map_guardian_tag')}</span></div>`;
+        milestoneBadge = `<div class="absolute -top-4 z-30 pointer-events-none bg-rose-600/90 text-white font-black text-[9px] px-1.5 py-0.5 rounded-full border border-rose-400 shadow flex items-center gap-0.5"><span>👑</span><span>${t('map_guardian_tag')}</span></div>`;
       } else if (nodeRhythm.isMilestone) {
-        milestoneBadge = `<div class="absolute -top-3.5 z-30 pointer-events-none bg-amber-500/90 text-amber-950 font-black text-[9px] px-1.5 py-0.5 rounded-full border border-amber-300 shadow flex items-center gap-0.5"><span>⭐</span><span>${t('map_milestone_tag')}</span></div>`;
+        milestoneBadge = `<div class="absolute -top-4 z-30 pointer-events-none bg-amber-500/90 text-amber-950 font-black text-[9px] px-1.5 py-0.5 rounded-full border border-amber-300 shadow flex items-center gap-0.5"><span>⭐</span><span>${t('map_milestone_tag')}</span></div>`;
       }
 
       const modProfile = getLevelModifierProfile(lvl, variant);
       const collectedCrystals = UserManager.getLevelCollectedCrystals(variant, lvl);
       const energyBadgeHTML = `<span class="absolute -bottom-1.5 -right-1.5 text-[11px] bg-[var(--bg-app)] border border-[var(--border-subtle)] rounded-full w-5 h-5 flex items-center justify-center shadow z-20 pointer-events-none">${modProfile.icon}</span>`;
       const crystalCounterHTML = (isCompleted || isCurrent)
-        ? `<div data-node-crystals="${lvl}" class="absolute -bottom-5 text-[9px] font-mono font-black text-[var(--accent-cyan)] pointer-events-none z-20">${collectedCrystals}/${modProfile.maxCollectibleCrystals}💎</div>`
+        ? `<div data-node-crystals="${lvl}" class="absolute -bottom-4 text-[9px] font-mono font-black text-[var(--accent-cyan)] pointer-events-none z-20">${collectedCrystals}/${modProfile.maxCollectibleCrystals}💎</div>`
         : '';
 
       let gateBadgeHTML = '';

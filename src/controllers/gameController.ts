@@ -845,7 +845,7 @@ export function startGame(
     }
   }
 
-  if (!isValidRestored && !isMatchMode && !isCustomGameMode && !activePlacementExam) {
+  if (!isMatchMode && !isCustomGameMode && !activePlacementExam) {
     activeBoardMechanics = createBoardMechanicsState(
       initialBoard || [],
       currentLevelNumber,
@@ -853,6 +853,25 @@ export function startGame(
       equippedAbilities,
       UserManager.getAbilitiesState()
     );
+
+    if (isValidRestored && activeBoardMechanics) {
+      activeBoardMechanics.cells.forEach(cell => {
+        if (userBoard && userBoard[cell.r] && userBoard[cell.r][cell.c] !== 0) {
+          if (cell.kind === 'crystal' && cell.state === 'active') {
+            cell.state = 'collected';
+            activeBoardMechanics!.crystalsEarnedInRun += 1;
+          } else if (cell.kind === 'key' && cell.state === 'active') {
+            cell.state = 'collected';
+            const seal = activeBoardMechanics!.cells.find(s => s.kind === 'seal' && s.pairId === cell.pairId && s.state === 'active');
+            if (seal) {
+              seal.state = 'unlocked';
+            }
+          } else if ((cell.kind === 'spark' || cell.kind === 'treasure') && cell.state === 'active') {
+            cell.state = 'collected';
+          }
+        }
+      });
+    }
   } else {
     activeBoardMechanics = null;
   }
