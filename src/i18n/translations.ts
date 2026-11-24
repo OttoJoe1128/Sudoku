@@ -80,6 +80,9 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     // Oyun Ekranı & Samurai Radar & Genel Etiketler
     game_errors: 'Hata: {count}/3',
     btn_hint: 'İpucu (10)',
+    btn_hint_free: 'Ücretsiz İpucu ({count})',
+    hint_btn_apply_free: 'Yerleştir (Ücretsiz)',
+    sprint_missed: '⏱️ Süre Doldu',
     btn_notes_off: 'Not: Kapalı',
     btn_notes_on: 'Not: Açık',
     btn_erase: 'Sil',
@@ -549,6 +552,16 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     energy_name_region_guardian: 'Bölge Muhafızı',
     energy_desc_region_guardian: 'Bölgenin en zorlu muhafız sınavı ve büyük ödülü.',
 
+    info_mod_crystal: '💎 Rün Kristali: Bu hücreyi hatasız çözersen +1 Kristal kazanırsın. Yanlış basarsan çatlar.',
+    info_mod_key_seal: '🗝️ Anahtar & Mühür: Kilitli (🔒) hücreye sayı yazılamaz. Önce 🗝️ anahtar hücresini çözerek kilidi aç.',
+    info_mod_spark: '⚡ Kıvılcım Akışı: ⚡ hücresini çözünce 20 sn kombo başlar; hızlı çözdüğün her rakam +1 Altın verir.',
+    info_mod_treasure: '🎁 Gizemli Hazine: Bu hücreyi çözünce anında 1 Ücretsiz İpucu veya 1 Hata Kalkanı kazanırsın.',
+    info_mod_one_breath: '🔥 Tek Nefes: Bu bölümde 3 yerine yalnızca 2 hata hakkın var; karşılığında 3 Kristal bulunur.',
+    info_mod_flawless: '🛡️ Kusursuz Sınav: Bölümü 0 hatayla bitirirsen bitişte +2 Bonus Kristal kazanırsın.',
+    info_mod_sprint: '⏱️ Hız Deparı: Hedef süre dolmadan bölümü bitirirsen +2 Bonus Kristal kazanırsın.',
+    info_mod_milestone: '⭐ Kasa Bölümü: Zengin kristal, anahtar-mühür ve gizemli hazine barındıran özel kilometre taşı.',
+    info_mod_guardian: '👑 Bölge Muhafızı: Bölgenin final sınavı; 2.5× Altın ve 4 Kristal ödülü sunar.',
+
     prep_title: 'Bölüm Hazırlığı',
     prep_crystals_progress: 'Bölüm Kristalleri: {collected} / {max}',
     prep_loadout_title: 'Yetenek Seçimi ({count} / 2)',
@@ -666,6 +679,9 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     // Game View & Samurai Radar & General Labels
     game_errors: 'Errors: {count}/3',
     btn_hint: 'Hint (10)',
+    btn_hint_free: 'Free Hint ({count})',
+    hint_btn_apply_free: 'Place (Free)',
+    sprint_missed: '⏱️ Missed',
     btn_notes_off: 'Notes: Off',
     btn_notes_on: 'Notes: On',
     btn_erase: 'Erase',
@@ -1134,6 +1150,16 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     energy_desc_milestone_vault: 'A milestone rich in crystals and treasure.',
     energy_name_region_guardian: 'Region Guardian',
     energy_desc_region_guardian: 'The ultimate guardian trial with maximum rewards.',
+
+    info_mod_crystal: '💎 Rune Crystal: Solve this cell without mistakes for +1 Crystal. A wrong move cracks it.',
+    info_mod_key_seal: '🗝️ Key & Seal: Locked (🔒) cells reject input. Solve the 🗝️ key cell first to break the seal.',
+    info_mod_spark: '⚡ Spark Flow: Solving a ⚡ cell starts a 20s combo; every correct digit grants +1 bonus Gold.',
+    info_mod_treasure: '🎁 Mystery Vault: Solve this cell to instantly receive 1 Free Hint or 1 Mistake Shield.',
+    info_mod_one_breath: '🔥 One Breath: You only have 2 mistake lives instead of 3, rewarded with 3 Crystals on the board.',
+    info_mod_flawless: '🛡️ Flawless Trial: Finish this stage with 0 mistakes to claim +2 Bonus Crystals.',
+    info_mod_sprint: '⏱️ Sprint Rush: Complete the board before the target timer to earn +2 Bonus Crystals.',
+    info_mod_milestone: '⭐ Milestone Vault: A special milestone stage rich in crystals, seals, and mystery treasure.',
+    info_mod_guardian: '👑 Region Guardian: The region finale trial granting 2.5x Gold and 4 Crystals.',
 
     prep_title: 'Stage Prep',
     prep_crystals_progress: 'Stage Crystals: {collected} / {max}',

@@ -15,6 +15,7 @@ import {
 } from '../engine/abilities';
 
 let abilitiesInterval: any = null;
+let onAbilitiesCloseReturnCallback: (() => void) | null = null;
 
 export function updateCrystalDisplays(): void {
   const c = UserManager.getCrystals();
@@ -35,9 +36,15 @@ export function closeAbilitiesModal(): void {
     abilitiesInterval = null;
   }
   UIManager.toggleModal('abilities-modal', false);
+  if (onAbilitiesCloseReturnCallback) {
+    const cb = onAbilitiesCloseReturnCallback;
+    onAbilitiesCloseReturnCallback = null;
+    cb();
+  }
 }
 
-export function openAbilitiesModal(nowMs: number = Date.now()): void {
+export function openAbilitiesModal(nowMs: number = Date.now(), onCloseReturn?: () => void): void {
+  onAbilitiesCloseReturnCallback = onCloseReturn || null;
   UIManager.toggleModal('abilities-modal', true);
   applyStaticTranslations();
   renderAbilitiesList(nowMs);

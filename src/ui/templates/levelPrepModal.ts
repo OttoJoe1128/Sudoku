@@ -11,6 +11,7 @@ export const levelPrepModalTemplate = `
 
             <!-- Özel Hücre Özeti -->
             <div id="prep-modifiers-summary" class="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-2 rounded-2xl mb-2 text-[10px] font-bold text-[var(--text-primary)] flex justify-around items-center gap-1 shadow-inner"></div>
+            <div id="prep-info-popover" class="hidden w-full bg-[var(--bg-elevated)] border border-[var(--accent-gold)]/50 rounded-xl px-3 py-2 text-[11px] text-left text-[var(--text-primary)] font-medium leading-snug mb-2 shadow-sm"></div>
 
             <!-- Kristal İlerlemesi -->
             <div id="prep-crystal-progress" class="text-xs font-mono font-black text-[var(--accent-cyan)] tracking-wide"></div>

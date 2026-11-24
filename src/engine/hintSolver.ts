@@ -102,12 +102,13 @@ function getRelatedCells(r: number, c: number, regionMap?: number[][]): { r: num
 export function findSmartHint(
   userBoard: number[][],
   solution: number[][],
-  options?: { preferredCell?: { r: number; c: number } | null; regionMap?: number[][] }
+  options?: { preferredCell?: { r: number; c: number } | null; regionMap?: number[][]; sealedCells?: { r: number; c: number }[] }
 ): SmartHint | null {
   if (!userBoard || !solution) return null;
 
   const regionMap = options?.regionMap;
   const preferred = options?.preferredCell;
+  const isSealed = (r: number, c: number) => Boolean(options?.sealedCells?.some(sc => sc.r === r && sc.c === c));
 
   // 1. Adayları hesapla
   const candidatesGrid: number[][][] = Array.from({ length: 9 }, () =>
@@ -117,7 +118,7 @@ export function findSmartHint(
   let emptyCount = 0;
   for (let r = 0; r < 9; r++) {
     for (let c = 0; c < 9; c++) {
-      if (userBoard[r][c] === 0) {
+      if (userBoard[r][c] === 0 && !isSealed(r, c)) {
         emptyCount++;
         candidatesGrid[r][c] = getCandidates(userBoard, r, c, regionMap);
       }
@@ -128,7 +129,7 @@ export function findSmartHint(
 
   // 1. NAKED SINGLE (Tek seçeneği kalan hücre)
   // preferredCell uyuyorsa öncelik ver
-  if (preferred && userBoard[preferred.r][preferred.c] === 0) {
+  if (preferred && userBoard[preferred.r][preferred.c] === 0 && !isSealed(preferred.r, preferred.c)) {
     const cands = candidatesGrid[preferred.r][preferred.c];
     if (cands.length === 1 && cands[0] === solution[preferred.r][preferred.c]) {
       return {
@@ -145,7 +146,7 @@ export function findSmartHint(
 
   for (let r = 0; r < 9; r++) {
     for (let c = 0; c < 9; c++) {
-      if (userBoard[r][c] === 0) {
+      if (userBoard[r][c] === 0 && !isSealed(r, c)) {
         const cands = candidatesGrid[r][c];
         if (cands.length === 1 && cands[0] === solution[r][c]) {
           return {
@@ -183,7 +184,7 @@ export function findSmartHint(
 
     for (let digit = 1; digit <= 9; digit++) {
       const matchingCells = boxCells.filter(
-        cell => userBoard[cell.r][cell.c] === 0 && candidatesGrid[cell.r][cell.c].includes(digit)
+        cell => userBoard[cell.r][cell.c] === 0 && !isSealed(cell.r, cell.c) && candidatesGrid[cell.r][cell.c].includes(digit)
       );
 
       if (matchingCells.length === 1) {
@@ -208,7 +209,7 @@ export function findSmartHint(
     for (let digit = 1; digit <= 9; digit++) {
       const matchingCols: number[] = [];
       for (let c = 0; c < 9; c++) {
-        if (userBoard[r][c] === 0 && candidatesGrid[r][c].includes(digit)) {
+        if (userBoard[r][c] === 0 && !isSealed(r, c) && candidatesGrid[r][c].includes(digit)) {
           matchingCols.push(c);
         }
       }
@@ -235,7 +236,7 @@ export function findSmartHint(
     for (let digit = 1; digit <= 9; digit++) {
       const matchingRows: number[] = [];
       for (let r = 0; r < 9; r++) {
-        if (userBoard[r][c] === 0 && candidatesGrid[r][c].includes(digit)) {
+        if (userBoard[r][c] === 0 && !isSealed(r, c) && candidatesGrid[r][c].includes(digit)) {
           matchingRows.push(r);
         }
       }
@@ -262,13 +263,13 @@ export function findSmartHint(
   let bestC = -1;
   let minCands = 99;
 
-  if (preferred && userBoard[preferred.r][preferred.c] === 0) {
+  if (preferred && userBoard[preferred.r][preferred.c] === 0 && !isSealed(preferred.r, preferred.c)) {
     bestR = preferred.r;
     bestC = preferred.c;
   } else {
     for (let r = 0; r < 9; r++) {
       for (let c = 0; c < 9; c++) {
-        if (userBoard[r][c] === 0) {
+        if (userBoard[r][c] === 0 && !isSealed(r, c)) {
           const count = candidatesGrid[r][c].length;
           if (count < minCands) {
             minCands = count;

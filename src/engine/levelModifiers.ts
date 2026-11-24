@@ -120,6 +120,11 @@ export function getLevelModifierProfile(
     }
   }
 
+  if (variant === 'samurai') {
+    keySealPairs = 0;
+    sparkCount = 0;
+  }
+
   // Yetenek Etkileri
   const runeMagnetLevel = Math.max(0, Math.floor(opts?.runeMagnetLevel || 0));
   if (runeMagnetLevel >= 3 && clamped % 5 === 0) {

@@ -17,6 +17,7 @@ import {
 import { getLevelModifierProfile } from '../engine/levelModifiers';
 
 let selectedLoadout: AbilityId[] = [];
+let activePrepInfoKey: string | null = null;
 let currentPrepParams: {
   level: number;
   diff: 'basit' | 'orta' | 'zor';
@@ -29,6 +30,12 @@ export function getSelectedPrepLoadout(): AbilityId[] {
 }
 
 export function closeLevelPrepModal(): void {
+  activePrepInfoKey = null;
+  const popover = document.getElementById('prep-info-popover');
+  if (popover) {
+    popover.classList.add('hidden');
+    popover.innerText = '';
+  }
   UIManager.toggleModal('level-prep-modal', false);
 }
 
@@ -41,9 +48,21 @@ export function openLevelPrepModal(params: {
 }): void {
   currentPrepParams = params;
   selectedLoadout = [];
+  activePrepInfoKey = null;
+  const popover = document.getElementById('prep-info-popover');
+  if (popover) {
+    popover.classList.add('hidden');
+    popover.innerText = '';
+  }
   UIManager.toggleModal('level-prep-modal', true);
   applyStaticTranslations();
   renderLevelPrepModal(params.nowMs || Date.now());
+}
+
+export function reopenCurrentLevelPrepModal(): void {
+  if (currentPrepParams) {
+    openLevelPrepModal({ ...currentPrepParams, nowMs: Date.now() });
+  }
 }
 
 export function refreshLevelPrepLanguageUI(): void {
@@ -52,6 +71,33 @@ export function refreshLevelPrepLanguageUI(): void {
   applyStaticTranslations();
   if (currentPrepParams) {
     renderLevelPrepModal(Date.now());
+  }
+}
+
+function getEnergyInfoKey(energyId: string): string {
+  if (energyId === 'spark_flow') return 'info_mod_spark';
+  if (energyId === 'sealed_path' || energyId === 'double_seal') return 'info_mod_key_seal';
+  if (energyId === 'mystery_vault') return 'info_mod_treasure';
+  if (energyId === 'flawless_trial') return 'info_mod_flawless';
+  if (energyId === 'one_breath') return 'info_mod_one_breath';
+  if (energyId === 'sprint_rush') return 'info_mod_sprint';
+  if (energyId === 'milestone_vault') return 'info_mod_milestone';
+  if (energyId === 'region_guardian') return 'info_mod_guardian';
+  return 'info_mod_crystal';
+}
+
+function togglePrepInfoPopover(key: string): void {
+  const popover = document.getElementById('prep-info-popover');
+  if (!popover) return;
+
+  if (activePrepInfoKey === key) {
+    activePrepInfoKey = null;
+    popover.classList.add('hidden');
+    popover.innerText = '';
+  } else {
+    activePrepInfoKey = key;
+    popover.innerText = t(key);
+    popover.classList.remove('hidden');
   }
 }
 
@@ -78,17 +124,40 @@ function renderLevelPrepModal(nowMs: number = Date.now()): void {
   const gridEl = document.getElementById('prep-abilities-grid');
 
   if (titleEl) titleEl.innerText = `${t('label_level')} ${level} • ${t('var_' + variant)}`;
-  if (energyBadgeEl) energyBadgeEl.innerText = `${profile.icon} ${t('energy_name_' + profile.energyId)}`;
+  if (energyBadgeEl) {
+    energyBadgeEl.className = "inline-flex items-center gap-1.5 bg-[var(--bg-elevated)] border border-[var(--border-strong)] text-[var(--accent-gold)] text-xs font-black px-3 py-1 rounded-full shadow-sm mb-1 cursor-pointer hover:brightness-110 active:scale-95 transition-all";
+    energyBadgeEl.innerHTML = `${profile.icon} <span>${t('energy_name_' + profile.energyId)}</span> <span class="text-[10px] opacity-80 font-normal">ⓘ</span>`;
+    energyBadgeEl.onclick = () => {
+      togglePrepInfoPopover(getEnergyInfoKey(profile.energyId));
+    };
+  }
   if (energyDescEl) energyDescEl.innerText = t('energy_desc_' + profile.energyId);
 
   if (summaryEl) {
-    const parts: string[] = [`💎 x${profile.crystalCount}`];
-    if (profile.keySealPairs > 0) parts.push(`🗝️ x${profile.keySealPairs}`);
-    if (profile.sparkCount > 0) parts.push(`⚡ x${profile.sparkCount}`);
-    if (profile.treasureCount > 0) parts.push(`🎁 x${profile.treasureCount}`);
-    if (profile.sprintTargetSec > 0) parts.push(`⏱️ ${profile.sprintTargetSec}s`);
-    if (profile.maxMistakes < 3) parts.push(`🔥 ${profile.maxMistakes}`);
-    summaryEl.innerHTML = parts.map(p => `<span>${p}</span>`).join('<span class="text-[var(--border-subtle)]">•</span>');
+    const summaryItems: { label: string; key: string }[] = [
+      { label: `💎 x${profile.crystalCount}`, key: 'crystal' }
+    ];
+    if (profile.keySealPairs > 0) summaryItems.push({ label: `🗝️ x${profile.keySealPairs}`, key: 'key_seal' });
+    if (profile.sparkCount > 0) summaryItems.push({ label: `⚡ x${profile.sparkCount}`, key: 'spark' });
+    if (profile.treasureCount > 0) summaryItems.push({ label: `🎁 x${profile.treasureCount}`, key: 'treasure' });
+    if (profile.hasFlawlessCrystalBonus) summaryItems.push({ label: `🛡️ +${profile.flawlessBonusCrystals}💎`, key: 'flawless' });
+    if (profile.sprintTargetSec > 0) summaryItems.push({ label: `⏱️ ${profile.sprintTargetSec}s`, key: 'sprint' });
+    if (profile.maxMistakes < 3) summaryItems.push({ label: `🔥 ${profile.maxMistakes}`, key: 'one_breath' });
+
+    summaryEl.innerHTML = summaryItems.map(item => `
+      <button data-prep-info="${item.key}" class="hover:text-[var(--accent-gold)] cursor-pointer active:scale-95 transition-transform flex items-center gap-0.5">
+        <span>${item.label}</span>
+      </button>
+    `).join('<span class="text-[var(--border-subtle)]">•</span>');
+
+    summaryEl.querySelectorAll('[data-prep-info]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const infoKey = (e.currentTarget as HTMLElement).getAttribute('data-prep-info');
+        if (infoKey) {
+          togglePrepInfoPopover('info_mod_' + infoKey);
+        }
+      });
+    });
   }
 
   if (crystalProgressEl) {
@@ -220,7 +289,7 @@ export function initLevelPrepController(): void {
 
   document.getElementById('btn-prep-open-abilities')?.addEventListener('click', () => {
     closeLevelPrepModal();
-    openAbilitiesModal();
+    openAbilitiesModal(Date.now(), () => reopenCurrentLevelPrepModal());
   });
 
   document.getElementById('btn-prep-start-game')?.addEventListener('click', () => {

@@ -14,13 +14,13 @@ import { initSaveController, updateSavedGamesCountUI, reconcileLevelsWithSavedGa
 import { initMapController, getSelectedMapVariant, openMapAtLevel, refreshMapLanguageUI } from './controllers/mapController';
 import { initArenaController, getSelectedArenaVariant, handleIncomingChallenge, triggerExpertBotMatch } from './controllers/arenaController';
 import { initModalsController, getSelectedCustomVariant, getSelectedCustomTimeSec, openPlayerProfile } from './controllers/modalsController';
-import { initGameController, startGame, startPlacementExam, handleBotMatchProgress, handleExitGameRequest, getGameRuntimeState } from './controllers/gameController';
+import { initGameController, startGame, startPlacementExam, handleBotMatchProgress, handleExitGameRequest, getGameRuntimeState, refreshGameLanguageUI } from './controllers/gameController';
 import { AdService } from './services/adService';
 import { openOnboardingModal, isOnboardingDone } from './controllers/onboardingController';
 import { startAppTour, isAppTourDone } from './controllers/appTourController';
 import { initAcademyController, refreshAcademyLanguageUI } from './controllers/academyController';
-import { initAbilitiesController, refreshAbilitiesLanguageUI, updateCrystalDisplays } from './controllers/abilitiesController';
-import { initLevelPrepController, refreshLevelPrepLanguageUI } from './controllers/levelPrepController';
+import { initAbilitiesController, refreshAbilitiesLanguageUI, updateCrystalDisplays, closeAbilitiesModal } from './controllers/abilitiesController';
+import { initLevelPrepController, refreshLevelPrepLanguageUI, closeLevelPrepModal } from './controllers/levelPrepController';
 import { AbilityId } from './engine/abilities';
 
 // UI Binişi & Öz-Teşhis
@@ -110,6 +110,7 @@ const updateLanguageUI = () => {
   refreshAcademyLanguageUI();
   refreshAbilitiesLanguageUI();
   refreshLevelPrepLanguageUI();
+  refreshGameLanguageUI();
   updateCrystalDisplays();
   updateWelcomeLangUI();
 
@@ -437,7 +438,37 @@ checkUser();
 
 // Android Donanım Geri Tuşu Mantığı (Capacitor)
 App.addListener('backButton', async () => {
-  const modals = ['avatar-gallery-modal', 'username-modal', 'view-profile', 'view-inbox', 'view-saved-games', 'view-leaderboard', 'view-shop', 'view-achievements', 'placement-modal', 'placement-result-modal', 'match-search-modal', 'match-result-modal', 'duel-exit-modal'];
+  const abilitiesModal = document.getElementById('abilities-modal');
+  if (abilitiesModal && !abilitiesModal.classList.contains('hidden')) {
+    closeAbilitiesModal();
+    return;
+  }
+
+  const levelPrepModal = document.getElementById('level-prep-modal');
+  if (levelPrepModal && !levelPrepModal.classList.contains('hidden')) {
+    closeLevelPrepModal();
+    return;
+  }
+
+  const modals = [
+    'avatar-gallery-modal',
+    'username-modal',
+    'view-profile',
+    'view-inbox',
+    'view-saved-games',
+    'view-leaderboard',
+    'view-shop',
+    'view-achievements',
+    'placement-modal',
+    'placement-result-modal',
+    'match-search-modal',
+    'match-result-modal',
+    'duel-exit-modal',
+    'crystal-repair-modal',
+    'academy-modal',
+    'second-chance-modal',
+    'onboarding-modal'
+  ];
   const openModal = modals.find(id => {
     const el = document.getElementById(id);
     return el && !el.classList.contains('hidden');

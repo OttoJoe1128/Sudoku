@@ -14,7 +14,7 @@ import { SoundManager } from '../engine/soundManager';
 import { canOfferSecondChance, tryGoldRevive, AdService } from '../services/adService';
 import { maybeShowRegionIntroLesson } from './academyController';
 import { findSmartHint, SmartHint, formatHintSymbol } from '../engine/hintSolver';
-import { AbilityId, ECONOMY_CONFIG } from '../engine/abilities';
+import { AbilityId, ECONOMY_CONFIG, isAbilityReady } from '../engine/abilities';
 import {
   BoardMechanicsState,
   createBoardMechanicsState,
@@ -88,6 +88,13 @@ const getSamuraiCompletionStatuses = () => {
 };
 
 const applyPendingSmartHint = async (hint: SmartHint) => {
+  if (activeBoardMechanics && isCellSealed(activeBoardMechanics, hint.row, hint.col)) {
+    UIManager.showToast(t('toast_cell_sealed'), "info");
+    pendingSmartHint = null;
+    UIManager.hideSmartHintBanner();
+    return;
+  }
+
   const isFreeHintFromTreasure = activeBoardMechanics && activeBoardMechanics.freeHintsGranted > 0;
   if (isFreeHintFromTreasure && activeBoardMechanics) {
     activeBoardMechanics.freeHintsGranted -= 1;
@@ -238,9 +245,13 @@ const applyPendingSmartHint = async (hint: SmartHint) => {
       const mult = getLevelConfig(currentLevelNumber, currentVariant).rewardMultiplier;
       let reward = Math.round(baseReward * mult);
 
+      let crystalDelta = 0;
       if (activeBoardMechanics) {
         const finalCrystals = computeFinalRunCrystals(activeBoardMechanics, errors, timeElapsed);
-        await UserManager.recordLevelCrystals(currentVariant, currentLevelNumber, finalCrystals, activeBoardMechanics.profile.maxCollectibleCrystals);
+        const crystalRes = await UserManager.recordLevelCrystals(currentVariant, currentLevelNumber, finalCrystals, activeBoardMechanics.profile.maxCollectibleCrystals);
+        if (crystalRes && crystalRes.delta > 0) {
+          crystalDelta = crystalRes.delta;
+        }
         if (activeBoardMechanics.sparkBonusGold > 0) {
           reward += activeBoardMechanics.sparkBonusGold;
         }
@@ -277,10 +288,11 @@ const applyPendingSmartHint = async (hint: SmartHint) => {
         lastErrors: errors
       });
 
+      const crystalSuffix = crystalDelta > 0 ? ` • +${crystalDelta} 💎` : '';
       const isEn = getLang() === 'en';
       const toastMsg = isEn
-        ? `🎉 Level ${currentLevelNumber} Completed! Level ${nextLevel} Unlocked! +${reward} 🪙`
-        : `🎉 Seviye ${currentLevelNumber} Tamamlandı! Seviye ${nextLevel} Açıldı! +${reward} 🪙`;
+        ? `🎉 Level ${currentLevelNumber} Completed! Level ${nextLevel} Unlocked! +${reward} 🪙${crystalSuffix}`
+        : `🎉 Seviye ${currentLevelNumber} Tamamlandı! Seviye ${nextLevel} Açıldı! +${reward} 🪙${crystalSuffix}`;
 
       UIManager.showToast(toastMsg, "success");
 
@@ -475,6 +487,17 @@ async function finishPlacementExam(completedAll: boolean): Promise<void> {
 
 const persistCurrentGame = () => {
   if (activePlacementExam) return;
+  const mechanicsSnapshot = activeBoardMechanics ? {
+    oracleChargesLeft: activeBoardMechanics.oracleChargesLeft,
+    shieldChargesLeft: activeBoardMechanics.shieldChargesLeft,
+    sealBreakerChargesLeft: activeBoardMechanics.sealBreakerChargesLeft,
+    consumedAbilities: [...activeBoardMechanics.consumedAbilities],
+    firstMoveMade: activeBoardMechanics.firstMoveMade,
+    crackedCrystals: activeBoardMechanics.crackedCrystals ? activeBoardMechanics.crackedCrystals.map(c => ({ r: c.r, c: c.c })) : [],
+    freeHintsGranted: activeBoardMechanics.freeHintsGranted,
+    errorShieldsGranted: activeBoardMechanics.errorShieldsGranted
+  } : undefined;
+
   saveActiveGameRecord({
     isMatchMode,
     isCustomGameMode,
@@ -492,6 +515,7 @@ const persistCurrentGame = () => {
     samuraiBoards: samuraiBoards.length === 5 ? samuraiBoards : undefined,
     activeSamuraiIndex: currentVariant === 'samurai' ? activeSamuraiIndex : undefined,
     equippedAbilities: activeEquippedAbilities,
+    mechanicsSnapshot,
     matchData: activeMatch,
     enemyName: activeMatch?.player2?.username
   });
@@ -508,6 +532,10 @@ const startTimer = (limitSeconds: number = 0) => {
 
   timerInterval = setInterval(() => {
     timeElapsed++;
+
+    if (activeBoardMechanics) {
+      UIManager.updateMechanicsLiveTimers(activeBoardMechanics, timeElapsed);
+    }
 
     if (limitSeconds > 0) {
       matchTimeRemaining--;
@@ -682,6 +710,7 @@ export async function handleExitGameRequest(): Promise<boolean> {
 
   activeRefreshFn = null;
   activeBoardMechanics = null;
+  UIManager.updateHintButtonLabel(0);
   UIManager.renderGameMechanicsBar(null, { onUseOracle: () => {}, onUseSealBreaker: () => {} });
   if (timerInterval) clearInterval(timerInterval);
   UIManager.hideSamuraiSpace();
@@ -877,6 +906,43 @@ export function startGame(
         }
       });
     }
+
+    if (activeBoardMechanics) {
+      // Adım A (Kayıtlı snapshot geri yükleme)
+      if (isValidRestored && resolvedRestoredState && resolvedRestoredState.mechanicsSnapshot) {
+        const ms = resolvedRestoredState.mechanicsSnapshot;
+        if (typeof ms.oracleChargesLeft === 'number') activeBoardMechanics.oracleChargesLeft = ms.oracleChargesLeft;
+        if (typeof ms.shieldChargesLeft === 'number') activeBoardMechanics.shieldChargesLeft = ms.shieldChargesLeft;
+        if (typeof ms.sealBreakerChargesLeft === 'number') activeBoardMechanics.sealBreakerChargesLeft = ms.sealBreakerChargesLeft;
+        if (Array.isArray(ms.consumedAbilities)) activeBoardMechanics.consumedAbilities = [...ms.consumedAbilities];
+        if (typeof ms.firstMoveMade === 'boolean') activeBoardMechanics.firstMoveMade = ms.firstMoveMade;
+        if (typeof ms.freeHintsGranted === 'number') activeBoardMechanics.freeHintsGranted = ms.freeHintsGranted;
+        if (typeof ms.errorShieldsGranted === 'number') activeBoardMechanics.errorShieldsGranted = ms.errorShieldsGranted;
+        if (Array.isArray(ms.crackedCrystals)) {
+          activeBoardMechanics.crackedCrystals = ms.crackedCrystals.map((c: { r: number; c: number }) => ({ r: c.r, c: c.c }));
+          activeBoardMechanics.crackedCrystals.forEach(cc => {
+            const cell = activeBoardMechanics!.cells.find(c => c.r === cc.r && c.c === cc.c);
+            if (cell) {
+              cell.state = 'cracked';
+            }
+          });
+        }
+      }
+
+      // Adım B (MUTLAK KÜRESEL COOLDOWN KİLİDİ — Her oyun ve her kayıt için her zaman çalışır!)
+      const globalAbilities = UserManager.getAbilitiesState();
+      activeBoardMechanics.equippedAbilities.forEach(id => {
+        const prog = globalAbilities[id];
+        if (!isAbilityReady(prog, id)) {
+          if (id === 'oracle_eye') activeBoardMechanics!.oracleChargesLeft = 0;
+          if (id === 'crystal_shield') activeBoardMechanics!.shieldChargesLeft = 0;
+          if (id === 'seal_breaker') activeBoardMechanics!.sealBreakerChargesLeft = 0;
+          if (!activeBoardMechanics!.consumedAbilities.includes(id)) {
+            activeBoardMechanics!.consumedAbilities.push(id);
+          }
+        }
+      });
+    }
   } else {
     activeBoardMechanics = null;
   }
@@ -1021,40 +1087,60 @@ export function startGame(
         activeBoardMechanics?.cells
       );
       UIManager.hideSamuraiRadar();
-      UIManager.renderGameMechanicsBar(activeBoardMechanics, {
-        onUseOracle: async () => {
-          if (!activeBoardMechanics) return;
-          const res = activateOracleEye(activeBoardMechanics, userBoard, selectedCell, currentRegionMap);
-          if (!res.ok) {
-            UIManager.showToast(t('toast_ability_no_charges'), "info");
-            return;
-          }
-          if (res.newlyConsumed) {
-            await UserManager.triggerAbilityCooldown('oracle_eye');
-          }
-          res.scannedCells.forEach(sc => {
-            notesBoard[sc.r][sc.c] = new Set(sc.candidates);
-          });
-          UIManager.showToast(t('toast_oracle_scanned'), "success");
-          persistCurrentGame();
-          refresh();
-        },
-        onUseSealBreaker: async () => {
-          if (!activeBoardMechanics) return;
-          const res = activateSealBreaker(activeBoardMechanics, selectedCell);
-          if (!res.ok) {
-            UIManager.showToast(t('toast_no_seal_to_break'), "info");
-            return;
-          }
-          if (res.newlyConsumed) {
-            await UserManager.triggerAbilityCooldown('seal_breaker');
-          }
-          UIManager.showToast(t('toast_seal_unlocked'), "success");
-          persistCurrentGame();
-          refresh();
-        }
-      });
     }
+
+    UIManager.renderGameMechanicsBar(activeBoardMechanics, {
+      onUseOracle: async () => {
+        if (!activeBoardMechanics) return;
+        const oracleProg = UserManager.getAbilityProgress('oracle_eye');
+        const ready = isAbilityReady(oracleProg, 'oracle_eye');
+        const isSameRunSecondaryUse = activeBoardMechanics.consumedAbilities.includes('oracle_eye') && activeBoardMechanics.oracleChargesLeft > 0;
+        if (!ready && !isSameRunSecondaryUse) {
+          UIManager.showToast(t('toast_ability_no_charges'), "info");
+          return;
+        }
+        const res = activateOracleEye(activeBoardMechanics, userBoard, selectedCell, currentRegionMap);
+        if (!res.ok) {
+          UIManager.showToast(t('toast_ability_no_charges'), "info");
+          return;
+        }
+        if (res.newlyConsumed) {
+          UserManager.triggerAbilityCooldown('oracle_eye');
+        }
+        res.scannedCells.forEach(sc => {
+          notesBoard[sc.r][sc.c] = new Set(sc.candidates);
+        });
+        UIManager.showToast(t('toast_oracle_scanned'), "success");
+        persistCurrentGame();
+        refresh();
+      },
+      onUseSealBreaker: async () => {
+        if (!activeBoardMechanics) return;
+        const sealProg = UserManager.getAbilityProgress('seal_breaker');
+        const ready = isAbilityReady(sealProg, 'seal_breaker');
+        const isSameRunSecondaryUse = activeBoardMechanics.consumedAbilities.includes('seal_breaker') && activeBoardMechanics.sealBreakerChargesLeft > 0;
+        if (!ready && !isSameRunSecondaryUse) {
+          UIManager.showToast(t('toast_no_seal_to_break'), "info");
+          return;
+        }
+        const res = activateSealBreaker(activeBoardMechanics, selectedCell);
+        if (!res.ok) {
+          UIManager.showToast(t('toast_no_seal_to_break'), "info");
+          return;
+        }
+        if (res.newlyConsumed) {
+          UserManager.triggerAbilityCooldown('seal_breaker');
+        }
+        UIManager.showToast(t('toast_seal_unlocked'), "success");
+        persistCurrentGame();
+        refresh();
+      },
+      onOpenRepair: () => {
+        UIManager.toggleModal('crystal-repair-modal', true);
+      }
+    }, timeElapsed);
+
+    UIManager.updateHintButtonLabel(activeBoardMechanics ? activeBoardMechanics.freeHintsGranted : 0);
 
     UIManager.renderNumpad(
       (num) => handleNumpadInput(num),
@@ -1204,9 +1290,13 @@ export function startGame(
         const mult = getLevelConfig(level, currentVariant).rewardMultiplier;
         let reward = Math.round(baseReward * mult);
 
+        let crystalDelta = 0;
         if (activeBoardMechanics) {
           const finalCrystals = computeFinalRunCrystals(activeBoardMechanics, errors, timeElapsed);
-          await UserManager.recordLevelCrystals(currentVariant, currentLevelNumber, finalCrystals, activeBoardMechanics.profile.maxCollectibleCrystals);
+          const crystalRes = await UserManager.recordLevelCrystals(currentVariant, currentLevelNumber, finalCrystals, activeBoardMechanics.profile.maxCollectibleCrystals);
+          if (crystalRes && crystalRes.delta > 0) {
+            crystalDelta = crystalRes.delta;
+          }
           if (activeBoardMechanics.sparkBonusGold > 0) {
             reward += activeBoardMechanics.sparkBonusGold;
           }
@@ -1241,10 +1331,11 @@ export function startGame(
           lastErrors: errors
         });
 
+        const crystalSuffix = crystalDelta > 0 ? ` • +${crystalDelta} 💎` : '';
         const isEn = getLang() === 'en';
         const toastMsg = isEn
-          ? `🎉 Level ${level} Completed! Level ${nextLevel} Unlocked! +${reward} 🪙`
-          : `🎉 Seviye ${level} Tamamlandı! Seviye ${nextLevel} Açıldı! +${reward} 🪙`;
+          ? `🎉 Level ${level} Completed! Level ${nextLevel} Unlocked! +${reward} 🪙${crystalSuffix}`
+          : `🎉 Seviye ${level} Tamamlandı! Seviye ${nextLevel} Açıldı! +${reward} 🪙${crystalSuffix}`;
 
         UIManager.showToast(toastMsg, "success");
 
@@ -1470,13 +1561,23 @@ export function startGame(
         return;
       }
 
+      if (selectedCell && activeBoardMechanics && isCellSealed(activeBoardMechanics, selectedCell.r, selectedCell.c)) {
+        UIManager.showToast(t('toast_cell_sealed'), "info");
+        return;
+      }
+
       if (hintsUsed >= 5) {
         return UIManager.showToast(t('toast_hint_limit_reached'), "error");
       }
 
+      const sealedCells = activeBoardMechanics
+        ? activeBoardMechanics.cells.filter(c => isCellSealed(activeBoardMechanics!, c.r, c.c)).map(c => ({ r: c.r, c: c.c }))
+        : [];
+
       const hint = findSmartHint(userBoard, currentSolution, {
         preferredCell: selectedCell,
-        regionMap: currentRegionMap
+        regionMap: currentRegionMap,
+        sealedCells
       });
 
       if (!hint) {
@@ -1599,4 +1700,14 @@ export function initGameController(callbacks?: {
       UIManager.showToast(t('toast_ad_failed'), "error");
     }
   });
+}
+
+export function refreshGameLanguageUI(): void {
+  const errorEl = document.getElementById('game-errors');
+  const maxMistakes = activeBoardMechanics ? activeBoardMechanics.profile.maxMistakes : 3;
+  if (errorEl) errorEl.innerText = t('game_errors_dynamic', { count: errors, max: maxMistakes });
+
+  if (activeRefreshFn) {
+    activeRefreshFn();
+  }
 }

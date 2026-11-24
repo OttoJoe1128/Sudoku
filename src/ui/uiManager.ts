@@ -56,6 +56,16 @@ export interface SavedGameRecord {
   equippedAbilities?: AbilityId[];
   enemyName?: string;
   updatedAtMs: number;
+  mechanicsSnapshot?: {
+    oracleChargesLeft: number;
+    shieldChargesLeft: number;
+    sealBreakerChargesLeft: number;
+    consumedAbilities: AbilityId[];
+    firstMoveMade: boolean;
+    crackedCrystals: { r: number; c: number }[];
+    freeHintsGranted: number;
+    errorShieldsGranted: number;
+  };
 }
 
 export const UIManager = {
@@ -274,12 +284,13 @@ export const UIManager = {
             <!-- Tahta İçi Mekanik & Yetenek Çubuğu -->
             <div id="game-mechanics-bar" class="hidden w-full mb-2 justify-between items-center bg-[var(--bg-card)] px-3 py-1.5 rounded-xl border border-[var(--border-strong)] text-xs font-black text-[var(--text-primary)] shadow-sm">
                 <div class="flex items-center gap-2">
-                    <span id="game-energy-pill" class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] px-2 py-0.5 rounded-lg text-[10px] font-black text-[var(--accent-gold)] flex items-center gap-1 shadow-inner"></span>
+                    <span id="game-energy-pill" class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] px-2 py-0.5 rounded-lg text-[10px] font-black text-[var(--accent-gold)] flex items-center gap-1 shadow-inner cursor-pointer"></span>
                     <span id="game-crystal-counter" class="text-[10px] font-mono font-black text-[var(--accent-cyan)] flex items-center gap-0.5"></span>
                     <span id="game-momentum-pill" class="hidden bg-amber-500/20 text-amber-300 border border-amber-400/40 px-1.5 py-0.5 rounded-md text-[9px] font-mono font-black animate-pulse"></span>
                 </div>
                 <div id="game-equipped-abilities" class="flex items-center gap-1.5"></div>
             </div>
+            <div id="game-info-popover" class="hidden w-full bg-[var(--bg-card)] border border-[var(--accent-gold)]/50 rounded-xl px-3 py-1.5 mb-2 text-[11px] text-left text-[var(--text-primary)] font-medium leading-snug shadow-sm"></div>
 
             <!-- Akıllı İpucu Şeridi -->
             <div id="smart-hint-banner" class="hidden w-full max-w-[380px] bg-[var(--bg-card)] border-2 border-[var(--accent-gold)] text-[var(--text-primary)] rounded-2xl p-3 shadow-xl flex-col gap-1.5 mb-2 relative transition-all z-20">
@@ -1628,36 +1639,125 @@ export const UIManager = {
     });
   },
 
+  updateMechanicsLiveTimers(
+    state: BoardMechanicsState | null,
+    timeElapsedSec: number = 0,
+    nowMs: number = Date.now()
+  ): void {
+    const momentumPill = document.getElementById('game-momentum-pill');
+    if (!momentumPill || !state) {
+      if (momentumPill) {
+        momentumPill.classList.add('hidden');
+      }
+      return;
+    }
+
+    const isSparkActive = nowMs < state.sparkFlowEndsAtMs;
+    if (isSparkActive) {
+      const remSec = Math.ceil((state.sparkFlowEndsAtMs - nowMs) / 1000);
+      momentumPill.classList.remove('hidden');
+      momentumPill.className = 'bg-amber-500/20 text-amber-300 border border-amber-400/40 px-1.5 py-0.5 rounded-md text-[9px] font-mono font-black animate-pulse';
+      momentumPill.innerText = `⚡ x${state.sparkCombo} (${remSec}s)`;
+    } else if (state.profile.sprintTargetSec > 0) {
+      const remainingSec = state.profile.sprintTargetSec - timeElapsedSec;
+      momentumPill.classList.remove('hidden');
+      if (remainingSec >= 0) {
+        const mm = Math.floor(remainingSec / 60).toString().padStart(2, '0');
+        const ss = (remainingSec % 60).toString().padStart(2, '0');
+        momentumPill.className = 'bg-amber-500/20 text-amber-300 border border-amber-400/40 px-1.5 py-0.5 rounded-md text-[9px] font-mono font-black';
+        momentumPill.innerText = `⏱️ ${mm}:${ss}`;
+      } else {
+        momentumPill.className = 'bg-slate-700/40 text-slate-400 border border-slate-600/40 px-1.5 py-0.5 rounded-md text-[9px] font-mono font-black';
+        momentumPill.innerText = t('sprint_missed');
+      }
+    } else {
+      momentumPill.classList.add('hidden');
+    }
+  },
+
+  updateHintButtonLabel(freeHints: number = 0) {
+    const hintSpan = document.querySelector('#btn-hint [data-i18n="btn_hint"]');
+    const applySpan = document.querySelector('#btn-apply-smart-hint [data-i18n="hint_btn_apply"]');
+
+    if (freeHints > 0) {
+      if (hintSpan) hintSpan.textContent = t('btn_hint_free', { count: freeHints });
+      if (applySpan) applySpan.textContent = t('hint_btn_apply_free');
+    } else {
+      if (hintSpan) hintSpan.textContent = t('btn_hint');
+      if (applySpan) applySpan.textContent = t('hint_btn_apply');
+    }
+  },
+
+  gamePopoverTimer: null as any,
+
+  toggleGameInfoPopover(energyId: string) {
+    const popover = document.getElementById('game-info-popover');
+    if (!popover) return;
+
+    if (this.gamePopoverTimer) {
+      clearTimeout(this.gamePopoverTimer);
+      this.gamePopoverTimer = null;
+    }
+
+    if (!popover.classList.contains('hidden') && popover.getAttribute('data-active-energy') === energyId) {
+      popover.classList.add('hidden');
+      popover.innerText = '';
+      popover.removeAttribute('data-active-energy');
+    } else {
+      let infoKey = 'info_mod_crystal';
+      if (energyId === 'spark_flow') infoKey = 'info_mod_spark';
+      else if (energyId === 'sealed_path' || energyId === 'double_seal') infoKey = 'info_mod_key_seal';
+      else if (energyId === 'mystery_vault') infoKey = 'info_mod_treasure';
+      else if (energyId === 'flawless_trial') infoKey = 'info_mod_flawless';
+      else if (energyId === 'one_breath') infoKey = 'info_mod_one_breath';
+      else if (energyId === 'sprint_rush') infoKey = 'info_mod_sprint';
+      else if (energyId === 'milestone_vault') infoKey = 'info_mod_milestone';
+      else if (energyId === 'region_guardian') infoKey = 'info_mod_guardian';
+
+      popover.innerText = t(infoKey);
+      popover.setAttribute('data-active-energy', energyId);
+      popover.classList.remove('hidden');
+
+      this.gamePopoverTimer = setTimeout(() => {
+        popover.classList.add('hidden');
+        popover.innerText = '';
+        popover.removeAttribute('data-active-energy');
+        this.gamePopoverTimer = null;
+      }, 4000);
+    }
+  },
+
   renderGameMechanicsBar(
     state: BoardMechanicsState | null,
-    handlers: { onUseOracle: () => void; onUseSealBreaker: () => void }
+    handlers: { onUseOracle: () => void; onUseSealBreaker: () => void; onOpenRepair?: () => void },
+    timeElapsedSec: number = 0
   ) {
     const bar = document.getElementById('game-mechanics-bar');
     const energyPill = document.getElementById('game-energy-pill');
     const crystalCounter = document.getElementById('game-crystal-counter');
-    const momentumPill = document.getElementById('game-momentum-pill');
     const abilitiesContainer = document.getElementById('game-equipped-abilities');
+    const gamePopover = document.getElementById('game-info-popover');
 
     if (!bar || !state) {
       if (bar) { bar.classList.add('hidden'); bar.classList.remove('flex'); }
+      if (gamePopover) { gamePopover.classList.add('hidden'); gamePopover.innerText = ''; }
       return;
     }
 
     bar.classList.remove('hidden');
     bar.classList.add('flex');
 
-    if (energyPill) energyPill.innerHTML = `${state.profile.icon} <span>${t('energy_name_' + state.profile.energyId)}</span>`;
+    if (energyPill) {
+      energyPill.className = "bg-[var(--bg-elevated)] border border-[var(--border-subtle)] px-2 py-0.5 rounded-lg text-[10px] font-black text-[var(--accent-gold)] flex items-center gap-1 shadow-inner cursor-pointer hover:brightness-110 active:scale-95 transition-all";
+      energyPill.innerHTML = `${state.profile.icon} <span>${t('energy_name_' + state.profile.energyId)}</span> <span class="text-[10px] opacity-80 font-normal">ⓘ</span>`;
+      energyPill.onclick = () => {
+        this.toggleGameInfoPopover(state.profile.energyId);
+      };
+    }
+
     if (crystalCounter) crystalCounter.innerText = `${state.crystalsEarnedInRun}/${state.profile.maxCollectibleCrystals}💎`;
 
-    const isSparkActive = Date.now() < state.sparkFlowEndsAtMs;
-    if (momentumPill) {
-      if (isSparkActive) {
-        momentumPill.classList.remove('hidden');
-        momentumPill.innerText = `⚡ x${state.sparkCombo}`;
-      } else {
-        momentumPill.classList.add('hidden');
-      }
-    }
+    this.updateMechanicsLiveTimers(state, timeElapsedSec);
 
     if (abilitiesContainer) {
       abilitiesContainer.innerHTML = '';
@@ -1700,11 +1800,22 @@ export const UIManager = {
         abilitiesContainer.appendChild(btn);
       });
 
+      if (state.errorShieldsGranted > 0) {
+        const shieldBadge = document.createElement('span');
+        shieldBadge.setAttribute('data-treasure-shield', 'true');
+        shieldBadge.className = 'px-1.5 py-0.5 rounded-lg text-[10px] font-mono font-black bg-emerald-500/20 text-emerald-400 border border-emerald-400/40';
+        shieldBadge.innerHTML = `🛡️x${state.errorShieldsGranted}`;
+        abilitiesContainer.appendChild(shieldBadge);
+      }
+
       if (state.crackedCrystals.length > 0) {
         const repairBtn = document.createElement('button');
         repairBtn.id = 'btn-open-crystal-repair';
         repairBtn.className = 'px-2 py-1 rounded-xl font-extrabold text-[10px] bg-rose-950/80 text-rose-300 border border-rose-500/50 shadow-sm flex items-center gap-1 transition-all active:scale-95 cursor-pointer animate-pulse';
         repairBtn.innerHTML = `<span>${t('repair_btn_open')}</span>`;
+        if (handlers.onOpenRepair) {
+          repairBtn.onclick = handlers.onOpenRepair;
+        }
         abilitiesContainer.appendChild(repairBtn);
       }
     }

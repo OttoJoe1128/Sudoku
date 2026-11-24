@@ -432,4 +432,78 @@ describe('Faz 3c Tahta İçi Özel Hücreler & 5 Yeteneğin Gerçek Oyun İçi E
       }
     });
   });
+
+  describe('10. Küresel Cooldown Otoritesi & Kayıt Senkronizasyonu Testleri', () => {
+    it('Çık-Gir Testi: Seviye 149da oracle_eye kullanılıp çıkılınca kayıttan oracleChargesLeft: 0 olarak yüklenmeli ve (0) göstermeli', async () => {
+      localStorage.setItem('sudoku_crystals', '999');
+      localStorage.setItem('sudoku_gold', '9999');
+      await UserManager.upgradeAbility('oracle_eye');
+
+      startGame(149, 'basit', undefined, undefined, 'classic', false, 0, ['oracle_eye']);
+      expect(getGameRuntimeState().boardMechanics?.oracleChargesLeft).toBe(1);
+
+      const oracleBtn = document.querySelector('[data-game-ability="oracle_eye"]') as HTMLElement;
+      expect(oracleBtn).not.toBeNull();
+      oracleBtn.click();
+
+      expect(getGameRuntimeState().boardMechanics?.oracleChargesLeft).toBe(0);
+      expect(UserManager.getAbilityProgress('oracle_eye').cooldownEndsAtMs).toBeGreaterThan(Date.now());
+
+      await handleExitGameRequest();
+
+      const rawSaved = localStorage.getItem('sudoku_map_save_classic_149');
+      expect(rawSaved).not.toBeNull();
+      const saved149 = JSON.parse(rawSaved!);
+
+      startGame(149, 'basit', undefined, saved149, 'classic', false, 0, ['oracle_eye']);
+
+      expect(getGameRuntimeState().boardMechanics?.oracleChargesLeft).toBe(0);
+      const oracleBtnResumed = document.querySelector('[data-game-ability="oracle_eye"]');
+      expect(oracleBtnResumed?.textContent).toContain('(0)');
+    });
+
+    it('Çapraz Bölüm Küresel Cooldown Testi (151 -> 149): Seviye 149 snapshotında 1 yazsa bile 151de cooldowna girmiş yetenek 0 olmalı', async () => {
+      localStorage.setItem('sudoku_crystals', '999');
+      localStorage.setItem('sudoku_gold', '9999');
+      await UserManager.upgradeAbility('oracle_eye');
+
+      // Seviye 149'da oyuna başla ve henüz yetenek kullanmadan kaydet (1 hamle yaparak kaydı tutulabilir kıl)
+      startGame(149, 'basit', undefined, undefined, 'classic', false, 0, ['oracle_eye']);
+      expect(getGameRuntimeState().boardMechanics?.oracleChargesLeft).toBe(1);
+
+      let emptyR = 0, emptyC = 0;
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          if (getGameRuntimeState().initialBoard[r][c] === 0) {
+            emptyR = r; emptyC = c; break;
+          }
+        }
+      }
+      getGameRuntimeState().userBoard[emptyR][emptyC] = getGameRuntimeState().currentSolution[emptyR][emptyC];
+
+      await handleExitGameRequest();
+
+      const rawSaved149 = localStorage.getItem('sudoku_map_save_classic_149');
+      expect(rawSaved149).not.toBeNull();
+      const saved149 = JSON.parse(rawSaved149!);
+      expect(saved149.mechanicsSnapshot?.oracleChargesLeft).toBe(1);
+
+      // Ardından Seviye 151'de oracle_eye kullan (global cooldown başlasın)
+      startGame(151, 'basit', undefined, undefined, 'classic', false, 0, ['oracle_eye']);
+      const oracleBtn151 = document.querySelector('[data-game-ability="oracle_eye"]') as HTMLElement;
+      expect(oracleBtn151).not.toBeNull();
+      oracleBtn151.click();
+
+      expect(UserManager.getAbilityProgress('oracle_eye').cooldownEndsAtMs).toBeGreaterThan(Date.now());
+      await handleExitGameRequest();
+
+      // Şimdi Seviye 149'un eski kaydına dön
+      startGame(149, 'basit', undefined, saved149, 'classic', false, 0, ['oracle_eye']);
+
+      // Eski kayıtta 1 yazsa dahi küresel cooldown aktif olduğu için 0 olmalı!
+      expect(getGameRuntimeState().boardMechanics?.oracleChargesLeft).toBe(0);
+      const oracleBtnResumed = document.querySelector('[data-game-ability="oracle_eye"]');
+      expect(oracleBtnResumed?.textContent).toContain('(0)');
+    });
+  });
 });

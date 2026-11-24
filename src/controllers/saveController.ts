@@ -25,6 +25,16 @@ export interface ActiveGameSnapshot {
   matchData?: any;
   enemyName?: string;
   equippedAbilities?: AbilityId[];
+  mechanicsSnapshot?: {
+    oracleChargesLeft: number;
+    shieldChargesLeft: number;
+    sealBreakerChargesLeft: number;
+    consumedAbilities: AbilityId[];
+    firstMoveMade: boolean;
+    crackedCrystals: { r: number; c: number }[];
+    freeHintsGranted: number;
+    errorShieldsGranted: number;
+  };
 }
 
 export function hasPlayerMadeAnyMove(snapshotOrRecord: any): boolean {
@@ -169,6 +179,7 @@ export function getSavedGamesList(): SavedGameRecord[] {
                   samuraiBoards: p.samuraiBoards,
                   activeSamuraiIndex: p.activeSamuraiIndex,
                   equippedAbilities: p.equippedAbilities,
+                  mechanicsSnapshot: p.mechanicsSnapshot,
                   isCustomMode: false,
                   updatedAtMs: p.updatedAtMs || Date.now()
                 };
@@ -365,7 +376,8 @@ export function saveActiveGameRecord(snapshot: ActiveGameSnapshot): void {
         isMatchMode: true,
         matchData: snapshot.matchData,
         enemyName: snapshot.enemyName || snapshot.matchData?.player2?.username || 'Rakip',
-        updatedAtMs: Date.now()
+        updatedAtMs: Date.now(),
+        mechanicsSnapshot: snapshot.mechanicsSnapshot
       };
 
       const idx = list.findIndex(item => item.id === gameId);
@@ -424,6 +436,7 @@ export function saveActiveGameRecord(snapshot: ActiveGameSnapshot): void {
         samuraiBoards: safeSamuraiBoards,
         activeSamuraiIndex: snapshot.variant === 'samurai' ? snapshot.activeSamuraiIndex : undefined,
         equippedAbilities: snapshot.equippedAbilities,
+        mechanicsSnapshot: snapshot.mechanicsSnapshot,
         updatedAtMs: Date.now()
       }));
     } else {
@@ -445,6 +458,7 @@ export function saveActiveGameRecord(snapshot: ActiveGameSnapshot): void {
         samuraiBoards: safeSamuraiBoards,
         activeSamuraiIndex: snapshot.variant === 'samurai' ? snapshot.activeSamuraiIndex : undefined,
         equippedAbilities: snapshot.equippedAbilities,
+        mechanicsSnapshot: snapshot.mechanicsSnapshot,
         isCustomMode: true,
         updatedAtMs: Date.now()
       };

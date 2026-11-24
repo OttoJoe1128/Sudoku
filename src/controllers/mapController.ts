@@ -116,6 +116,7 @@ export function renderMapPathUI(
         SoundManager.playWin();
         UIManager.showToast(t('gate_toast_claimed', { gold: res.rewardGold || 0, crystals: res.rewardCrystals || 0 }), "success");
         updateCrystalDisplays();
+        UIManager.updateHeaderGold(UserManager.getGold());
         renderMapPathUI(onStartLevel, false);
       } else if (res.reason === 'insufficient_crystals') {
         const collected = UserManager.getBlockCollectedCrystals(selectedMapVariant, gateDef.startLevel, gateDef.endLevel);
