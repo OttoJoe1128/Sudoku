@@ -117,6 +117,24 @@ export const profileModalTemplate = `
                     <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--accent-gold)]"></div>
                 </label>
             </div>
+
+            <!-- Hesap & Bulut Yedekleme Bölümü -->
+            <div id="profile-account-section" class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl p-3 flex flex-col gap-2 shadow-sm text-left">
+                <p class="text-[10px] font-black text-[var(--accent-gold)] uppercase tracking-wider block" data-i18n="auth_section_title">Hesap & Bulut Yedekleme</p>
+                <p id="profile-auth-status" class="text-xs font-extrabold text-[var(--text-primary)]" data-i18n="auth_status_guest">Misafir Modu (Yalnızca bu cihaz)</p>
+
+                <button id="btn-profile-open-auth" class="w-full bg-[var(--accent-gold)] text-[var(--text-on-gold)] font-black py-2 rounded-xl text-xs shadow active:scale-95 transition-all cursor-pointer">
+                    <span data-i18n="auth_btn_open_modal">E-posta ile Giriş / Kayıt</span>
+                </button>
+
+                <button id="btn-profile-logout" class="hidden w-full bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] border border-[var(--border-subtle)] font-bold py-2 rounded-xl text-xs transition-colors cursor-pointer">
+                    <span data-i18n="auth_btn_logout">Çıkış Yap</span>
+                </button>
+
+                <button id="btn-profile-delete-account" class="hidden w-full bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-500/50 font-black py-2 rounded-xl text-xs active:scale-95 transition-all cursor-pointer">
+                    <span data-i18n="auth_btn_delete">Hesabı Kalıcı Olarak Sil</span>
+                </button>
+            </div>
         </div>
 
         <!-- Başka Bir Oyuncunun Profili İçin Düello İsteği Butonu -->

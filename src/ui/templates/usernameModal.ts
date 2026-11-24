@@ -24,8 +24,12 @@ export const usernameModalTemplate = `
             <input type="text" id="username-input" class="w-full bg-[var(--bg-elevated)] border-2 border-[var(--border-subtle)] rounded-2xl px-4 py-4 text-center text-lg font-black text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-[var(--accent-gold)] transition-all shadow-inner" placeholder="Kullanıcı adını yaz..." data-i18n-ph="ph_enter_username" maxlength="12">
         </div>
 
-        <button id="save-username" class="w-full bg-[var(--accent-gold)] text-[var(--text-on-gold)] font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all text-sm tracking-wide hover:brightness-110">
+        <button id="save-username" class="w-full bg-[var(--accent-gold)] text-[var(--text-on-gold)] font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all text-sm tracking-wide hover:brightness-110 mb-2.5">
             <span data-i18n="btn_save_start">Kaydet ve Maceraya Başla ➔</span>
+        </button>
+
+        <button id="btn-welcome-open-auth" class="w-full bg-[var(--bg-elevated)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] border border-[var(--border-subtle)] font-bold py-3 rounded-2xl active:scale-95 transition-all text-xs tracking-wide cursor-pointer">
+            <span data-i18n="auth_btn_open_modal">E-posta ile Giriş / Kayıt</span>
         </button>
     </div>
 </div>

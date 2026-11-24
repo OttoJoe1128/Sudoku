@@ -16,6 +16,7 @@ import { academyModalTemplate } from './templates/academyModal';
 import { abilitiesModalTemplate } from './templates/abilitiesModal';
 import { levelPrepModalTemplate } from './templates/levelPrepModal';
 import { crystalRepairModalTemplate } from './templates/crystalRepairModal';
+import { authModalTemplate } from './templates/authModal';
 import { getLevelModifierProfile } from '../engine/levelModifiers';
 import { getMapGateDef } from '../engine/mapGates';
 import { getAmbientBackgroundHTML } from '../design/backgrounds';
@@ -248,6 +249,7 @@ export const UIManager = {
         ${abilitiesModalTemplate}
         ${levelPrepModalTemplate}
         ${crystalRepairModalTemplate}
+        ${authModalTemplate}
         <div id="game-view" class="hidden flex-col items-center p-6 w-full h-full relative z-10">
             <!-- Düello Canlı İlerleme Çubuğu -->
             <div id="match-header-bar" class="hidden w-full bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-strong)] p-3 rounded-2xl mb-3 shadow-lg flex-col gap-2">
@@ -595,6 +597,15 @@ export const UIManager = {
         badgesSection.classList.remove('hidden');
       } else {
         badgesSection.classList.add('hidden');
+      }
+    }
+
+    const accountSection = document.getElementById('profile-account-section');
+    if (accountSection) {
+      if (isOwnProfile) {
+        accountSection.classList.remove('hidden');
+      } else {
+        accountSection.classList.add('hidden');
       }
     }
 

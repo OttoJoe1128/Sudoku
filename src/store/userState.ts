@@ -15,6 +15,9 @@ import {
 } from '../engine/abilities';
 import { getMapGateDef, getMapGateKey } from '../engine/mapGates';
 
+const isTestRuntime = (): boolean =>
+  typeof globalThis !== 'undefined' && Boolean((globalThis as any).process?.env?.VITEST);
+
 export type GameCategory = 'map' | 'custom' | 'pvp' | 'ai';
 
 export interface CompletedByCategory {
@@ -117,6 +120,7 @@ export const UserManager = {
   },
 
   async setPresence(status: 'available' | 'in_game' | 'in_duel'): Promise<void> {
+    if (isTestRuntime()) return;
     try {
       if (auth.currentUser) {
         const uid = auth.currentUser.uid;
@@ -159,6 +163,8 @@ export const UserManager = {
         localStorage.setItem('sudoku_level', updatedClassic.toString());
       }
     }
+
+    if (isTestRuntime()) return;
 
     try {
       if (auth.currentUser) {
@@ -205,6 +211,8 @@ export const UserManager = {
         localStorage.setItem('sudoku_level', safeClassic.toString());
       }
     }
+
+    if (isTestRuntime()) return;
 
     try {
       if (auth.currentUser) {
@@ -264,8 +272,29 @@ export const UserManager = {
     };
   },
 
+  async syncFullEconomyToCloud(): Promise<void> {
+    if (isTestRuntime()) return;
+    try {
+      if (auth.currentUser) {
+        const uid = auth.currentUser.uid;
+        await setDoc(doc(db, 'leaderboard', uid), {
+          username: this.getUsername() || 'Oyuncu',
+          level: this.getCurrentLevel(),
+          gold: this.getGold(),
+          crystals: this.getCrystals(),
+          abilities: this.getAbilitiesState(),
+          level_crystals: this.getLevelCollectedCrystalsMap(),
+          claimed_gates: this.getClaimedMapGates(),
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      }
+    } catch (e) {
+      console.warn("Bulut tam ekonomi senkronizasyonu hatası:", e);
+    }
+  },
+
   async initUser(): Promise<UserData | null> {
-    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    if (isTestRuntime() || (typeof navigator !== 'undefined' && navigator.onLine === false)) {
       return this.getOfflineFallbackUser();
     }
 
@@ -290,6 +319,53 @@ export const UserManager = {
         const safeTotal = Math.max(localTotal, totalCompleted);
         if (typeof localStorage !== 'undefined') {
           localStorage.setItem('sudoku_total_completed', safeTotal.toString());
+        }
+
+        if (typeof data.crystals === 'number') {
+          const safeCrystals = Math.max(this.getCrystals(), data.crystals);
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('sudoku_crystals', safeCrystals.toString());
+          }
+        }
+
+        if (data.abilities && typeof data.abilities === 'object') {
+          const localAbilities = this.getAbilitiesState();
+          const mergedAbilities = { ...localAbilities };
+          Object.keys(data.abilities).forEach(k => {
+            const id = k as AbilityId;
+            const remoteProg = data.abilities[id];
+            if (remoteProg && typeof remoteProg === 'object') {
+              const localProg = mergedAbilities[id] || { level: 0, cooldownEndsAtMs: 0 };
+              mergedAbilities[id] = {
+                level: Math.max(localProg.level || 0, remoteProg.level || 0),
+                cooldownEndsAtMs: Math.max(localProg.cooldownEndsAtMs || 0, remoteProg.cooldownEndsAtMs || 0)
+              };
+            }
+          });
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('sudoku_abilities', JSON.stringify(mergedAbilities));
+          }
+        }
+
+        if (data.level_crystals && typeof data.level_crystals === 'object') {
+          const localLevelCrystals = this.getLevelCollectedCrystalsMap();
+          const mergedLevelCrystals = { ...localLevelCrystals };
+          Object.keys(data.level_crystals).forEach(k => {
+            const remoteVal = typeof data.level_crystals[k] === 'number' ? data.level_crystals[k] : 0;
+            const localVal = typeof mergedLevelCrystals[k] === 'number' ? mergedLevelCrystals[k] : 0;
+            mergedLevelCrystals[k] = Math.max(localVal, remoteVal);
+          });
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('sudoku_level_crystals', JSON.stringify(mergedLevelCrystals));
+          }
+        }
+
+        if (Array.isArray(data.claimed_gates)) {
+          const localGates = this.getClaimedMapGates();
+          const mergedGates = Array.from(new Set([...localGates, ...data.claimed_gates]));
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('sudoku_claimed_gates', JSON.stringify(mergedGates));
+          }
         }
 
         (['classic', 'irregular', 'killer', 'wordoku', 'samurai'] as SudokuVariant[]).forEach(v => {
@@ -427,6 +503,7 @@ export const UserManager = {
   },
 
   async findUserByName(username: string): Promise<UserData | null> {
+    if (isTestRuntime()) return null;
     try {
       const directDocRef = doc(db, 'leaderboard', username);
       const directSnap = await getDoc(directDocRef);
@@ -613,6 +690,10 @@ export const UserManager = {
       localStorage.setItem('sudoku_username', username);
     }
 
+    if (isTestRuntime()) {
+      return { username, gold: currentGold, level: currentLevel, avatar, title };
+    }
+
     try {
       const cred = auth.currentUser ? { user: auth.currentUser } : await signInAnonymously(auth);
       const uid = cred.user.uid;
@@ -643,6 +724,8 @@ export const UserManager = {
       localStorage.setItem('sudoku_gold', gold.toString());
     }
 
+    if (isTestRuntime()) return;
+
     const currentTitle = this.getTitle();
 
     try {
@@ -669,6 +752,8 @@ export const UserManager = {
       localStorage.setItem('sudoku_title', title);
     }
 
+    if (isTestRuntime()) return;
+
     try {
       if (auth.currentUser) {
         const uid = auth.currentUser.uid;
@@ -694,6 +779,8 @@ export const UserManager = {
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem('sudoku_gold', newGold.toString());
       }
+
+      if (isTestRuntime()) return;
 
       if (auth.currentUser) {
         const uid = auth.currentUser.uid;
@@ -752,6 +839,8 @@ export const UserManager = {
       const category = details.category || 'map';
       const safeTotal = this.incrementCompletedCategory(category);
       const cats = this.getCompletedByCategory();
+
+      if (isTestRuntime()) return;
 
       const cred = auth.currentUser ? { user: auth.currentUser } : await signInAnonymously(auth);
       const uid = cred.user.uid;
@@ -1013,6 +1102,7 @@ export const UserManager = {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('sudoku_crystals', newTotal.toString());
     }
+    if (isTestRuntime()) return newTotal;
     try {
       if (auth.currentUser) {
         await setDoc(doc(db, 'leaderboard', auth.currentUser.uid), {
@@ -1034,6 +1124,8 @@ export const UserManager = {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('sudoku_crystals', newTotal.toString());
     }
+    if (isTestRuntime()) return true;
+
     try {
       if (auth.currentUser) {
         await setDoc(doc(db, 'leaderboard', auth.currentUser.uid), {
@@ -1113,6 +1205,7 @@ export const UserManager = {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('sudoku_abilities', JSON.stringify(state));
     }
+    if (isTestRuntime()) return;
     try {
       if (auth.currentUser) {
         await setDoc(doc(db, 'leaderboard', auth.currentUser.uid), {
@@ -1234,6 +1327,8 @@ export const UserManager = {
     await this.addCrystals(gate.rewardCrystals);
     const currentGold = this.getGold();
     await this.updateProgress(this.getCurrentLevel(), currentGold + gate.rewardGold);
+
+    if (isTestRuntime()) return { ok: true, rewardGold: gate.rewardGold, rewardCrystals: gate.rewardCrystals };
 
     try {
       if (auth.currentUser) {

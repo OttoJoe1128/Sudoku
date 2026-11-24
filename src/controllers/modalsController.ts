@@ -11,6 +11,7 @@ import { t, getLang } from '../i18n/translations';
 import { getPlacementExamConfig } from '../engine/placementEngine';
 import { auth } from '../api/firebase';
 import { formatDisplayName } from '../utils/sanitize';
+import { refreshAuthProfileUI } from './authController';
 
 let selectedCustomVariant: SudokuVariant = 'classic';
 let selectedCustomTimeSec: number = 0;
@@ -145,6 +146,7 @@ export async function openPlayerProfile(targetData?: any): Promise<void> {
   UIManager.renderProfileModal(stats, badges, isOwn);
 
   if (isOwn) {
+    refreshAuthProfileUI();
     document.querySelectorAll('.avatar-option-btn').forEach(btn => {
       (btn as HTMLElement).onclick = async (e: Event) => {
         const newAvatar = (e.currentTarget as HTMLElement).getAttribute('data-avatar');

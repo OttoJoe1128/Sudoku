@@ -21,6 +21,7 @@ import { startAppTour, isAppTourDone } from './controllers/appTourController';
 import { initAcademyController, refreshAcademyLanguageUI } from './controllers/academyController';
 import { initAbilitiesController, refreshAbilitiesLanguageUI, updateCrystalDisplays, closeAbilitiesModal } from './controllers/abilitiesController';
 import { initLevelPrepController, refreshLevelPrepLanguageUI, closeLevelPrepModal } from './controllers/levelPrepController';
+import { initAuthController, refreshAuthLanguageUI, refreshAuthProfileUI, closeAuthModal } from './controllers/authController';
 import { AbilityId } from './engine/abilities';
 
 // UI Binişi & Öz-Teşhis
@@ -111,6 +112,7 @@ const updateLanguageUI = () => {
   refreshAbilitiesLanguageUI();
   refreshLevelPrepLanguageUI();
   refreshGameLanguageUI();
+  refreshAuthLanguageUI();
   updateCrystalDisplays();
   updateWelcomeLangUI();
 
@@ -219,6 +221,15 @@ initModalsController({
 initAcademyController();
 initAbilitiesController();
 initLevelPrepController();
+initAuthController({
+  onAuthSynced: () => {
+    updateGoldDisplay();
+    updateSavedGamesCountUI();
+    updateCrystalDisplays();
+    const user = UserManager.getOfflineFallbackUser();
+    if (user) updateProfileUI(user);
+  }
+});
 updateCrystalDisplays();
 
 // ----------------------------------------------------
@@ -438,6 +449,12 @@ checkUser();
 
 // Android Donanım Geri Tuşu Mantığı (Capacitor)
 App.addListener('backButton', async () => {
+  const authModal = document.getElementById('auth-modal');
+  if (authModal && !authModal.classList.contains('hidden')) {
+    closeAuthModal();
+    return;
+  }
+
   const abilitiesModal = document.getElementById('abilities-modal');
   if (abilitiesModal && !abilitiesModal.classList.contains('hidden')) {
     closeAbilitiesModal();
@@ -451,6 +468,7 @@ App.addListener('backButton', async () => {
   }
 
   const modals = [
+    'auth-modal',
     'avatar-gallery-modal',
     'username-modal',
     'view-profile',
