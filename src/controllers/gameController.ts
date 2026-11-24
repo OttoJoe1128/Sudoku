@@ -11,3 +11,23 @@ export function getGameRuntimeState(): any {
     boardMechanics: null
   };
 }
+
+export function initGameController(): void {
+  // Oyun kontrolcüsünü başlatır
+}
+
+export function startGame(_mode?: string, _difficulty?: string): void {
+  // Oyunu başlatır
+}
+
+export function startPlacementExam(): void {
+  // Yerleştirme sınavını başlatır
+}
+
+export function handleBotMatchProgress(): void {
+  // Bot maçı ilerlemesini yönetir
+}
+
+export function handleExitGameRequest(): void {
+  // Oyundan çıkış isteğini yönetir
+}
