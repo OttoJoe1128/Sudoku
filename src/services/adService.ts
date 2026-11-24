@@ -3,7 +3,7 @@ import { AdMob, RewardAdPluginEvents } from '@capacitor-community/admob';
 import { SoundManager } from '../engine/soundManager';
 
 export const AD_CONFIG = {
-  USE_TEST_ADS: false,
+  USE_TEST_ADS: import.meta.env.PROD ? false : true,
   TEST_REWARDED_ANDROID_ID: 'ca-app-pub-3940256099942544/5224354917',
   PROD_REWARDED_ANDROID_ID: 'ca-app-pub-9186685815420341/4830997068',
   REVIVE_GOLD_COST: 50
@@ -112,8 +112,17 @@ export const AdService = {
       // Reklam gosterilmeden hemen once muzigi duraklat
       SoundManager.pauseForBackground();
 
-      // Reklam gosterimi (timeout olmadan!)
-      await AdMob.showRewardVideoAd();
+      // Reklam gosterimi ve show timeout korumasi (45 sn)
+      const showPromise = AdMob.showRewardVideoAd();
+      const showTimeoutPromise = new Promise<{ showFailed: boolean }>((resolve) => {
+        timeoutId = setTimeout(() => resolve({ showFailed: true }), 45000);
+      });
+
+      const showResult = await Promise.race([showPromise, showTimeoutPromise]);
+      if (showResult && (showResult as any).showFailed) {
+        return { rewarded: false, reason: 'show_timeout' };
+      }
+      if (timeoutId) clearTimeout(timeoutId);
 
       return { rewarded: isRewarded };
     } catch (e) {
