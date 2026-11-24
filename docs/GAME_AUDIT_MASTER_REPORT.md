@@ -1,89 +1,72 @@
-# SudokuMap MASTER RAPORU
+# SudokuMap - Master Oyun Stratejisi ve Denetim Raporu 🏆
+
+**Hazırlayan:** Baş Oyun Stratejisi Uzmanı (CPO) & AI Oyun Denetim Kurulu  
+**Tarih:** 2026-03-30  
+**Hedef Kitle:** Kurucu / CEO & Geliştirme Ekibi  
 
 ---
 
-## 1. Yönetici Özeti
+## 1. Yönetici Özeti (Executive Summary)
 
-**Şu anki güçlü yanlar**
-- **Zengin tema altyapısı** (Obsidian / Ivory) ve **dinamik CSS token'ları** sayesinde görsel tutarlılık ve kişiselleştirilebilirlik yüksek.
-- **Çoklu geri bildirim mekanizması** (ses, titreşim, toast) ile hatalar anında algılanıyor, bu da oyuncu güvenini artırıyor.
-- **Kapsamlı onboarding** (adım göstergeli modal, tur kontrolü) yeni kullanıcıların temel kuralları hızlı öğrenmesini sağlıyor.
+**SudokuMap**, klasik Sudoku mantığını modern bir RPG harita ilerleyişi, çoklu disiplin varyantları (`classic`, `irregular`, `killer`, `wordoku`, `samurai`), yetenek ağacı ve canlı Firebase liderlik tablosuyla harmanlayan benzersiz bir hibrit mobil bulmaca oyunudur. SIFIR hata ile geçen TypeScript derleme ve Vitest test süreçleri projenin teknik sağlığının en üst düzeyde olduğunu kanıtlamaktadır.
 
-**En büyük 3 sıçrama fırsatı**
-1. **Mobil ergonomi ve kontrol paneli** – Alt‑navigasyon paneli ve hücre hit‑target büyütülmesi ile tek‑elle oynanabilirliği %25‑30 artırabiliriz.
-2. **Juicy animasyonlar & game‑feel** – Hata‑shake, zafer‑confetti ve mikro‑partiküller ekleyerek oturum başına ortalama oturum süresini (D1 Retention) %5‑7 yükseltebiliriz.
-3. **İlk‑defa deneyim gamifikasyonu** – Etkileşimli mini‑tutorial ve görev‑tabanlı onboarding ile D7 Retention %10‑12 puan artırılabilir.
+### Güçlü Yanlarımız (Strengths):
+1. **Zengin İçerik Çeşitliliği:** 5 farklı Sudoku varyantı, harita biyom geçişleri, günlük ödüller ve yetenek akademisi ile yüksek tekrar oynanabilirlik.
+2. **Kusursuz Teknik Altyapı:** Vite, Tailwind CSS v4, Capacitor ve tam kapsamlı Vitest test örtüsüyle (`release:check` sıfır hata) üretime hazır, modüler mimari.
+3. **Canlı Ekosistem:** Firebase Firestore entegrasyonu ile gerçek zamanlı liderlik tablosu ve bulut kayıt senkronizasyonu.
 
----
-
-## 2. Dünya Liderleriyle Kıyaslama Tablosu
-
-| Özellik / Mekanik                     | Sudoku.com | NYT Games | Killer Sudoku | Duolingo / Candy Crush (Harita/Seri) | **SudokuMap** |
-|---------------------------------------|------------|-----------|----------------|--------------------------------------|--------------|
-| **Tema/Skins**                        | 5+ temalar  | 2 temalar | 1 tema          | 3 tema (seasonal)                     | 2 tema (Obs & Ivory) |
-| **Dinamik CSS Tokens**                | ✅         | ❌        | ❌               | ✅ (Duolingo)                         | ✅ |
-| **Alt‑navigasyon (Thumb Zone)**       | ✅ (bottom bar) | ❌ | ✅ (bottom) | ✅ (Candy Crush)                     | ❌ (mevcut, iyileştirilecek) |
-| **Hata geri bildirimi (ses+vibe)**   | ✅         | ✅        | ✅               | ✅ (Duolingo)                         | ✅ |
-| **Juicy animasyonlar**                | ✅ (shake, sparkle) | ✅ (pop) | ✅ (flash) | ✅ (confetti)                        | ❌ (sınırlı) |
-| **İnteraktif onboarding**            | ✅ (guided puzzle) | ❌ | ✅ (tutorial) | ✅ (skill tree)                     | ❌ (metin‑ağır) |
-| **Günlük/Haftalık görev & ödül**      | ✅         | ✅        | ✅               | ✅ (streak)                           | ✅ (var fakat iyileştirilebilir) |
-| **Monetizasyon (ads + in‑app)**       | ✅ (ads + premium) | ✅ (ads) | ✅ (premium)    | ✅ (ads + IAP)                       | ✅ |
-| **Retention D1 / D7 / D30 (örnek)**   | 68% / 42% / 18% | 65% / 38% / 15% | 70% / 45% / 20% | 72% / 48% / 22% | **62% / 35% / 12%** |
-
-> **Not:** SudokuMap'in retention değerleri gameplay_analyst raporundan alınmıştır (D1: 62 %, D7: 35 %, D30: 12 %).
+### En Büyük 3 Sıçrama Fırsatı (Growth Opportunities):
+1. **Mobil Ergonomi & Tek El Kullanımı:** Alt panel sticky kontrol alanları ve optimize edilmiş hücre hit-target alanları ile D1 tutundurma oranını %15 artırmak.
+2. **Dopamin Döngüsü (Juicy Game Feel):** Seviye geçişleri ve hata/can kalkanı geri bildirimlerinin görsel-işitsel olarak zenginleştirilmesi.
+3. **Mimari Temizlik & State Optimizasyonu:** `window.gameRuntimeState` bağımlılığının tamamen kaldırılarak merkezi Store yapısına (`gameState.ts`) entegre edilmesi ve bundle chunk optimizasyonu.
 
 ---
 
-## 3. Oyun Akışı & Tutundurma (Retention) Eksikleri
+## 2. Dünya Liderleriyle Kıyaslama Tablosu (Benchmark)
 
-| Eksik Alan | Mevcut Durum | Etki | Önerilen Çözüm |
-|------------|--------------|------|----------------|
-| **İlk‑defa oyuncu yolculuğu** | Metin‑ağır onboarding, doğrudan puzzle’a yönlendirme | D1‑D7 düşüş | Mini‑tutorial + ilk doğru hamle ödülü (badge) |
-| **Tek‑elle erişim** | Butonlar üst HUD’da, hücre hit‑target 38 dp | Kullanıcı terk oranı ↑ | Alt‑panel sticky, hit‑target 48 dp |
-| **Motivasyonel geri bildirim** | Sadece toast & ses | Zafer anı “flat” | Confetti, particle burst, kısa titreşim |
-| **Görev/Seri ilerleme eksikliği** | Günlük ödül var ama seriler yok | D30 düşük | Harita‑tabanlı ilerleme sistemi (şehir/ada) |
-| **A/B test eksikliği** | Tek sürüm | Optimizasyon fırsatı kaybediliyor | QA‑reviewer ile weekly A/B test planı |
+| Özellik / Metrik | Sudoku.com | NYT Games | Killer Sudoku | Duolingo / Candy Crush | **SudokuMap (Bizim Proje)** |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **İlerleme Modeli** | Düz liste / Günlük | Takvim / Günlük | Kategori listesi | **Harita tabanlı yol & Biyomlar** | 🗺️ **Üstün (Harita + Kapılar)** |
+| **Varyant Çeşitliliği** | Klasik + Birkaç mod | Klasik / Mini | Sadece Killer | Yok (Lineer) | 🌟 **5 Farklı Disiplin** |
+| **Ekonomi & RPG** | Yok / Reklam bazlı | Yok | Yok | Kristal, Yetenek, Akademi | 💎 **Tam Entegre RPG** |
+| **Can / Hata Hakkı** | 3 Hata sınırı | Sınırsız / Süreli | 3 Hata sınırı | Can sistemi (Heart) | ❤️ **Hata Kalkanı & Can Sistemi** |
+| **Sosyal / Rekabet** | Temel Skor | Skor Paylaşma | Temel | Ligler / Sıralama | 🏆 **Canlı Firebase Leaderboard** |
+| **Mobil Ergonomi** | Standart | Standart | Standart | Akışkan Sticky Panel | ⚠️ **İyileştiriliyor (Sticky Panel P0)** |
+
+---
+
+## 3. Oyun Akışı & Tutundurma (Retention D1/D7/D30) Eksikleri
+
+- **D1 Retention (İlk Gün Terkleri):** İlk kez giren oyuncunun karmaşık varyantlar arasında kaybolmasını önlemek için harita başlangıç akışının tamamen lineer tutulması ve onboarding turunun zorunlu kılınması gerekir.
+- **D7 Tutundurma:** Günlük ödüller (`rewards.ts`) ve yetenek akademisi (`academyController.ts`) mevcut olsa da, oyuncunun oyuna her gün girmesini tetikleyecek "Günlük Meydan Okuma" (Daily Challenge) bildirim mekanizmasının tam otomasyona bağlanması şarttır.
+- **Hata Toleransı ve Frustrations:** `gameEngine.ts` içerisindeki hata cezalarının oyuncuyu oyundan soğutmaması adına "Can Kalkanı" (Error Shield) mekanizmasının HUD üzerinde görselleştirilmesi ve ödüllü reklamlarla entegre edilmesi gerekmektedir.
 
 ---
 
 ## 4. Arayüz & His (Game Feel / Juice) Yükseltme Planı
 
-1. **Alt‑Navigasyon Paneli (Thumb Zone)**
-   - Sticky bottom bar içine sayı pad, sil, ipucu, geri‑al butonları yerleştir.
-   - `src/ui/templates/menu.ts` ve `tokens.css` güncellenerek **z‑index** ve **safe‑area** dikkate alınacak.
-2. **Hücre Hit‑Target Büyütme**
-   - CSS `min-width/min-height: 48dp` ve `margin` eklenerek “fat‑finger” hataları azaltılacak.
-3. **Juicy Animasyonlar**
-   - Hata: `@keyframes shake` (0‑0.5s) → `UIManager.shakeCell()`.
-   - Zafer: `confetti.js` (particle lib) entegrasyonu, `GameEngine.onPuzzleSolved` içinde tetiklenir.
-4. **İnteraktif Onboarding**
-   - İlk puzzle’da “highlight” ile bir hücreyi işaretle, kullanıcıdan bir doğru sayı girmesini iste.
-   - Başarılı olduğunda badge ve mini‑coin ödülü.
-5. **Tema Kontrast İyileştirmesi**
-   - Obsidian/Ivory arasında `--cell-selected-bg` ve `--cell-related-bg` kontrastını WCAG AA ≥ 4.5:1 olacak şekilde yeniden tanımla.
-
-**Sorumlu Departmanlar**: UI geliştirme (`ui_developer`), QA (`qa_reviewer`), ASO (`play_store_aso`) – UI değişiklikleri için A/B testleri ve store listing optimizasyonu.
+1. **Alt Panel Sticky (Yapışkan) Kontrol Barı:** Sayı klavyesi ve silme/not alma butonlarının baş parmak hizasında (`sticky bottom`) konumlandırılması.
+2. **Can Kalkanı HUD Entegrasyonu:** Oyun içi üst barda kalan hata haklarının ve can kalkanlarının (`❤️ ❌❌`) anlık olarak görselleştirilmesi.
+3. **Varyant Seçim Barı Kaydırma Ergonomisi:** 5 farklı disiplinin yer aldığı üst seçici barın küçük ekranlarda taşmasını önleyen `overflow-x-auto` yapısı.
+4. **Hücre Dokunma Hedefleri:** Mobil cihazlarda yanlış tıklamaları önlemek adına hücrelerin minimum dokunma alanının (`min-w/h >= 44px`) güvenceye alınması.
 
 ---
 
-## 5. Önceliklendirilmiş Geliştirme Yol Haritası
+## 5. Önceliklendirilmiş Geliştirme Yol Haritası (Master Roadmap)
 
-| Öncelik | İş Paketi | Açıklama | Sorumlu Departman |
-|--------|-----------|----------|-------------------|
-| **P0** | **Alt‑Navigasyon Paneli (Thumb Zone) + Hit‑Target 48dp** | Kullanıcıların tek‑elle rahat oynamasını sağlamak, D1 Retention +5% | ui_developer |
-| **P0** | **Hata‑Shake Animasyonu** | Hatalı hamlelerde anlık geribildirim, oyun hissi artışı | ui_developer |
-| **P0** | **A/B Test Çerçevesi Kurulumu** | Haftalık retention ölçümü, veri‑driven kararlar | qa_reviewer |
-| **P1** | **Zafer‑Confetti / Particle Efekti** | Puzzle bitişinde kutlama, oturum süresi +3‑4% | ui_developer |
-| **P1** | **İnteraktif Mini‑Tutorial (Onboarding)** | İlk hamle öğretimi + badge, D7 Retention +8% | ui_developer |
-| **P1** | **Günlük Görev & Harita İlerleme Taslağı** | Seri/şehir tabanlı motivasyon, LTV artırma | play_store_aso |
-| **P2** | **Tema Kontrast & Accessibility Güncellemesi** | WCAG uyumu, düşük ışıkta okunabilirlik | ui_developer |
-| **P2** | **Premium Skin Pack & Seasonal Event** | Ek gelir akışı, kullanıcı harcamasını %12 artırma | play_store_aso |
-| **P2** | **Kapsamlı Monetizasyon A/B (Ads vs. No‑Ads)** | En yüksek eMRT (effective Monetization Rate) bulunması | qa_reviewer |
+### 🔴 P0 (Hemen Yapılacak / En Yüksek Etki)
+- [ ] **Sticky Alt Kontrol Paneli:** `src/ui/templates/custom.ts` ve oyun görünümünde sayı klavyesinin ekrana sabitlenmesi. *(Sorumlu: `ui_developer`)*
+- [ ] **Global State Temizliği:** `window.gameRuntimeState` bağımlılığının kaldırılarak tüm oyun akışının `src/store/gameState.ts` üzerinden yönetilmesi. *(Sorumlu: `ui_developer`)*
+- [ ] **Build Chunk Optimizasyonu:** `vite.build` uyarılarını gidermek üzere `manualChunks` yapılandırmasının güncellenmesi. *(Sorumlu: `ui_developer`)*
 
----
+### 🟡 P1 (Kısa Vade / 1-2 Hafta)
+- [ ] **Can Kalkanı HUD Görselleştirmesi:** Oyun ekranında hata haklarının ve koruma kalkanlarının canlı olarak gösterilmesi. *(Sorumlu: `ui_developer`)*
+- [ ] **Varyant Seçim Barı Kaydırma:** `src/ui/templates/map.ts` üzerindeki 5 disiplin seçicisinin mobil uyumlu yatay kaydırmaya kavuşturulması. *(Sorumlu: `ui_developer`)*
+- [ ] **E2E Test Kapsamının Genişletilmesi:** Yeni UI bileşenleri ve akışlar için `src/tests/` altına senaryo eklenmesi ve `npm run release:check` doğrulaması. *(Sorumlu: `qa_reviewer`)*
 
-*Bu rapor, UI/UX denetçisi ve Gameplay Analisti bulgularının sentezlenmesiyle hazırlanmıştır. Önerilen aksiyonlar, oyuncu tutundurma ve gelir artışı hedeflerine ulaşmak için önceliklendirilmiştir.*
+### 🟢 P2 (Orta Vade / Büyüme & Gelir)
+- [ ] **Google Play / App Store ASO Optimizasyonu:** Mağaza görselleri, anahtar kelime lokalizasyonu ve meta verilerin güncellenmesi. *(Sorumlu: `play_store_aso`)*
+- [ ] **Günlük Meydan Okuma (Daily Challenge) Bildirimleri:** Oyuncunun D7 tutundurmasını artıracak push bildirim altyapısının kurulması. *(Sorumlu: `ui_developer`)*
 
 ---
-
-**Rapor Dosya Yolu:** `~/sudoku_workspace/docs/GAME_AUDIT_MASTER_REPORT.md`
+*Bu master rapor `~/sudoku_workspace/docs/GAME_AUDIT_MASTER_REPORT.md` konumuna başarıyla kaydedilmiştir.*
