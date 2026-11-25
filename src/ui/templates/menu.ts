@@ -115,20 +115,49 @@ export const menuTemplate = `
                 <span class="relative z-10 text-xs sm:text-sm font-black tracking-[0.16em] uppercase text-amber-950 drop-shadow-sm font-mono">ARENA</span>
             </button>
 
-            <!-- Sağ Kalkan: Yolculuk Haritası (HARİTA) -->
-            <button id="btn-open-map" class="w-24 h-24 sm:w-28 sm:h-28 relative flex items-center justify-center bg-transparent border-0 p-0 cursor-pointer active:scale-95 transition-transform drop-shadow-md group">
+            <!-- Sağ Aksiyon: Yolculuk Haritası (Kıvrımlı 3D Harita Vektörü) -->
+            <button id="btn-open-map" class="w-24 h-24 sm:w-28 sm:h-28 relative flex flex-col items-center justify-center bg-transparent border-0 p-0 cursor-pointer active:scale-95 transition-transform drop-shadow-md group">
                 <svg viewBox="0 0 100 110" class="absolute inset-0 w-full h-full pointer-events-none">
                     <defs>
-                        <linearGradient id="mapShieldGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stop-color="#38bdf8"/>
-                            <stop offset="50%" stop-color="#0284c7"/>
+                        <linearGradient id="mapFoldLeft" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#ffffff"/>
+                            <stop offset="40%" stop-color="#7dd3fc"/>
+                            <stop offset="100%" stop-color="#0284c7"/>
+                        </linearGradient>
+                        <linearGradient id="mapFoldCenter" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#f0f9ff"/>
+                            <stop offset="50%" stop-color="#38bdf8"/>
                             <stop offset="100%" stop-color="#0369a1"/>
                         </linearGradient>
+                        <linearGradient id="mapFoldRight" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#e0f2fe"/>
+                            <stop offset="60%" stop-color="#0284c7"/>
+                            <stop offset="100%" stop-color="#075985"/>
+                        </linearGradient>
                     </defs>
-                    <path d="M50 4 C75 4 92 14 92 24 C92 70 68 96 50 106 C32 96 8 70 8 24 C8 14 25 4 50 4 Z" fill="url(#mapShieldGrad)" stroke="#bae6fd" stroke-width="3" stroke-linejoin="round"/>
-                    <path d="M50 10 C70 10 85 18 85 27 C85 66 63 89 50 98 C37 89 15 66 15 27 C15 18 30 10 50 10 Z" fill="none" stroke="#e0f2fe" stroke-opacity="0.4" stroke-width="1.5"/>
+
+                    <!-- Dış Gölge Çerçevesi -->
+                    <path d="M10 22 L36 10 L64 22 L90 10 L90 88 L64 100 L36 88 L10 100 Z" fill="#0369a1" opacity="0.3"/>
+
+                    <!-- Sol Panel (Kıvrım 1) -->
+                    <path d="M10 20 L36 8 L36 86 L10 98 Z" fill="url(#mapFoldLeft)" stroke="#e0f2fe" stroke-width="2" stroke-linejoin="round"/>
+
+                    <!-- Orta Panel (Kıvrım 2 - İçe Bükülme & Beyaz Geçiş) -->
+                    <path d="M36 8 L64 20 L64 98 L36 86 Z" fill="url(#mapFoldCenter)" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
+
+                    <!-- Sağ Panel (Kıvrım 3) -->
+                    <path d="M64 20 L90 8 L90 86 L64 98 Z" fill="url(#mapFoldRight)" stroke="#bae6fd" stroke-width="2" stroke-linejoin="round"/>
+
+                    <!-- Beyaz Işık Kat Çizgileri (Fold Crease Highlights) -->
+                    <line x1="36" y1="8" x2="36" y2="86" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+                    <line x1="64" y1="20" x2="64" y2="98" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+
+                    <!-- Harita İçi Ritim Yolları (Decorative Path Lines) -->
+                    <path d="M18 45 Q28 35 36 50 T54 60 T82 40" fill="none" stroke="#ffffff" stroke-opacity="0.85" stroke-width="2.5" stroke-dasharray="3 3" stroke-linecap="round"/>
+                    <circle cx="18" cy="45" r="3.5" fill="#f59e0b" stroke="#ffffff" stroke-width="1.5"/>
+                    <circle cx="82" cy="40" r="4" fill="#ef4444" stroke="#ffffff" stroke-width="1.5"/>
                 </svg>
-                <span class="relative z-10 text-xs sm:text-sm font-black tracking-[0.16em] uppercase text-sky-950 drop-shadow-sm font-mono" data-i18n="tag_map">HARİTA</span>
+                <span class="relative z-10 text-xs sm:text-sm font-black tracking-[0.16em] uppercase text-sky-950 drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)] font-mono mt-1" data-i18n="tag_map">HARİTA</span>
             </button>
         </div>
     </div>
