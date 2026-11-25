@@ -38,9 +38,14 @@
 - `npx cap sync android` veya `npx cap copy android` komutları **kesinlikle her şey kullanıcı tarafından onaylandıktan ve test edildikten sonra** çalıştırılacak.
 - Onaysız otomatik Android build senkronizasyonu yapılmayacak.
 
-## 4. İLAVE SAĞLIKLI VE HIZLI KARAR ALMA AKIŞLARI (KULLANICI ONAYINA SUNULAN)
+### 🌐 Çift Dilli Bütünlük Garantisi
+- `translations.ts` dosyasındaki `tr` ve `en` anahtarları %100 birebir eşit tutulacak, yeni eklenen her metin iki dilde de eksiksiz tanımlanacak.
 
-1. **Çift Dilli Bütünlük Garantisi:** `translations.ts` dosyasındaki `tr` ve `en` anahtarları %100 birebir eşit tutulacak, yeni eklenen her metin iki dilde de tanımlanacak.
-2. **Sıfır Duvar Kuralı (Google Play / Apple Uyumlu):** Oyuncu e-posta ile kaydolmaya zorlanmayacak; misafir modu kesintisiz çalışacak.
-3. **Mobil Ergonomi Koruması:** Ekrana eklenen yeni öğelerde `env(safe-area-inset-top/bottom)` ve minimum 44px dokunma alanları korunacak.
-4. **Test Ortamı Sahte Ağ Koruması:** Vitest testleri çalışırken canlı Firebase sunucularına sahte istek atılmayacak (`isTestRuntime()` mantığı korunacak).
+### 🔓 Sıfır Duvar Kuralı (Google Play / Apple Uyumlu)
+- Oyuncu ilk açılışta e-posta ile kaydolmaya zorlanmayacak; misafir modu kesintisiz ve tek tıkla çalışacak. E-posta seçeneği isteğe bağlı kalacak.
+
+### 📐 Mobil Ergonomi ve Dokunma Standartları
+- Ekrana eklenen veya güncellenen tüm UI bileşenlerinde `env(safe-area-inset-top/bottom)` alanları ve minimum ~44px dokunma hedefleri korunacak. Numpad ve buton düzenleri tek elle kullanıma tam uygun olacak.
+
+### 🛡️ Test Ortamı Sahte Ağ Koruması
+- Vitest unit testleri çalışırken canlı Firebase sunucularına sahte istek atılmayacak (`isTestRuntime()` mantığı korunacak).

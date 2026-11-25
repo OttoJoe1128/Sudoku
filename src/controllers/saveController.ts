@@ -249,6 +249,17 @@ export function updateSavedGamesCountUI(): void {
   const btnDaily = document.getElementById('btn-daily-reward');
   const dailyDot = document.getElementById('daily-reward-dot');
 
+  const streakCount = UserManager.updateDailyStreak();
+  const streakEl = document.getElementById('menu-streak-count');
+  if (streakEl) streakEl.innerText = streakCount.toString();
+
+  const progressBar = document.getElementById('quick-play-progress-bar');
+  if (progressBar) {
+    const regionLvl = (classicLvl - 1) % 50 + 1;
+    const pct = Math.min(100, Math.max(5, Math.round((regionLvl / 50) * 100)));
+    progressBar.style.width = `${pct}%`;
+  }
+
   if (pillText) {
     pillText.innerText = `${t('label_level')} ${classicLvl} • ${t('var_classic')}`;
   }

@@ -14,7 +14,13 @@ export const menuTemplate = `
             </div>
         </div>
 
-        <div class="flex items-center gap-2 shrink-0">
+        <div class="flex items-center gap-1.5 shrink-0">
+            <!-- Günlük Seri (Streak) Kapsülü -->
+            <div id="menu-streak-capsule" title="Günlük Seri" data-i18n-title="menu_streak_title" class="bg-[var(--bg-elevated)] text-amber-400 font-mono font-black px-2 py-1 rounded-xl text-xs border border-amber-500/40 shadow-sm flex items-center gap-1 shrink-0">
+                <span>🔥</span>
+                <span id="menu-streak-count">1</span>
+            </div>
+
             <!-- Kompakt Günlük Ödül Butonu -->
             <button id="btn-daily-reward" title="Günlük Ödül" data-i18n-title="menu_daily" class="relative bg-[var(--bg-elevated)] text-[var(--accent-gold)] p-2 rounded-xl active:scale-95 transition-all border border-[var(--border-strong)] flex items-center justify-center text-sm shadow-sm">
                 <span id="daily-reward-icon">${Icons.zap}</span>
@@ -57,13 +63,19 @@ export const menuTemplate = `
     <!-- Başparmak Bölgesi Ana Aksiyonlar -->
     <div class="flex flex-col gap-3 w-full mt-1">
         <!-- 1. Birincil Aksiyon: HIZLI OYNA / DEVAM ET (Ekrandaki TEK Dolu Altın Buton) -->
-        <button id="btn-quick-play" class="w-full bg-[var(--accent-gold)] text-[var(--text-on-gold)] rounded-3xl px-5 py-4 shadow-lg active:scale-[0.98] transition-all flex items-center justify-between cursor-pointer group">
-            <div class="text-left">
-                <span id="quick-play-title" class="text-xl font-black block leading-tight tracking-wide uppercase">OYNA</span>
-                <span id="quick-play-subtitle" class="text-xs font-bold block opacity-90 mt-0.5">Seviye 1 • Klasik</span>
+        <button id="btn-quick-play" class="w-full bg-[var(--accent-gold)] text-[var(--text-on-gold)] rounded-3xl px-5 py-4 shadow-lg active:scale-[0.98] transition-all flex flex-col gap-2.5 cursor-pointer group">
+            <div class="flex items-center justify-between w-full">
+                <div class="text-left">
+                    <span id="quick-play-title" class="text-xl font-black block leading-tight tracking-wide uppercase">OYNA</span>
+                    <span id="quick-play-subtitle" class="text-xs font-bold block opacity-90 mt-0.5">Seviye 1 • Klasik</span>
+                </div>
+                <div class="w-10 h-10 rounded-2xl bg-[#070D19]/20 flex items-center justify-center text-lg font-black group-hover:translate-x-1 transition-transform">
+                    ➔
+                </div>
             </div>
-            <div class="w-10 h-10 rounded-2xl bg-[#070D19]/20 flex items-center justify-center text-lg font-black group-hover:translate-x-1 transition-transform">
-                ➔
+            <!-- Canlı İlerleme Çubuğu -->
+            <div class="w-full bg-[#070D19]/25 h-1.5 rounded-full overflow-hidden flex shadow-inner">
+                <div id="quick-play-progress-bar" class="bg-[var(--text-on-gold)] h-full transition-all duration-300 rounded-full" style="width: 10%"></div>
             </div>
         </button>
 

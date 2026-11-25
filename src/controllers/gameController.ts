@@ -1162,10 +1162,15 @@ export function startGame(
 
     UIManager.updateHintButtonLabel(activeBoardMechanics ? activeBoardMechanics.freeHintsGranted : 0);
 
+    const selectedVal = (selectedCell && userBoard[selectedCell.r] && userBoard[selectedCell.r][selectedCell.c] > 0)
+      ? userBoard[selectedCell.r][selectedCell.c]
+      : 0;
+
     UIManager.renderNumpad(
       (num) => handleNumpadInput(num),
       calculateRemainingCounts(userBoard),
-      currentVariant === 'wordoku'
+      currentVariant === 'wordoku',
+      selectedVal
     );
   };
   activeRefreshFn = refresh;

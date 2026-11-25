@@ -591,6 +591,9 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     btn_undo: 'Geri Al',
     toast_undo_empty: 'Geri alınacak not hamlesi yok.',
 
+    menu_streak_title: 'Günlük Seri',
+    menu_streak_days: '{count} Gün',
+
     prep_title: 'Bölüm Hazırlığı',
     prep_crystals_progress: 'Bölüm Kristalleri: {collected} / {max}',
     prep_loadout_title: 'Yetenek Seçimi ({count} / 2)',
@@ -1218,6 +1221,9 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
 
     btn_undo: 'Undo',
     toast_undo_empty: 'Nothing to undo.',
+
+    menu_streak_title: 'Daily Streak',
+    menu_streak_days: '{count} Days',
 
     prep_title: 'Stage Prep',
     prep_crystals_progress: 'Stage Crystals: {collected} / {max}',

@@ -602,6 +602,43 @@ export const UserManager = {
   getGold(): number { if (typeof localStorage === 'undefined') return 100; return parseInt(localStorage.getItem('sudoku_gold') || '100'); },
   getCurrentLevel(): number { if (typeof localStorage === 'undefined') return 1; return parseInt(localStorage.getItem('sudoku_level') || '1'); },
 
+  getDailyStreak(): number {
+    if (typeof localStorage === 'undefined') return 1;
+    const raw = localStorage.getItem('sudoku_daily_streak');
+    const val = raw ? parseInt(raw) : 1;
+    return isNaN(val) || val < 1 ? 1 : val;
+  },
+
+  updateDailyStreak(): number {
+    if (typeof localStorage === 'undefined') return 1;
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const lastDate = localStorage.getItem('sudoku_last_streak_date');
+
+    if (!lastDate) {
+      localStorage.setItem('sudoku_daily_streak', '1');
+      localStorage.setItem('sudoku_last_streak_date', todayStr);
+      return 1;
+    }
+
+    if (lastDate === todayStr) {
+      return this.getDailyStreak();
+    }
+
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
+    let newStreak = 1;
+    if (lastDate === yesterdayStr) {
+      newStreak = this.getDailyStreak() + 1;
+    }
+
+    localStorage.setItem('sudoku_daily_streak', newStreak.toString());
+    localStorage.setItem('sudoku_last_streak_date', todayStr);
+    return newStreak;
+  },
+
   getCompletedByCategory(): CompletedByCategory {
     const fallback: CompletedByCategory = { map: 0, custom: 0, pvp: 0, ai: 0 };
     if (typeof localStorage === 'undefined') return fallback;

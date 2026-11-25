@@ -2077,7 +2077,8 @@ export const UIManager = {
   renderNumpad(
     onNumberClick: (num: number) => void,
     remainingCounts?: Map<number, number>,
-    isWordoku: boolean = false
+    isWordoku: boolean = false,
+    selectedNum: number = 0
   ) {
     const grid = document.getElementById('numpad-grid');
     if (!grid) return;
@@ -2089,18 +2090,30 @@ export const UIManager = {
         const label = isWordoku ? wordokuLetters[num - 1] : num.toString();
         const remaining = remainingCounts ? remainingCounts.get(num) ?? 9 : 9;
         const isCompleted = remaining <= 0;
+        const isSelected = selectedNum === num;
 
         const btn = document.createElement('button');
         btn.type = "button";
-        btn.className = `bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] p-1.5 sm:p-2 rounded-xl border border-[var(--border-subtle)] font-black text-sm sm:text-base text-[var(--text-primary)] active:scale-95 transition-all flex flex-col items-center justify-center relative shadow-sm ${isCompleted ? 'opacity-40 pointer-events-none bg-[var(--bg-elevated)]' : ''}`;
+        let btnClasses = 'min-h-[48px] py-1.5 px-1 rounded-2xl border font-black text-base transition-all flex flex-col items-center justify-center relative shadow-sm cursor-pointer select-none active:scale-95 ';
+
+        if (isCompleted) {
+          btnClasses += 'opacity-30 pointer-events-none bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-secondary)]';
+        } else if (isSelected) {
+          btnClasses += 'bg-[var(--accent-gold)]/20 text-[var(--accent-gold-bright)] border-2 border-[var(--accent-gold)] ring-2 ring-[var(--accent-gold)]/50 shadow-md z-10';
+        } else {
+          btnClasses += 'bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border-[var(--border-subtle)] text-[var(--text-primary)]';
+        }
+
+        btn.className = btnClasses;
 
         btn.innerHTML = `
-          <span class="pointer-events-none">${label}</span>
-          <span class="text-[9px] font-bold text-[var(--accent-gold)] pointer-events-none">${isCompleted ? '✓' : remaining}</span>
+          <span class="pointer-events-none text-sm font-black leading-none mb-0.5">${label}</span>
+          <span class="text-[9px] font-mono font-bold text-[var(--accent-gold)] pointer-events-none leading-none">${isCompleted ? '✓' : remaining}</span>
         `;
         btn.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
+          SoundManager.vibrate(10);
           onNumberClick(num);
         };
         grid.appendChild(btn);
