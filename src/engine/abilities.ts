@@ -44,6 +44,54 @@ export const ABILITY_UPGRADE_COSTS: Record<number, UpgradeCost> = {
   4: { crystals: 75, gold: 280 }
 };
 
+export interface AbilityTierDef {
+  level: number;
+  titleKey: string;
+  descKey: string;
+}
+
+export const ABILITY_TIER_DEFS: Record<AbilityId, AbilityTierDef[]> = {
+  oracle_eye: [
+    { level: 1, titleKey: 'ability_tier_oracle_eye_1', descKey: 'ability_tier_desc_oracle_eye_1' },
+    { level: 2, titleKey: 'ability_tier_oracle_eye_2', descKey: 'ability_tier_desc_oracle_eye_2' },
+    { level: 3, titleKey: 'ability_tier_oracle_eye_3', descKey: 'ability_tier_desc_oracle_eye_3' },
+    { level: 4, titleKey: 'ability_tier_oracle_eye_4', descKey: 'ability_tier_desc_oracle_eye_4' },
+    { level: 5, titleKey: 'ability_tier_oracle_eye_5', descKey: 'ability_tier_desc_oracle_eye_5' }
+  ],
+  crystal_shield: [
+    { level: 1, titleKey: 'ability_tier_crystal_shield_1', descKey: 'ability_tier_desc_crystal_shield_1' },
+    { level: 2, titleKey: 'ability_tier_crystal_shield_2', descKey: 'ability_tier_desc_crystal_shield_2' },
+    { level: 3, titleKey: 'ability_tier_crystal_shield_3', descKey: 'ability_tier_desc_crystal_shield_3' },
+    { level: 4, titleKey: 'ability_tier_crystal_shield_4', descKey: 'ability_tier_desc_crystal_shield_4' },
+    { level: 5, titleKey: 'ability_tier_crystal_shield_5', descKey: 'ability_tier_desc_crystal_shield_5' }
+  ],
+  rhythm_bender: [
+    { level: 1, titleKey: 'ability_tier_rhythm_bender_1', descKey: 'ability_tier_desc_rhythm_bender_1' },
+    { level: 2, titleKey: 'ability_tier_rhythm_bender_2', descKey: 'ability_tier_desc_rhythm_bender_2' },
+    { level: 3, titleKey: 'ability_tier_rhythm_bender_3', descKey: 'ability_tier_desc_rhythm_bender_3' },
+    { level: 4, titleKey: 'ability_tier_rhythm_bender_4', descKey: 'ability_tier_desc_rhythm_bender_4' },
+    { level: 5, titleKey: 'ability_tier_rhythm_bender_5', descKey: 'ability_tier_desc_rhythm_bender_5' }
+  ],
+  seal_breaker: [
+    { level: 1, titleKey: 'ability_tier_seal_breaker_1', descKey: 'ability_tier_desc_seal_breaker_1' },
+    { level: 2, titleKey: 'ability_tier_seal_breaker_2', descKey: 'ability_tier_desc_seal_breaker_2' },
+    { level: 3, titleKey: 'ability_tier_seal_breaker_3', descKey: 'ability_tier_desc_seal_breaker_3' },
+    { level: 4, titleKey: 'ability_tier_seal_breaker_4', descKey: 'ability_tier_desc_seal_breaker_4' },
+    { level: 5, titleKey: 'ability_tier_seal_breaker_5', descKey: 'ability_tier_desc_seal_breaker_5' }
+  ],
+  rune_magnet: [
+    { level: 1, titleKey: 'ability_tier_rune_magnet_1', descKey: 'ability_tier_desc_rune_magnet_1' },
+    { level: 2, titleKey: 'ability_tier_rune_magnet_2', descKey: 'ability_tier_desc_rune_magnet_2' },
+    { level: 3, titleKey: 'ability_tier_rune_magnet_3', descKey: 'ability_tier_desc_rune_magnet_3' },
+    { level: 4, titleKey: 'ability_tier_rune_magnet_4', descKey: 'ability_tier_desc_rune_magnet_4' },
+    { level: 5, titleKey: 'ability_tier_rune_magnet_5', descKey: 'ability_tier_desc_rune_magnet_5' }
+  ]
+};
+
+export function getAbilityTierDefs(id: AbilityId): AbilityTierDef[] {
+  return ABILITY_TIER_DEFS[id] || ABILITY_TIER_DEFS.oracle_eye;
+}
+
 export const ABILITIES: AbilityDef[] = [
   {
     id: 'oracle_eye',

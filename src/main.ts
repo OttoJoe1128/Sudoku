@@ -19,7 +19,7 @@ import { AdService } from './services/adService';
 import { openOnboardingModal, isOnboardingDone } from './controllers/onboardingController';
 import { startAppTour, isAppTourDone } from './controllers/appTourController';
 import { initAcademyController, refreshAcademyLanguageUI } from './controllers/academyController';
-import { initAbilitiesController, refreshAbilitiesLanguageUI, updateCrystalDisplays, closeAbilitiesModal } from './controllers/abilitiesController';
+import { initAbilitiesController, refreshAbilitiesLanguageUI, updateCrystalDisplays, closeAbilitiesModal, closeAbilityDetailModal } from './controllers/abilitiesController';
 import { initLevelPrepController, refreshLevelPrepLanguageUI, closeLevelPrepModal } from './controllers/levelPrepController';
 import { initAuthController, refreshAuthLanguageUI, refreshAuthProfileUI, closeAuthModal } from './controllers/authController';
 import { initStreakController, refreshStreakLanguageUI, closeStreakModal } from './controllers/streakController';
@@ -454,6 +454,12 @@ checkUser();
 
 // Android Donanım Geri Tuşu Mantığı (Capacitor)
 App.addListener('backButton', async () => {
+  const detailModal = document.getElementById('ability-detail-modal');
+  if (detailModal && !detailModal.classList.contains('hidden')) {
+    closeAbilityDetailModal();
+    return;
+  }
+
   const streakModal = document.getElementById('streak-modal');
   if (streakModal && !streakModal.classList.contains('hidden')) {
     closeStreakModal();
