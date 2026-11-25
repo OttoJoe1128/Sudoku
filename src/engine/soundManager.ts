@@ -127,6 +127,46 @@ export const SoundManager = {
     }
   },
 
+  playErase(): void {
+    if (!soundEnabled) return;
+    try {
+      const ctx = getAudioContext();
+      if (!ctx) return;
+
+      const now = ctx.currentTime;
+
+      // Silgi Sürtünme Sesi (Soft Rubber Eraser Friction Noise on Paper)
+      const bufferSize = Math.floor(ctx.sampleRate * 0.08);
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        const envelope = Math.sin((i / bufferSize) * Math.PI);
+        data[i] = (Math.random() * 2 - 1) * envelope;
+      }
+
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+
+      const noiseFilter = ctx.createBiquadFilter();
+      noiseFilter.type = 'lowpass';
+      noiseFilter.frequency.setValueAtTime(1200, now);
+      noiseFilter.frequency.exponentialRampToValueAtTime(400, now + 0.08);
+
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.22, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+      noise.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+
+      noise.start(now);
+      noise.stop(now + 0.08);
+    } catch {
+      // ignore
+    }
+  },
+
   vibrate(pattern: number | number[]): void {
     if (!soundEnabled) return;
     try {

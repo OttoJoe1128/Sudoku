@@ -602,6 +602,9 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     streak_btn_repair_ad: 'Reklam İzle & Seriyi Koru',
     streak_toast_repaired: '🔥 Seri korundu! Yeni serin: {count} gün.',
     streak_toast_no_gold: 'Seriyi korumak için 50 Altın gerekiyor.',
+    streak_reward_title: '7 Günlük Seri Hediyesi',
+    streak_reward_desc: '24 Saatlik Geçici Rastgele Yetenek',
+    streak_toast_reward_granted: '🎁 Tebrikler! 7 günlük serinize özel {ability} 24 saatliğine açıldı!',
 
     prep_title: 'Bölüm Hazırlığı',
     prep_crystals_progress: 'Bölüm Kristalleri: {collected} / {max}',
@@ -1244,6 +1247,9 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     streak_btn_repair_ad: 'Watch Ad & Shield Streak',
     streak_toast_repaired: '🔥 Streak shielded! New streak: {count} days.',
     streak_toast_no_gold: 'You need 50 Gold to shield your streak.',
+    streak_reward_title: '7-Day Streak Reward',
+    streak_reward_desc: '24-Hour Temporary Random Ability',
+    streak_toast_reward_granted: '🎁 Congrats! {ability} unlocked for 24 hours for your 7-day streak!',
 
     prep_title: 'Stage Prep',
     prep_crystals_progress: 'Stage Crystals: {collected} / {max}',

@@ -44,7 +44,7 @@ describe('Faz 7 Tam Kapsamlı Arayüz & Sistem İyileştirme Test Paketi', () =>
     expect(() => SoundManager.vibrate(10)).not.toThrow();
   });
 
-  it('3. Günlük Seri Modalı 4. Gün Satır Kayması Koruması: 4.Gün yazısı whitespace-nowrap taşımalı', () => {
+  it('3. Günlük Seri Modalı 4. Gün Satır Kayması Koruması: 4.Gün (Per) yazısı whitespace-nowrap taşımalı', () => {
     openStreakModal();
     const calendar = document.getElementById('streak-calendar-grid');
     expect(calendar?.children.length).toBe(7);
@@ -53,7 +53,7 @@ describe('Faz 7 Tam Kapsamlı Arayüz & Sistem İyileştirme Test Paketi', () =>
     const tagSpan = day4Card?.querySelector('span');
 
     expect(tagSpan?.className).toContain('whitespace-nowrap');
-    expect(tagSpan?.textContent).toContain('4');
+    expect(tagSpan?.textContent).toBe('Per');
   });
 
   it('4. Oyuncu Ünvanı EN Dilinde Sığma & Truncate Koruması: Long rank titles should fit without breaking layout', () => {

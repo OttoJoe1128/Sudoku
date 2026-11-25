@@ -25,37 +25,64 @@ function renderStreakModalUI(): void {
   const streak = UserManager.getDailyStreak();
   const subEl = document.getElementById('streak-modal-subtitle');
   const gridEl = document.getElementById('streak-calendar-grid');
+  const rewardBadgeEl = document.getElementById('streak-reward-badge');
 
   if (subEl) {
     subEl.innerText = t('streak_sub_active', { count: streak });
   }
 
+  const tempAbility = UserManager.getTemporaryAbilityInfo();
+  if (rewardBadgeEl) {
+    if (tempAbility.id) {
+      rewardBadgeEl.className = "bg-emerald-500/20 text-emerald-300 border border-emerald-400/50 text-[10px] font-black px-2 py-1 rounded-lg shrink-0";
+      rewardBadgeEl.innerText = `✅ ${t('ability_' + tempAbility.id)}`;
+    } else {
+      rewardBadgeEl.className = "bg-amber-400/20 text-amber-300 border border-amber-400/50 text-[10px] font-black px-2 py-1 rounded-lg shrink-0";
+      rewardBadgeEl.innerText = `🎁 24Sa`;
+    }
+  }
+
   if (gridEl) {
     gridEl.innerHTML = '';
-    const dayMod = ((streak - 1) % 7) + 1;
 
-    for (let day = 1; day <= 7; day++) {
-      const isPastOrCurrent = day <= dayMod;
-      const isCurrentDay = day === dayMod;
+    const jsDay = new Date().getDay();
+    const currentMondayIdx = jsDay === 0 ? 6 : jsDay - 1; // 0=Pzt, 1=Sal, ... 6=Paz
+    const dayTagsTr = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+    const dayTagsEn = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
+      const isPast = dayIdx < currentMondayIdx;
+      const isToday = dayIdx === currentMondayIdx;
+      const isFuture = dayIdx > currentMondayIdx;
 
       const card = document.createElement('div');
       let classes = 'flex flex-col items-center justify-center p-1.5 rounded-xl border text-[10px] font-black transition-all ';
 
-      if (isCurrentDay) {
+      let dayIcon = '🔒';
+      if (isToday) {
         classes += 'bg-amber-500/20 text-amber-300 border-amber-400/60 shadow-md ring-2 ring-amber-400/40 z-10';
-      } else if (isPastOrCurrent) {
+        dayIcon = '🔥';
+      } else if (isPast) {
         classes += 'bg-[var(--bg-card)] text-[var(--accent-gold)] border-[var(--border-strong)]';
+        dayIcon = '🔥';
       } else {
         classes += 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-subtle)] opacity-50';
+        dayIcon = '🔒';
       }
 
       card.className = classes;
       card.innerHTML = `
-        <span class="text-[8px] font-black opacity-90 whitespace-nowrap leading-none tracking-tighter">${t('streak_day_tag', { day })}</span>
-        <span class="text-sm mt-0.5">${isPastOrCurrent ? '🔥' : '🔒'}</span>
+        <span class="text-[8px] font-black opacity-90 whitespace-nowrap leading-none tracking-tighter">${dayTagsTr[dayIdx]}</span>
+        <span class="text-sm mt-0.5">${dayIcon}</span>
       `;
       gridEl.appendChild(card);
     }
+  }
+
+  // 7 günlük seri tamamlandığında 24 saatlik geçici yetenek hediyesi kontrolü
+  if (streak >= 7 && !tempAbility.id) {
+    const granted = UserManager.grantTemporaryAbilityReward();
+    UIManager.showToast(t('streak_toast_reward_granted', { ability: t('ability_' + granted.id) }), 'success');
   }
 }
 

@@ -649,6 +649,37 @@ export const UserManager = {
     return newStreak;
   },
 
+  getTemporaryAbilityInfo(): { id: AbilityId | null; endsAtMs: number } {
+    if (typeof localStorage === 'undefined') return { id: null, endsAtMs: 0 };
+    const id = localStorage.getItem('sudoku_temp_ability_id') as AbilityId | null;
+    const endsAt = parseInt(localStorage.getItem('sudoku_temp_ability_ends_at') || '0');
+    if (!id || isNaN(endsAt) || endsAt <= Date.now()) {
+      return { id: null, endsAtMs: 0 };
+    }
+    return { id, endsAtMs: endsAt };
+  },
+
+  grantTemporaryAbilityReward(): { id: AbilityId; endsAtMs: number } {
+    const abilities: AbilityId[] = ['oracle_eye', 'crystal_shield', 'rhythm_bender', 'seal_breaker', 'rune_magnet'];
+    const randomAbility = abilities[Math.floor(Math.random() * abilities.length)];
+    const endsAtMs = Date.now() + 24 * 3600_000;
+
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('sudoku_temp_ability_id', randomAbility);
+      localStorage.setItem('sudoku_temp_ability_ends_at', endsAtMs.toString());
+    }
+
+    if (auth && auth.currentUser) {
+      setDoc(doc(db, 'leaderboard', auth.currentUser.uid), {
+        temp_ability_id: randomAbility,
+        temp_ability_ends_at: endsAtMs,
+        updatedAt: serverTimestamp()
+      }, { merge: true }).catch(() => {});
+    }
+
+    return { id: randomAbility, endsAtMs };
+  },
+
   getCompletedByCategory(): CompletedByCategory {
     const fallback: CompletedByCategory = { map: 0, custom: 0, pvp: 0, ai: 0 };
     if (typeof localStorage === 'undefined') return fallback;

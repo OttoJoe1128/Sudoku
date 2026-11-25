@@ -1573,6 +1573,7 @@ export function startGame(
         return;
       }
       if (notesBoard[r][c].size > 0) {
+        SoundManager.playErase();
         const prev = Array.from(notesBoard[r][c]);
         pushNoteUndoStep([{ r, c, prevNotes: prev, gridIdx: currentVariant === 'samurai' ? activeSamuraiIndex : undefined }]);
         notesBoard[r][c].clear();
