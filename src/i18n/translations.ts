@@ -611,6 +611,8 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     prep_locked_toast: 'Bu yetenek kilitli; Yetenekler ekranından açabilirsin.',
     prep_btn_start: 'Bölüme Gir ➔',
     prep_btn_manage_abilities: '⚡ Yetenekleri Yönet',
+    prep_replay_title: 'Geçmiş Bölüm Tekrarı',
+    prep_replay_desc: 'Bu bölümü daha önce tamamladınız. Harita ilerlemeniz değişmez; yalnızca eksik kristalleri toplayabilir ve rekor sürenizi geliştirebilirsiniz.',
 
     // Faz 3c — Tahta İçi Mekanik Bildirimleri
     toast_cell_sealed: '🔒 Bu hücre mühürlü! Önce 🗝️ anahtar hücresini çöz.',
@@ -1249,6 +1251,8 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     prep_locked_toast: 'This ability is locked; unlock it from Abilities.',
     prep_btn_start: 'Start Stage ➔',
     prep_btn_manage_abilities: '⚡ Manage Abilities',
+    prep_replay_title: 'Stage Replay',
+    prep_replay_desc: 'You already completed this stage. Map progress won\'t change; you can collect missing crystals and improve your best time.',
 
     // Faz 3c — Board Mechanics Toasts
     toast_cell_sealed: '🔒 This cell is sealed! Solve the 🗝️ key cell first.',

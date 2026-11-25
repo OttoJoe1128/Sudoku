@@ -14,7 +14,18 @@ export const levelPrepModalTemplate = `
             <div id="prep-info-popover" class="hidden w-full bg-[var(--bg-elevated)] border border-[var(--accent-gold)]/50 rounded-xl px-3 py-2 text-[11px] text-left text-[var(--text-primary)] font-medium leading-snug mb-2 shadow-sm"></div>
 
             <!-- Kristal İlerlemesi -->
-            <div id="prep-crystal-progress" class="text-xs font-mono font-black text-[var(--accent-cyan)] tracking-wide"></div>
+            <div id="prep-crystal-progress" class="text-xs font-mono font-black text-[var(--accent-cyan)] tracking-wide mb-1"></div>
+
+            <!-- Geçmiş Seviye Tekrar İkaz Bannerı -->
+            <div id="prep-replay-banner" class="hidden w-full bg-amber-500/10 border border-amber-500/40 rounded-2xl p-2.5 mb-2 text-left">
+                <div class="flex items-center gap-1.5 text-xs font-black text-amber-400 mb-0.5">
+                    <span>🔁</span>
+                    <span data-i18n="prep_replay_title">Geçmiş Bölüm Tekrarı</span>
+                </div>
+                <p id="prep-replay-desc" class="text-[10px] text-[var(--text-secondary)] font-medium leading-snug" data-i18n="prep_replay_desc">
+                    Bu bölümü daha önce tamamladınız. Harita ilerlemeniz değişmez; yalnızca eksik kristalleri toplayabilir ve rekor sürenizi geliştirebilirsiniz.
+                </p>
+            </div>
         </div>
 
         <!-- 2'li Yetenek Donanım Paneli (Loadout) -->

@@ -123,6 +123,18 @@ function renderLevelPrepModal(nowMs: number = Date.now()): void {
   const slot1El = document.getElementById('prep-slot-1');
   const gridEl = document.getElementById('prep-abilities-grid');
 
+  const userLvl = UserManager.getVariantLevel(variant);
+  const isReplayStage = level < userLvl;
+  const replayBanner = document.getElementById('prep-replay-banner');
+
+  if (replayBanner) {
+    if (isReplayStage) {
+      replayBanner.classList.remove('hidden');
+    } else {
+      replayBanner.classList.add('hidden');
+    }
+  }
+
   if (titleEl) titleEl.innerText = `${t('label_level')} ${level} • ${t('var_' + variant)}`;
   if (energyBadgeEl) {
     energyBadgeEl.className = "inline-flex items-center gap-1.5 bg-[var(--bg-elevated)] border border-[var(--border-strong)] text-[var(--accent-gold)] text-xs font-black px-3 py-1 rounded-full shadow-sm mb-1 cursor-pointer hover:brightness-110 active:scale-95 transition-all";
