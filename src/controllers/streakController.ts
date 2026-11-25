@@ -45,15 +45,26 @@ function renderStreakModalUI(): void {
   if (gridEl) {
     gridEl.innerHTML = '';
 
-    const jsDay = new Date().getDay();
+    const now = new Date();
+    const jsDay = now.getDay();
     const currentMondayIdx = jsDay === 0 ? 6 : jsDay - 1; // 0=Pzt, 1=Sal, ... 6=Paz
+
+    const mondayDate = new Date(now);
+    mondayDate.setDate(now.getDate() - currentMondayIdx);
+
+    const loggedInDates = UserManager.getDailyStreakDates();
     const dayTagsTr = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
     const dayTagsEn = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
+      const targetDate = new Date(mondayDate);
+      targetDate.setDate(mondayDate.getDate() + dayIdx);
+      const dateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
+
       const isPast = dayIdx < currentMondayIdx;
       const isToday = dayIdx === currentMondayIdx;
       const isFuture = dayIdx > currentMondayIdx;
+      const hasLoggedIn = loggedInDates.includes(dateStr);
 
       const card = document.createElement('div');
       let classes = 'flex flex-col items-center justify-center p-1.5 rounded-xl border text-[10px] font-black transition-all ';
@@ -62,11 +73,14 @@ function renderStreakModalUI(): void {
       if (isToday) {
         classes += 'bg-amber-500/20 text-amber-300 border-amber-400/60 shadow-md ring-2 ring-amber-400/40 z-10';
         dayIcon = '🔥';
-      } else if (isPast) {
+      } else if (hasLoggedIn) {
         classes += 'bg-[var(--bg-card)] text-[var(--accent-gold)] border-[var(--border-strong)]';
         dayIcon = '🔥';
+      } else if (isPast) {
+        classes += 'bg-rose-500/10 text-rose-300 border-rose-500/30 opacity-70';
+        dayIcon = '💔';
       } else {
-        classes += 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-subtle)] opacity-50';
+        classes += 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-subtle)] opacity-40';
         dayIcon = '🔒';
       }
 

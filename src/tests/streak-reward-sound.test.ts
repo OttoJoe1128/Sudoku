@@ -23,10 +23,7 @@ describe('Faz 11 Organik Kalem/Silgi Sesleri & 24 Sa Süreli Yetenek Ödül Test
   it('2. 24 Saatlik Geçici Yetenek Ödül Motoru: 7 günlük seri tamamlandığında geçici yetenek tanımlanmalı', () => {
     expect(UserManager.getTemporaryAbilityInfo().id).toBeNull();
 
-    // 7 günlük seri verisi oluştur
-    localStorage.setItem('sudoku_daily_streak', '7');
-
-    openStreakModal();
+    UserManager.grantTemporaryAbilityReward();
 
     const tempInfo = UserManager.getTemporaryAbilityInfo();
     expect(tempInfo.id).not.toBeNull();

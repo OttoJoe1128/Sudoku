@@ -638,7 +638,33 @@ export const UserManager = {
     if (typeof localStorage === 'undefined') return 1;
     const raw = localStorage.getItem('sudoku_daily_streak');
     const val = raw ? parseInt(raw) : 1;
-    return isNaN(val) || val < 1 ? 1 : val;
+    if (isNaN(val) || val !== 1) {
+      localStorage.setItem('sudoku_daily_streak', '1');
+    }
+    return 1;
+  },
+
+  getDailyStreakDates(): string[] {
+    if (typeof localStorage === 'undefined') return [];
+    try {
+      const raw = localStorage.getItem('sudoku_streak_dates');
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      if (!raw) {
+        localStorage.setItem('sudoku_streak_dates', JSON.stringify([todayStr]));
+        return [todayStr];
+      }
+      const arr = JSON.parse(raw);
+      if (!Array.isArray(arr) || !arr.includes(todayStr)) {
+        const safeArr = Array.isArray(arr) ? arr : [];
+        if (!safeArr.includes(todayStr)) safeArr.push(todayStr);
+        localStorage.setItem('sudoku_streak_dates', JSON.stringify(safeArr));
+        return safeArr;
+      }
+      return arr;
+    } catch {
+      return [];
+    }
   },
 
   updateDailyStreak(): number {
