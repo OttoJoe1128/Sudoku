@@ -4,13 +4,13 @@ export const menuTemplate = `
 <div id="view-menu" class="flex-1 flex flex-col p-4 gap-3 pb-24 overflow-y-auto hidden-scrollbar relative">
     <!-- Üst Header (Profil, Günlük Ödül, Gelen Kutusu & Altın Kapsülü) -->
     <div class="w-full bg-[var(--bg-card)] p-3 rounded-2xl shadow-sm border border-[var(--border-subtle)] flex justify-between items-center transition-all">
-        <div id="btn-open-profile" class="flex items-center gap-2.5 cursor-pointer active:scale-95 transition-transform flex-1 min-w-0 pr-2">
-            <div id="menu-avatar-box" class="w-10 h-10 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-xl shadow-inner shrink-0">
+        <div id="btn-open-profile" class="flex items-center gap-2 cursor-pointer active:scale-95 transition-transform flex-1 min-w-0 pr-1 overflow-hidden">
+            <div id="menu-avatar-box" class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-xl shadow-inner shrink-0">
                 ${renderAvatarSVG('av_prism', 24)}
             </div>
-            <div class="truncate">
-                <p id="menu-player-title" class="text-[10px] text-[var(--accent-gold)] font-bold uppercase tracking-wider block truncate">Apprentice</p>
-                <p id="menu-player-name" class="font-black text-[var(--text-primary)] text-sm tracking-wide truncate">Guest</p>
+            <div class="truncate flex-1 min-w-0">
+                <p id="menu-player-title" class="text-[10px] text-[var(--accent-gold)] font-bold uppercase tracking-wider block truncate max-w-full leading-tight">Apprentice</p>
+                <p id="menu-player-name" class="font-black text-[var(--text-primary)] text-xs sm:text-sm tracking-wide truncate max-w-full">Guest</p>
             </div>
         </div>
 

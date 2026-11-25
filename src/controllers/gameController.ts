@@ -1193,6 +1193,7 @@ export function startGame(
 
     if (isNotesMode) {
       if (num >= 1 && num <= 9) {
+        SoundManager.playNumber();
         const prev = Array.from(notesBoard[r][c]);
         pushNoteUndoStep([{ r, c, prevNotes: prev, gridIdx: currentVariant === 'samurai' ? activeSamuraiIndex : undefined }]);
         if (notesBoard[r][c].has(num)) {

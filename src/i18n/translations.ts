@@ -595,7 +595,7 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     menu_streak_days: '{count} Gün',
     streak_modal_title: 'Günlük Seri & Koruma',
     streak_sub_active: '🔥 Harika! Şu an {count} günlük seri yakaladın.',
-    streak_day_tag: '{day}. Gün',
+    streak_day_tag: '{day}.Gün',
     streak_btn_repair_gold: 'Seriyi Koru (-50 Altın)',
     streak_btn_repair_ad: 'Reklam İzle & Seriyi Koru',
     streak_toast_repaired: '🔥 Seri korundu! Yeni serin: {count} gün.',

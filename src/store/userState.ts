@@ -1209,8 +1209,15 @@ export const UserManager = {
     earnedInRun: number,
     maxLevelCrystals: number
   ): Promise<{ delta: number; bestCollected: number; totalCrystals: number }> {
+    const userLvl = this.getVariantLevel(variant);
     const map = this.getLevelCollectedCrystalsMap();
     const { key, delta, bestCollected } = computeLevelCrystalDelta(variant, level, earnedInRun, maxLevelCrystals, map);
+
+    // Anti-farm kuralı: Geçmiş bir seviyede (level < userLvl) 0 yeni kristal verilir!
+    if (level < userLvl) {
+      return { delta: 0, bestCollected, totalCrystals: this.getCrystals() };
+    }
+
     if (delta > 0) {
       map[key] = bestCollected;
       if (typeof localStorage !== 'undefined') {

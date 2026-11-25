@@ -154,7 +154,7 @@ export function renderRankBadgeSVG(title: string = '🥉 Çırak'): string {
 
   const translatedTitle = translateRankName(title);
 
-  return `<span class="inline-flex items-center font-black text-xs">${badgeIcon}<span>${translatedTitle}</span></span>`;
+  return `<span class="inline-flex items-center font-black text-[10px] sm:text-xs truncate max-w-full">${badgeIcon}<span class="truncate max-w-full">${translatedTitle}</span></span>`;
 }
 
 export const Icons = {

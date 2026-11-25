@@ -51,7 +51,7 @@ function renderStreakModalUI(): void {
 
       card.className = classes;
       card.innerHTML = `
-        <span class="text-[8px] opacity-75">${t('streak_day_tag', { day })}</span>
+        <span class="text-[8px] font-black opacity-90 whitespace-nowrap leading-none tracking-tighter">${t('streak_day_tag', { day })}</span>
         <span class="text-sm mt-0.5">${isPastOrCurrent ? '🔥' : '🔒'}</span>
       `;
       gridEl.appendChild(card);
