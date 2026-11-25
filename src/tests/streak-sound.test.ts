@@ -19,15 +19,22 @@ describe('Faz 6 Organik Ses & 7 Günlük Seri Koruma Test Paketi', () => {
     expect(() => SoundManager.playNumber()).not.toThrow();
   });
 
-  it('2. 7 Günlük Seri Koruma Modalı: Modal açılmalı, 7 günlük takvim dolmalı ve altınla tamir yapılmalı', async () => {
+  it('2. 7 Günlük Seri Koruma Modalı: Modal açılmalı, 7 günlük takvim dolmalı ve kırık seri altınla tamir yapılmalı', async () => {
+    // 3 gün önceye ayarla -> isStreakBroken === true
+    const past = new Date();
+    past.setDate(past.getDate() - 3);
+    const pastStr = `${past.getFullYear()}-${String(past.getMonth() + 1).padStart(2, '0')}-${String(past.getDate()).padStart(2, '0')}`;
+    localStorage.setItem('sudoku_last_streak_date', pastStr);
+
     openStreakModal();
 
     const modal = document.getElementById('streak-modal');
     const calendar = document.getElementById('streak-calendar-grid');
-    const goldRepairBtn = document.getElementById('btn-streak-repair-gold');
+    const goldRepairBtn = document.getElementById('btn-streak-repair-gold') as HTMLButtonElement;
 
     expect(modal?.classList.contains('hidden')).toBe(false);
     expect(calendar?.children.length).toBe(7);
+    expect(goldRepairBtn.hasAttribute('disabled')).toBe(false);
 
     // Altın 100 yap
     await UserManager.updateProgress(1, 100);
@@ -35,9 +42,9 @@ describe('Faz 6 Organik Ses & 7 Günlük Seri Koruma Test Paketi', () => {
     goldRepairBtn?.click();
     await new Promise(r => setTimeout(r, 50));
 
-    // 50 Altın düşmeli, yeni seri 2 olmalı
+    // 50 Altın düşmeli, yeni seri 1 olmalı
     expect(UserManager.getGold()).toBe(50);
-    expect(UserManager.getDailyStreak()).toBe(2);
+    expect(UserManager.getDailyStreak()).toBe(1);
 
     closeStreakModal();
     expect(modal?.classList.contains('hidden')).toBe(true);

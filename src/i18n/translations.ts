@@ -664,6 +664,7 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     streak_reward_title: '7 Günlük Seri Hediyesi',
     streak_reward_desc: '24 Saatlik Geçici Rastgele Yetenek',
     streak_toast_reward_granted: '🎁 Tebrikler! 7 günlük serinize özel {ability} 24 saatliğine açıldı!',
+    streak_status_perfect: '🔥 Seriniz tam durumda! Seriyi koruma butonuna ihtiyaç yok.',
 
     prep_title: 'Bölüm Hazırlığı',
     prep_crystals_progress: 'Bölüm Kristalleri: {collected} / {max}',
@@ -1368,6 +1369,7 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     streak_reward_title: '7-Day Streak Reward',
     streak_reward_desc: '24-Hour Temporary Random Ability',
     streak_toast_reward_granted: '🎁 Congrats! {ability} unlocked for 24 hours for your 7-day streak!',
+    streak_status_perfect: '🔥 Your streak is perfect! No need to shield.',
 
     prep_title: 'Stage Prep',
     prep_crystals_progress: 'Stage Crystals: {collected} / {max}',

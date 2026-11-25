@@ -84,6 +84,30 @@ function renderStreakModalUI(): void {
     const granted = UserManager.grantTemporaryAbilityReward();
     UIManager.showToast(t('streak_toast_reward_granted', { ability: t('ability_' + granted.id) }), 'success');
   }
+
+  const isBroken = UserManager.isStreakBroken();
+  const btnGold = document.getElementById('btn-streak-repair-gold') as HTMLButtonElement | null;
+  const btnAd = document.getElementById('btn-streak-repair-ad') as HTMLButtonElement | null;
+
+  if (btnGold) {
+    if (isBroken) {
+      btnGold.removeAttribute('disabled');
+      btnGold.className = "w-full bg-[var(--accent-gold)] hover:brightness-110 text-[var(--text-on-gold)] font-black py-3 rounded-2xl shadow-md active:scale-95 transition-all text-xs flex items-center justify-center gap-1.5 cursor-pointer";
+    } else {
+      btnGold.setAttribute('disabled', 'true');
+      btnGold.className = "w-full bg-[var(--bg-elevated)] text-[var(--text-secondary)] opacity-40 border border-[var(--border-subtle)] font-black py-3 rounded-2xl text-xs flex items-center justify-center gap-1.5 pointer-events-none cursor-not-allowed";
+    }
+  }
+
+  if (btnAd) {
+    if (isBroken) {
+      btnAd.removeAttribute('disabled');
+      btnAd.className = "w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-2xl shadow-md active:scale-95 transition-all text-xs flex items-center justify-center gap-1.5 cursor-pointer";
+    } else {
+      btnAd.setAttribute('disabled', 'true');
+      btnAd.className = "w-full bg-[var(--bg-elevated)] text-[var(--text-secondary)] opacity-40 border border-[var(--border-subtle)] font-black py-3 rounded-2xl text-xs flex items-center justify-center gap-1.5 pointer-events-none cursor-not-allowed";
+    }
+  }
 }
 
 export function initStreakController(callbacks?: { onUpdateGoldDisplay?: () => void }): void {
@@ -97,6 +121,10 @@ export function initStreakController(callbacks?: { onUpdateGoldDisplay?: () => v
   });
 
   document.getElementById('btn-streak-repair-gold')?.addEventListener('click', async () => {
+    if (!UserManager.isStreakBroken()) {
+      UIManager.showToast(t('streak_status_perfect'), "info");
+      return;
+    }
     SoundManager.playNumber();
     const currentGold = UserManager.getGold();
     const cost = 50;
@@ -113,6 +141,10 @@ export function initStreakController(callbacks?: { onUpdateGoldDisplay?: () => v
   });
 
   document.getElementById('btn-streak-repair-ad')?.addEventListener('click', async () => {
+    if (!UserManager.isStreakBroken()) {
+      UIManager.showToast(t('streak_status_perfect'), "info");
+      return;
+    }
     const adRes = await AdService.showRewardedReviveAd();
     if (adRes.rewarded) {
       const newStreak = UserManager.repairDailyStreak();

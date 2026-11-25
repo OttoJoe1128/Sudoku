@@ -639,13 +639,43 @@ export const UserManager = {
     return newStreak;
   },
 
+  isStreakBroken(): boolean {
+    if (typeof localStorage === 'undefined') return false;
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const lastDate = localStorage.getItem('sudoku_last_streak_date');
+    if (!lastDate) return false;
+
+    if (lastDate === todayStr) return false;
+
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
+    if (lastDate === yesterdayStr) return false;
+
+    return true;
+  },
+
   repairDailyStreak(): number {
-    if (typeof localStorage === 'undefined') return 1;
-    const newStreak = this.getDailyStreak() + 1;
+    if (typeof localStorage === 'undefined') return this.getDailyStreak();
+    if (!this.isStreakBroken()) {
+      return this.getDailyStreak();
+    }
+    const newStreak = Math.max(1, this.getDailyStreak());
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     localStorage.setItem('sudoku_daily_streak', newStreak.toString());
     localStorage.setItem('sudoku_last_streak_date', todayStr);
+
+    if (auth && auth.currentUser) {
+      setDoc(doc(db, 'leaderboard', auth.currentUser.uid), {
+        streak_count: newStreak,
+        last_streak_date: todayStr,
+        updatedAt: serverTimestamp()
+      }, { merge: true }).catch(() => {});
+    }
+
     return newStreak;
   },
 
