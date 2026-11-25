@@ -338,8 +338,11 @@ export const UIManager = {
                 </button>
             </div>
 
-            <!-- Ergonomik Numpad -->
-            <div id="numpad-grid" class="grid grid-cols-9 gap-1 w-full max-w-[380px]"></div>
+            <!-- Ergonomik Model 1 Numpad (Çift Sıralı: 5 + 4) -->
+            <div id="numpad-grid" class="flex flex-col gap-1.5 w-full max-w-[380px]">
+                <div id="numpad-row-1" class="grid grid-cols-5 gap-1.5 sm:gap-2 w-full"></div>
+                <div id="numpad-row-2" class="grid grid-cols-4 gap-1.5 sm:gap-2 w-[82%] sm:w-[84%] mx-auto"></div>
+            </div>
         </div>
       </div>
     `;
@@ -2084,7 +2087,21 @@ export const UIManager = {
   ) {
     const grid = document.getElementById('numpad-grid');
     if (!grid) return;
-    grid.innerHTML = '';
+
+    let row1 = document.getElementById('numpad-row-1');
+    let row2 = document.getElementById('numpad-row-2');
+
+    if (!row1 || !row2) {
+      grid.innerHTML = `
+        <div id="numpad-row-1" class="grid grid-cols-5 gap-1.5 sm:gap-2 w-full"></div>
+        <div id="numpad-row-2" class="grid grid-cols-4 gap-1.5 sm:gap-2 w-[82%] sm:w-[84%] mx-auto"></div>
+      `;
+      row1 = document.getElementById('numpad-row-1');
+      row2 = document.getElementById('numpad-row-2');
+    }
+
+    if (row1) row1.innerHTML = '';
+    if (row2) row2.innerHTML = '';
 
     const wordokuLetters = ['A','B','C','D','E','F','G','H','I'];
 
@@ -2096,7 +2113,8 @@ export const UIManager = {
 
         const btn = document.createElement('button');
         btn.type = "button";
-        let btnClasses = 'min-h-[48px] py-1.5 px-1 rounded-2xl border font-black text-base transition-all flex flex-col items-center justify-center relative shadow-sm cursor-pointer select-none active:scale-95 ';
+        btn.setAttribute('data-numpad-num', num.toString());
+        let btnClasses = 'min-h-[48px] py-2 px-2 rounded-2xl border font-black text-base transition-all flex flex-col items-center justify-center relative shadow-sm cursor-pointer select-none active:scale-95 ';
 
         if (isCompleted) {
           btnClasses += 'opacity-30 pointer-events-none bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-secondary)]';
@@ -2118,7 +2136,14 @@ export const UIManager = {
           SoundManager.vibrate(10);
           onNumberClick(num);
         };
-        grid.appendChild(btn);
+
+        if (num <= 5 && row1) {
+          row1.appendChild(btn);
+        } else if (row2) {
+          row2.appendChild(btn);
+        } else {
+          grid.appendChild(btn);
+        }
     });
   },
 

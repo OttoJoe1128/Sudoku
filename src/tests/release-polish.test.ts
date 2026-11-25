@@ -47,10 +47,9 @@ describe('Faz 4b Release Polish Verification Test Suite', () => {
     const notesBtn = document.getElementById('btn-toggle-notes');
     notesBtn?.click();
 
-    // Numpad 3 (index 2) ve 7 (index 6) seç
-    const numpadGrid = document.getElementById('numpad-grid');
-    const numpad3 = numpadGrid?.children[2] as HTMLElement;
-    const numpad7 = numpadGrid?.children[6] as HTMLElement;
+    // Numpad 3 ve 7 seç
+    const numpad3 = document.querySelector('[data-numpad-num="3"]') as HTMLElement;
+    const numpad7 = document.querySelector('[data-numpad-num="7"]') as HTMLElement;
 
     expect(numpad3).not.toBeNull();
     expect(numpad7).not.toBeNull();

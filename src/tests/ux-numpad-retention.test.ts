@@ -22,9 +22,12 @@ describe('Faz 5 UX, Numpad Ergonomisi & Retention Test Paketi', () => {
     startGame(1, 'basit', undefined, undefined, 'classic', false);
 
     const numpadGrid = document.getElementById('numpad-grid');
-    expect(numpadGrid).not.toBeNull();
+    const row1 = document.getElementById('numpad-row-1');
+    const row2 = document.getElementById('numpad-row-2');
+    expect(row1).not.toBeNull();
+    expect(row2).not.toBeNull();
 
-    const btn1 = numpadGrid?.children[0] as HTMLElement;
+    const btn1 = row1?.children[0] as HTMLElement;
     expect(btn1).not.toBeNull();
     expect(btn1.className).toContain('min-h-[48px]');
 
@@ -36,8 +39,8 @@ describe('Faz 5 UX, Numpad Ergonomisi & Retention Test Paketi', () => {
 
     UIManager.renderNumpad(() => {}, remainingCounts, false, 2);
 
-    const btnCompleted1 = numpadGrid?.children[0] as HTMLElement;
-    const btnSelected2 = numpadGrid?.children[1] as HTMLElement;
+    const btnCompleted1 = row1?.children[0] as HTMLElement;
+    const btnSelected2 = row1?.children[1] as HTMLElement;
 
     // Rakam 1 tamamlandı -> pasifleşmeli
     expect(btnCompleted1.className).toContain('opacity-30');
