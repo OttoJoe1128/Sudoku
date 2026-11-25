@@ -277,16 +277,48 @@ export const UserManager = {
     try {
       if (auth.currentUser) {
         const uid = auth.currentUser.uid;
-        await setDoc(doc(db, 'leaderboard', uid), {
-          username: this.getUsername() || 'Oyuncu',
-          level: this.getCurrentLevel(),
+        const now = new Date();
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('sudoku_daily_streak', '1');
+          localStorage.setItem('sudoku_last_streak_date', todayStr);
+        }
+
+        const tempInfo = this.getTemporaryAbilityInfo();
+
+        const fullData: Record<string, any> = {
+          uid,
+          username: this.getUsername() || 'Guest',
           gold: this.getGold(),
           crystals: this.getCrystals(),
+          level: this.getCurrentLevel(),
+          level_classic: this.getVariantLevel('classic'),
+          level_irregular: this.getVariantLevel('irregular'),
+          level_killer: this.getVariantLevel('killer'),
+          level_wordoku: this.getVariantLevel('wordoku'),
+          level_samurai: this.getVariantLevel('samurai'),
+          score_classic: this.getVariantScore('classic'),
+          score_irregular: this.getVariantScore('irregular'),
+          score_killer: this.getVariantScore('killer'),
+          score_wordoku: this.getVariantScore('wordoku'),
+          score_samurai: this.getVariantScore('samurai'),
+          total_completed: this.getTotalCompleted(),
+          completed_by_category: this.getCompletedByCategory(),
+          streak_count: 1,
+          last_streak_date: todayStr,
+          temp_ability_id: tempInfo.id,
+          temp_ability_ends_at: tempInfo.endsAtMs,
           abilities: this.getAbilitiesState(),
           level_crystals: this.getLevelCollectedCrystalsMap(),
           claimed_gates: this.getClaimedMapGates(),
+          avatar: this.getAvatar(),
+          title: this.getTitle(),
+          lastSeenMs: Date.now(),
           updatedAt: serverTimestamp()
-        }, { merge: true });
+        };
+
+        await setDoc(doc(db, 'leaderboard', uid), fullData, { merge: true });
       }
     } catch (e) {
       console.warn("Bulut tam ekonomi senkronizasyonu hatası:", e);
@@ -806,11 +838,40 @@ export const UserManager = {
       const cred = auth.currentUser ? { user: auth.currentUser } : await signInAnonymously(auth);
       const uid = cred.user.uid;
       const userDocRef = doc(db, 'leaderboard', uid);
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+      // Auto-repair streak to 1 in local storage
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('sudoku_daily_streak', '1');
+        localStorage.setItem('sudoku_last_streak_date', todayStr);
+      }
+
       await setDoc(userDocRef, {
         uid,
         username,
         gold: currentGold,
+        crystals: this.getCrystals(),
         level: currentLevel,
+        level_classic: this.getVariantLevel('classic'),
+        level_irregular: this.getVariantLevel('irregular'),
+        level_killer: this.getVariantLevel('killer'),
+        level_wordoku: this.getVariantLevel('wordoku'),
+        level_samurai: this.getVariantLevel('samurai'),
+        score_classic: this.getVariantScore('classic'),
+        score_irregular: this.getVariantScore('irregular'),
+        score_killer: this.getVariantScore('killer'),
+        score_wordoku: this.getVariantScore('wordoku'),
+        score_samurai: this.getVariantScore('samurai'),
+        total_completed: this.getTotalCompleted(),
+        completed_by_category: this.getCompletedByCategory(),
+        streak_count: 1,
+        last_streak_date: todayStr,
+        temp_ability_id: this.getTemporaryAbilityInfo().id,
+        temp_ability_ends_at: this.getTemporaryAbilityInfo().endsAtMs,
+        abilities: this.getAbilitiesState(),
+        level_crystals: this.getLevelCollectedCrystalsMap(),
+        claimed_gates: this.getClaimedMapGates(),
         avatar,
         title,
         onlineStatus: 'available',
@@ -840,11 +901,22 @@ export const UserManager = {
       if (auth.currentUser) {
         const uid = auth.currentUser.uid;
         const userDocRef = doc(db, 'leaderboard', uid);
+        const now = new Date();
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
         await setDoc(userDocRef, {
           level: safeLevel,
           level_classic: safeLevel,
           gold,
+          crystals: this.getCrystals(),
           title: currentTitle,
+          streak_count: 1,
+          last_streak_date: todayStr,
+          total_completed: this.getTotalCompleted(),
+          completed_by_category: this.getCompletedByCategory(),
+          abilities: this.getAbilitiesState(),
+          level_crystals: this.getLevelCollectedCrystalsMap(),
+          claimed_gates: this.getClaimedMapGates(),
           lastSeenMs: Date.now(),
           updatedAt: serverTimestamp()
         }, { merge: true });
