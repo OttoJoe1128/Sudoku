@@ -639,6 +639,16 @@ export const UserManager = {
     return newStreak;
   },
 
+  repairDailyStreak(): number {
+    if (typeof localStorage === 'undefined') return 1;
+    const newStreak = this.getDailyStreak() + 1;
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    localStorage.setItem('sudoku_daily_streak', newStreak.toString());
+    localStorage.setItem('sudoku_last_streak_date', todayStr);
+    return newStreak;
+  },
+
   getCompletedByCategory(): CompletedByCategory {
     const fallback: CompletedByCategory = { map: 0, custom: 0, pvp: 0, ai: 0 };
     if (typeof localStorage === 'undefined') return fallback;

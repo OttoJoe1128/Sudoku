@@ -22,6 +22,7 @@ import { initAcademyController, refreshAcademyLanguageUI } from './controllers/a
 import { initAbilitiesController, refreshAbilitiesLanguageUI, updateCrystalDisplays, closeAbilitiesModal } from './controllers/abilitiesController';
 import { initLevelPrepController, refreshLevelPrepLanguageUI, closeLevelPrepModal } from './controllers/levelPrepController';
 import { initAuthController, refreshAuthLanguageUI, refreshAuthProfileUI, closeAuthModal } from './controllers/authController';
+import { initStreakController, refreshStreakLanguageUI, closeStreakModal } from './controllers/streakController';
 import { AbilityId } from './engine/abilities';
 
 // UI Binişi & Öz-Teşhis
@@ -113,6 +114,7 @@ const updateLanguageUI = () => {
   refreshLevelPrepLanguageUI();
   refreshGameLanguageUI();
   refreshAuthLanguageUI();
+  refreshStreakLanguageUI();
   updateCrystalDisplays();
   updateWelcomeLangUI();
 
@@ -221,6 +223,9 @@ initModalsController({
 initAcademyController();
 initAbilitiesController();
 initLevelPrepController();
+initStreakController({
+  onUpdateGoldDisplay: () => updateGoldDisplay()
+});
 initAuthController({
   onAuthSynced: () => {
     updateGoldDisplay();
@@ -449,6 +454,12 @@ checkUser();
 
 // Android Donanım Geri Tuşu Mantığı (Capacitor)
 App.addListener('backButton', async () => {
+  const streakModal = document.getElementById('streak-modal');
+  if (streakModal && !streakModal.classList.contains('hidden')) {
+    closeStreakModal();
+    return;
+  }
+
   const authModal = document.getElementById('auth-modal');
   if (authModal && !authModal.classList.contains('hidden')) {
     closeAuthModal();

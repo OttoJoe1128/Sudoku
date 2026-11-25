@@ -593,6 +593,13 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
 
     menu_streak_title: 'Günlük Seri',
     menu_streak_days: '{count} Gün',
+    streak_modal_title: 'Günlük Seri & Koruma',
+    streak_sub_active: '🔥 Harika! Şu an {count} günlük seri yakaladın.',
+    streak_day_tag: '{day}. Gün',
+    streak_btn_repair_gold: 'Seriyi Koru (-50 Altın)',
+    streak_btn_repair_ad: 'Reklam İzle & Seriyi Koru',
+    streak_toast_repaired: '🔥 Seri korundu! Yeni serin: {count} gün.',
+    streak_toast_no_gold: 'Seriyi korumak için 50 Altın gerekiyor.',
 
     prep_title: 'Bölüm Hazırlığı',
     prep_crystals_progress: 'Bölüm Kristalleri: {collected} / {max}',
@@ -1224,6 +1231,13 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
 
     menu_streak_title: 'Daily Streak',
     menu_streak_days: '{count} Days',
+    streak_modal_title: 'Daily Streak & Shield',
+    streak_sub_active: '🔥 Awesome! You currently have a {count}-day streak.',
+    streak_day_tag: 'Day {day}',
+    streak_btn_repair_gold: 'Shield Streak (-50 Gold)',
+    streak_btn_repair_ad: 'Watch Ad & Shield Streak',
+    streak_toast_repaired: '🔥 Streak shielded! New streak: {count} days.',
+    streak_toast_no_gold: 'You need 50 Gold to shield your streak.',
 
     prep_title: 'Stage Prep',
     prep_crystals_progress: 'Stage Crystals: {collected} / {max}',
