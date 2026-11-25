@@ -192,10 +192,9 @@ describe('Faz 2.4-QA Gerçek DOM & İşlevsel Entegrasyon Test Paketi', () => {
       expect(bottomDock?.querySelector('#btn-open-match')).toBeNull();
     });
 
-    it('alt dock tam 4 eşit sekmeden oluşmalı', () => {
+    it('alt dock tam 3 eşit sekmeden oluşmalı', () => {
       const bottomDockGrid = document.querySelector('.fixed.bottom-3 .grid');
-      expect(bottomDockGrid?.children.length).toBe(4);
-      expect(document.getElementById('btn-open-map')).not.toBeNull();
+      expect(bottomDockGrid?.children.length).toBe(3);
       expect(document.getElementById('btn-leaderboard')).not.toBeNull();
       expect(document.getElementById('btn-achievements')).not.toBeNull();
       expect(document.getElementById('btn-shop')).not.toBeNull();
@@ -238,15 +237,16 @@ describe('Faz 2.4-QA Gerçek DOM & İşlevsel Entegrasyon Test Paketi', () => {
     });
   });
 
-  describe('Grup 4 — Spotlight Uygulama Turu (16 Adım Gerçek Tıklama & Gizleme Hatası Yakalayıcı)', () => {
-    it('16 adımın tüm targetId leri DOM da bulunmalı', () => {
+  describe('Grup 4 — Spotlight Uygulama Turu (17 Adım Gerçek Tıklama & Gizleme Hatası Yakalayıcı)', () => {
+    it('17 adımın tüm targetId leri DOM da bulunmalı', () => {
+      expect(APP_TOUR_STEPS.length).toBe(17);
       APP_TOUR_STEPS.forEach(step => {
         const el = document.getElementById(step.targetId);
         expect(el).not.toBeNull();
       });
     });
 
-    it('Adım 11 den Adım 12 ye geçilirken #btn-open-map GİZLENMEMELİ ve #btn-open-saved-games tekrar gizlenmeli', async () => {
+    it('Adım 13 den Adım 14 e geçilirken #btn-open-map GİZLENMEMELİ ve #btn-open-saved-games tekrar gizlenmeli', async () => {
       localStorage.clear();
       updateSavedGamesCountUI();
 
@@ -254,14 +254,14 @@ describe('Faz 2.4-QA Gerçek DOM & İşlevsel Entegrasyon Test Paketi', () => {
       const mapBtn = document.getElementById('btn-open-map');
       expect(savedGamesBtn?.classList.contains('hidden')).toBe(true);
 
-      // Turu başlat ve 11. adıma geç (index 11 = #btn-open-saved-games)
-      renderTourStep(11);
+      // Turu başlat ve 13. adıma geç (index 13 = #btn-open-saved-games)
+      renderTourStep(13);
 
-      // Adım 11 de #btn-open-saved-games geçici görünür olmalı
+      // Adım 13 de #btn-open-saved-games geçici görünür olmalı
       expect(savedGamesBtn?.classList.contains('hidden')).toBe(false);
       expect(savedGamesBtn?.classList.contains('flex')).toBe(true);
 
-      // İleri tıkla -> Adım 12 (index 12 = #btn-open-map)
+      // İleri tıkla -> Adım 14 (index 14 = #btn-leaderboard)
       const nextBtn = document.getElementById('btn-tour-next');
       (nextBtn as HTMLElement)?.click();
 

@@ -97,30 +97,45 @@ export const menuTemplate = `
             <span class="text-[var(--text-secondary)] font-bold text-xs shrink-0">➔</span>
         </button>
 
-        <!-- 4. Düello Arenası (Gerçek Kalkan Formu - Sadece ARENA) -->
-        <button id="btn-open-match" class="mx-auto mt-1 w-28 h-28 relative flex items-center justify-center bg-transparent border-0 p-0 cursor-pointer active:scale-95 transition-transform drop-shadow-md group">
-            <svg viewBox="0 0 100 110" class="absolute inset-0 w-full h-full pointer-events-none">
-                <defs>
-                    <linearGradient id="arenaShieldGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#e2c097"/>
-                        <stop offset="60%" stop-color="#be8f5d"/>
-                        <stop offset="100%" stop-color="#96693c"/>
-                    </linearGradient>
-                </defs>
-                <path d="M50 4 C75 4 92 14 92 24 C92 70 68 96 50 106 C32 96 8 70 8 24 C8 14 25 4 50 4 Z" fill="url(#arenaShieldGrad)" stroke="#f5e2c8" stroke-width="3" stroke-linejoin="round"/>
-                <path d="M50 10 C70 10 85 18 85 27 C85 66 63 89 50 98 C37 89 15 66 15 27 C15 18 30 10 50 10 Z" fill="none" stroke="#faebd7" stroke-opacity="0.4" stroke-width="1.5"/>
-            </svg>
-            <span class="relative z-10 text-sm font-black tracking-[0.18em] uppercase text-amber-950 drop-shadow-sm font-mono">ARENA</span>
-        </button>
+        <!-- 4. İkiz Kalkanlar Sırası: ARENA (Sol) & HARİTA (Sağ) -->
+        <div class="flex items-center justify-center gap-3 sm:gap-4 w-full mt-1">
+            <!-- Sol Kalkan: Düello Arenası (ARENA) -->
+            <button id="btn-open-match" class="w-24 h-24 sm:w-28 sm:h-28 relative flex items-center justify-center bg-transparent border-0 p-0 cursor-pointer active:scale-95 transition-transform drop-shadow-md group">
+                <svg viewBox="0 0 100 110" class="absolute inset-0 w-full h-full pointer-events-none">
+                    <defs>
+                        <linearGradient id="arenaShieldGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#e2c097"/>
+                            <stop offset="60%" stop-color="#be8f5d"/>
+                            <stop offset="100%" stop-color="#96693c"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M50 4 C75 4 92 14 92 24 C92 70 68 96 50 106 C32 96 8 70 8 24 C8 14 25 4 50 4 Z" fill="url(#arenaShieldGrad)" stroke="#f5e2c8" stroke-width="3" stroke-linejoin="round"/>
+                    <path d="M50 10 C70 10 85 18 85 27 C85 66 63 89 50 98 C37 89 15 66 15 27 C15 18 30 10 50 10 Z" fill="none" stroke="#faebd7" stroke-opacity="0.4" stroke-width="1.5"/>
+                </svg>
+                <span class="relative z-10 text-xs sm:text-sm font-black tracking-[0.16em] uppercase text-amber-950 drop-shadow-sm font-mono">ARENA</span>
+            </button>
+
+            <!-- Sağ Kalkan: Yolculuk Haritası (HARİTA) -->
+            <button id="btn-open-map" class="w-24 h-24 sm:w-28 sm:h-28 relative flex items-center justify-center bg-transparent border-0 p-0 cursor-pointer active:scale-95 transition-transform drop-shadow-md group">
+                <svg viewBox="0 0 100 110" class="absolute inset-0 w-full h-full pointer-events-none">
+                    <defs>
+                        <linearGradient id="mapShieldGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#38bdf8"/>
+                            <stop offset="50%" stop-color="#0284c7"/>
+                            <stop offset="100%" stop-color="#0369a1"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M50 4 C75 4 92 14 92 24 C92 70 68 96 50 106 C32 96 8 70 8 24 C8 14 25 4 50 4 Z" fill="url(#mapShieldGrad)" stroke="#bae6fd" stroke-width="3" stroke-linejoin="round"/>
+                    <path d="M50 10 C70 10 85 18 85 27 C85 66 63 89 50 98 C37 89 15 66 15 27 C15 18 30 10 50 10 Z" fill="none" stroke="#e0f2fe" stroke-opacity="0.4" stroke-width="1.5"/>
+                </svg>
+                <span class="relative z-10 text-xs sm:text-sm font-black tracking-[0.16em] uppercase text-sky-950 drop-shadow-sm font-mono" data-i18n="tag_map">HARİTA</span>
+            </button>
+        </div>
     </div>
 
-    <!-- Floating Bottom Dock (Ekranın En Altındaki Alt Bar: 4 Eşit Sekme) -->
+    <!-- Floating Bottom Dock (Ekranın En Altındaki Alt Bar: 3 Eşit Sekme) -->
     <div class="fixed bottom-3 left-1/2 -translate-x-1/2 w-full max-w-[440px] px-4 z-40" style="bottom: max(env(safe-area-inset-bottom, 0px), 0.75rem);">
-        <div class="bg-[var(--bg-elevated)]/90 backdrop-blur-md border border-[var(--border-strong)] p-1.5 rounded-3xl shadow-2xl grid grid-cols-4 gap-1.5">
-            <button id="btn-open-map" class="hover:bg-[var(--bg-card-hover)] p-2.5 rounded-2xl text-center font-bold text-xs flex flex-col items-center gap-0.5 active:scale-95 transition-transform text-[var(--text-primary)] min-w-0">
-                <span class="text-base text-[var(--accent-gold)] shrink-0">${Icons.map}</span>
-                <span class="text-[10px] truncate max-w-full" data-i18n="tag_map">Harita</span>
-            </button>
+        <div class="bg-[var(--bg-elevated)]/90 backdrop-blur-md border border-[var(--border-strong)] p-1.5 rounded-3xl shadow-2xl grid grid-cols-3 gap-1.5">
             <button id="btn-leaderboard" class="hover:bg-[var(--bg-card-hover)] p-2.5 rounded-2xl text-center font-bold text-xs flex flex-col items-center gap-0.5 active:scale-95 transition-transform text-[var(--text-primary)] min-w-0">
                 <span class="text-base text-[var(--accent-gold)] shrink-0">${Icons.trophy}</span>
                 <span class="text-[10px] truncate max-w-full" data-i18n="nav_rank">Sıralama</span>

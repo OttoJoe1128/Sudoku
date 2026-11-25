@@ -290,8 +290,8 @@ describe('Faz 2.3b İşlevsel & DOM Entegrasyon Test Paketi', () => {
   });
 
   describe('9. Spotlight Uygulama Turu & Bayrak Yönetimi', () => {
-    it('APP_TOUR_STEPS 16 adımı eksiksiz içermeli ve tüm çeviri anahtarları tanımlı olmalı', () => {
-      expect(APP_TOUR_STEPS.length).toBe(16);
+    it('APP_TOUR_STEPS 17 adımı eksiksiz içermeli ve tüm çeviri anahtarları tanımlı olmalı', () => {
+      expect(APP_TOUR_STEPS.length).toBe(17);
 
       setLang('tr');
       APP_TOUR_STEPS.forEach(step => {
