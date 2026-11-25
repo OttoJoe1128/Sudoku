@@ -103,8 +103,20 @@ export const SoundManager = {
     }
   },
 
+  vibrate(pattern: number | number[]): void {
+    if (!soundEnabled) return;
+    try {
+      if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+        navigator.vibrate(pattern);
+      }
+    } catch {
+      // ignore
+    }
+  },
+
   playError(): void {
     if (!soundEnabled) return;
+    this.vibrate([45, 30, 45]);
     try {
       const ctx = getAudioContext();
       if (!ctx) return;
@@ -131,6 +143,7 @@ export const SoundManager = {
 
   playWin(): void {
     if (!soundEnabled) return;
+    this.vibrate([30, 40, 60]);
     try {
       const ctx = getAudioContext();
       if (!ctx) return;

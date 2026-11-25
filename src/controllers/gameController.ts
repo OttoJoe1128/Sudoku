@@ -54,6 +54,16 @@ let samuraiBoards: { userBoard: number[][]; initialBoard: number[][]; solution: 
 let activeSamuraiIndex = 0;
 let activeRefreshFn: any = null;
 
+let noteUndoStack: { r: number; c: number; prevNotes: number[]; gridIdx?: number }[][] = [];
+
+function pushNoteUndoStep(snapshots: { r: number; c: number; prevNotes: number[]; gridIdx?: number }[]): void {
+  if (!snapshots || snapshots.length === 0) return;
+  noteUndoStack.push(snapshots);
+  if (noteUndoStack.length > 30) {
+    noteUndoStack.shift();
+  }
+}
+
 let isMatchMode = false;
 let activeMatch: MatchState | null = null;
 let matchUserFilled = 0;
@@ -72,10 +82,11 @@ export function getGameRuntimeState(): {
   currentSolution: number[][];
   initialBoard: number[][];
   userBoard: number[][];
+  notesBoard: Set<number>[][];
   equippedAbilities: AbilityId[];
   boardMechanics: BoardMechanicsState | null;
 } {
-  return { isMatchMode, isNotesMode, currentSolution, initialBoard, userBoard, equippedAbilities: activeEquippedAbilities, boardMechanics: activeBoardMechanics };
+  return { isMatchMode, isNotesMode, currentSolution, initialBoard, userBoard, notesBoard, equippedAbilities: activeEquippedAbilities, boardMechanics: activeBoardMechanics };
 }
 
 const getSamuraiCompletionStatuses = () => {
@@ -358,6 +369,7 @@ const switchSamuraiGrid = (idx: number, shouldFocusCamera: boolean = true) => {
   currentSolution = target.solution;
   notesBoard = target.notesBoard;
   selectedCell = null;
+  noteUndoStack = [];
 
   if (shouldFocusCamera) {
     UIManager.focusSamuraiGrid(idx);
@@ -637,6 +649,7 @@ export async function handleBotMatchProgress(botProgress: number, enemyName: str
 
 export async function handleExitGameRequest(): Promise<boolean> {
   pendingSmartHint = null;
+  noteUndoStack = [];
   UIManager.hideSmartHintBanner();
 
   if (activePlacementExam) {
@@ -766,6 +779,7 @@ export function startGame(
   currentLevelNumber = level;
   isCustomGameMode = isCustom;
   currentTimeLimitSec = resolvedRestoredState?.timeLimitSec ?? (matchData ? (matchData.durationSec || 0) : customTimeLimitSec);
+  noteUndoStack = [];
 
   UserManager.setPresence(isMatchMode ? 'in_duel' : 'in_game');
 
@@ -1107,9 +1121,15 @@ export function startGame(
         if (res.newlyConsumed) {
           UserManager.triggerAbilityCooldown('oracle_eye');
         }
+        const oracleSnapshots: { r: number; c: number; prevNotes: number[]; gridIdx?: number }[] = [];
         res.scannedCells.forEach(sc => {
+          const prev = Array.from(notesBoard[sc.r][sc.c]);
+          oracleSnapshots.push({ r: sc.r, c: sc.c, prevNotes: prev, gridIdx: currentVariant === 'samurai' ? activeSamuraiIndex : undefined });
           notesBoard[sc.r][sc.c] = new Set(sc.candidates);
         });
+        if (oracleSnapshots.length > 0) {
+          pushNoteUndoStep(oracleSnapshots);
+        }
         UIManager.showToast(t('toast_oracle_scanned'), "success");
         persistCurrentGame();
         refresh();
@@ -1168,6 +1188,8 @@ export function startGame(
 
     if (isNotesMode) {
       if (num >= 1 && num <= 9) {
+        const prev = Array.from(notesBoard[r][c]);
+        pushNoteUndoStep([{ r, c, prevNotes: prev, gridIdx: currentVariant === 'samurai' ? activeSamuraiIndex : undefined }]);
         if (notesBoard[r][c].has(num)) {
           notesBoard[r][c].delete(num);
         } else {
@@ -1183,6 +1205,9 @@ export function startGame(
       const mechRes = applyValidMoveMechanics(activeBoardMechanics, r, c);
       for (const abId of mechRes.newlyConsumedAbilities) {
         await UserManager.triggerAbilityCooldown(abId);
+      }
+      if (mechRes.crystalCollected || mechRes.unlockedSeal || mechRes.treasureReward) {
+        SoundManager.vibrate(20);
       }
       if (mechRes.crystalCollected) UIManager.showToast(t('toast_crystal_collected'), "success");
       if (mechRes.unlockedSeal) UIManager.showToast(t('toast_seal_unlocked'), "success");
@@ -1541,7 +1566,34 @@ export function startGame(
         UIManager.showToast(t('cell_locked_erase_toast'), "info");
         return;
       }
-      notesBoard[r][c].clear();
+      if (notesBoard[r][c].size > 0) {
+        const prev = Array.from(notesBoard[r][c]);
+        pushNoteUndoStep([{ r, c, prevNotes: prev, gridIdx: currentVariant === 'samurai' ? activeSamuraiIndex : undefined }]);
+        notesBoard[r][c].clear();
+        persistCurrentGame();
+        refresh();
+      }
+    };
+  }
+
+  const undoBtn = document.getElementById('btn-undo');
+  if (undoBtn) {
+    undoBtn.onclick = () => {
+      if (!noteUndoStack || noteUndoStack.length === 0) {
+        UIManager.showToast(t('toast_undo_empty'), "info");
+        return;
+      }
+      const lastStep = noteUndoStack.pop()!;
+      lastStep.forEach(item => {
+        let targetNotesBoard = notesBoard;
+        if (currentVariant === 'samurai' && typeof item.gridIdx === 'number' && samuraiBoards[item.gridIdx]) {
+          targetNotesBoard = samuraiBoards[item.gridIdx].notesBoard;
+        }
+        if (targetNotesBoard && targetNotesBoard[item.r] && targetNotesBoard[item.r][item.c]) {
+          targetNotesBoard[item.r][item.c] = new Set(item.prevNotes);
+        }
+      });
+      SoundManager.playTap();
       persistCurrentGame();
       refresh();
     };

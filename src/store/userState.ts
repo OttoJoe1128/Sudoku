@@ -946,7 +946,7 @@ export const UserManager = {
       };
 
       const uid = auth.currentUser ? auth.currentUser.uid : undefined;
-      if (uid) {
+      if (uid && !isTestRuntime()) {
         try {
           const snap = await getDoc(doc(db, 'leaderboard', uid));
           if (snap.exists()) {
@@ -1020,7 +1020,7 @@ export const UserManager = {
     const variantScores: Record<SudokuVariant, number> = { classic: 0, irregular: 0, killer: 0, wordoku: 0, samurai: 0 };
     const variantLevels: Record<SudokuVariant, number> = { classic: 1, irregular: 1, killer: 1, wordoku: 1, samurai: 1 };
 
-    if (targetUid) {
+    if (targetUid && !isTestRuntime()) {
       try {
         const snap = await getDoc(doc(db, 'leaderboard', targetUid));
         if (snap.exists()) {

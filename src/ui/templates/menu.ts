@@ -103,7 +103,7 @@ export const menuTemplate = `
     </div>
 
     <!-- Floating Bottom Dock (Ekranın En Altındaki Alt Bar: 4 Eşit Sekme) -->
-    <div class="fixed bottom-3 left-1/2 -translate-x-1/2 w-full max-w-[440px] px-4 z-40">
+    <div class="fixed bottom-3 left-1/2 -translate-x-1/2 w-full max-w-[440px] px-4 z-40" style="bottom: max(env(safe-area-inset-bottom, 0px), 0.75rem);">
         <div class="bg-[var(--bg-elevated)]/90 backdrop-blur-md border border-[var(--border-strong)] p-1.5 rounded-3xl shadow-2xl grid grid-cols-4 gap-1.5">
             <button id="btn-open-map" class="hover:bg-[var(--bg-card-hover)] p-2.5 rounded-2xl text-center font-bold text-xs flex flex-col items-center gap-0.5 active:scale-95 transition-transform text-[var(--text-primary)] min-w-0">
                 <span class="text-base text-[var(--accent-gold)] shrink-0">${Icons.map}</span>

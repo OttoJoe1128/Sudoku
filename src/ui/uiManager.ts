@@ -250,7 +250,7 @@ export const UIManager = {
         ${levelPrepModalTemplate}
         ${crystalRepairModalTemplate}
         ${authModalTemplate}
-        <div id="game-view" class="hidden flex-col items-center p-6 w-full h-full relative z-10">
+        <div id="game-view" class="hidden flex-col items-center p-6 w-full h-full relative z-10" style="padding-bottom: max(env(safe-area-inset-bottom, 0px), 1.5rem);">
             <!-- Düello Canlı İlerleme Çubuğu -->
             <div id="match-header-bar" class="hidden w-full bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-strong)] p-3 rounded-2xl mb-3 shadow-lg flex-col gap-2">
                 <div class="flex justify-between items-center text-xs font-black">
@@ -317,18 +317,22 @@ export const UIManager = {
             <div id="samurai-viewport" class="hidden w-full flex-1 min-h-[320px] max-h-[430px] rounded-2xl bg-[var(--board-bg)] border-2 border-[var(--border-strong)] shadow-2xl mb-3 relative overflow-hidden"></div>
 
             <!-- Oyun Kontrol Araç Çubuğu -->
-            <div class="flex gap-2 mb-3 w-full max-w-[380px] justify-center">
-                <button id="btn-hint" class="flex-1 bg-[var(--accent-gold)] text-[var(--text-on-gold)] hover:brightness-110 py-2.5 px-2 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1.5">
+            <div class="flex gap-1.5 sm:gap-2 mb-3 w-full max-w-[380px] justify-center min-w-0">
+                <button id="btn-hint" class="flex-1 bg-[var(--accent-gold)] text-[var(--text-on-gold)] hover:brightness-110 py-2.5 px-2 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1 min-w-0">
                     ${Icons.hint}
-                    <span data-i18n="btn_hint">İpucu (10)</span>
+                    <span data-i18n="btn_hint" class="truncate">İpucu (10)</span>
                 </button>
-                <button id="btn-toggle-notes" class="bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] text-[var(--text-primary)] py-2.5 px-3 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1.5">
+                <button id="btn-toggle-notes" class="bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] text-[var(--text-primary)] py-2.5 px-2 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1 shrink-0">
                     ${Icons.pen}
                     <span id="notes-status-text" data-i18n="btn_notes_off">Not: Kapalı</span>
                 </button>
-                <button id="btn-erase" class="bg-rose-950/60 border border-rose-500/40 text-rose-300 py-2.5 px-3 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1.5">
+                <button id="btn-erase" class="bg-rose-950/60 border border-rose-500/40 text-rose-300 py-2.5 px-2 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1 shrink-0">
                     ${Icons.trash}
                     <span data-i18n="btn_erase">Sil</span>
+                </button>
+                <button id="btn-undo" class="bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] text-[var(--text-primary)] py-2.5 px-2 rounded-2xl font-black text-xs shadow active:scale-95 transition-all flex items-center justify-center gap-1 shrink-0" title="Geri Al" data-i18n-title="btn_undo">
+                    <svg class="w-3.5 h-3.5 text-[var(--accent-gold)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a5 5 0 015 5v2M3 10l6-6M3 10l6 6"></path></svg>
+                    <span data-i18n="btn_undo">Geri Al</span>
                 </button>
             </div>
 

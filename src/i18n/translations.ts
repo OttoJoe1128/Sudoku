@@ -588,6 +588,9 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     auth_toast_logged_out: 'Oturum kapatıldı.',
     auth_toast_deleted: 'Hesabın ve verilerin silindi.',
 
+    btn_undo: 'Geri Al',
+    toast_undo_empty: 'Geri alınacak not hamlesi yok.',
+
     prep_title: 'Bölüm Hazırlığı',
     prep_crystals_progress: 'Bölüm Kristalleri: {collected} / {max}',
     prep_loadout_title: 'Yetenek Seçimi ({count} / 2)',
@@ -1212,6 +1215,9 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     auth_toast_reset_sent: '📧 Password reset link sent.',
     auth_toast_logged_out: 'Signed out.',
     auth_toast_deleted: 'Your account and data were deleted.',
+
+    btn_undo: 'Undo',
+    toast_undo_empty: 'Nothing to undo.',
 
     prep_title: 'Stage Prep',
     prep_crystals_progress: 'Stage Crystals: {collected} / {max}',
