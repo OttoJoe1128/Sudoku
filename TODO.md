@@ -40,8 +40,14 @@
 - [ ] Uygulama İçi Satın Alma (In-App Purchase).
 - [ ] Altın paketi mağaza entegrasyonu.
 
-### 5. Aşama: Yayınlama ve ASO
+### 5. Aşama: Gelişmiş Özellikler & Optimizasyon (Yeni Eklenenler)
+- [ ] Gelişmiş Ses Efektleri ve Haptic Geri Bildirimler (Web Audio API / Capacitor Haptic Engine).
+- [ ] Gelişmiş AI İpucu Motoru (`hintSolver.ts` optimizasyonu ve naked/hidden single algoritmaları).
+- [ ] Günlük Görevler (Daily Quests) ve Başarım rozetlerinin aktif takibi.
+- [ ] Test Kapsamının Genişletilmesi (Vitest ile motor ve store testlerinin artırılması).
+
+### 6. Aşama: Yayınlama ve ASO
 - [ ] Google Play Store ASO optimizasyonu (Keyword, Screenshot, Icon).
-- [ ] Gizlilik Politikası sayfası.
-- [ ] Firebase Crashlytics entegrasyonu.
-- [ ] TWA (Trusted Web Activity) paketleme.
+- [ ] Gizlilik Politikası sayfası (`public/privacy.html`).
+- [ ] Firebase Crashlytics ve performans izleme entegrasyonu.
+- [ ] TWA ve Capacitor Android release build testleri (`npm run release:check`).
