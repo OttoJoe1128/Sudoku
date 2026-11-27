@@ -431,6 +431,8 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     academy_how_to_spot: 'Nasıl Görülür?',
     academy_new_region_badge: 'YENİ BÖLGE DERSİ',
     academy_back_list: '← Tüm Teknikler',
+    academy_btn_simulate: 'Eleme Adımını Simüle Et ➔',
+    academy_btn_reset_diagram: 'Orijinal Deseni Gör ↺',
 
     // 20 Teknik İçin Özet & İpucu
     academy_summary_row_col_scan: 'Boş hücrenin yer aldığı satır ve sütundaki dolu rakamları tarayarak eksik tek seçeneği bul.',
@@ -1141,6 +1143,8 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     academy_how_to_spot: 'How to Spot',
     academy_new_region_badge: 'NEW REGION LESSON',
     academy_back_list: '← All Techniques',
+    academy_btn_simulate: 'Simulate Elimination Step ➔',
+    academy_btn_reset_diagram: 'Show Original Pattern ↺',
 
     // 20 Technique Summaries & Tips
     academy_summary_row_col_scan: 'Scan filled numbers in row and column to deduce the remaining single option.',

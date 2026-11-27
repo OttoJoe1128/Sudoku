@@ -23,10 +23,14 @@ Bu belge, SudokuMap projesini geleneksel bir bulmaca oyunundan küresel çapta l
   - `#smart-hint-step-badge` (adım sayacı) ve `#btn-step-smart-hint` (adımı incele / ileri adım butonu) eklendi.
   - Tahta üzerinde deseni oluşturan birincil hücreler altın sarısı parıltıyla (`data-hint-pattern`), hedef hücreler zümrüt yeşili halkayla (`data-hint-target`), eleme hücreleri kırmızı vurguyla (`data-hint-elimination`) işaretlendi.
   - `src/tests/smart-hint.test.ts` içine interaktif adım adımlı çözücü testi eklendi ve tüm 284 test %100 yeşil tamamlandı.
-- [ ] **Adım 1.4 — Sudoku Akademisi Genişletmesi (İleri Düzey Master Müfredat):**
-  - Mevcut 20 temel dersin üzerine X-Wing, Swordfish ve XY-Wing için animasyonlu interaktif laboratuvar derslerinin eklenmesi.
-- [ ] **Adım 1.5 — Faz 1 Doğrulama & Kontrol Noktası:**
-  - İleri seviye çözücü unit testlerinin yazılması, 271+ testin yeşil kalması ve `release:check` onayı.
+- [x] **Adım 1.4 — Sudoku Akademisi Genişletmesi (İleri Düzey Master Müfredat):**
+  - X-Wing, Y-Wing, Swordfish, Naked/Hidden Pairs gibi ileri düzey derslere interaktif adım simülasyonu (`#btn-academy-simulate-step`) eklendi.
+  - Eleme aşaması ile orijinal desen arasında anlık animasyonlu geçiş sağlandı.
+  - `src/tests/academy.test.ts` içine simülatör doğrulama testi eklendi.
+- [x] **Adım 1.5 — Faz 1 Doğrulama & Kontrol Noktası:**
+  - İleri seviye çözücü unit testleri (`bitmask-engine.test.ts`, `advanced-techniques.test.ts`, `smart-hint.test.ts`, `academy.test.ts`) yazıldı.
+  - 27 test dosyasının 27'si (%100) ve 285 testin 285'i (%100) tam yeşil geçti.
+  - `npm run release:check` (Typecheck + Vitest + Vite Build) sıfır hatayla doğrulandı.
 
 ---
 

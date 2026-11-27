@@ -153,4 +153,29 @@ describe('Faz 2.5c Sudoku Akademisi Ders Kartları, Mini Diyagramlar & Kitapçı
       expect(lessonSummary?.innerText).toBe(t('academy_summary_row_col_scan'));
     });
   });
+
+  describe('6. İnteraktif Adım Simülatörü (Laboratuvar Modu)', () => {
+    it('X-Wing gibi eleme içeren derslerde #btn-academy-simulate-step adımı simüle etmeli', () => {
+      // 15. Bölge: X-Wing
+      openAcademyLesson(15, false);
+
+      const simulateBtn = document.getElementById('btn-academy-simulate-step');
+      const label = document.getElementById('academy-simulate-step-label');
+
+      expect(simulateBtn?.classList.contains('hidden')).toBe(false);
+      expect(label?.innerText).toContain('Simüle');
+
+      // Simülasyonu çalıştır
+      simulateBtn?.click();
+      expect(label?.innerText).toContain('Orijinal');
+
+      const diagramCells = document.querySelectorAll('#academy-lesson-diagram > div');
+      const hasElimMark = Array.from(diagramCells).some(c => (c as HTMLElement).innerText === '✕');
+      expect(hasElimMark).toBe(true);
+
+      // Tekrar tıkla -> Orijinale dön
+      simulateBtn?.click();
+      expect(label?.innerText).toContain('Simüle');
+    });
+  });
 });

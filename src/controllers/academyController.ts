@@ -54,30 +54,73 @@ export function openAcademyLesson(regionId: number, isAutoIntro: boolean = false
   if (lessonSummary) lessonSummary.innerText = t('academy_summary_' + lesson.techniqueId);
   if (lessonTip) lessonTip.innerText = t('academy_tip_' + lesson.techniqueId);
 
-  if (diagramGrid) {
-    diagramGrid.innerHTML = '';
-    lesson.diagramCells.forEach(cell => {
-      const cellDiv = document.createElement('div');
-      let cellClasses = 'flex items-center justify-center font-mono font-black text-xs rounded-xl border select-none ';
-      if (cell.role === 'target') {
-        cellClasses += 'bg-[var(--accent-gold)] text-[var(--text-on-gold)] border-[var(--accent-gold-bright)] shadow-md animate-pulse';
-      } else if (cell.role === 'highlight') {
-        cellClasses += 'bg-[var(--accent-cyan)]/20 text-[var(--accent-cyan)] border-[var(--accent-cyan)]/60';
-      } else if (cell.role === 'eliminated') {
-        cellClasses += 'bg-rose-950/40 text-rose-400 border-rose-500/40 line-through';
-      } else if (cell.role === 'given') {
-        cellClasses += 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border-strong)]';
-      } else {
-        cellClasses += 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-subtle)]';
-      }
+  isSimulatingElimination = false;
+  renderDiagramGrid(lesson, false);
 
-      cellDiv.className = cellClasses;
-      cellDiv.innerText = cell.value;
-      diagramGrid.appendChild(cellDiv);
-    });
+  const simulateBtn = document.getElementById('btn-academy-simulate-step');
+  const simulateLabel = document.getElementById('academy-simulate-step-label');
+  const hasEliminations = lesson.diagramCells.some(c => c.role === 'eliminated');
+
+  if (simulateBtn) {
+    if (hasEliminations) {
+      simulateBtn.classList.remove('hidden');
+      simulateBtn.classList.add('flex');
+      if (simulateLabel) simulateLabel.innerText = t('academy_btn_simulate');
+      simulateBtn.onclick = () => {
+        SoundManager.playNumber();
+        isSimulatingElimination = !isSimulatingElimination;
+        renderDiagramGrid(lesson, isSimulatingElimination);
+        if (simulateLabel) {
+          simulateLabel.innerText = isSimulatingElimination
+            ? t('academy_btn_reset_diagram')
+            : t('academy_btn_simulate');
+        }
+      };
+    } else {
+      simulateBtn.classList.add('hidden');
+      simulateBtn.classList.remove('flex');
+    }
   }
 
   markRegionLessonSeen(regionId);
+}
+
+let isSimulatingElimination = false;
+
+function renderDiagramGrid(lesson: AcademyLesson, simulated: boolean): void {
+  const diagramGrid = document.getElementById('academy-lesson-diagram');
+  if (!diagramGrid) return;
+  diagramGrid.innerHTML = '';
+  lesson.diagramCells.forEach(cell => {
+    const cellDiv = document.createElement('div');
+    let cellClasses = 'flex items-center justify-center font-mono font-black text-xs rounded-xl border select-none transition-all duration-300 ';
+    let cellValue = cell.value;
+
+    if (cell.role === 'target') {
+      if (simulated) {
+        cellClasses += 'bg-emerald-500/30 text-emerald-300 border-emerald-400 shadow-lg scale-105 ring-2 ring-emerald-400/50';
+      } else {
+        cellClasses += 'bg-[var(--accent-gold)] text-[var(--text-on-gold)] border-[var(--accent-gold-bright)] shadow-md animate-pulse';
+      }
+    } else if (cell.role === 'highlight') {
+      cellClasses += 'bg-[var(--accent-cyan)]/20 text-[var(--accent-cyan)] border-[var(--accent-cyan)]/60';
+    } else if (cell.role === 'eliminated') {
+      if (simulated) {
+        cellClasses += 'bg-rose-950/70 text-rose-500 border-rose-500 line-through opacity-40 scale-95';
+        cellValue = '✕';
+      } else {
+        cellClasses += 'bg-rose-950/40 text-rose-400 border-rose-500/40 line-through';
+      }
+    } else if (cell.role === 'given') {
+      cellClasses += 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border-strong)]';
+    } else {
+      cellClasses += 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-subtle)]';
+    }
+
+    cellDiv.className = cellClasses;
+    cellDiv.innerText = cellValue;
+    diagramGrid.appendChild(cellDiv);
+  });
 }
 
 export function openAcademyBooklet(maxUnlockedLevel?: number): void {

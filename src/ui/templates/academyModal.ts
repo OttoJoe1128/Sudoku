@@ -35,6 +35,12 @@ export const academyModalTemplate = `
                 <!-- 9 Hücre academyController tarafından doldurulur -->
             </div>
 
+            <!-- İnteraktif Adım Simülatörü Butonu -->
+            <button id="btn-academy-simulate-step" class="hidden bg-[var(--bg-elevated)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-strong)] text-[var(--accent-gold)] font-black py-1.5 px-3 rounded-xl text-[11px] mb-2 items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer">
+                <span>⚡</span>
+                <span id="academy-simulate-step-label" data-i18n="academy_btn_simulate">Eleme Adımını Simüle Et ➔</span>
+            </button>
+
             <!-- Özet Açıklama -->
             <p id="academy-lesson-summary" class="text-xs text-[var(--text-secondary)] font-medium leading-relaxed mb-3"></p>
 
