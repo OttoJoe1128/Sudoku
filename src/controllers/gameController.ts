@@ -27,9 +27,14 @@ import {
   repairLastCrackedCrystal
 } from '../engine/boardMechanics';
 import { updateCrystalDisplays } from './abilitiesController';
+import { getCurrentSeason, SeasonalEventManager } from '../engine/seasonalEvents';
+import { createInitialPaceMetrics, recordMoveInMetrics, evaluateDDA, PlayerPaceMetrics } from '../engine/adaptiveDifficulty';
+
 
 let pendingSmartHint: SmartHint | null = null;
 let activeBoardMechanics: BoardMechanicsState | null = null;
+let paceMetrics: PlayerPaceMetrics = createInitialPaceMetrics();
+
 
 let currentSolution: number[][];
 let userBoard: number[][];
@@ -843,6 +848,8 @@ export function startGame(
     timeElapsed = 0;
     selectedCell = null;
     isNotesMode = false;
+    paceMetrics = createInitialPaceMetrics();
+
 
     if (isMatchMode && matchData) {
       currentVariant = matchData.variant || variant;
@@ -1207,8 +1214,15 @@ export function startGame(
       return;
     }
 
-    if (activeBoardMechanics && num === currentSolution[r][c]) {
-      const mechRes = applyValidMoveMechanics(activeBoardMechanics, r, c);
+    const isMoveCorrect = num === currentSolution[r][c];
+    paceMetrics = recordMoveInMetrics(paceMetrics, isMoveCorrect);
+    const dda = evaluateDDA(paceMetrics);
+
+    if (activeBoardMechanics && isMoveCorrect) {
+      if (dda.masterFlowActive) {
+        activeBoardMechanics.sparkBonusGold += 1;
+      }
+      const mechRes = applyValidMoveMechanics(activeBoardMechanics, r, c, num);
       for (const abId of mechRes.newlyConsumedAbilities) {
         await UserManager.triggerAbilityCooldown(abId);
       }
@@ -1369,6 +1383,20 @@ export function startGame(
           : `🎉 Seviye ${level} Tamamlandı! Seviye ${nextLevel} Açıldı! +${reward} 🪙${crystalSuffix}`;
 
         UIManager.showToast(toastMsg, "success");
+        // Sezonluk Pul Düşüşü (Postcard Stamp Drop)
+        try {
+          const currentSeason = getCurrentSeason();
+          const stampRes = SeasonalEventManager.awardRandomStamp(currentSeason.id);
+          if (stampRes.newStampIndex !== -1) {
+            const totalCollected = SeasonalEventManager.getCollectedStamps(currentSeason.id).length;
+            setTimeout(() => {
+              UIManager.showToast(t('season_toast_stamp_found', { count: totalCollected }), "info");
+            }, 800);
+          }
+        } catch {
+          // ignore
+        }
+
 
         if (onReturnToMapCallback) {
           onReturnToMapCallback(currentVariant, nextLevel);
@@ -1659,6 +1687,11 @@ export function startGame(
         else if (hint.technique === 'hidden_single_col') techKey = 'tech_hidden_single';
         else if (hint.technique === 'hidden_single_box') techKey = 'tech_hidden_single';
         else if (hint.technique === 'pointing_deduction') techKey = 'tech_pointing_pairs';
+        else if (hint.technique === 'naked_pair') techKey = 'tech_naked_pairs';
+        else if (hint.technique === 'hidden_pair') techKey = 'tech_hidden_pairs';
+        else if (hint.technique === 'x_wing') techKey = 'tech_x_wing';
+        else if (hint.technique === 'swordfish') techKey = 'tech_swordfish';
+        else if (hint.technique === 'xy_wing') techKey = 'tech_y_wing';
         else techKey = 'tech_crosshatching';
 
         const techLabel = t(techKey);
@@ -1666,7 +1699,9 @@ export function startGame(
         let reasonText = '';
 
         if (hintStep === 1) {
-          if (hint.technique === 'naked_single') {
+          if (hint.explanationText) {
+            reasonText = hint.explanationText;
+          } else if (hint.technique === 'naked_single') {
             reasonText = t('hint_explain_naked_single', { row: hint.row + 1, col: hint.col + 1, val: symbol });
           } else if (hint.technique === 'hidden_single_row') {
             reasonText = t('hint_explain_hidden_single_row', { row: hint.row + 1, val: symbol });

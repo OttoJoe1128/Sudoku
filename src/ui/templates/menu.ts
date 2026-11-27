@@ -44,12 +44,23 @@ export const menuTemplate = `
     <!-- Marka Logos & Amblem -->
     ${renderBrandLogoHTML()}
 
-    <!-- Ferah İlerleme Hapı -->
-    <button id="btn-menu-progress-pill" class="w-full bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-full py-1 px-3 sm:py-1.5 sm:px-4 flex items-center justify-center gap-1.5 sm:gap-2 active:scale-95 transition-all cursor-pointer shadow-sm shrink-0">
-        <span class="w-2 h-2 rounded-full bg-[var(--accent-gold)] animate-pulse"></span>
-        <span id="menu-progress-pill-text" class="text-[11px] sm:text-xs font-bold tracking-wide">Seviye 1 • Klasik</span>
-        <span class="text-[10px] text-[var(--text-secondary)]">➔</span>
-    </button>
+    <!-- İlerleme Hapı & Sezonluk Etkinlik Kartpostal Girişi (Kompakt Çift Hap) -->
+    <div class="w-full flex gap-2 shrink-0">
+        <button id="btn-menu-progress-pill" class="flex-1 bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-full py-1 px-2.5 sm:py-1.5 sm:px-3 flex items-center justify-between active:scale-95 transition-all cursor-pointer shadow-sm">
+            <div class="flex items-center gap-1.5 min-w-0">
+                <span class="w-2 h-2 rounded-full bg-[var(--accent-gold)] animate-pulse shrink-0"></span>
+                <span id="menu-progress-pill-text" class="text-[10px] sm:text-[11px] font-bold tracking-wide truncate">Seviye 1 • Klasik</span>
+            </div>
+            <span class="text-[9px] text-[var(--text-secondary)] shrink-0">➔</span>
+        </button>
+        <button id="btn-open-postcards" class="flex-1 bg-gradient-to-r from-amber-500/10 via-amber-500/15 to-amber-500/10 hover:brightness-110 text-amber-300 border border-amber-400/40 rounded-full py-1 px-2.5 sm:py-1.5 sm:px-3 flex items-center justify-between active:scale-95 transition-all cursor-pointer shadow-sm">
+            <div class="flex items-center gap-1.5 min-w-0">
+                <span class="text-xs shrink-0">📮</span>
+                <span id="menu-season-pill-text" class="text-[10px] sm:text-[11px] font-black truncate max-w-full" data-i18n="season_btn_menu">Season</span>
+            </div>
+            <span id="menu-season-stamps-count" class="text-[9px] font-mono font-bold bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded-full border border-amber-400/40 shrink-0">0/9</span>
+        </button>
+    </div>
 
     <!-- PWA Yükleme Kartı -->
     <button id="btn-install-pwa" class="hidden w-full bg-[var(--bg-card)] text-[var(--text-primary)] p-2.5 rounded-2xl text-xs font-bold items-center justify-between shadow-sm transition-all border border-[var(--border-subtle)] shrink-0">

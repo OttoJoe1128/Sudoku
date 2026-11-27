@@ -23,6 +23,7 @@ import { initAbilitiesController, refreshAbilitiesLanguageUI, updateCrystalDispl
 import { initLevelPrepController, refreshLevelPrepLanguageUI, closeLevelPrepModal } from './controllers/levelPrepController';
 import { initAuthController, refreshAuthLanguageUI, refreshAuthProfileUI, closeAuthModal } from './controllers/authController';
 import { initStreakController, refreshStreakLanguageUI, closeStreakModal } from './controllers/streakController';
+import { initPostcardController, openPostcardModal, closePostcardModal } from './controllers/postcardController';
 import { AbilityId } from './engine/abilities';
 
 // UI Binişi & Öz-Teşhis
@@ -226,6 +227,7 @@ initLevelPrepController();
 initStreakController({
   onUpdateGoldDisplay: () => updateGoldDisplay()
 });
+initPostcardController();
 initAuthController({
   onAuthSynced: () => {
     updateGoldDisplay();

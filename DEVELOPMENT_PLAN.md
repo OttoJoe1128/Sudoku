@@ -78,6 +78,13 @@ Bu belge, SudokuMap projesini geleneksel bir bulmaca oyunundan küresel çapta l
   - 31 test dosyasının 31'i (%100) ve 308 testin 308'i (%100) tam yeşil geçti.
   - `npm run release:check` (Typecheck + Vitest + Vite Build) sıfır hatayla doğrulandı.
 
+- [x] **Adım 3.5 — Görsel ve Kullanıcı Arayüzü (UI/UX) Entegrasyonu:**
+  - **Görev Grubu 1 (Faz 1 Görsel/Mantık Entegrasyonu):** `findSmartHint` içine `findAdvancedTechnique` (Naked/Hidden Pairs, X-Wing, Swordfish, XY-Wing) bağlandı. Tahtada desen hücreleri altın sarısı halkayla (`bg-amber-500/25`), eleme hücreleri kırmızı halkayla (`bg-rose-500/15`) parlatıldı.
+  - **Görev Grubu 2 (Faz 2 Roguelike/Harita Entegrasyonu):** Oyun içi mekanik çubuğuna `#game-relic-pill` rozeti eklendi. Harita düğümlerinde 4 ve 7 ile biten seviyelerde dallanan yol `⚡` rozeti çizildi. Kıvılcım kombosunda x3 ve x5 seviyelerine özel kademeli alev efektleri entegre edildi.
+  - **Görev Grubu 3 (Faz 3 Canlı Operasyon & Kartpostal Albümü):** Sezonluk kartpostal albüm modalı (`postcardModalTemplate`, `#postcard-modal`), 3x3 interaktif pul vitrini, ana menüde ekran ergonomisini bozmayan kompakt çift hap sezon butonu (`#btn-open-postcards`), zafer ekranında pul düşüşü (`awardRandomStamp`) ve oyun içinde adaptif zorluk (DDA) usta akışı bağlandı.
+  - `src/tests/postcard-integration.test.ts` (2 yeni unit test) eklendi.
+  - 32 test dosyasının 32'si (%100) ve 310 testin 310'u (%100) tam yeşil tamamlandı.
+
 ---
 
 ## 📌 FAZ 4: SOSYAL EKOSİSTEM, ASENKRON HAYALET DÜELLOLARI & KLAN RÜN KAPILARI

@@ -5,6 +5,7 @@ import { UserManager } from '../store/userState';
 import { Rewards } from '../engine/rewards';
 import { t } from '../i18n/translations';
 import { AbilityId } from '../engine/abilities';
+import { getCurrentSeason, SeasonalEventManager } from '../engine/seasonalEvents';
 
 export interface ActiveGameSnapshot {
   isMatchMode: boolean;
@@ -263,6 +264,13 @@ export function updateSavedGamesCountUI(): void {
   if (pillText) {
     pillText.innerText = `${t('label_level')} ${classicLvl} • ${t('var_classic')}`;
   }
+
+  const currentSeason = getCurrentSeason();
+  const stamps = SeasonalEventManager.getCollectedStamps(currentSeason.id);
+  const seasonPillText = document.getElementById('menu-season-pill-text');
+  const seasonStampsCount = document.getElementById('menu-season-stamps-count');
+  if (seasonPillText) seasonPillText.innerText = t(currentSeason.nameKey);
+  if (seasonStampsCount) seasonStampsCount.innerText = `${stamps.length}/9`;
 
   if (btnDaily && dailyDot) {
     if (Rewards.isClaimedToday()) {

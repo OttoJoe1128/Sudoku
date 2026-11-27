@@ -1,5 +1,6 @@
 import { SudokuVariant } from './sudoku';
 import { getCandidatesBitmask, SudokuBitmaskBoard, bitToDigit, digitToBit } from './bitmaskEngine';
+import { findAdvancedTechnique } from './advancedTechniques';
 
 export type HintTechnique =
   | 'naked_single'
@@ -7,6 +8,11 @@ export type HintTechnique =
   | 'hidden_single_col'
   | 'hidden_single_box'
   | 'pointing_deduction'
+  | 'naked_pair'
+  | 'hidden_pair'
+  | 'x_wing'
+  | 'swordfish'
+  | 'xy_wing'
   | 'solution_fallback';
 
 export interface SmartHint {
@@ -17,6 +23,9 @@ export interface SmartHint {
   unitType: 'cell' | 'row' | 'col' | 'box';
   unitIndex: number;
   relatedCells: { r: number; c: number }[];
+  primaryCells?: { r: number; c: number }[];
+  eliminatedCells?: { r: number; c: number }[];
+  explanationText?: string;
 }
 
 export function getCandidates(
@@ -224,6 +233,26 @@ export function findSmartHint(
     }
   }
 
+  // 5. İLERİ MANTIK: Naked/Hidden Pairs, X-Wing, Swordfish, XY-Wing
+  const adv = findAdvancedTechnique(userBoard, regionMap, options?.sealedCells);
+  if (adv) {
+    const targetCell = adv.targetEliminations[0] || adv.primaryCells[0];
+    const targetDigit = solution[targetCell.r][targetCell.c];
+    return {
+      row: targetCell.r,
+      col: targetCell.c,
+      digit: targetDigit,
+      technique: adv.technique as HintTechnique,
+      unitType: adv.unitType || 'cell',
+      unitIndex: adv.unitIndices ? adv.unitIndices[0] : 0,
+      relatedCells: getRelatedCells(targetCell.r, targetCell.c, regionMap),
+      primaryCells: adv.primaryCells,
+      eliminatedCells: adv.targetEliminations.map(e => ({ r: e.r, c: e.c })),
+      explanationText: adv.explanation.tr
+    };
+  }
+
+  // 6. FALLBACK: solution_fallback (En az adayı olan boş hücreyi seç)
   // 5. FALLBACK: solution_fallback (En az adayı olan boş hücreyi seç)
   let bestR = -1;
   let bestC = -1;

@@ -19,7 +19,9 @@ import { crystalRepairModalTemplate } from './templates/crystalRepairModal';
 import { authModalTemplate } from './templates/authModal';
 import { streakModalTemplate } from './templates/streakModal';
 import { abilityDetailModalTemplate } from './templates/abilityDetailModal';
+import { postcardModalTemplate } from './templates/postcardModal';
 import { getLevelModifierProfile, isBranchingLevel } from '../engine/levelModifiers';
+import { getRelicDef } from '../engine/relics';
 import { getMapGateDef } from '../engine/mapGates';
 import { getAmbientBackgroundHTML } from '../design/backgrounds';
 import { Icons, renderAvatarSVG, renderRankBadgeSVG, AVATAR_LIST } from '../design/icons';
@@ -254,6 +256,8 @@ export const UIManager = {
         ${authModalTemplate}
         ${streakModalTemplate}
         ${abilityDetailModalTemplate}
+        ${postcardModalTemplate}
+
         <div id="game-view" class="hidden flex-col items-center p-3 sm:p-5 w-full h-full relative z-10 justify-between overflow-hidden" style="padding-bottom: max(env(safe-area-inset-bottom, 0px), 1.5rem);">
             <!-- Düello Canlı İlerleme Çubuğu -->
             <div id="match-header-bar" class="hidden w-full bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-strong)] p-3 rounded-2xl mb-3 shadow-lg flex-col gap-2">
@@ -289,8 +293,9 @@ export const UIManager = {
 
             <!-- Tahta İçi Mekanik & Yetenek Çubuğu -->
             <div id="game-mechanics-bar" class="hidden w-full mb-2 justify-between items-center bg-[var(--bg-card)] px-3 py-1.5 rounded-xl border border-[var(--border-strong)] text-xs font-black text-[var(--text-primary)] shadow-sm">
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1.5 sm:gap-2">
                     <span id="game-energy-pill" class="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] px-2 py-0.5 rounded-lg text-[10px] font-black text-[var(--accent-gold)] flex items-center gap-1 shadow-inner cursor-pointer"></span>
+                    <span id="game-relic-pill" class="hidden bg-[var(--bg-elevated)] border border-amber-400/40 px-1.5 py-0.5 rounded-lg text-[10px] font-black text-amber-300 flex items-center gap-1 shadow-inner cursor-pointer hover:brightness-110 active:scale-95 transition-all"></span>
                     <span id="game-crystal-counter" class="text-[10px] font-mono font-black text-[var(--accent-cyan)] flex items-center gap-0.5"></span>
                     <span id="game-momentum-pill" class="hidden bg-amber-500/20 text-amber-300 border border-amber-400/40 px-1.5 py-0.5 rounded-md text-[9px] font-mono font-black animate-pulse"></span>
                 </div>
@@ -1255,6 +1260,8 @@ export const UIManager = {
         btn.setAttribute('data-energy', modProfile.energyId);
         if (isBranchingLevel(lvl)) {
           btn.setAttribute('data-branching', 'true');
+          const branchBadgeHTML = `<span class="absolute -top-1.5 -left-1.5 text-[8px] bg-[var(--bg-app)] border border-amber-400/50 rounded-full w-4 h-4 flex items-center justify-center shadow z-20 pointer-events-none text-amber-300">⚡</span>`;
+          innerBox.insertAdjacentHTML('beforeend', branchBadgeHTML);
         }
         if (btn.hasAttribute('data-level')) {
           btn.addEventListener('click', () => onNodeClick(lvl));
@@ -1689,7 +1696,13 @@ export const UIManager = {
     if (isSparkActive) {
       const remSec = Math.ceil((state.sparkFlowEndsAtMs - nowMs) / 1000);
       momentumPill.classList.remove('hidden');
-      momentumPill.className = 'bg-amber-500/20 text-amber-300 border border-amber-400/40 px-1.5 py-0.5 rounded-md text-[9px] font-mono font-black animate-pulse';
+      if (state.sparkCombo >= 5) {
+        momentumPill.className = 'bg-gradient-to-r from-amber-500/30 via-orange-500/30 to-rose-500/30 text-amber-200 border-2 border-orange-400 px-2 py-0.5 rounded-md text-[9px] font-mono font-black animate-pulse shadow-md';
+      } else if (state.sparkCombo >= 3) {
+        momentumPill.className = 'bg-orange-500/25 text-orange-200 border border-orange-400/50 px-1.5 py-0.5 rounded-md text-[9px] font-mono font-black animate-pulse shadow-sm';
+      } else {
+        momentumPill.className = 'bg-amber-500/20 text-amber-300 border border-amber-400/40 px-1.5 py-0.5 rounded-md text-[9px] font-mono font-black animate-pulse';
+      }
       momentumPill.innerText = `⚡ x${state.sparkCombo} (${remSec}s)`;
     } else if (state.profile.sprintTargetSec > 0) {
       const remainingSec = state.profile.sprintTargetSec - timeElapsedSec;
@@ -1789,6 +1802,22 @@ export const UIManager = {
     }
 
     if (crystalCounter) crystalCounter.innerText = `${state.crystalsEarnedInRun}/${state.profile.maxCollectibleCrystals}💎`;
+    const relicPill = document.getElementById('game-relic-pill');
+    const equippedRelic = UserManager.getEquippedRelic();
+    if (relicPill) {
+      if (equippedRelic) {
+        const rDef = getRelicDef(equippedRelic);
+        relicPill.classList.remove('hidden');
+        relicPill.innerHTML = `<span>${rDef.icon}</span><span class="text-[9px] font-mono font-bold hidden sm:inline">${t(rDef.nameKey).slice(0, 6)}</span>`;
+        relicPill.onclick = (e) => {
+          e.stopPropagation();
+          this.showToast(`🧭 ${t(rDef.nameKey)}: ${t(rDef.descKey)}`, 'info');
+        };
+      } else {
+        relicPill.classList.add('hidden');
+      }
+    }
+
 
     this.updateMechanicsLiveTimers(state, timeElapsedSec);
 

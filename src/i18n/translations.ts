@@ -541,6 +541,10 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     season_title: 'Sezonluk Etkinlik',
     season_stamps_progress: '{current} / 9 Pul Toplandı',
     season_btn_claim: 'Kartpostalı Tamamla & Ödülü Al',
+    season_modal_info: '9 pul toplandığında +150 Altın, +20 Kristal ve Özel Tematik Tahta açılır!',
+    season_progress_title: 'İlerleme',
+    season_btn_menu: 'Sezon',
+
     season_reward_claimed: '✓ Ödül Alındı',
     season_toast_stamp_found: '📮 Yeni pul parçası bulundu! ({count}/9)',
     season_toast_reward_claimed: '🎉 Sezonluk kartpostal tamamlandı! +{gold} 🪙 +{crystals} 💎',
@@ -1295,6 +1299,10 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     // Faz 3 — Seasonal Live-Ops & Postcards
     season_title: 'Seasonal Event',
     season_stamps_progress: '{current} / 9 Stamps Collected',
+    season_modal_info: 'Collect 9 stamps to unlock +150 Gold, +20 Crystals and Exclusive Theme!',
+    season_progress_title: 'Progress',
+    season_btn_menu: 'Season',
+
     season_btn_claim: 'Complete Postcard & Claim Reward',
     season_reward_claimed: '✓ Reward Claimed',
     season_toast_stamp_found: '📮 New stamp piece discovered! ({count}/9)',
