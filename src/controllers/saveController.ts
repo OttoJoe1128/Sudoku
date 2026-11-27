@@ -6,6 +6,11 @@ import { Rewards } from '../engine/rewards';
 import { t } from '../i18n/translations';
 import { AbilityId } from '../engine/abilities';
 import { getCurrentSeason, SeasonalEventManager } from '../engine/seasonalEvents';
+import { getRelicDef } from '../engine/relics';
+import { getLeagueByRating } from '../engine/leagueSystem';
+import { getLevelModifierProfile } from '../engine/levelModifiers';
+import { ClanManager } from '../engine/clanSystem';
+
 
 export interface ActiveGameSnapshot {
   isMatchMode: boolean;
@@ -252,7 +257,46 @@ export function updateSavedGamesCountUI(): void {
 
   const streakCount = UserManager.updateDailyStreak();
   const streakEl = document.getElementById('menu-streak-count');
+  const streakCapsule = document.getElementById('menu-streak-capsule');
   if (streakEl) streakEl.innerText = streakCount.toString();
+  if (streakCapsule) {
+    if (UserManager.isStreakBroken()) {
+      streakCapsule.className = "bg-[var(--bg-elevated)] text-rose-400 font-mono font-black px-1.5 py-1 sm:px-2 rounded-xl text-xs border border-rose-500/60 shadow-sm flex items-center gap-1 shrink-0 cursor-pointer active:scale-95 transition-transform animate-pulse";
+    } else {
+      streakCapsule.className = "bg-[var(--bg-elevated)] text-amber-400 font-mono font-black px-1.5 py-1 sm:px-2 rounded-xl text-xs border border-amber-500/40 shadow-sm flex items-center gap-1 shrink-0 cursor-pointer active:scale-95 transition-transform";
+    }
+  }
+
+  const crystalCountEl = document.getElementById('menu-crystal-count');
+  if (crystalCountEl) {
+    crystalCountEl.innerText = UserManager.getCrystals().toString();
+  }
+
+  const relicTrinket = document.getElementById('menu-relic-trinket');
+  if (relicTrinket) {
+    const eq = UserManager.getEquippedRelic();
+    if (eq) {
+      const def = getRelicDef(eq);
+      relicTrinket.innerText = def.icon;
+      relicTrinket.title = t(def.nameKey);
+    } else {
+      relicTrinket.innerText = '💍';
+      relicTrinket.title = t('relic_trinket_title');
+    }
+  }
+
+  const leagueBadge = document.getElementById('menu-league-badge');
+  if (leagueBadge) {
+    const league = getLeagueByRating(1200);
+    leagueBadge.innerText = league.icon;
+    leagueBadge.title = t('league_modal_title');
+  }
+
+  const energyBadge = document.getElementById('hero-energy-badge');
+  if (energyBadge) {
+    const modProfile = getLevelModifierProfile(classicLvl, 'classic');
+    energyBadge.innerHTML = `${modProfile.icon} <span>${t('energy_name_' + modProfile.energyId)}</span>`;
+  }
 
   const progressBar = document.getElementById('quick-play-progress-bar');
   if (progressBar) {
@@ -271,6 +315,12 @@ export function updateSavedGamesCountUI(): void {
   const seasonStampsCount = document.getElementById('menu-season-stamps-count');
   if (seasonPillText) seasonPillText.innerText = t(currentSeason.nameKey);
   if (seasonStampsCount) seasonStampsCount.innerText = `${stamps.length}/9`;
+
+  const clanPillText = document.getElementById('menu-clan-pill-text');
+  const clanDustCount = document.getElementById('menu-clan-dust-count');
+  const clan = ClanManager.getUserClan() || ClanManager.getPublicClans()[0];
+  if (clanPillText) clanPillText.innerText = t('menu_clan_title');
+  if (clanDustCount) clanDustCount.innerText = clan ? `${clan.runeDustBank}/${clan.runeDustGoal}` : '350/500';
 
   if (btnDaily && dailyDot) {
     if (Rewards.isClaimedToday()) {

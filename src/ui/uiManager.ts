@@ -20,6 +20,8 @@ import { authModalTemplate } from './templates/authModal';
 import { streakModalTemplate } from './templates/streakModal';
 import { abilityDetailModalTemplate } from './templates/abilityDetailModal';
 import { postcardModalTemplate } from './templates/postcardModal';
+import { clanModalTemplate } from './templates/clanModal';
+import { leagueModalTemplate } from './templates/leagueModal';
 import { getLevelModifierProfile, isBranchingLevel } from '../engine/levelModifiers';
 import { getRelicDef } from '../engine/relics';
 import { getMapGateDef } from '../engine/mapGates';
@@ -257,6 +259,9 @@ export const UIManager = {
         ${streakModalTemplate}
         ${abilityDetailModalTemplate}
         ${postcardModalTemplate}
+        ${clanModalTemplate}
+        ${leagueModalTemplate}
+
 
         <div id="game-view" class="hidden flex-col items-center p-3 sm:p-5 w-full h-full relative z-10 justify-between overflow-hidden" style="padding-bottom: max(env(safe-area-inset-bottom, 0px), 1.5rem);">
             <!-- Düello Canlı İlerleme Çubuğu -->

@@ -572,6 +572,26 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     clan_dungeon_unlocked: '⛩️ Samuray Zindanı Açıldı!',
     clan_boss_defeated: '🎉 Zindan Canavarı Yenildi! Klan Sandığı Açıldı!',
     clan_toast_donated: '✨ {amount} Rün Tozu bağışlandı!',
+    menu_clan_title: 'Klan Zindanı',
+    menu_clan_sub: 'Samuray Baskını',
+    menu_academy_card_title: 'Akademi',
+    menu_academy_card_sub: '20 Teknik & Simülatör',
+    menu_abilities_card_title: 'Yetenekler',
+    menu_abilities_card_sub: 'Rün Ağacı & Unvanlar',
+    menu_arena_card_sub: 'Canlı & Hayalet Düello',
+    menu_journey_continue: 'YOLCULUĞA DEVAM ET',
+    clan_boss_title: 'Haftalık Zindan Canavarı',
+    clan_gate_title: 'Zindan Rün Kapısı',
+    clan_gate_info: '500 Rün Tozuna ulaşıldığında klan için Samuray 5-Grid zindanı açılır!',
+    clan_donate_btn: 'Rün Tozu Bağışla (5 💎 ➔ 50 ✨)',
+    league_next_tier_title: 'Sonraki Kademe',
+    league_chest_title: 'Sezon Sonu Kademe Sandığı',
+    league_chest_btn: 'Lig Sandığını Aç',
+    league_modal_title: 'Lig Arması',
+    relic_trinket_title: 'Kuşanılmış Kalıntı',
+
+
+
 
 
     // Faz 3a — Çift Ekonomi & Yetenekler
@@ -1347,6 +1367,26 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     clan_dungeon_unlocked: '⛩️ Samurai Dungeon Unlocked!',
     clan_boss_defeated: '🎉 Dungeon Boss Defeated! Clan Chest Unlocked!',
     clan_toast_donated: '✨ Donated {amount} Rune Dust!',
+    menu_clan_title: 'Clan Dungeon',
+    menu_clan_sub: 'Samurai Raid',
+    menu_academy_card_title: 'Academy',
+    menu_academy_card_sub: '20 Techniques & Lab',
+    menu_abilities_card_title: 'Abilities',
+    menu_abilities_card_sub: 'Rune Tree & Tiers',
+    menu_arena_card_sub: 'Live & Ghost Duel',
+    menu_journey_continue: 'CONTINUE JOURNEY',
+    clan_boss_title: 'Weekly Dungeon Boss',
+    clan_gate_title: 'Dungeon Rune Gate',
+    clan_gate_info: 'Reach 500 Rune Dust to unlock the 5-Grid Samurai Dungeon!',
+    clan_donate_btn: 'Donate Rune Dust (5 💎 ➔ 50 ✨)',
+    league_next_tier_title: 'Next Tier',
+    league_chest_title: 'End of Season Tier Chest',
+    league_modal_title: 'League Crest',
+    relic_trinket_title: 'Equipped Relic',
+
+    league_chest_btn: 'Open League Chest',
+
+
 
     season_celestial_desc: 'Transcend astral shrines beyond the stars to earn the reward.',
 

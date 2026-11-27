@@ -19,11 +19,13 @@ import { AdService } from './services/adService';
 import { openOnboardingModal, isOnboardingDone } from './controllers/onboardingController';
 import { startAppTour, isAppTourDone } from './controllers/appTourController';
 import { initAcademyController, refreshAcademyLanguageUI } from './controllers/academyController';
-import { initAbilitiesController, refreshAbilitiesLanguageUI, updateCrystalDisplays, closeAbilitiesModal, closeAbilityDetailModal } from './controllers/abilitiesController';
+import { initAbilitiesController, refreshAbilitiesLanguageUI, updateCrystalDisplays, openAbilitiesModal, closeAbilitiesModal, closeAbilityDetailModal } from './controllers/abilitiesController';
 import { initLevelPrepController, refreshLevelPrepLanguageUI, closeLevelPrepModal } from './controllers/levelPrepController';
 import { initAuthController, refreshAuthLanguageUI, refreshAuthProfileUI, closeAuthModal } from './controllers/authController';
 import { initStreakController, refreshStreakLanguageUI, closeStreakModal } from './controllers/streakController';
 import { initPostcardController, openPostcardModal, closePostcardModal } from './controllers/postcardController';
+import { initClanController, openClanModal, closeClanModal } from './controllers/clanController';
+import { initLeagueController, openLeagueModal, closeLeagueModal } from './controllers/leagueController';
 import { AbilityId } from './engine/abilities';
 
 // UI Binişi & Öz-Teşhis
@@ -228,6 +230,8 @@ initStreakController({
   onUpdateGoldDisplay: () => updateGoldDisplay()
 });
 initPostcardController();
+initClanController();
+initLeagueController();
 initAuthController({
   onAuthSynced: () => {
     updateGoldDisplay();
@@ -291,6 +295,11 @@ document.getElementById('btn-quick-play')?.addEventListener('click', () => {
 document.getElementById('btn-menu-progress-pill')?.addEventListener('click', () => {
   openMapAtLevel(getSelectedMapVariant());
 });
+document.getElementById('menu-relic-trinket')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  openAbilitiesModal();
+});
+
 
 document.getElementById('btn-theme-toggle')?.addEventListener('click', () => {
   const active = ShopManager.getActiveTheme();
@@ -505,7 +514,9 @@ App.addListener('backButton', async () => {
     'academy-modal',
     'second-chance-modal',
     'onboarding-modal',
-    'postcard-modal'
+    'postcard-modal',
+    'clan-modal',
+    'league-modal'
   ];
   const openModal = modals.find(id => {
     const el = document.getElementById(id);

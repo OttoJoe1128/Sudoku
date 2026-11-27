@@ -514,6 +514,10 @@ export function initModalsController(callbacks: {
     UIManager.toggleModal('view-shop', true);
     openAndRenderShop();
   });
+  document.getElementById('menu-gold-capsule')?.addEventListener('click', () => {
+    document.getElementById('btn-shop')?.click();
+  });
+
 
   document.getElementById('close-shop')?.addEventListener('click', () => {
     UIManager.toggleModal('view-shop', false);

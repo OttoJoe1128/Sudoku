@@ -214,10 +214,13 @@ export function refreshAcademyLanguageUI(): void {
 }
 
 export function initAcademyController(): void {
-  document.getElementById('btn-open-academy')?.addEventListener('click', () => {
+  const openHandler = () => {
     SoundManager.playNumber();
     openAcademyBooklet();
-  });
+  };
+
+  document.getElementById('btn-open-academy')?.addEventListener('click', openHandler);
+  document.getElementById('btn-menu-open-academy')?.addEventListener('click', openHandler);
 
   document.getElementById('btn-close-academy')?.addEventListener('click', () => {
     closeAcademyModal();

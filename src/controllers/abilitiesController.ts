@@ -348,10 +348,14 @@ function renderAbilitiesList(nowMs: number = Date.now()): void {
 }
 
 export function initAbilitiesController(): void {
-  document.getElementById('btn-open-abilities')?.addEventListener('click', () => {
+  const openHandler = () => {
     SoundManager.playNumber();
     openAbilitiesModal();
-  });
+  };
+
+  document.getElementById('btn-open-abilities')?.addEventListener('click', openHandler);
+  document.getElementById('btn-menu-open-abilities')?.addEventListener('click', openHandler);
+  document.getElementById('menu-crystal-capsule')?.addEventListener('click', openHandler);
 
   document.getElementById('btn-close-abilities')?.addEventListener('click', () => {
     closeAbilitiesModal();
