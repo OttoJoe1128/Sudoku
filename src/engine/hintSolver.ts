@@ -1,4 +1,5 @@
 import { SudokuVariant } from './sudoku';
+import { getCandidatesBitmask, SudokuBitmaskBoard, bitToDigit, digitToBit } from './bitmaskEngine';
 
 export type HintTechnique =
   | 'naked_single'
@@ -24,42 +25,7 @@ export function getCandidates(
   c: number,
   regionMap?: number[][]
 ): number[] {
-  if (!board || !board[r] || board[r][c] !== 0) return [];
-
-  const used = new Set<number>();
-
-  // Satır & Sütun kontrolü
-  for (let i = 0; i < 9; i++) {
-    if (board[r][i] > 0) used.add(board[r][i]);
-    if (board[i][c] > 0) used.add(board[i][c]);
-  }
-
-  // Kutu / Bölge kontrolü
-  if (regionMap && regionMap[r]) {
-    const targetRegion = regionMap[r][c];
-    for (let i = 0; i < 9; i++) {
-      for (let j = 0; j < 9; j++) {
-        if (regionMap[i][j] === targetRegion && board[i][j] > 0) {
-          used.add(board[i][j]);
-        }
-      }
-    }
-  } else {
-    const boxR = Math.floor(r / 3) * 3;
-    const boxC = Math.floor(c / 3) * 3;
-    for (let i = 0; i < 3; i++) {
-      for (let j = 0; j < 3; j++) {
-        const val = board[boxR + i][boxC + j];
-        if (val > 0) used.add(val);
-      }
-    }
-  }
-
-  const candidates: number[] = [];
-  for (let num = 1; num <= 9; num++) {
-    if (!used.has(num)) candidates.push(num);
-  }
-  return candidates;
+  return getCandidatesBitmask(board, r, c, regionMap);
 }
 
 function getRelatedCells(r: number, c: number, regionMap?: number[][]): { r: number; c: number }[] {
