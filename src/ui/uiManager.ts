@@ -19,7 +19,7 @@ import { crystalRepairModalTemplate } from './templates/crystalRepairModal';
 import { authModalTemplate } from './templates/authModal';
 import { streakModalTemplate } from './templates/streakModal';
 import { abilityDetailModalTemplate } from './templates/abilityDetailModal';
-import { getLevelModifierProfile } from '../engine/levelModifiers';
+import { getLevelModifierProfile, isBranchingLevel } from '../engine/levelModifiers';
 import { getMapGateDef } from '../engine/mapGates';
 import { getAmbientBackgroundHTML } from '../design/backgrounds';
 import { Icons, renderAvatarSVG, renderRankBadgeSVG, AVATAR_LIST } from '../design/icons';
@@ -1240,7 +1240,7 @@ export const UIManager = {
         innerBox.innerHTML = `
           ${milestoneBadge}
           ${gateBadgeHTML}
-          <button disabled class="w-16 h-16 rounded-2xl bg-[var(--bg-elevated)] border-2 border-[var(--border-subtle)] text-[var(--text-secondary)] flex flex-col items-center justify-center cursor-not-allowed opacity-60 relative">
+          <button disabled data-level="${lvl}" class="w-16 h-16 rounded-2xl bg-[var(--bg-elevated)] border-2 border-[var(--border-subtle)] text-[var(--text-secondary)] flex flex-col items-center justify-center cursor-not-allowed opacity-60 relative">
             <span class="text-sm font-mono font-black leading-none">${lvl}</span>
             <span class="mt-0.5">${Icons.lock}</span>
             ${energyBadgeHTML}
@@ -1253,6 +1253,9 @@ export const UIManager = {
         const modProfile = getLevelModifierProfile(lvl, variant);
         btn.setAttribute('data-rhythm', nodeRhythm.rhythmPhase);
         btn.setAttribute('data-energy', modProfile.energyId);
+        if (isBranchingLevel(lvl)) {
+          btn.setAttribute('data-branching', 'true');
+        }
         if (btn.hasAttribute('data-level')) {
           btn.addEventListener('click', () => onNodeClick(lvl));
         }

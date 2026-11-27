@@ -1397,6 +1397,17 @@ export const UserManager = {
       localStorage.removeItem('sudoku_equipped_relic');
     }
   },
+  getLevelBranchChoice(level: number): 'risk' | 'speed' {
+    if (typeof localStorage === 'undefined') return 'speed';
+    const choice = localStorage.getItem('sudoku_branch_' + level);
+    return choice === 'risk' ? 'risk' : 'speed';
+  },
+
+  setLevelBranchChoice(level: number, choice: 'risk' | 'speed'): void {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem('sudoku_branch_' + level, choice);
+  },
+
 
   getAbilitiesState(): Record<AbilityId, AbilityProgress> {
     try {

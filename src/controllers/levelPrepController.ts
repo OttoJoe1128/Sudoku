@@ -14,7 +14,7 @@ import {
   isAbilityReady,
   ECONOMY_CONFIG
 } from '../engine/abilities';
-import { getLevelModifierProfile } from '../engine/levelModifiers';
+import { getLevelModifierProfile, isBranchingLevel, PathBranchChoice } from '../engine/levelModifiers';
 import { RELICS, getRelicDef, RelicId } from '../engine/relics';
 
 let selectedLoadout: AbilityId[] = [];
@@ -106,10 +106,13 @@ function renderLevelPrepModal(nowMs: number = Date.now()): void {
   if (!currentPrepParams) return;
   const { level, diff, variant } = currentPrepParams;
 
+  const isBranching = isBranchingLevel(level);
+  const currentBranch = isBranching ? UserManager.getLevelBranchChoice(level) : undefined;
   const userAbilities = UserManager.getAbilitiesState();
   const profile = getLevelModifierProfile(level, variant, {
     runeMagnetLevel: selectedLoadout.includes('rune_magnet') ? (userAbilities.rune_magnet?.level || 0) : 0,
-    rhythmBenderLevel: selectedLoadout.includes('rhythm_bender') ? (userAbilities.rhythm_bender?.level || 0) : 0
+    rhythmBenderLevel: selectedLoadout.includes('rhythm_bender') ? (userAbilities.rhythm_bender?.level || 0) : 0,
+    branchChoice: currentBranch
   });
 
   const collected = UserManager.getLevelCollectedCrystals(variant, level);
@@ -241,6 +244,49 @@ function renderLevelPrepModal(nowMs: number = Date.now()): void {
       gridEl.appendChild(cell);
     });
   }
+  // Yol Ayrımı Seçimi (Branching Selector) Renderı
+  const branchContainer = document.getElementById('prep-branch-container');
+  const branchBadge = document.getElementById('prep-branch-badge');
+  const btnSpeed = document.getElementById('btn-branch-speed');
+  const btnRisk = document.getElementById('btn-branch-risk');
+
+  if (branchContainer) {
+    if (isBranching) {
+      branchContainer.classList.remove('hidden');
+      if (branchBadge) {
+        branchBadge.innerText = currentBranch === 'risk' ? t('map_branch_risk_badge') : t('map_branch_speed_badge');
+      }
+      if (btnSpeed && btnRisk) {
+        if (currentBranch === 'speed') {
+          btnSpeed.className = 'p-2 rounded-xl border border-amber-400 bg-amber-500/20 text-amber-300 ring-2 ring-amber-400/40 text-[11px] font-black flex items-center justify-center gap-1 active:scale-95 transition-all cursor-pointer shadow-md';
+          btnRisk.className = 'p-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-[11px] font-bold flex items-center justify-center gap-1 active:scale-95 transition-all cursor-pointer opacity-70';
+        } else {
+          btnRisk.className = 'p-2 rounded-xl border border-rose-400 bg-rose-500/20 text-rose-300 ring-2 ring-rose-400/40 text-[11px] font-black flex items-center justify-center gap-1 active:scale-95 transition-all cursor-pointer shadow-md';
+          btnSpeed.className = 'p-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-[11px] font-bold flex items-center justify-center gap-1 active:scale-95 transition-all cursor-pointer opacity-70';
+        }
+
+        btnSpeed.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          SoundManager.playTap();
+          UserManager.setLevelBranchChoice(level, 'speed');
+          renderLevelPrepModal(nowMs);
+        };
+
+        btnRisk.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          SoundManager.playTap();
+          UserManager.setLevelBranchChoice(level, 'risk');
+          renderLevelPrepModal(nowMs);
+        };
+      }
+    } else {
+      branchContainer.classList.add('hidden');
+    }
+  }
+
+
   // Pasif Kalıntılar (Relics) Satırı Renderı
   const relicsRow = document.getElementById('prep-relics-row');
   const relicStatus = document.getElementById('prep-relic-status');

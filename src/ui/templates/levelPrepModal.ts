@@ -46,6 +46,23 @@ export const levelPrepModalTemplate = `
             <!-- 5 Yetenek Izgarası -->
             <div id="prep-abilities-grid" class="grid grid-cols-5 gap-1.5 w-full"></div>
 
+            <!-- Yol Ayrımı Seçimi (Yalnızca dallanan seviyelerde görünür) -->
+            <div id="prep-branch-container" class="hidden w-full mb-3 bg-[var(--bg-elevated)] border border-[var(--border-strong)] rounded-2xl p-2.5 shadow-sm">
+                <div class="flex justify-between items-center mb-1.5">
+                    <span class="text-[10px] font-black uppercase text-[var(--accent-gold)] tracking-wider" data-i18n="map_branch_title">Yol Ayrımı Seçimi</span>
+                    <span id="prep-branch-badge" class="text-[9px] font-mono font-bold text-[var(--accent-gold)] bg-[var(--accent-gold)]/15 px-2 py-0.5 rounded-full border border-[var(--accent-gold)]/30"></span>
+                </div>
+                <p id="prep-branch-desc" class="text-[10px] text-[var(--text-secondary)] font-medium mb-2 text-left" data-i18n="map_branch_desc">Rotanı seç: Zorlu mühürler mi, hızlı kombo akışı mı?</p>
+                <div class="grid grid-cols-2 gap-1.5 w-full">
+                    <button id="btn-branch-speed" class="p-2 rounded-xl border text-[11px] font-black flex items-center justify-center gap-1 active:scale-95 transition-all cursor-pointer">
+                        <span data-i18n="map_branch_speed">⚡ Kıvılcım Vadisi</span>
+                    </button>
+                    <button id="btn-branch-risk" class="p-2 rounded-xl border text-[11px] font-black flex items-center justify-center gap-1 active:scale-95 transition-all cursor-pointer">
+                        <span data-i18n="map_branch_risk">🗝️ Mühürlü Patika</span>
+                    </button>
+                </div>
+            </div>
+
             <!-- Pasif Kalıntı (Relic) Donanımı -->
             <div class="w-full mt-3 pt-2.5 border-t border-[var(--border-subtle)]">
                 <div class="flex justify-between items-center mb-1.5">

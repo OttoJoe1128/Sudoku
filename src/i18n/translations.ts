@@ -524,6 +524,14 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     relic_toast_equipped: '🧭 {name} kalıntısı kuşandı!',
     relic_toast_unequipped: 'Kalıntı çıkarıldı.',
     relic_locked_hint: 'Seviye {level}',
+    // Faz 2 — Dallanan Yol Ayrımı (Branching Path)
+    map_branch_title: 'Yol Ayrımı Seçimi',
+    map_branch_risk: '🗝️ Mühürlü Patika (Tehlike & Bol Kristal)',
+    map_branch_speed: '⚡ Kıvılcım Vadisi (Hız & Bol Altın)',
+    map_branch_desc: 'Rotanı seç: Mühürlü tehlike mi, hızlı kombo akışı mı?',
+    map_branch_risk_badge: 'Tehlike & Kristal',
+    map_branch_speed_badge: 'Hız & Altın',
+
 
 
     // Faz 3a — Çift Ekonomi & Yetenekler
@@ -1253,6 +1261,14 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     relic_toast_equipped: '🧭 Equipped {name} relic!',
     relic_toast_unequipped: 'Relic unequipped.',
     relic_locked_hint: 'Level {level}',
+    // Faz 2 — Branching Path Decisions
+    map_branch_title: 'Fork in the Road',
+    map_branch_risk: '🗝️ Sealed Path (Risk & +Crystals)',
+    map_branch_speed: '⚡ Spark Valley (Speed & +Gold)',
+    map_branch_desc: 'Pick your route: Demanding seals or rapid combo flow?',
+    map_branch_risk_badge: 'Risk & Crystals',
+    map_branch_speed_badge: 'Speed & Gold',
+
 
     // Faz 3a — Dual Economy & Abilities
     abilities_title: 'Abilities',

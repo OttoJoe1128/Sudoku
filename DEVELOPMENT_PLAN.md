@@ -42,8 +42,12 @@ Bu belge, SudokuMap projesini geleneksel bir bulmaca oyunundan küresel çapta l
   - `levelPrepModal` üzerinde 1 yuvalık pasif kalıntı donanım satırı (`#prep-relics-row`) eklendi.
   - Çalışma zamanı avantajları bağlandı: Altın Pusula (5 rakamında +2 altın), Zaman Kum Saati (Kıvılcım süresi +5s), Kadim Rün Taşı (Zaferde +1 kristal).
   - `src/tests/relics.test.ts` (7 yeni unit test) eklendi ve tüm 292 test %100 yeşil tamamlandı.
-- [ ] **Adım 2.2 — Dallanan Yol Ayrımı ve Dinamik Biyom Kararları:**
-  - Harita düğümlerinde risk-ödül seçenekleri ("Mühürlü Patika" vs. "Kıvılcım Vadisi").
+- [x] **Adım 2.2 — Dallanan Yol Ayrımı ve Dinamik Biyom Kararları:**
+  - `isBranchingLevel` (4 ve 7 ile biten seviyeler) ile 1.000 bölümlük haritaya stratejik yol ayrımları entegre edildi.
+  - "Mühürlü Patika" (Risk: +1 Kristal, ekstra mühür) ve "Kıvılcım Vadisi" (Hız: +Kıvılcım, 180s Depar bonusu) rotaları kodlandı.
+  - `levelPrepModal` üzerinde `#prep-branch-container` ile interaktif rota seçimi eklendi.
+  - Harita düğümlerinde dallanan seviyeler `data-branching="true"` özniteliğiyle işaretlendi.
+  - `src/tests/branching-path.test.ts` (6 yeni unit test) eklendi ve tüm 298 test %100 yeşil tamamlandı.
 - [ ] **Adım 2.3 — Kıvılcım Akışı (Spark Flow) Dinamik Kombo Sistemi:**
   - Hızlı ve hatasız hamlelerde çarpanı katlayan organik kombo barı.
 - [ ] **Adım 2.4 — Anlamsal Terminoloji İyileştirmesi (Realia / Irrealia Çift Dilli Bütünlük):**

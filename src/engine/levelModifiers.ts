@@ -40,10 +40,17 @@ export interface LevelModifierProfile {
   maxCollectibleCrystals: number;
 }
 
+export type PathBranchChoice = 'risk' | 'speed';
+
+export function isBranchingLevel(level: number): boolean {
+  const m = Math.floor(level) % 10;
+  return m === 4 || m === 7;
+}
+
 export function getLevelModifierProfile(
   level: number,
   variant: SudokuVariant = 'classic',
-  opts?: { runeMagnetLevel?: number; rhythmBenderLevel?: number }
+  opts?: { runeMagnetLevel?: number; rhythmBenderLevel?: number; branchChoice?: PathBranchChoice }
 ): LevelModifierProfile {
   const clamped = Math.max(1, Math.min(1000, Math.floor(level)));
   const mod10 = clamped % 10;
@@ -136,6 +143,20 @@ export function getLevelModifierProfile(
     const bonusMap = [0, 20, 32, 45, 60, 75];
     const bonusSec = bonusMap[Math.min(5, rhythmBenderLevel)] || 0;
     sprintTargetSec += bonusSec;
+  }
+
+  // Dallanan Yol Ayrımı (Roguelike Branching Decisions)
+  if (isBranchingLevel(clamped) && opts?.branchChoice) {
+    if (opts.branchChoice === 'risk') {
+      if (variant !== 'samurai') {
+        keySealPairs = Math.max(1, keySealPairs);
+      }
+      crystalCount += 1;
+    } else if (opts.branchChoice === 'speed') {
+      sparkCount = Math.max(2, sparkCount + 1);
+      sprintTargetSec = Math.max(180, sprintTargetSec);
+      sprintBonusCrystals = Math.max(1, sprintBonusCrystals);
+    }
   }
 
   const maxCollectibleCrystals =
