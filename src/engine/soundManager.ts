@@ -204,6 +204,36 @@ export const SoundManager = {
       // ignore
     }
   },
+  playBlockComplete(): void {
+    if (!soundEnabled) return;
+    this.vibrate([25, 40, 35]);
+    try {
+      const ctx = getAudioContext();
+      if (!ctx) return;
+
+      const freqs = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 (Ksilofon Akoru)
+      freqs.forEach((freq, idx) => {
+        const startTime = ctx.currentTime + idx * 0.04;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        gain.gain.setValueAtTime(0.2, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.18);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(startTime);
+        osc.stop(startTime + 0.18);
+      });
+    } catch {
+      // ignore
+    }
+  },
+
 
   playWin(): void {
     if (!soundEnabled) return;

@@ -109,13 +109,78 @@ Bu belge, SudokuMap projesini geleneksel bir bulmaca oyunundan küresel çapta l
 
 ---
 
-## 📌 FAZ 5: ÇAPRAZ PLATFORM GENİŞLEMESİ (STEAM PC + MOBİL) & KÜRESEL ÇIKIŞ
+## 🎨 YENİ MASTER ARAYÜZ (UI/UX) & OYUN HİSSİ (GAME FEEL / JUICE) DÖNÜŞÜMÜ
 
-- [ ] **Adım 5.1 — Masaüstü / PC Arayüz Adaptasyonu:**
+### 📌 FAZ I (UI): GÖRSEL DİL, TASARIM SİSTEMİ & ANLAMSAL TERMİNOLOJİ
+- [ ] **Adım I.1 — WCAG AAA Renk Paleti ve Kontrast Mimarisi:**
+  - Obsidyen Gece (`#0B0F19`) ve Kadim Parşömen (`#F8F6F0`).
+  - Seçili Hücre Safir Mavisi (`#2563EB`) neon odak aurası.
+  - Aynı Rakam Vurgusu Buzul Mavisi / Amber İnce Dolgu (`#38BDF8/20`).
+  - Hata & Çakışma Kızıl Alarm (`#EF4444`) mikro sarsıntı.
+  - Pivot / İleri Teknik Altın Nabız (`#F59E0B`), Elenen Adaylar duman kırmızısı (`#F43F5E/30`).
+- [ ] **Adım I.2 — Tipografi Hiyerarşisi:**
+  - Rakamlar: Monospaced geometrik yüksek okunurluklu glifler.
+  - Arayüz: Modern, keskin Plus Jakarta Sans / Inter.
+- [ ] **Adım I.3 — Anlamsal Terminoloji Standardizasyonu (Realia & Irrealia Dengesi):**
+  - Standart kurallar şeffaf (Hücre, Satır, Sütun, Blok, Aday Notu).
+  - Evren mekanikleri tematik (Rün Taşı, Mühür, Kıvılcım Kombosu, Kâhin Gözü).
+
+---
+
+### 📌 FAZ II (UI): ÇEKİRDEK TAHTA KATMANI, DOKUNSAL REAKSİYONLAR & "JUICE"
+- [ ] **Adım II.1 — Responsive Sudoku Izgarası ve Derinlikli Katmanlama:**
+  - 3x3 ana blokları ayıran kalın çizgiler kabartmalı diegetik çerçeveye dönüştürülür.
+  - Hücrelere basıldığında 0.96x yaylanan (spring physics) mikro reaksiyon.
+- [ ] **Adım II.2 — Model 1 Ergonomik Numpad Dönüşümü (5+4 Dinamik Matris):**
+  - Tahtada 9 adedi tükenen rakamlar otomatik karartılır, üzerine zarif tamamlanma rünü yerleştirilir ve dokunulmaz kılınır.
+  - Numpad butonlarının alt köşelerine tahtada henüz girilmemiş kaç adet kaldığını gösteren mikro sayaç rozetleri eklenir.
+- [ ] **Adım II.3 — Kıvılcım Kombosu ve Dinamik Auralar:**
+  - Kombo x1'den x5'e çıktıkça tahta kenar çizgileri soğuk beyaz ➔ elektrik mavisi ➔ altın sarısı ➔ alev kırmızısına bürünür.
+  - Hata yapıldığında ekran camı gibi hafifçe çatlayan kırmızı overlay ve kombo kırılma reaksiyonu.
+- [ ] **Adım II.4 — Çoklu Dokunsal Entegrasyon (Audio-Haptic Matrix):**
+  - Doğru rakamda rezonant taş tıklaması ve hafif haptik.
+  - Blok/Satır/Sütun tamamlandığında ksilofon akoru ve orta düzey haptik.
+
+---
+
+### 📌 FAZ III (UI): TAKTİKSEL KATMAN, İLERİ ÇÖZÜCÜ & CANLI DÜELLO HUD'I
+- [ ] **Adım III.1 — Vektörel Çözücü Işınları Katmanı (Raycasting Visualizer):**
+  - `#smart-hint-banner` bir tekniği (X-Wing, Swordfish vb.) açıkladığında, SVG overlay üzerinde ilgili satır ve sütunları birbirine bağlayan şeffaf neon vektörler çizilir.
+  - Elenen adayların üzerine çarpı yerine küçük bir parıltıyla buharlaşma animasyonu verilir.
+- [ ] **Adım III.2 — Canlı Düello & Asenkron Hayalet HUD'ı (Split Dynamics):**
+  - Rakip hayalet oyuncunun hamleleri tahta üzerinde yarı saydam mor lazer hayalet imleci olarak takip edilir.
+  - Karşılaştırma çubuğunda rakibin son hamle hızı, serisi ve dalgalanan yarış göstergesi sunulur.
+- [ ] **Adım III.3 — Aktif Yetenek Hızlı Erişim Çarkı / Barı:**
+  - Tahta üstü yetenek butonlarında dairesel SVG dolgu cooldown animasyonu ve hazır olduğunda enerji akış aurası.
+
+---
+
+### 📌 FAZ IV (UI): META SİSTEMLER, SEZONLUK CANLI OPERASYONLAR & HARİTA
+- [ ] **Adım IV.1 — 1.000 Seviyelik Topoğrafik Harita Deneyimi:**
+  - Biyom zemin geçişleri (Bambu Korusu ➔ Antik Çöl ➔ Buzul Zirvesi) ve sis perdesi (Fog of War).
+  - Çatallanan rotalarda (Branching Nodes) fiziksel iki kola ayrılan yol ve "Mühürlü Patika / Kıvılcım Yolu" levhaları.
+- [ ] **Adım IV.2 — Kartpostal Albümü ve Zafer Akışı (Victory Flow):**
+  - Zaferde kazanılan pul tahtanın ortasında 3D dönüşle belirir ve uçarak sağ üstteki albüm simgesine yerleşir.
+- [ ] **Adım IV.3 — Lig ve Rütbe Ekosistemi (League Rank Crest):**
+  - Ana menüde oyuncunun ELO puanını gösteren dinamik lig arması (Bronz ➔ Büyük Usta), kalan süre ve lig özeti popover'ı.
+
+---
+
+### 📌 FAZ V (UI): RITE KULLANILABİLİRLİK DOĞRULAMASI & PERFORMANS CİLASI
+- [ ] **Adım V.1 — RITE (Rapid Iterative Testing and Evaluation) Protokolü:**
+  - Sesli düşünme oturumları ve anlık arayüz kural revizyonları.
+- [ ] **Adım V.2 — Donanım ve Render Performansı (Zero-Lag UI):**
+  - 60/120 FPS sabit GPU transform (translate3d, will-change), minimum DOM re-render.
+
+---
+
+## 📌 FAZ VI: ÇAPRAZ PLATFORM GENİŞLEMESİ (STEAM PC + MOBİL) & KÜRESEL ÇIKIŞ
+
+- [ ] **Adım VI.1 — Masaüstü / PC Arayüz Adaptasyonu:**
   - Klavye kısayolları (Numpad, yön tuşları, Space), fare tekeri ve tam gamepad/Steam Deck kontrolcü haritalaması.
-- [ ] **Adım 5.2 — Çift Ekonomi Dengelemesi (Premium PC vs F2P Mobil):**
+- [ ] **Adım VI.2 — Çift Ekonomi Dengelemesi (Premium PC vs F2P Mobil):**
   - PC sürümünde reklamsız tek seferlik satın alma dengesi; mobil tarafta ödüllü reklam/IAP dengesi.
-- [ ] **Adım 5.3 — WebAssembly Çekirdek Köprüsü & Performans Zirvesi:**
+- [ ] **Adım VI.3 — WebAssembly Çekirdek Köprüsü & Performans Zirvesi:**
   - Samurai ve Killer çözücülerinin WebAssembly derlemesiyle 60/120 FPS sıfır gecikme garantisi.
-- [ ] **Adım 5.4 — Faz 5 Doğrulama & Nihai Yayın Kontrolü:**
+- [ ] **Adım VI.4 — Faz VI Doğrulama & Nihai Yayın Kontrolü:**
   - Çoklu platform derlemeleri, Steam uyumluluk testleri ve nihai sürüm doğrulaması.

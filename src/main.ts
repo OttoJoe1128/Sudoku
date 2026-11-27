@@ -504,7 +504,8 @@ App.addListener('backButton', async () => {
     'crystal-repair-modal',
     'academy-modal',
     'second-chance-modal',
-    'onboarding-modal'
+    'onboarding-modal',
+    'postcard-modal'
   ];
   const openModal = modals.find(id => {
     const el = document.getElementById(id);

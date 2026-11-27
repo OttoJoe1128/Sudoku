@@ -1405,6 +1405,8 @@ export function startGame(
         }
       },
       async (errCount) => {
+        UIManager.triggerBoardShakeAndCrack();
+
         if (activeBoardMechanics) {
           const mistakeRes = applyMistakeMechanics(activeBoardMechanics, r, c);
           for (const abId of mistakeRes.newlyConsumedAbilities) {
@@ -1573,6 +1575,39 @@ export function startGame(
         MatchEngine.updateProgress(activeMatch.matchId, isP1, matchUserFilled, errors);
         const enemyName = activeMatch?.player2?.username || 'Rakip';
         UIManager.renderMatchProgress(matchUserFilled, matchEnemyFilled, enemyName, matchTotalEmpty);
+      }
+
+      // Blok, satır veya sütun tamamlanma denetimi (Xylophone Chord & Medium Haptic)
+      const isRowComplete = userBoard[r].every(v => v !== 0);
+      const isColComplete = userBoard.every(row => row[c] !== 0);
+      let isBoxComplete = true;
+      if (currentVariant === 'irregular' && currentRegionMap) {
+        const regionId = currentRegionMap[r][c];
+        for (let i = 0; i < 9; i++) {
+          for (let j = 0; j < 9; j++) {
+            if (currentRegionMap[i][j] === regionId && userBoard[i][j] === 0) {
+              isBoxComplete = false;
+              break;
+            }
+          }
+          if (!isBoxComplete) break;
+        }
+      } else {
+        const boxR = Math.floor(r / 3) * 3;
+        const boxC = Math.floor(c / 3) * 3;
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+            if (userBoard[boxR + i][boxC + j] === 0) {
+              isBoxComplete = false;
+              break;
+            }
+          }
+          if (!isBoxComplete) break;
+        }
+      }
+
+      if (isRowComplete || isColComplete || isBoxComplete) {
+        SoundManager.playBlockComplete();
       }
 
       persistCurrentGame();

@@ -1719,6 +1719,33 @@ export const UIManager = {
     } else {
       momentumPill.classList.add('hidden');
     }
+    const boardEl = document.getElementById('sudoku-grid');
+    if (boardEl) {
+      if (isSparkActive) {
+        if (state.sparkCombo >= 5) {
+          boardEl.classList.add('border-rose-500', 'ring-4', 'ring-rose-500/50');
+          boardEl.classList.remove('border-[var(--border-strong)]', 'border-amber-400', 'border-cyan-400', 'ring-2', 'ring-3', 'ring-cyan-400/40', 'ring-amber-400/50');
+        } else if (state.sparkCombo >= 3) {
+          boardEl.classList.add('border-amber-400', 'ring-3', 'ring-amber-400/50');
+          boardEl.classList.remove('border-[var(--border-strong)]', 'border-rose-500', 'border-cyan-400', 'ring-2', 'ring-4', 'ring-cyan-400/40', 'ring-rose-500/50');
+        } else {
+          boardEl.classList.add('border-cyan-400', 'ring-2', 'ring-cyan-400/40');
+          boardEl.classList.remove('border-[var(--border-strong)]', 'border-rose-500', 'border-amber-400', 'ring-3', 'ring-4', 'ring-amber-400/50', 'ring-rose-500/50');
+        }
+      } else {
+        boardEl.classList.remove('border-rose-500', 'border-amber-400', 'border-cyan-400', 'ring-2', 'ring-3', 'ring-4', 'ring-cyan-400/40', 'ring-amber-400/50', 'ring-rose-500/50');
+        boardEl.classList.add('border-[var(--border-strong)]');
+      }
+    }
+  },
+
+  triggerBoardShakeAndCrack(): void {
+    const boardEl = document.getElementById('sudoku-grid');
+    if (!boardEl) return;
+    boardEl.classList.add('ring-4', 'ring-rose-600', 'border-rose-600', 'scale-[0.98]');
+    setTimeout(() => {
+      boardEl.classList.remove('ring-4', 'ring-rose-600', 'border-rose-600', 'scale-[0.98]');
+    }, 400);
   },
 
   updateHintButtonLabel(freeHints: number = 0) {
@@ -2078,36 +2105,21 @@ export const UIManager = {
         if (variant === 'irregular' && regionMap) {
           const currentRegion = regionMap[r][c];
           if (c < 8 && regionMap[r][c + 1] !== currentRegion) {
-            borderRight = '!border-r-[3px] !border-r-[var(--accent-gold)]';
+            borderRight = '!border-r-[2.5px] !border-r-[var(--accent-gold)] shadow-[inset_-1px_0_0_rgba(0,0,0,0.12)]';
           }
           if (r < 8 && regionMap[r + 1][c] !== currentRegion) {
-            borderBottom = '!border-b-[3px] !border-b-[var(--accent-gold)]';
+            borderBottom = '!border-b-[2.5px] !border-b-[var(--accent-gold)] shadow-[inset_0_-1px_0_rgba(0,0,0,0.12)]';
           }
         } else {
-          if (c === 2 || c === 5) borderRight = '!border-r-[3px] !border-r-[var(--accent-gold)]';
-          if (r === 2 || r === 5) borderBottom = '!border-b-[3px] !border-b-[var(--accent-gold)]';
+          if (c === 2 || c === 5) borderRight = '!border-r-[2.5px] !border-r-[var(--accent-gold)] shadow-[inset_-1px_0_0_rgba(0,0,0,0.12)]';
+          if (r === 2 || r === 5) borderBottom = '!border-b-[2.5px] !border-b-[var(--accent-gold)] shadow-[inset_0_-1px_0_rgba(0,0,0,0.12)]';
         }
 
-        cell.className = `w-full h-full min-w-0 min-h-0 box-border border border-[var(--border-subtle)] flex items-center justify-center text-lg select-none cursor-pointer active:scale-95 transition-all relative ${stateClass} ${borderRight} ${borderBottom}`;
+        cell.className = `w-full h-full min-w-0 min-h-0 box-border border border-[var(--border-subtle)] flex items-center justify-center text-lg select-none cursor-pointer active:scale-[0.96] transition-transform duration-100 ease-out relative ${stateClass} ${borderRight} ${borderBottom}`;
 
         if (specialBadgeHTML) {
           cell.insertAdjacentHTML('beforeend', specialBadgeHTML);
         }
-
-        if (variant === 'irregular' && regionMap) {
-          const currentRegion = regionMap[r][c];
-          if (c < 8 && regionMap[r][c + 1] !== currentRegion) {
-            borderRight = '!border-r-[3px] !border-r-[var(--accent-gold)]';
-          }
-          if (r < 8 && regionMap[r + 1][c] !== currentRegion) {
-            borderBottom = '!border-b-[3px] !border-b-[var(--accent-gold)]';
-          }
-        } else {
-          if (c === 2 || c === 5) borderRight = '!border-r-[3px] !border-r-[var(--accent-gold)]';
-          if (r === 2 || r === 5) borderBottom = '!border-b-[3px] !border-b-[var(--accent-gold)]';
-        }
-
-        cell.className = `w-full h-full min-w-0 min-h-0 box-border border border-[var(--border-subtle)] flex items-center justify-center text-lg select-none cursor-pointer active:scale-95 transition-all relative ${stateClass} ${borderRight} ${borderBottom}`;
 
         // Killer Sudoku Dış Sınır Kafes Çerçevesi
         if (variant === 'killer' && cages) {
@@ -2159,6 +2171,42 @@ export const UIManager = {
         boardEl.appendChild(cell);
       });
     });
+    // Vektörel Çözücü Işınları Katmanı (Raycasting Visualizer)
+    const existingSvg = boardEl.querySelector('#hint-raycast-overlay');
+    if (existingSvg) existingSvg.remove();
+
+    const advHint = smartHint as any;
+    if (advHint && advHint.primaryCells && advHint.primaryCells.length >= 2) {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('id', 'hint-raycast-overlay');
+      svg.setAttribute('class', 'absolute inset-0 pointer-events-none w-full h-full z-15');
+      svg.setAttribute('viewBox', '0 0 900 900');
+
+      const pts = advHint.primaryCells.map((pc: any) => ({
+        x: pc.c * 100 + 50,
+        y: pc.r * 100 + 50
+      }));
+
+      for (let i = 0; i < pts.length; i++) {
+        for (let j = i + 1; j < pts.length; j++) {
+          if (pts[i].x === pts[j].x || pts[i].y === pts[j].y) {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', pts[i].x.toString());
+            line.setAttribute('y1', pts[i].y.toString());
+            line.setAttribute('x2', pts[j].x.toString());
+            line.setAttribute('y2', pts[j].y.toString());
+            line.setAttribute('stroke', '#F59E0B');
+            line.setAttribute('stroke-width', '4');
+            line.setAttribute('stroke-dasharray', '8,6');
+            line.setAttribute('stroke-opacity', '0.85');
+            line.setAttribute('class', 'animate-pulse');
+            svg.appendChild(line);
+          }
+        }
+      }
+      boardEl.appendChild(svg);
+    }
+
   },
 
   renderNumpad(
@@ -2196,21 +2244,21 @@ export const UIManager = {
         const btn = document.createElement('button');
         btn.type = "button";
         btn.setAttribute('data-numpad-num', num.toString());
-        let btnClasses = 'min-h-[48px] py-2 px-2 rounded-2xl border font-black text-base transition-all flex flex-col items-center justify-center relative shadow-sm cursor-pointer select-none active:scale-95 ';
+        let btnClasses = 'min-h-[48px] py-1.5 px-2 rounded-2xl border font-black text-base transition-all flex flex-col items-center justify-center relative shadow-sm select-none ';
 
         if (isCompleted) {
-          btnClasses += 'opacity-30 pointer-events-none bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-secondary)]';
+          btnClasses += 'opacity-30 pointer-events-none cursor-not-allowed bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-secondary)]';
         } else if (isSelected) {
-          btnClasses += 'bg-[var(--accent-gold)]/20 text-[var(--accent-gold-bright)] border-2 border-[var(--accent-gold)] ring-2 ring-[var(--accent-gold)]/50 shadow-md z-10';
+          btnClasses += 'bg-[var(--accent-gold)]/20 text-[var(--accent-gold-bright)] border-2 border-[var(--accent-gold)] ring-2 ring-[var(--accent-gold)]/50 shadow-md z-10 active:scale-95 cursor-pointer';
         } else {
-          btnClasses += 'bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border-[var(--border-subtle)] text-[var(--text-primary)]';
+          btnClasses += 'bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border-[var(--border-subtle)] text-[var(--text-primary)] active:scale-95 cursor-pointer';
         }
 
         btn.className = btnClasses;
 
         btn.innerHTML = `
-          <span class="pointer-events-none text-sm font-black leading-none mb-0.5">${label}</span>
-          <span class="text-[9px] font-mono font-bold text-[var(--accent-gold)] pointer-events-none leading-none">${isCompleted ? '✓' : remaining}</span>
+          <span class="pointer-events-none text-base sm:text-lg font-black leading-none">${label}</span>
+          <span class="absolute bottom-1 right-1.5 text-[8.5px] font-mono font-black pointer-events-none leading-none px-1 py-0.5 rounded ${isCompleted ? 'text-amber-400 bg-amber-500/20 border border-amber-400/40' : 'text-[var(--accent-gold)] bg-[var(--bg-elevated)] border border-[var(--border-subtle)]'}">${isCompleted ? '✓' : remaining}</span>
         `;
         btn.onclick = (e) => {
           e.preventDefault();

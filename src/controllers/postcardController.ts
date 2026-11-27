@@ -16,6 +16,7 @@ export function openPostcardModal(): void {
 }
 
 export function closePostcardModal(): void {
+  SoundManager.playTap();
   UIManager.toggleModal('postcard-modal', false);
 }
 
