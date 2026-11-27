@@ -509,6 +509,22 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     hint_step_pattern_title: 'Kilit Deseni Gör',
     hint_step_elim_title: 'Adayları Ele',
     hint_step_place_title: 'Doğru Değeri Yerleştir',
+    // Faz 2 — Roguelike Pasif Kalıntılar (Relics)
+    relics_slot_title: 'Pasif Kalıntı (1 Yuva)',
+    relic_golden_compass_name: 'Altın Pusula',
+    relic_golden_compass_desc: 'Doğru girilen her 5 sayısı için +2 bonus altın üretir.',
+    relic_chrono_hourglass_name: 'Zaman Kum Saati',
+    relic_chrono_hourglass_desc: 'Kıvılcım akışı kombo süresini +5 saniye uzatır.',
+    relic_mirror_cage_name: 'Ayna Kafes',
+    relic_mirror_cage_desc: 'Hesap ve kafes toplamı hatasına karşı 1 kerelik kalkan sağlar.',
+    relic_ancient_rune_stone_name: 'Kadim Rün Taşı',
+    relic_ancient_rune_stone_desc: 'Bölüm tamamlandığında kazanılan rün kristallerini +1 artırır.',
+    relic_scout_mirror_name: 'Gözcü Dürbünü',
+    relic_scout_mirror_desc: 'Bölüm başında en zor kutudaki gizli bir adayı otomatik açığa çıkarır.',
+    relic_toast_equipped: '🧭 {name} kalıntısı kuşandı!',
+    relic_toast_unequipped: 'Kalıntı çıkarıldı.',
+    relic_locked_hint: 'Seviye {level}',
+
 
     // Faz 3a — Çift Ekonomi & Yetenekler
     abilities_title: 'Yetenekler',
@@ -1221,6 +1237,22 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     hint_step_pattern_title: 'Spot the Pattern',
     hint_step_elim_title: 'Eliminate Candidates',
     hint_step_place_title: 'Place Final Value',
+
+    // Faz 2 — Roguelike Passive Relics
+    relics_slot_title: 'Passive Relic (1 Slot)',
+    relic_golden_compass_name: 'Golden Compass',
+    relic_golden_compass_desc: 'Produces +2 bonus gold on every correctly placed 5 digit.',
+    relic_chrono_hourglass_name: 'Chrono Hourglass',
+    relic_chrono_hourglass_desc: 'Extends spark flow combo duration by +5 seconds.',
+    relic_mirror_cage_name: 'Mirror Cage',
+    relic_mirror_cage_desc: 'Grants 1-time mistake shield against cage sum errors.',
+    relic_ancient_rune_stone_name: 'Ancient Rune Stone',
+    relic_ancient_rune_stone_desc: 'Increases level completion rune crystals reward by +1.',
+    relic_scout_mirror_name: 'Scout Scope',
+    relic_scout_mirror_desc: 'Reveals a single candidate in the hardest box at round start.',
+    relic_toast_equipped: '🧭 Equipped {name} relic!',
+    relic_toast_unequipped: 'Relic unequipped.',
+    relic_locked_hint: 'Level {level}',
 
     // Faz 3a — Dual Economy & Abilities
     abilities_title: 'Abilities',

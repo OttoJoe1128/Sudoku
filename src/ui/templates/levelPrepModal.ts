@@ -45,6 +45,15 @@ export const levelPrepModalTemplate = `
 
             <!-- 5 Yetenek Izgarası -->
             <div id="prep-abilities-grid" class="grid grid-cols-5 gap-1.5 w-full"></div>
+
+            <!-- Pasif Kalıntı (Relic) Donanımı -->
+            <div class="w-full mt-3 pt-2.5 border-t border-[var(--border-subtle)]">
+                <div class="flex justify-between items-center mb-1.5">
+                    <span class="text-[10px] font-black uppercase text-[var(--accent-gold)] tracking-wider" data-i18n="relics_slot_title">Pasif Kalıntı (1 Yuva)</span>
+                    <span id="prep-relic-status" class="text-[9px] font-bold text-[var(--text-secondary)]"></span>
+                </div>
+                <div id="prep-relics-row" class="grid grid-cols-5 gap-1.5 w-full"></div>
+            </div>
         </div>
 
         <!-- Alt Düğmeler -->

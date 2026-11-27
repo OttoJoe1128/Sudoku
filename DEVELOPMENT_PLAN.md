@@ -36,9 +36,12 @@ Bu belge, SudokuMap projesini geleneksel bir bulmaca oyunundan küresel çapta l
 
 ## 📌 FAZ 2: ROGUELIKE OYUN DÖNGÜSÜ, KALINTILAR (RELICS) VE ANLAMSAL TERMİNOLOJİ
 
-- [ ] **Adım 2.1 — Pasif Kalıntı (Relic) Veri Mimarisi ve Envanter Sistemi:**
-  - "Altın Pusula", "Ayna Kafes", "Rün Taşı" vb. kalıntıların tanımlanması.
-  - Bölüm öncesi kalıntı donatma (loadout) arayüzü.
+- [x] **Adım 2.1 — Pasif Kalıntı (Relic) Veri Mimarisi ve Envanter Sistemi:**
+  - `src/engine/relics.ts` modülü oluşturuldu; "Altın Pusula", "Zaman Kum Saati", "Ayna Kafes", "Kadim Rün Taşı" ve "Gözcü Dürbünü" tanımlandı.
+  - `UserManager` envanterine `getUnlockedRelics`, `getEquippedRelic` ve `equipRelic` metotları entegre edildi.
+  - `levelPrepModal` üzerinde 1 yuvalık pasif kalıntı donanım satırı (`#prep-relics-row`) eklendi.
+  - Çalışma zamanı avantajları bağlandı: Altın Pusula (5 rakamında +2 altın), Zaman Kum Saati (Kıvılcım süresi +5s), Kadim Rün Taşı (Zaferde +1 kristal).
+  - `src/tests/relics.test.ts` (7 yeni unit test) eklendi ve tüm 292 test %100 yeşil tamamlandı.
 - [ ] **Adım 2.2 — Dallanan Yol Ayrımı ve Dinamik Biyom Kararları:**
   - Harita düğümlerinde risk-ödül seçenekleri ("Mühürlü Patika" vs. "Kıvılcım Vadisi").
 - [ ] **Adım 2.3 — Kıvılcım Akışı (Spark Flow) Dinamik Kombo Sistemi:**

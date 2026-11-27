@@ -15,6 +15,7 @@ import {
   ECONOMY_CONFIG
 } from '../engine/abilities';
 import { getLevelModifierProfile } from '../engine/levelModifiers';
+import { RELICS, getRelicDef, RelicId } from '../engine/relics';
 
 let selectedLoadout: AbilityId[] = [];
 let activePrepInfoKey: string | null = null;
@@ -240,6 +241,71 @@ function renderLevelPrepModal(nowMs: number = Date.now()): void {
       gridEl.appendChild(cell);
     });
   }
+  // Pasif Kalıntılar (Relics) Satırı Renderı
+  const relicsRow = document.getElementById('prep-relics-row');
+  const relicStatus = document.getElementById('prep-relic-status');
+  const unlockedRelics = UserManager.getUnlockedRelics();
+  const equippedRelicId = UserManager.getEquippedRelic();
+
+  if (relicStatus) {
+    if (equippedRelicId) {
+      const def = getRelicDef(equippedRelicId);
+      relicStatus.innerText = `✓ ${t(def.nameKey)}`;
+      relicStatus.className = 'text-[9px] font-bold text-[var(--accent-gold)]';
+    } else {
+      relicStatus.innerText = t('relic_toast_unequipped');
+      relicStatus.className = 'text-[9px] font-bold text-[var(--text-secondary)]';
+    }
+  }
+
+  if (relicsRow) {
+    relicsRow.innerHTML = '';
+    RELICS.forEach(relic => {
+      const isUnlocked = unlockedRelics.includes(relic.id);
+      const isEquipped = equippedRelicId === relic.id;
+      const relicBtn = document.createElement('button');
+
+      let btnClasses = 'p-1.5 rounded-xl border flex flex-col items-center justify-center transition-all cursor-pointer relative ';
+      if (isEquipped) {
+        btnClasses += 'bg-[var(--accent-gold)]/20 border-[var(--accent-gold)] ring-2 ring-[var(--accent-gold)]/50 shadow-md scale-105';
+      } else if (isUnlocked) {
+        btnClasses += 'bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border-[var(--border-strong)] text-[var(--text-primary)]';
+      } else {
+        btnClasses += 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] opacity-40 cursor-not-allowed';
+      }
+
+      relicBtn.className = btnClasses;
+      relicBtn.setAttribute('data-relic-id', relic.id);
+      relicBtn.setAttribute('title', `${t(relic.nameKey)} - ${t(relic.descKey)}`);
+      relicBtn.innerHTML = `
+        <span class="text-base mb-0.5">${relic.icon}</span>
+        <span class="text-[8px] font-black truncate max-w-full leading-none">${isUnlocked ? (isEquipped ? '✓' : t(relic.nameKey).slice(0, 5)) : `🔒${relic.unlockLevel}`}</span>
+      `;
+
+      if (isUnlocked) {
+        relicBtn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          SoundManager.playTap();
+          if (isEquipped) {
+            UserManager.equipRelic(null);
+            UIManager.showToast(t('relic_toast_unequipped'), 'info');
+          } else {
+            UserManager.equipRelic(relic.id);
+            UIManager.showToast(t('relic_toast_equipped', { name: t(relic.nameKey) }), 'success');
+          }
+          renderLevelPrepModal(nowMs);
+        };
+      } else {
+        relicBtn.onclick = () => {
+          UIManager.showToast(t('relic_locked_hint', { level: relic.unlockLevel }), 'info');
+        };
+      }
+
+      relicsRow.appendChild(relicBtn);
+    });
+  }
+
 
   // Olay Dinleyicileri
   document.querySelectorAll('[data-remove-slot]').forEach(el => {

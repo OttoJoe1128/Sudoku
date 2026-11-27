@@ -14,6 +14,7 @@ import {
   computeLevelCrystalDelta
 } from '../engine/abilities';
 import { getMapGateDef, getMapGateKey } from '../engine/mapGates';
+import { RelicId, RELICS, isRelicUnlocked } from '../engine/relics';
 
 const isTestRuntime = (): boolean =>
   typeof globalThis !== 'undefined' && Boolean((globalThis as any).process?.env?.VITEST);
@@ -1373,6 +1374,28 @@ export const UserManager = {
       await this.addCrystals(delta);
     }
     return { delta, bestCollected, totalCrystals: this.getCrystals() };
+  },
+
+  getUnlockedRelics(): RelicId[] {
+    const playerLevel = this.getCurrentLevel();
+    return RELICS.filter(r => isRelicUnlocked(r.id, playerLevel)).map(r => r.id);
+  },
+
+  getEquippedRelic(): RelicId | null {
+    if (typeof localStorage === 'undefined') return 'golden_compass';
+    const raw = localStorage.getItem('sudoku_equipped_relic');
+    if (!raw) return 'golden_compass';
+    const unlocked = this.getUnlockedRelics();
+    return unlocked.includes(raw as RelicId) ? (raw as RelicId) : 'golden_compass';
+  },
+
+  equipRelic(id: RelicId | null): void {
+    if (typeof localStorage === 'undefined') return;
+    if (id) {
+      localStorage.setItem('sudoku_equipped_relic', id);
+    } else {
+      localStorage.removeItem('sudoku_equipped_relic');
+    }
   },
 
   getAbilitiesState(): Record<AbilityId, AbilityProgress> {

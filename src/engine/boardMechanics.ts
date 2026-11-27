@@ -8,6 +8,7 @@ import {
   generateSpecialCellsForBoard
 } from './levelModifiers';
 import { getCandidates } from './hintSolver';
+import { UserManager } from '../store/userState';
 
 export type SpecialCellState = 'active' | 'collected' | 'cracked' | 'unlocked';
 
@@ -107,7 +108,8 @@ export function applyValidMoveMechanics(
   state: BoardMechanicsState,
   r: number,
   c: number,
-  nowMs: number = Date.now()
+  arg3?: number,
+  arg4?: number
 ): {
   newlyConsumedAbilities: AbilityId[];
   crystalCollected: boolean;
@@ -117,6 +119,16 @@ export function applyValidMoveMechanics(
   treasureReward?: 'free_hint' | 'error_shield';
   bonusGold: number;
 } {
+  let digit: number | undefined;
+  let nowMs: number;
+
+  if (typeof arg3 === 'number' && arg3 >= 1 && arg3 <= 9) {
+    digit = arg3;
+    nowMs = typeof arg4 === 'number' ? arg4 : Date.now();
+  } else {
+    nowMs = typeof arg3 === 'number' ? arg3 : Date.now();
+    digit = typeof arg4 === 'number' ? arg4 : undefined;
+  }
   const newlyConsumedAbilities: AbilityId[] = [];
 
   if (!state.firstMoveMade) {
@@ -138,6 +150,11 @@ export function applyValidMoveMechanics(
     sparkComboGain = 1;
     bonusGold += 1;
     state.sparkBonusGold += 1;
+  }
+
+  // Pasif Kalıntı (Golden Compass): Doğru girilen her 5 sayısı için +2 altın
+  if (digit === 5 && typeof UserManager !== 'undefined' && UserManager.getEquippedRelic() === 'golden_compass') {
+    bonusGold += 2;
   }
 
   let crystalCollected = false;
@@ -172,7 +189,8 @@ export function applyValidMoveMechanics(
       sparkTriggered = true;
       const rbLvl = state.equippedAbilities.includes('rhythm_bender') ? (state.abilityLevels.rhythm_bender || 0) : 0;
       const rhythmBonusMs = [0, 5000, 8000, 12000, 16000, 20000][Math.min(5, rbLvl)] || 0;
-      state.sparkFlowEndsAtMs = nowMs + 20_000 + rhythmBonusMs;
+      const relicExtraMs = typeof UserManager !== 'undefined' && UserManager.getEquippedRelic() === 'chrono_hourglass' ? 5000 : 0;
+      state.sparkFlowEndsAtMs = nowMs + 20_000 + rhythmBonusMs + relicExtraMs;
     } else if (cell.kind === 'treasure') {
       cell.state = 'collected';
       const seed = (state.profile.level + r + c) % 2;
@@ -393,5 +411,10 @@ export function computeFinalRunCrystals(
     total += state.profile.sprintBonusCrystals;
   }
 
-  return Math.min(state.profile.maxCollectibleCrystals, total);
+  // Pasif Kalıntı (Ancient Rune Stone): Kazanılan kristallere +1 ilave eder
+  if (typeof UserManager !== 'undefined' && UserManager.getEquippedRelic() === 'ancient_rune_stone') {
+    total += 1;
+  }
+
+  return Math.min(state.profile.maxCollectibleCrystals + (UserManager.getEquippedRelic() === 'ancient_rune_stone' ? 1 : 0), total);
 }
