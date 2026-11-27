@@ -12,11 +12,12 @@ Bu belge, SudokuMap projesini geleneksel bir bulmaca oyunundan küresel çapta l
   - Sıfır nesne tahsisi (zero allocation) ve sıfır GC duraklaması ile mikrosaniye düzeyinde kural denetimi.
   - `SudokuBitmaskBoard` ve `getCandidatesBitmask` motoru `hintSolver` ve `boardMechanics` içine entegre edildi.
   - `src/tests/bitmask-engine.test.ts` (6 yeni unit test) eklendi; 10.000 sorgulama 4ms'de tamamlandı. Tüm 277 test %100 yeşil.
-- [ ] **Adım 1.2 — İleri Seviye Mantık Algoritmalarının Eklenmesi:**
-  - **Naked / Hidden Pairs & Triples** (Çift ve Üçlü Aday Eleme).
-  - **X-Wing** (2 satır/2 sütun kafes elemesi).
-  - **Swordfish** (3x3 ızgara eleme zinciri).
-  - **XY-Wing & Renkli Kesişimler** (Bivalue cell zincirleri).
+- [x] **Adım 1.2 — İleri Seviye Mantık Algoritmalarının Eklenmesi:**
+  - **Naked / Hidden Pairs & Triples** (Çift ve Üçlü Aday Eleme): `findNakedPair` ve `findHiddenPair` algoritmaları O(1) bitmask motoruyla kodlandı.
+  - **X-Wing** (2 satır/2 sütun kafes elemesi): Yatay ve dikey çift hat taraması `findXWing` fonksiyonuyla eklendi.
+  - **Swordfish** (3x3 ızgara eleme zinciri): 3 satır / 3 sütun matris elemesi `findSwordfish` ile uygulandı.
+  - **XY-Wing & Renkli Kesişimler** (Bivalue cell zincirleri): Pivot-kanat (X-Y, X-Z, Y-Z) bivalue ilişki motoru `findXYWing` ile tamamlandı.
+  - `src/tests/advanced-techniques.test.ts` (6 yeni unit test) eklendi ve tüm 283 test %100 yeşil tamamlandı.
 - [ ] **Adım 1.3 — İnteraktif Adım Adım Açıklamalı Çözücü (Interactive Step-by-Step Solver UI):**
   - Tahtadaki kilit noktalarda eleme mantığını görselleştiren, etkilenen satır/sütunları ve adayları animasyonla gösteren görsel çözücü katmanı.
 - [ ] **Adım 1.4 — Sudoku Akademisi Genişletmesi (İleri Düzey Master Müfredat):**
