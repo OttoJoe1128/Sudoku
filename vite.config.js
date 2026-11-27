@@ -1,5 +1,29 @@
+import { webcrypto } from 'node:crypto';
+import { createRequire } from 'node:module';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+
+if (!globalThis.crypto) {
+  globalThis.crypto = webcrypto;
+}
+if (parseInt(process.versions.node.split('.')[0], 10) < 19) {
+  const require = createRequire(import.meta.url);
+  const workerThreads = require('worker_threads');
+  const OriginalWorker = workerThreads.Worker;
+  if (!OriginalWorker.__webcryptoPatched) {
+    class PatchedWorker extends OriginalWorker {
+      constructor(filename, options = {}) {
+        const execArgv = options.execArgv ? [...options.execArgv] : [...process.execArgv];
+        if (!execArgv.includes('--experimental-global-webcrypto')) {
+          execArgv.push('--experimental-global-webcrypto');
+        }
+        super(filename, { ...options, execArgv });
+      }
+    }
+    PatchedWorker.__webcryptoPatched = true;
+    workerThreads.Worker = PatchedWorker;
+  }
+}
 
 export default defineConfig({
   root: './',
