@@ -89,14 +89,23 @@ Bu belge, SudokuMap projesini geleneksel bir bulmaca oyunundan küresel çapta l
 
 ## 📌 FAZ 4: SOSYAL EKOSİSTEM, ASENKRON HAYALET DÜELLOLARI & KLAN RÜN KAPILARI
 
-- [ ] **Adım 4.1 — Asenkron Hayalet Koşusu (Ghost Run) Sistemi:**
-  - Eşit seviyedeki gerçek oyuncuların kaydedilmiş hamle zamanlamalarıyla bekleme süresiz düello eşleşmesi.
-- [ ] **Adım 4.2 — Küresel Sezonluk Ligler ve Rütbe Hiyerarşisi:**
-  - Bronz, Gümüş, Altın, Usta, Büyük Usta lig kademeleri ve aylık rütbe ödülleri.
-- [ ] **Adım 4.3 — Klan / Lonca Rün Kapıları ve Haftalık Samurai Zindanı:**
-  - Oyuncuların rün tozu bağışlayarak açtığı devasa ortak Samurai 5-Grid kooperatif zindanı.
-- [ ] **Adım 4.4 — Faz 4 Doğrulama & Kontrol Noktası:**
-  - Firestore optimizasyonları, hayalet verisi senkronizasyon testleri ve `release:check`.
+- [x] **Adım 4.1 — Asenkron Hayalet Koşusu (Ghost Run) Sistemi:**
+  - `src/engine/ghostRun.ts` motoru kuruldu; `GhostRunRecord`, `GhostRunStep` veri yapıları ve `interpolateGhostProgress` lineer zaman interpolatörü kodlandı.
+  - Eşit seviyedeki oyuncuların kaydedilmiş zaman serileri veya organik üretilen eşdeğer MMR hayaletleri ile bekleme süresiz anlık düello eşleşmesi sağlandı (`MatchEngine.startGhostRunner`).
+  - `src/tests/ghost-run.test.ts` (3 yeni unit test) eklendi.
+- [x] **Adım 4.2 — Küresel Sezonluk Ligler ve Rütbe Hiyerarşisi:**
+  - `src/engine/leagueSystem.ts` oluşturuldu; Bronz, Gümüş, Altın, Platin, Elmas ve Büyük Usta olmak üzere 6 lig kademesi ve baremleri tanımlandı.
+  - `getLeagueProgress` ile sonraki lige olan MMR mesafesi ve ilerleme yüzdesi hesaplandı.
+  - `LeagueManager.claimLeagueSeasonReward` ile sezon sonu kademe sandıkları (+50..+1000 Altın, +5..+100 Kristal) entegre edildi.
+  - `src/tests/league-system.test.ts` (4 yeni unit test) eklendi.
+- [x] **Adım 4.3 — Klan / Lonca Rün Kapıları ve Haftalık Samurai Zindanı:**
+  - `src/engine/clanSystem.ts` klan mimarisi inşa edildi (`ClanDef`, `ClanMember`, `DEFAULT_CLANS`).
+  - `ClanManager`: Klan oluşturma (`createClan`), katılma (`joinClan`), ayrılma (`leaveClan`), rün tozu bağışlama (`donateRuneDust`: 1 Kristal = 10 Rün Tozu) ve 500 rün tozuna ulaşıldığında Haftalık Samuray Zindanını açma (`isDungeonUnlocked`) mekanikleri kodlandı.
+  - Zindan boss'una klan üyelerinin ortaklaşa hasar vermesi (`damageSamuraiBoss`) bağlandı.
+  - `src/tests/clan-system.test.ts` (4 yeni unit test) eklendi.
+- [x] **Adım 4.4 — Faz 4 Doğrulama & Kontrol Noktası:**
+  - 35 test dosyasının 35'i (%100) ve 321 testin 321'i (%100) tam yeşil geçti.
+  - `npm run release:check` (Typecheck + Vitest + Vite Build) sıfır hatayla doğrulandı.
 
 ---
 

@@ -556,6 +556,23 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     season_emerald_desc: 'Yeşim ormanlarında doğanın 9 gizemli rün pulunu topla.',
     season_celestial_name: 'Göksel Tapınak Sezonu',
     season_celestial_desc: 'Yıldızların ötesindeki gök tapınaklarını aş ve ödülü kazan.',
+    // Faz 4 — Küresel Sezonluk Ligler
+    league_bronze: 'Bronz Lig',
+    league_silver: 'Gümüş Lig',
+    league_gold: 'Altın Lig',
+    league_platinum: 'Platin Lig',
+    league_diamond: 'Elmas Lig',
+    league_grandmaster: 'Büyük Usta Ligi',
+    league_reward_toast: '🏆 {league} ödülü alındı! +{gold} 🪙 +{crystals} 💎',
+
+    // Faz 4 — Klanlar & Samuray Zindanı
+    clan_title: 'Klanlar & Loncalar',
+    clan_samurai_dungeon: 'Haftalık Samuray Zindanı',
+    clan_donate_dust: 'Rün Tozu Bağışla',
+    clan_dungeon_unlocked: '⛩️ Samuray Zindanı Açıldı!',
+    clan_boss_defeated: '🎉 Zindan Canavarı Yenildi! Klan Sandığı Açıldı!',
+    clan_toast_donated: '✨ {amount} Rün Tozu bağışlandı!',
+
 
     // Faz 3a — Çift Ekonomi & Yetenekler
     abilities_title: 'Yetenekler',
@@ -1314,6 +1331,23 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     season_emerald_name: 'Emerald Grove Season',
     season_emerald_desc: 'Gather nature 9 mystical rune stamps deep in the jade forests.',
     season_celestial_name: 'Celestial Temple Season',
+    // Faz 4 — Global Seasonal Leagues
+    league_bronze: 'Bronze League',
+    league_silver: 'Silver League',
+    league_gold: 'Gold League',
+    league_platinum: 'Platinum League',
+    league_diamond: 'Diamond League',
+    league_grandmaster: 'Grandmaster League',
+    league_reward_toast: '🏆 {league} reward claimed! +{gold} 🪙 +{crystals} 💎',
+
+    // Faz 4 — Clans & Samurai Dungeon
+    clan_title: 'Clans & Guilds',
+    clan_samurai_dungeon: 'Weekly Samurai Dungeon',
+    clan_donate_dust: 'Donate Rune Dust',
+    clan_dungeon_unlocked: '⛩️ Samurai Dungeon Unlocked!',
+    clan_boss_defeated: '🎉 Dungeon Boss Defeated! Clan Chest Unlocked!',
+    clan_toast_donated: '✨ Donated {amount} Rune Dust!',
+
     season_celestial_desc: 'Transcend astral shrines beyond the stars to earn the reward.',
 
     // Faz 3a — Dual Economy & Abilities

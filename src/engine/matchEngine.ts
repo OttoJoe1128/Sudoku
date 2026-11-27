@@ -3,11 +3,14 @@ import { auth, db } from '../api/firebase';
 import { SudokuGen, SudokuVariant } from './sudoku';
 import { UserManager } from '../store/userState';
 import { t } from '../i18n/translations';
+import { GhostRunRecord, interpolateGhostProgress } from './ghostRun';
 
 export interface MatchPlayer {
   uid: string;
   username: string;
   isBot?: boolean;
+  isGhost?: boolean;
+  ghostRating?: number;
   progress: number; // 0 - 81
   errors: number;
   completedAt?: number;
@@ -631,6 +634,35 @@ export const MatchEngine = {
         clearInterval(botTimerInterval);
       }
     }, intervalMs);
+  },
+
+  startGhostRunner(
+    ghost: GhostRunRecord,
+    onGhostProgress: (progressCells: number, errors: number, isFinished: boolean) => void
+  ): { stop: () => void } {
+    if (botTimerInterval) clearInterval(botTimerInterval);
+    const startMs = Date.now();
+    botTimerInterval = setInterval(() => {
+      const elapsedSec = (Date.now() - startMs) / 1000;
+      const interp = interpolateGhostProgress(ghost.steps, ghost.totalTimeSec, elapsedSec);
+      const progressCells = Math.min(81, Math.round((interp.progressPct / 100) * 81));
+      onGhostProgress(progressCells, interp.errors, interp.isFinished);
+      if (interp.isFinished) {
+        if (botTimerInterval) {
+          clearInterval(botTimerInterval);
+          botTimerInterval = null;
+        }
+      }
+    }, 1000);
+
+    return {
+      stop: () => {
+        if (botTimerInterval) {
+          clearInterval(botTimerInterval);
+          botTimerInterval = null;
+        }
+      }
+    };
   },
 
   listenMatchUpdates(matchId: string, onUpdate: (match: MatchState) => void) {
