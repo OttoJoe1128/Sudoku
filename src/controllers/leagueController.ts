@@ -2,7 +2,8 @@ import { UIManager } from '../ui/uiManager';
 import { SoundManager } from '../engine/soundManager';
 import { getLeagueByRating, getLeagueProgress, LeagueManager } from '../engine/leagueSystem';
 import { UserManager } from '../store/userState';
-import { t, applyStaticTranslations } from '../i18n/translations';
+import { t, getLang, applyStaticTranslations } from '../i18n/translations';
+import { getRemainingSeasonDays } from '../engine/seasonalEvents';
 
 export function openLeagueModal(): void {
   UIManager.toggleModal('league-modal', true);
@@ -33,6 +34,12 @@ export function renderLeagueModalUI(): void {
   if (iconEl) iconEl.innerText = league.icon;
   if (nameEl) nameEl.innerText = t(league.nameKey);
   if (ratingEl) ratingEl.innerText = `${rating} MMR`;
+  const remDays = getRemainingSeasonDays();
+  const daysEl = document.getElementById('league-season-days-label');
+  if (daysEl) {
+    daysEl.innerText = getLang() === 'en' ? `${remDays} Days Left` : `${remDays} Gün Kaldı`;
+  }
+
 
   if (nextNameLabel) {
     nextNameLabel.innerText = prog.nextLeague ? t(prog.nextLeague.nameKey) : t('ability_btn_max');

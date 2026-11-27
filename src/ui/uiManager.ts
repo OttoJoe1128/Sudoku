@@ -398,6 +398,42 @@ export const UIManager = {
       setTimeout(() => toast.remove(), 300);
     }, 3500);
   },
+  animateStampDropAndFly(stampIdx: number, seasonNameKey: string, onComplete?: () => void): void {
+    if (typeof document === 'undefined') {
+      if (onComplete) onComplete();
+      return;
+    }
+
+    const container = document.getElementById('container') || document.body;
+    const tile = document.createElement('div');
+    tile.id = 'victory-stamp-flyer';
+    tile.className = 'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-3xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 border-4 border-amber-200 text-slate-950 font-black shadow-[0_0_40px_rgba(245,158,11,0.7)] flex flex-col items-center justify-center z-50 pointer-events-none transition-all duration-700 transform scale-50 opacity-0';
+    const isEn = getLang() === 'en';
+    const pulLabel = isEn ? 'Stamp' : 'Pul';
+    tile.innerHTML = `
+      <span class="text-3xl mb-1 drop-shadow animate-bounce">📮</span>
+      <span class="text-xs font-mono font-black uppercase tracking-wider">#${stampIdx + 1} ${pulLabel}</span>
+      <span class="text-[8.5px] opacity-90 font-bold">${t(seasonNameKey).slice(0, 10)}</span>
+    `;
+
+    container.appendChild(tile);
+
+    setTimeout(() => {
+      tile.classList.remove('scale-50', 'opacity-0');
+      tile.classList.add('scale-110', 'opacity-100');
+    }, 20);
+
+    setTimeout(() => {
+      tile.style.transform = 'translate3d(140px, -280px, 0) scale(0.25)';
+      tile.style.opacity = '0';
+    }, 600);
+
+    setTimeout(() => {
+      tile.remove();
+      if (onComplete) onComplete();
+    }, 1200);
+  },
+
 
   applyTheme(themeId: string) {
     const container = document.getElementById('container');

@@ -11,7 +11,11 @@ export const leagueModalTemplate = `
                 🥇
             </div>
             <h3 id="league-modal-name" class="text-xl font-black text-[var(--text-primary)] mb-0.5" data-i18n="league_gold">Gold League</h3>
-            <p id="league-modal-rating" class="text-xs font-mono text-[var(--accent-gold)] font-bold">1500 MMR</p>
+            <div class="flex items-center justify-center gap-2 mt-0.5">
+                <span id="league-modal-rating" class="text-xs font-mono text-[var(--accent-gold)] font-bold">1500 MMR</span>
+                <span class="text-slate-500">•</span>
+                <span id="league-season-days-label" class="text-[10px] text-amber-300 font-bold">6 Days Left</span>
+            </div>
         </div>
 
         <!-- İlerleme Çubuğu -->

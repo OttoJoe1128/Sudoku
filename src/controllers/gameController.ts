@@ -1383,15 +1383,15 @@ export function startGame(
           : `🎉 Seviye ${level} Tamamlandı! Seviye ${nextLevel} Açıldı! +${reward} 🪙${crystalSuffix}`;
 
         UIManager.showToast(toastMsg, "success");
-        // Sezonluk Pul Düşüşü (Postcard Stamp Drop)
+        // Sezonluk Pul Düşüşü (Postcard Stamp Drop & Victory Flow Animation)
         try {
           const currentSeason = getCurrentSeason();
           const stampRes = SeasonalEventManager.awardRandomStamp(currentSeason.id);
           if (stampRes.newStampIndex !== -1) {
             const totalCollected = SeasonalEventManager.getCollectedStamps(currentSeason.id).length;
-            setTimeout(() => {
+            UIManager.animateStampDropAndFly(stampRes.newStampIndex, currentSeason.nameKey, () => {
               UIManager.showToast(t('season_toast_stamp_found', { count: totalCollected }), "info");
-            }, 800);
+            });
           }
         } catch {
           // ignore
