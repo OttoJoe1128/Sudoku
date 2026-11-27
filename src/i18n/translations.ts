@@ -532,6 +532,9 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     map_branch_risk_badge: 'Tehlike & Kristal',
     map_branch_speed_badge: 'Hız & Altın',
 
+    spark_combo_broken: '💔 Kıvılcım kombosu kırıldı!',
+    spark_combo_gold_bonus: '+{gold} Kombo Altını!',
+
 
 
     // Faz 3a — Çift Ekonomi & Yetenekler
@@ -1268,6 +1271,9 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     map_branch_desc: 'Pick your route: Demanding seals or rapid combo flow?',
     map_branch_risk_badge: 'Risk & Crystals',
     map_branch_speed_badge: 'Speed & Gold',
+    spark_combo_broken: '💔 Spark combo broken!',
+    spark_combo_gold_bonus: '+{gold} Combo Gold!',
+
 
 
     // Faz 3a — Dual Economy & Abilities

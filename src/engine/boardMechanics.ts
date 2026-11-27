@@ -148,8 +148,9 @@ export function applyValidMoveMechanics(
   if (nowMs < state.sparkFlowEndsAtMs) {
     state.sparkCombo += 1;
     sparkComboGain = 1;
-    bonusGold += 1;
-    state.sparkBonusGold += 1;
+    const comboTierBonus = Math.min(5, Math.floor(state.sparkCombo / 2));
+    bonusGold += 1 + comboTierBonus;
+    state.sparkBonusGold += 1 + comboTierBonus;
   }
 
   // Pasif Kalıntı (Golden Compass): Doğru girilen her 5 sayısı için +2 altın
@@ -218,17 +219,26 @@ export function applyValidMoveMechanics(
 export function applyMistakeMechanics(
   state: BoardMechanicsState,
   r: number,
-  c: number
+  c: number,
+  nowMs: number = Date.now()
 ): {
   newlyConsumedAbilities: AbilityId[];
   crystalCracked: boolean;
   crystalProtectedByShield: boolean;
   absorbMistake: boolean;
+  comboBroken: boolean;
 } {
   const newlyConsumedAbilities: AbilityId[] = [];
   let crystalCracked = false;
   let crystalProtectedByShield = false;
   let absorbMistake = false;
+
+  let comboBroken = false;
+  if (state.sparkCombo > 0 || nowMs < state.sparkFlowEndsAtMs) {
+    state.sparkCombo = 0;
+    state.sparkFlowEndsAtMs = 0;
+    comboBroken = true;
+  }
 
   const cell = getSpecialCellAt(state, r, c);
   if (cell && cell.kind === 'crystal' && cell.state === 'active') {
@@ -257,7 +267,8 @@ export function applyMistakeMechanics(
     newlyConsumedAbilities,
     crystalCracked,
     crystalProtectedByShield,
-    absorbMistake
+    absorbMistake,
+    comboBroken
   };
 }
 

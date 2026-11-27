@@ -1382,6 +1382,10 @@ export function startGame(
           for (const abId of mistakeRes.newlyConsumedAbilities) {
             await UserManager.triggerAbilityCooldown(abId);
           }
+          if (mistakeRes.comboBroken) {
+            UIManager.showToast(t('spark_combo_broken'), "error");
+            SoundManager.vibrate(35);
+          }
           if (mistakeRes.crystalProtectedByShield) {
             UIManager.showToast(t('toast_crystal_shield_saved'), "info");
           } else if (mistakeRes.crystalCracked) {

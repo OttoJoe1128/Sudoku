@@ -48,12 +48,17 @@ Bu belge, SudokuMap projesini geleneksel bir bulmaca oyunundan küresel çapta l
   - `levelPrepModal` üzerinde `#prep-branch-container` ile interaktif rota seçimi eklendi.
   - Harita düğümlerinde dallanan seviyeler `data-branching="true"` özniteliğiyle işaretlendi.
   - `src/tests/branching-path.test.ts` (6 yeni unit test) eklendi ve tüm 298 test %100 yeşil tamamlandı.
-- [ ] **Adım 2.3 — Kıvılcım Akışı (Spark Flow) Dinamik Kombo Sistemi:**
-  - Hızlı ve hatasız hamlelerde çarpanı katlayan organik kombo barı.
-- [ ] **Adım 2.4 — Anlamsal Terminoloji İyileştirmesi (Realia / Irrealia Çift Dilli Bütünlük):**
-  - Kuru matematiksel terimlerin yerine kurgusal ve anlaşılır Türkçe/İngilizce terimlerin standartlaştırılması (`translations.ts`).
-- [ ] **Adım 2.5 — Faz 2 Doğrulama & Kontrol Noktası:**
-  - Roguelike döngü mekanik testleri, denge analizleri ve `release:check` doğrulaması.
+- [x] **Adım 2.3 — Kıvılcım Akışı (Spark Flow) Dinamik Kombo Sistemi:**
+  - Hızlı ve hatasız hamlelerde kombo çarpanı (`sparkCombo`) ve kademeli altın bonusu artışı kodlandı.
+  - Hata yapıldığında kombo kırılması (`comboBroken`), haptik titreşim ve `spark_combo_broken` uyarısı bağlandı.
+  - `#game-momentum-pill` üzerinde canlı kombo ve süre animasyonu sağlandı.
+  - `src/tests/spark-combo.test.ts` (4 yeni unit test) eklendi.
+- [x] **Adım 2.4 — Anlamsal Terminoloji İyileştirmesi (Realia / Irrealia Çift Dilli Bütünlük):**
+  - Tüm 20 teknik ve 10 bölüm enerjisi kurgusal ve zengin bir terminolojiyle `translations.ts` içinde TR/EN olarak eşitlendi.
+  - Yasaklı İngilizce kelime sızıntıları ve çift dilli karakter uyumsuzlukları giderildi.
+- [x] **Adım 2.5 — Faz 2 Doğrulama & Kontrol Noktası:**
+  - 30 test dosyasının 30'u (%100) ve 302 testin 302'si (%100) tam yeşil geçti.
+  - `npm run release:check` (Typecheck + Vitest + Vite Build) sıfır hatayla doğrulandı.
 
 ---
 
