@@ -16,10 +16,20 @@ export const ShopItems: ShopItem[] = [
   { id: 'theme-obsidian', name: 'Obsidyen & Altın', nameEn: 'Obsidian & Gold', price: 0, type: 'theme', previewColor: '#070D19', accentColor: '#C89B3C' },
   { id: 'theme-shogun', name: 'Kızıl Shogun', nameEn: 'Crimson Shogun', price: 250, type: 'theme', previewColor: '#0F090C', accentColor: '#D4A853' },
   { id: 'theme-cyber', name: 'Siber Akşam', nameEn: 'Cyber Dusk', price: 300, type: 'theme', previewColor: '#0B0718', accentColor: '#22D3EE' },
-  { id: 'theme-jade', name: 'Antik Yeşim', nameEn: 'Ancient Jade', price: 350, type: 'theme', previewColor: '#051613', accentColor: '#D4B475' }
+  { id: 'theme-jade', name: 'Antik Yeşim', nameEn: 'Ancient Jade', price: 350, type: 'theme', previewColor: '#051613', accentColor: '#D4B475' },
+  { id: 'theme-egypt', name: 'Güneş Tanrısı (Mısır)', nameEn: 'Sun God (Egypt)', price: 500, type: 'theme', previewColor: '#1A1408', accentColor: '#EAB308' }
 ];
 
 export const ShopManager = {
+  unlockTheme(themeId: string): void {
+    const purchased = this.getPurchasedThemes();
+    if (!purchased.includes(themeId)) {
+      purchased.push(themeId);
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('sudoku_purchased_themes', JSON.stringify(purchased));
+      }
+    }
+  },
   getPurchasedThemes(): string[] {
     let parsed: string[] = [];
     try {

@@ -64,15 +64,19 @@ Bu belge, SudokuMap projesini geleneksel bir bulmaca oyunundan küresel çapta l
 
 ## 📌 FAZ 3: CANLI OPERASYONLAR (LIVE-OPS), TEMATİK PUL KOLEKSİYONU & DDA
 
-- [ ] **Adım 3.1 — 14 Günlük Sezonluk Canlı Operasyon Motoru (Seasonal Events Engine):**
-  - Sezonluk takvim yöneticisi (Antik Mısır, Siber Şehir, Zümrüt Ormanı vb. temalar).
-- [ ] **Adım 3.2 — Tematik Pul ve Kartpostal Koleksiyonu (Postal Stamp & Postcard Meta):**
-  - Bölüm sonlarında kazanılan 9 parçalı pul birleştirme albümü.
-  - Tamamlanan kartpostallarla açılan özel tahta temaları ve çerçeve ödülleri.
-- [ ] **Adım 3.3 — Dinamik Zorluk Ayarlaması (Dynamic Difficulty Adjustment - DDA):**
-  - Oyuncunun hata oranı ve çözüm hızına göre adil yardım veya ek zorluk katan akıllı adaptasyon motoru.
-- [ ] **Adım 3.4 — Faz 3 Doğrulama & Kontrol Noktası:**
-  - Koleksiyon kaydetme/yükleme, sezon geçiş testleri ve `release:check` onayı.
+- [x] **Adım 3.1 — 14 Günlük Sezonluk Canlı Operasyon Motoru (Seasonal Events Engine):**
+  - `src/engine/seasonalEvents.ts` modülü oluşturuldu; 14 günlük rotasyonlu 4 tematik sezon (Antik Mısır, Siber Metropol, Zümrüt Korusu, Göksel Tapınak) tanımlandı.
+  - `getCurrentSeason` ve `getRemainingSeasonDays` ile deterministik küresel döngü kuruldu.
+- [x] **Adım 3.2 — Tematik Pul ve Kartpostal Koleksiyonu (Postal Stamp & Postcard Meta):**
+  - Her sezona özel 9 parçalı pul birleştirme albümü (`SeasonalEventManager`) kodlandı.
+  - 9 pul tamamlandığında +150 Altın, +20 Kristal ödülü ve özel tematik tahta derisi (`ShopManager.unlockTheme`) açılması sağlandı.
+- [x] **Adım 3.3 — Dinamik Zorluk Ayarlaması (Dynamic Difficulty Adjustment - DDA):**
+  - `src/engine/adaptiveDifficulty.ts` motoru kuruldu.
+  - 2 ardışık hatada `scoutSupportActive`, 5 hızlı hatasız hamlede `masterFlowActive` (+%25 skor bonusu) ve 45s hamlesizlikte `hesitationDetected` algoritmaları tamamlandı.
+- [x] **Adım 3.4 — Faz 3 Doğrulama & Kontrol Noktası:**
+  - `src/tests/seasonal-events-dda.test.ts` (6 yeni unit test) eklendi.
+  - 31 test dosyasının 31'i (%100) ve 308 testin 308'i (%100) tam yeşil geçti.
+  - `npm run release:check` (Typecheck + Vitest + Vite Build) sıfır hatayla doğrulandı.
 
 ---
 

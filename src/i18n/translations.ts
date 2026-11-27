@@ -537,6 +537,22 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
 
 
 
+    // Faz 3 — Sezonluk Canlı Operasyonlar & Kartpostal
+    season_title: 'Sezonluk Etkinlik',
+    season_stamps_progress: '{current} / 9 Pul Toplandı',
+    season_btn_claim: 'Kartpostalı Tamamla & Ödülü Al',
+    season_reward_claimed: '✓ Ödül Alındı',
+    season_toast_stamp_found: '📮 Yeni pul parçası bulundu! ({count}/9)',
+    season_toast_reward_claimed: '🎉 Sezonluk kartpostal tamamlandı! +{gold} 🪙 +{crystals} 💎',
+    season_egypt_name: 'Antik Mısır Sezonu',
+    season_egypt_desc: 'Güneş tapınaklarını ve 9 kadim pul parçasını keşfet.',
+    season_cyber_name: 'Siber Metropol Sezonu',
+    season_cyber_desc: 'Neon ışıkları altında siber bulmacaları çöz ve kartpostalı tamamla.',
+    season_emerald_name: 'Zümrüt Korusu Sezonu',
+    season_emerald_desc: 'Yeşim ormanlarında doğanın 9 gizemli rün pulunu topla.',
+    season_celestial_name: 'Göksel Tapınak Sezonu',
+    season_celestial_desc: 'Yıldızların ötesindeki gök tapınaklarını aş ve ödülü kazan.',
+
     // Faz 3a — Çift Ekonomi & Yetenekler
     abilities_title: 'Yetenekler',
     abilities_subtitle: 'Rün Kristali ve Altınla Güçlendir',
@@ -1275,6 +1291,22 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     spark_combo_gold_bonus: '+{gold} Combo Gold!',
 
 
+
+    // Faz 3 — Seasonal Live-Ops & Postcards
+    season_title: 'Seasonal Event',
+    season_stamps_progress: '{current} / 9 Stamps Collected',
+    season_btn_claim: 'Complete Postcard & Claim Reward',
+    season_reward_claimed: '✓ Reward Claimed',
+    season_toast_stamp_found: '📮 New stamp piece discovered! ({count}/9)',
+    season_toast_reward_claimed: '🎉 Seasonal postcard completed! +{gold} 🪙 +{crystals} 💎',
+    season_egypt_name: 'Ancient Egypt Season',
+    season_egypt_desc: 'Explore sun temples and assemble all 9 ancient stamp pieces.',
+    season_cyber_name: 'Cyber Metropolis Season',
+    season_cyber_desc: 'Crack cyber puzzles beneath neon lights to complete the postcard.',
+    season_emerald_name: 'Emerald Grove Season',
+    season_emerald_desc: 'Gather nature 9 mystical rune stamps deep in the jade forests.',
+    season_celestial_name: 'Celestial Temple Season',
+    season_celestial_desc: 'Transcend astral shrines beyond the stars to earn the reward.',
 
     // Faz 3a — Dual Economy & Abilities
     abilities_title: 'Abilities',
