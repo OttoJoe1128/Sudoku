@@ -63,53 +63,53 @@ export const menuTemplate = `
     <!-- KATMAN 2: CANLI MACERA VİTRİNİ (Hero Card) & CANLI ETKİNLİKLER -->
     <div class="w-full flex flex-col gap-2 shrink-0">
         <!-- Macera Kartı (Primary Hero Card) -->
-        <div class="w-full bg-gradient-to-br from-amber-950/40 via-[var(--bg-card)] to-slate-900/60 border border-amber-500/30 rounded-2xl sm:rounded-3xl p-2.5 sm:p-3 shadow-xl flex flex-col justify-between relative overflow-hidden group">
-            <div class="absolute -right-8 -top-8 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="w-full border border-[var(--border-strong)] rounded-2xl sm:rounded-3xl p-2.5 sm:p-3 shadow-xl flex flex-col justify-between relative overflow-hidden group transition-all" style="background: var(--hero-bg); color: var(--hero-text);">
+            <div class="absolute -right-8 -top-8 w-32 h-32 bg-[var(--accent-gold)]/10 rounded-full blur-2xl pointer-events-none"></div>
 
             <div class="flex items-center justify-between w-full mb-1">
                 <div class="text-left min-w-0 pr-2">
-                    <span id="quick-play-title" class="text-xs sm:text-sm font-black block leading-tight tracking-wider uppercase text-amber-300 font-mono">CHAPTER 1</span>
-                    <span id="quick-play-subtitle" class="text-[9.5px] sm:text-[10.5px] font-bold text-[var(--text-secondary)] block mt-0.5 truncate">Level 1 - Classic</span>
+                    <span id="quick-play-title" class="text-xs sm:text-sm font-black block leading-tight tracking-wider uppercase text-[var(--accent-gold)] font-mono">CHAPTER 1</span>
+                    <span id="quick-play-subtitle" class="text-[9.5px] sm:text-[10.5px] font-bold text-[var(--hero-subtext)] block mt-0.5 truncate">Level 1 - Classic</span>
                 </div>
                 <!-- Aktif Bölüm Enerjisi Rozeti -->
-                <div id="hero-energy-badge" class="bg-amber-500/15 text-amber-300 border border-amber-400/40 px-2 py-0.5 rounded-full text-[8.5px] font-mono font-black flex items-center gap-1 shadow-sm shrink-0">
+                <div id="hero-energy-badge" class="bg-[var(--bg-elevated)] text-[var(--accent-gold)] border border-[var(--border-strong)] px-2 py-0.5 rounded-full text-[8.5px] font-mono font-black flex items-center gap-1 shadow-sm shrink-0">
                     ⚡ <span>Energy</span>
                 </div>
             </div>
 
-            <!-- Devasa Çağrı Butonu: YOLCULUĞA DEVAM ET (3D Kabartmalı, Altın & Neon Zümrüt) -->
-            <button id="btn-quick-play" class="w-full bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:brightness-110 text-slate-950 font-black rounded-xl sm:rounded-2xl py-2 px-3 shadow-lg active:scale-[0.98] transition-all flex items-center justify-between cursor-pointer border border-amber-300/40 mt-0.5">
+            <!-- Devasa Çağrı Butonu: YOLCULUĞA DEVAM ET (Theme-Aware 3D Çağrı Butonu) -->
+            <button id="btn-quick-play" class="w-full bg-[var(--accent-gold)] hover:brightness-110 text-[var(--text-on-gold)] font-black rounded-xl sm:rounded-2xl py-2 px-3 shadow-lg active:scale-[0.98] transition-all flex items-center justify-between cursor-pointer border border-[var(--border-strong)] mt-0.5">
                 <div class="flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-slate-950 animate-ping"></span>
+                    <span class="w-2 h-2 rounded-full bg-[var(--text-on-gold)] animate-ping"></span>
                     <span class="text-xs sm:text-sm font-black tracking-wider uppercase font-sans" data-i18n="menu_journey_continue">CONTINUE JOURNEY</span>
                 </div>
-                <div class="w-5 h-5 rounded-lg bg-black/20 flex items-center justify-center text-xs font-black">➔</div>
+                <div class="w-5 h-5 rounded-lg bg-[var(--text-on-gold)]/20 flex items-center justify-center text-xs font-black">➔</div>
             </button>
 
             <!-- Canlı İlerleme Çubuğu -->
             <div class="w-full bg-[#070D19]/40 h-1 rounded-full overflow-hidden flex shadow-inner mt-1.5 border border-white/5">
-                <div id="quick-play-progress-bar" class="bg-gradient-to-r from-amber-300 to-emerald-400 h-full transition-all duration-300 rounded-full" style="width: 10%"></div>
+                <div id="quick-play-progress-bar" class="bg-[var(--accent-cyan)] h-full transition-all duration-300 rounded-full" style="width: 10%"></div>
             </div>
         </div>
 
         <!-- İkili Canlı-Ops Hapları (Live-Ops Split Capsules) -->
         <div class="w-full flex gap-1.5">
             <!-- Sol: 📮 Sezonluk Kartpostal -->
-            <button id="btn-open-postcards" class="flex-1 bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-amber-400/40 rounded-full py-1 px-2.5 sm:px-3 flex items-center justify-between active:scale-95 transition-all cursor-pointer shadow-sm">
+            <button id="btn-open-postcards" class="flex-1 bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-strong)] rounded-full py-1 px-2.5 sm:px-3 flex items-center justify-between active:scale-95 transition-all cursor-pointer shadow-sm">
                 <div class="flex items-center gap-1.5 min-w-0">
                     <span class="text-xs shrink-0">📮</span>
-                    <span id="menu-season-pill-text" class="text-[9.5px] sm:text-[10.5px] font-black text-amber-300 truncate" data-i18n="season_btn_menu">Season</span>
+                    <span id="menu-season-pill-text" class="text-[9.5px] sm:text-[10.5px] font-black text-[var(--accent-gold)] truncate" data-i18n="season_btn_menu">Season</span>
                 </div>
-                <span id="menu-season-stamps-count" class="text-[8.5px] font-mono font-bold bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded-full border border-amber-400/40 shrink-0">0/9</span>
+                <span id="menu-season-stamps-count" class="text-[8.5px] font-mono font-bold bg-[var(--bg-elevated)] text-[var(--accent-gold)] px-1.5 py-0.5 rounded-full border border-[var(--border-subtle)] shrink-0">0/9</span>
             </button>
 
             <!-- Sağ: 👹 Klan Samurai Zindanı -->
             <button id="btn-open-clan" class="flex-1 bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-rose-500/40 rounded-full py-1 px-2.5 sm:px-3 flex items-center justify-between active:scale-95 transition-all cursor-pointer shadow-sm">
                 <div class="flex items-center gap-1.5 min-w-0">
                     <span class="text-xs shrink-0">⛩️</span>
-                    <span id="menu-clan-pill-text" class="text-[9.5px] sm:text-[10.5px] font-black text-rose-300 truncate" data-i18n="menu_clan_title">Clan Dungeon</span>
+                    <span id="menu-clan-pill-text" class="text-[9.5px] sm:text-[10.5px] font-black text-rose-500 dark:text-rose-400 truncate" data-i18n="menu_clan_title">Clan Dungeon</span>
                 </div>
-                <span id="menu-clan-dust-count" class="text-[8.5px] font-mono font-bold bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded-full border border-rose-500/40 shrink-0">350/500</span>
+                <span id="menu-clan-dust-count" class="text-[8.5px] font-mono font-bold bg-rose-500/20 text-rose-500 dark:text-rose-300 px-1.5 py-0.5 rounded-full border border-rose-500/30 shrink-0">350/500</span>
             </button>
         </div>
     </div>
@@ -124,51 +124,51 @@ export const menuTemplate = `
     </button>
 
     <!-- KATMAN 3: TAKTİKSEL MODLAR (Bento Grid — 2x2 Dengeli Matris) -->
-    <div class="grid grid-cols-2 gap-2 w-full flex-1 my-auto max-h-[160px]">
+    <div class="grid grid-cols-2 gap-1.5 sm:gap-2 w-full flex-1 my-auto max-h-[145px]">
         <!-- 1. ⚔️ Arena Düello Kartı -->
-        <button id="btn-open-match" class="bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] border border-amber-500/30 rounded-2xl p-2.5 sm:p-3 flex flex-col justify-between text-left active:scale-[0.98] transition-all cursor-pointer shadow-sm group min-w-0 relative overflow-hidden">
+        <button id="btn-open-match" class="bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] border border-[var(--border-strong)] rounded-2xl p-2 sm:p-2.5 flex flex-col justify-between text-left active:scale-[0.97] transition-all cursor-pointer shadow-sm group min-w-0 relative overflow-hidden">
             <div class="flex items-center justify-between w-full">
-                <span class="text-xs sm:text-sm font-black text-amber-300 flex items-center gap-1">
-                    <svg class="w-3.5 h-3.5 text-amber-300 shrink-0 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <span class="text-xs sm:text-sm font-black text-[var(--accent-gold)] flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5 text-[var(--accent-gold)] shrink-0 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                     <span>ARENA</span>
                 </span>
-                <span class="text-[8px] sm:text-[9px] font-mono font-black bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded-md border border-amber-400/30">100 🪙</span>
+                <span class="text-[8px] sm:text-[8.5px] font-mono font-black bg-[var(--bg-elevated)] text-[var(--accent-gold)] px-1 py-0.2 rounded border border-[var(--border-subtle)]">100 🪙</span>
             </div>
-            <div class="mt-1">
-                <span class="text-[9.5px] sm:text-[10.5px] font-bold text-[var(--text-secondary)] block leading-tight truncate" data-i18n="menu_arena_card_sub">Live & Ghost PvP</span>
+            <div class="mt-0.5">
+                <span class="text-[9px] sm:text-[10px] font-bold text-[var(--text-secondary)] block leading-tight truncate" data-i18n="menu_arena_card_sub">Live & Ghost PvP</span>
             </div>
         </button>
 
         <!-- 2. 🌀 Serbest Mod Kartı -->
-        <button id="btn-new-game" class="bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] border border-[var(--border-strong)] rounded-2xl p-2.5 sm:p-3 flex flex-col justify-between text-left active:scale-[0.98] transition-all cursor-pointer shadow-sm group min-w-0">
+        <button id="btn-new-game" class="bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] border border-[var(--border-strong)] rounded-2xl p-2 sm:p-2.5 flex flex-col justify-between text-left active:scale-[0.97] transition-all cursor-pointer shadow-sm group min-w-0">
             <div class="flex items-center justify-between w-full">
                 <span class="text-xs sm:text-sm font-black text-[var(--text-primary)] flex items-center gap-1" data-i18n="menu_new_game_title">FREE MODE</span>
-                <span class="text-[8px] sm:text-[9px] font-mono font-bold bg-[var(--bg-elevated)] text-[var(--accent-gold)] px-1.5 py-0.5 rounded-md border border-[var(--border-subtle)]">5 Modes</span>
+                <span class="text-[8px] sm:text-[8.5px] font-mono font-bold bg-[var(--bg-elevated)] text-[var(--text-secondary)] px-1 py-0.2 rounded border border-[var(--border-subtle)]">5 Modes</span>
             </div>
-            <div class="mt-1">
-                <span class="text-[9.5px] sm:text-[10.5px] font-bold text-[var(--text-secondary)] block leading-tight truncate" data-i18n="menu_new_game_sub">Classic, Killer, Samurai</span>
+            <div class="mt-0.5">
+                <span class="text-[9px] sm:text-[10px] font-bold text-[var(--text-secondary)] block leading-tight truncate" data-i18n="menu_new_game_sub">Classic, Killer, Samurai</span>
             </div>
         </button>
 
         <!-- 3. 📜 Sudoku Akademisi Kartı -->
-        <button id="btn-menu-open-academy" class="bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] border border-[var(--border-strong)] rounded-2xl p-2.5 sm:p-3 flex flex-col justify-between text-left active:scale-[0.98] transition-all cursor-pointer shadow-sm group min-w-0">
+        <button id="btn-menu-open-academy" class="bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] border border-[var(--border-strong)] rounded-2xl p-2 sm:p-2.5 flex flex-col justify-between text-left active:scale-[0.97] transition-all cursor-pointer shadow-sm group min-w-0">
             <div class="flex items-center justify-between w-full">
-                <span class="text-xs sm:text-sm font-black text-cyan-300 flex items-center gap-1" data-i18n="menu_academy_card_title">ACADEMY</span>
-                <span class="text-[8px] sm:text-[9px] font-mono font-bold bg-cyan-500/15 text-cyan-300 px-1.5 py-0.5 rounded-md border border-cyan-400/30">20 Lessons</span>
+                <span class="text-xs sm:text-sm font-black text-[var(--accent-cyan)] flex items-center gap-1" data-i18n="menu_academy_card_title">ACADEMY</span>
+                <span class="text-[8px] sm:text-[8.5px] font-mono font-bold bg-[var(--bg-elevated)] text-[var(--accent-cyan)] px-1 py-0.2 rounded border border-[var(--border-subtle)]">20 Lessons</span>
             </div>
-            <div class="mt-1">
-                <span class="text-[9.5px] sm:text-[10.5px] font-bold text-[var(--text-secondary)] block leading-tight truncate" data-i18n="menu_academy_card_sub">Simulator & Techniques</span>
+            <div class="mt-0.5">
+                <span class="text-[9px] sm:text-[10px] font-bold text-[var(--text-secondary)] block leading-tight truncate" data-i18n="menu_academy_card_sub">Simulator & Techniques</span>
             </div>
         </button>
 
         <!-- 4. 🎒 Yetenekler & Rün Ağacı Kartı -->
-        <button id="btn-menu-open-abilities" class="bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] border border-purple-500/30 rounded-2xl p-2.5 sm:p-3 flex flex-col justify-between text-left active:scale-[0.98] transition-all cursor-pointer shadow-sm group min-w-0">
+        <button id="btn-menu-open-abilities" class="bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] border border-[var(--border-strong)] rounded-2xl p-2 sm:p-2.5 flex flex-col justify-between text-left active:scale-[0.97] transition-all cursor-pointer shadow-sm group min-w-0">
             <div class="flex items-center justify-between w-full">
-                <span class="text-xs sm:text-sm font-black text-purple-300 flex items-center gap-1" data-i18n="menu_abilities_card_title">ABILITIES</span>
-                <span class="text-[8px] sm:text-[9px] font-mono font-bold bg-purple-500/15 text-purple-300 px-1.5 py-0.5 rounded-md border border-purple-400/30">Rune Tree</span>
+                <span class="text-xs sm:text-sm font-black text-purple-600 dark:text-purple-300 flex items-center gap-1" data-i18n="menu_abilities_card_title">ABILITIES</span>
+                <span class="text-[8px] sm:text-[8.5px] font-mono font-bold bg-[var(--bg-elevated)] text-purple-600 dark:text-purple-300 px-1 py-0.2 rounded border border-[var(--border-subtle)]">Rune Tree</span>
             </div>
-            <div class="mt-1">
-                <span class="text-[9.5px] sm:text-[10.5px] font-bold text-[var(--text-secondary)] block leading-tight truncate" data-i18n="menu_abilities_card_sub">5 Spells & 25 Tiers</span>
+            <div class="mt-0.5">
+                <span class="text-[9px] sm:text-[10px] font-bold text-[var(--text-secondary)] block leading-tight truncate" data-i18n="menu_abilities_card_sub">5 Spells & 25 Tiers</span>
             </div>
         </button>
     </div>
