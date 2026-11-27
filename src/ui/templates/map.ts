@@ -1,7 +1,7 @@
 import { Icons } from '../../design/icons';
 
 export const mapTemplate = `
-<div id="view-map" class="hidden flex-col items-center p-4 bg-[var(--bg-app)] text-[var(--text-primary)] h-[100dvh] relative overflow-hidden font-sans">
+<div id="view-map" class="hidden flex-1 flex-col items-center p-3 sm:p-4 bg-[var(--bg-app)] text-[var(--text-primary)] relative overflow-hidden font-sans">
     <!-- Sabit Üst Bölüm -->
     <div class="w-full flex flex-col items-center shrink-0 z-20">
         <!-- Üst Bar -->

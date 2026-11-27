@@ -254,7 +254,7 @@ export const UIManager = {
         ${authModalTemplate}
         ${streakModalTemplate}
         ${abilityDetailModalTemplate}
-        <div id="game-view" class="hidden flex-col items-center p-6 w-full h-full relative z-10" style="padding-bottom: max(env(safe-area-inset-bottom, 0px), 1.5rem);">
+        <div id="game-view" class="hidden flex-col items-center p-3 sm:p-5 w-full h-full relative z-10 justify-between overflow-hidden" style="padding-bottom: max(env(safe-area-inset-bottom, 0px), 1.5rem);">
             <!-- Düello Canlı İlerleme Çubuğu -->
             <div id="match-header-bar" class="hidden w-full bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-strong)] p-3 rounded-2xl mb-3 shadow-lg flex-col gap-2">
                 <div class="flex justify-between items-center text-xs font-black">

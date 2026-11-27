@@ -280,11 +280,6 @@ export const UserManager = {
         const now = new Date();
         const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-        if (typeof localStorage !== 'undefined') {
-          localStorage.setItem('sudoku_daily_streak', '1');
-          localStorage.setItem('sudoku_last_streak_date', todayStr);
-        }
-
         const tempInfo = this.getTemporaryAbilityInfo();
 
         const fullData: Record<string, any> = {
@@ -305,7 +300,7 @@ export const UserManager = {
           score_samurai: this.getVariantScore('samurai'),
           total_completed: this.getTotalCompleted(),
           completed_by_category: this.getCompletedByCategory(),
-          streak_count: 1,
+          streak_count: this.getDailyStreak(),
           last_streak_date: todayStr,
           temp_ability_id: tempInfo.id,
           temp_ability_ends_at: tempInfo.endsAtMs,
@@ -638,10 +633,7 @@ export const UserManager = {
     if (typeof localStorage === 'undefined') return 1;
     const raw = localStorage.getItem('sudoku_daily_streak');
     const val = raw ? parseInt(raw) : 1;
-    if (isNaN(val) || val !== 1) {
-      localStorage.setItem('sudoku_daily_streak', '1');
-    }
-    return 1;
+    return isNaN(val) || val < 1 ? 1 : val;
   },
 
   getDailyStreakDates(): string[] {
@@ -672,6 +664,7 @@ export const UserManager = {
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const lastDate = localStorage.getItem('sudoku_last_streak_date');
+    this.getDailyStreakDates();
 
     if (!lastDate) {
       localStorage.setItem('sudoku_daily_streak', '1');
@@ -725,6 +718,7 @@ export const UserManager = {
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     localStorage.setItem('sudoku_daily_streak', newStreak.toString());
     localStorage.setItem('sudoku_last_streak_date', todayStr);
+    this.getDailyStreakDates();
 
     if (auth && auth.currentUser) {
       setDoc(doc(db, 'leaderboard', auth.currentUser.uid), {
@@ -867,12 +861,6 @@ export const UserManager = {
       const now = new Date();
       const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-      // Auto-repair streak to 1 in local storage
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('sudoku_daily_streak', '1');
-        localStorage.setItem('sudoku_last_streak_date', todayStr);
-      }
-
       await setDoc(userDocRef, {
         uid,
         username,
@@ -891,7 +879,7 @@ export const UserManager = {
         score_samurai: this.getVariantScore('samurai'),
         total_completed: this.getTotalCompleted(),
         completed_by_category: this.getCompletedByCategory(),
-        streak_count: 1,
+        streak_count: this.getDailyStreak(),
         last_streak_date: todayStr,
         temp_ability_id: this.getTemporaryAbilityInfo().id,
         temp_ability_ends_at: this.getTemporaryAbilityInfo().endsAtMs,
@@ -936,7 +924,7 @@ export const UserManager = {
           gold,
           crystals: this.getCrystals(),
           title: currentTitle,
-          streak_count: 1,
+          streak_count: this.getDailyStreak(),
           last_streak_date: todayStr,
           total_completed: this.getTotalCompleted(),
           completed_by_category: this.getCompletedByCategory(),

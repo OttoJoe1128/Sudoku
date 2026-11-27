@@ -74,4 +74,31 @@ describe('Faz 6 Organik Ses & 7 Günlük Seri Koruma Test Paketi', () => {
       expect(trCharRegex.test(enVal)).toBe(false);
     });
   });
+
+  it('4. Çok Günlük Seri İlerlemesi & Günlük Ödül Entegrasyonu: Seri 1 den 2 ye ve 3 e ilerlemeli, ödül alma ve modal açma seriyi 1 e düşürmemeli', async () => {
+    // 1. Gün: Kullanıcı ilk kez girdi
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
+    localStorage.setItem('sudoku_daily_streak', '1');
+    localStorage.setItem('sudoku_last_streak_date', yesterdayStr);
+
+    // 2. Gün: Giriş yapıldı -> Seri 2 olmalı
+    const streakDay2 = UserManager.updateDailyStreak();
+    expect(streakDay2).toBe(2);
+    expect(UserManager.getDailyStreak()).toBe(2);
+
+    // Günlük ödül alındı (UserManager.updateProgress tetiklenir)
+    await UserManager.updateProgress(1, 150);
+    expect(UserManager.getDailyStreak()).toBe(2);
+
+    // Seri modalı açıldı -> getDailyStreak() seriyi ezmemeli, 2 kalmalı
+    openStreakModal();
+    const subEl = document.getElementById('streak-modal-subtitle');
+    expect(subEl?.innerText).toContain('2');
+    expect(UserManager.getDailyStreak()).toBe(2);
+    closeStreakModal();
+  });
 });

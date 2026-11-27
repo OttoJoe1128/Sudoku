@@ -6,8 +6,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run",
-    "release:check": "tsc --noEmit && vitest run && vite build"
+    "test": "vitest run --fileParallelism=false",
+    "release:check": "tsc --noEmit && vitest run --fileParallelism=false && vite build",
+    "cap:sync": "node -e \"process.argv = ['node', 'cap', 'sync', 'android']; require('./node_modules/@capacitor/cli/dist/index').run();\""
   },
   "devDependencies": {
     "autoprefixer": "^10.6.2",

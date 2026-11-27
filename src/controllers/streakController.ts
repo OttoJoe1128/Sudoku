@@ -2,7 +2,7 @@ import { UIManager } from '../ui/uiManager';
 import { UserManager } from '../store/userState';
 import { SoundManager } from '../engine/soundManager';
 import { AdService } from '../services/adService';
-import { t, applyStaticTranslations } from '../i18n/translations';
+import { t, applyStaticTranslations, getLang } from '../i18n/translations';
 
 export function openStreakModal(): void {
   UIManager.toggleModal('streak-modal', true);
@@ -84,9 +84,10 @@ function renderStreakModalUI(): void {
         dayIcon = '🔒';
       }
 
+      const dayLabel = getLang() === 'en' ? dayTagsEn[dayIdx] : dayTagsTr[dayIdx];
       card.className = classes;
       card.innerHTML = `
-        <span class="text-[8px] font-black opacity-90 whitespace-nowrap leading-none tracking-tighter">${dayTagsTr[dayIdx]}</span>
+        <span class="text-[8px] font-black opacity-90 whitespace-nowrap leading-none tracking-tighter">${dayLabel}</span>
         <span class="text-sm mt-0.5">${dayIcon}</span>
       `;
       gridEl.appendChild(card);

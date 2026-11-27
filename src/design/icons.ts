@@ -2,17 +2,17 @@ import { translateRankName } from '../i18n/translations';
 
 export function renderBrandLogoHTML(): string {
   return `
-    <div class="flex flex-col items-center justify-center my-1 text-center select-none pointer-events-none">
-      <div class="flex items-center gap-2.5 mb-1">
-        <img src="./logo.png" alt="SudokuMap" class="w-12 h-12 rounded-2xl object-cover shadow-md border border-[var(--border-strong)] shrink-0" />
+    <div class="flex flex-col items-center justify-center my-0.5 sm:my-1 text-center select-none pointer-events-none shrink-0">
+      <div class="flex items-center gap-2 mb-0.5">
+        <img src="./logo.png" alt="SudokuMap" class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-cover shadow-sm border border-[var(--border-strong)] shrink-0" />
         <div class="flex flex-col text-left">
-          <h1 class="text-lg font-black tracking-[0.22em] leading-none">
+          <h1 class="text-base sm:text-lg font-black tracking-[0.2em] leading-none">
             <span class="text-[var(--text-primary)]">SUDOKU</span><span class="text-[var(--accent-gold)]">MAP</span>
           </h1>
-          <span class="text-[8px] font-bold text-[var(--text-secondary)] tracking-[0.18em] uppercase mt-0.5 opacity-80">SMART PUZZLE ARENA</span>
+          <span class="text-[7.5px] sm:text-[8px] font-bold text-[var(--text-secondary)] tracking-[0.16em] uppercase mt-0.5 opacity-80">SMART PUZZLE ARENA</span>
         </div>
       </div>
-      <div class="h-[1px] w-32 bg-gradient-to-r from-transparent via-[var(--accent-gold)]/60 to-transparent"></div>
+      <div class="h-[1px] w-24 sm:w-32 bg-gradient-to-r from-transparent via-[var(--accent-gold)]/60 to-transparent"></div>
     </div>
   `;
 }
