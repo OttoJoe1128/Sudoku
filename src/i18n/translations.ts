@@ -589,6 +589,8 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     league_chest_btn: 'Lig Sandığını Aç',
     league_modal_title: 'Lig Arması',
     relic_trinket_title: 'Kuşanılmış Kalıntı',
+    map_region_gate_title: '{id}. Kadim Rün Kapısı',
+
 
 
 
@@ -1382,6 +1384,8 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     league_next_tier_title: 'Next Tier',
     league_chest_title: 'End of Season Tier Chest',
     league_modal_title: 'League Crest',
+    map_region_gate_title: '{id}. Ancient Rune Gate',
+
     relic_trinket_title: 'Equipped Relic',
 
     league_chest_btn: 'Open League Chest',

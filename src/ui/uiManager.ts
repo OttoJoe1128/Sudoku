@@ -1104,6 +1104,17 @@ export const UIManager = {
       const pct = Math.min(100, Math.max(5, Math.round(((currentLevel % 300) / 300) * 100)));
       tierProgress.style.width = `${pct}%`;
     }
+    const scrollArea = document.getElementById('map-scroll-area');
+    if (scrollArea) {
+      if (currentLevel <= 300) {
+        scrollArea.className = 'w-full h-full overflow-y-auto hidden-scrollbar relative z-10 pt-4 pb-28 bg-gradient-to-b from-emerald-950/15 via-transparent to-emerald-950/10 transition-colors duration-500';
+      } else if (currentLevel <= 700) {
+        scrollArea.className = 'w-full h-full overflow-y-auto hidden-scrollbar relative z-10 pt-4 pb-28 bg-gradient-to-b from-amber-950/20 via-transparent to-amber-950/15 transition-colors duration-500';
+      } else {
+        scrollArea.className = 'w-full h-full overflow-y-auto hidden-scrollbar relative z-10 pt-4 pb-28 bg-gradient-to-b from-rose-950/25 via-transparent to-indigo-950/20 transition-colors duration-500';
+      }
+    }
+
 
     // 20 Bölge × 50 Bölüm Kartı Güncellemesi
     const currentRegion = getRegionForLevel(currentLevel);
@@ -1212,11 +1223,22 @@ export const UIManager = {
             label = `🎁 ${t('gate_btn_open')}`;
           }
 
-          gateBadgeHTML = `
-            <button data-map-gate="${lvl}" data-gate-status="${status}" class="absolute -left-20 top-1/2 -translate-y-1/2 border font-mono font-black text-[9px] px-2 py-1 rounded-xl shadow-md flex items-center gap-1 active:scale-95 transition-all z-20 cursor-pointer ${statusClasses}">
-              <span>${label}</span>
-            </button>
-          `;
+          if (gateDef.isRegionVault) {
+            gateBadgeHTML = `
+              <div class="absolute -left-28 top-1/2 -translate-y-1/2 w-24 flex flex-col items-center p-1.5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-[var(--bg-card)] to-amber-500/20 border-2 border-amber-400/80 shadow-xl z-25">
+                <span class="text-[7.5px] font-black uppercase text-amber-300 tracking-wider mb-1 flex items-center gap-0.5"><span>⛩️</span><span>${t('map_region_gate_title', { id: Math.floor(lvl / 50) })}</span></span>
+                <button data-map-gate="${lvl}" data-gate-status="${status}" class="border font-mono font-black text-[8.5px] px-2 py-0.5 rounded-lg shadow-md flex items-center gap-1 active:scale-95 transition-all cursor-pointer ${statusClasses}">
+                  <span>${label}</span>
+                </button>
+              </div>
+            `;
+          } else {
+            gateBadgeHTML = `
+              <button data-map-gate="${lvl}" data-gate-status="${status}" class="absolute -left-20 top-1/2 -translate-y-1/2 border font-mono font-black text-[9px] px-2 py-1 rounded-xl shadow-md flex items-center gap-1 active:scale-95 transition-all z-20 cursor-pointer ${statusClasses}">
+                <span>${label}</span>
+              </button>
+            `;
+          }
         }
       }
 
@@ -1265,12 +1287,25 @@ export const UIManager = {
         btn.setAttribute('data-energy', modProfile.energyId);
         if (isBranchingLevel(lvl)) {
           btn.setAttribute('data-branching', 'true');
-          const branchBadgeHTML = `<span class="absolute -top-1.5 -left-1.5 text-[8px] bg-[var(--bg-app)] border border-amber-400/50 rounded-full w-4 h-4 flex items-center justify-center shadow z-20 pointer-events-none text-amber-300">⚡</span>`;
+          const isEn = getLang() === 'en';
+          const speedLabel = isEn ? 'Speed' : 'Hız';
+          const branchBadgeHTML = `
+            <div class="absolute -top-5 flex items-center gap-1 z-30 pointer-events-none whitespace-nowrap">
+              <span class="text-[7.5px] font-mono font-black bg-rose-950/90 border border-rose-500/60 text-rose-300 px-1 py-0.2 rounded shadow">🗝️ Risk</span>
+              <span class="text-[7.5px] font-mono font-black bg-amber-950/90 border border-amber-400/60 text-amber-300 px-1 py-0.2 rounded shadow">⚡ ${speedLabel}</span>
+            </div>
+            <span class="absolute -top-1.5 -left-1.5 text-[8px] bg-[var(--bg-app)] border border-amber-400/50 rounded-full w-4 h-4 flex items-center justify-center shadow z-20 pointer-events-none text-amber-300">⚡</span>
+          `;
           innerBox.insertAdjacentHTML('beforeend', branchBadgeHTML);
         }
         if (btn.hasAttribute('data-level')) {
           btn.addEventListener('click', () => onNodeClick(lvl));
         }
+      }
+
+      if (lvl > currentLevel + 2) {
+        wrapper.style.filter = 'blur(1.2px)';
+        wrapper.style.opacity = '0.45';
       }
 
       const gateBtn = innerBox.querySelector('[data-map-gate]');
