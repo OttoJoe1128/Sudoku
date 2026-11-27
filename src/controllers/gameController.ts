@@ -1645,32 +1645,50 @@ export function startGame(
 
       pendingSmartHint = hint;
       selectedCell = { r: hint.row, c: hint.col };
+      let hintStep = 1;
+      const totalSteps = 2;
 
-      let techKey = 'academy_title';
-      if (hint.technique === 'naked_single') techKey = 'tech_naked_single';
-      else if (hint.technique === 'hidden_single_row') techKey = 'tech_hidden_single';
-      else if (hint.technique === 'hidden_single_col') techKey = 'tech_hidden_single';
-      else if (hint.technique === 'hidden_single_box') techKey = 'tech_hidden_single';
-      else if (hint.technique === 'pointing_deduction') techKey = 'tech_pointing_pairs';
-      else techKey = 'tech_crosshatching';
+      const updateHintStepUI = () => {
+        let techKey = 'academy_title';
+        if (hint.technique === 'naked_single') techKey = 'tech_naked_single';
+        else if (hint.technique === 'hidden_single_row') techKey = 'tech_hidden_single';
+        else if (hint.technique === 'hidden_single_col') techKey = 'tech_hidden_single';
+        else if (hint.technique === 'hidden_single_box') techKey = 'tech_hidden_single';
+        else if (hint.technique === 'pointing_deduction') techKey = 'tech_pointing_pairs';
+        else techKey = 'tech_crosshatching';
 
-      const techLabel = t(techKey);
-      const symbol = formatHintSymbol(hint.digit, currentVariant);
-      let reasonText = '';
+        const techLabel = t(techKey);
+        const symbol = formatHintSymbol(hint.digit, currentVariant);
+        let reasonText = '';
 
-      if (hint.technique === 'naked_single') {
-        reasonText = t('hint_explain_naked_single', { row: hint.row + 1, col: hint.col + 1, val: symbol });
-      } else if (hint.technique === 'hidden_single_row') {
-        reasonText = t('hint_explain_hidden_single_row', { row: hint.row + 1, val: symbol });
-      } else if (hint.technique === 'hidden_single_col') {
-        reasonText = t('hint_explain_hidden_single_col', { col: hint.col + 1, val: symbol });
-      } else if (hint.technique === 'hidden_single_box') {
-        reasonText = t('hint_explain_hidden_single_box', { box: hint.unitIndex + 1, val: symbol });
-      } else {
-        reasonText = t('hint_explain_fallback', { val: symbol });
-      }
+        if (hintStep === 1) {
+          if (hint.technique === 'naked_single') {
+            reasonText = t('hint_explain_naked_single', { row: hint.row + 1, col: hint.col + 1, val: symbol });
+          } else if (hint.technique === 'hidden_single_row') {
+            reasonText = t('hint_explain_hidden_single_row', { row: hint.row + 1, val: symbol });
+          } else if (hint.technique === 'hidden_single_col') {
+            reasonText = t('hint_explain_hidden_single_col', { col: hint.col + 1, val: symbol });
+          } else if (hint.technique === 'hidden_single_box') {
+            reasonText = t('hint_explain_hidden_single_box', { box: hint.unitIndex + 1, val: symbol });
+          } else {
+            reasonText = t('hint_explain_fallback', { val: symbol });
+          }
+        } else {
+          reasonText = `🎯 ${t('hint_step_place_title')}: [${hint.row + 1},${hint.col + 1}] ➔ ${symbol}`;
+        }
 
-      UIManager.showSmartHintBanner(techLabel, reasonText);
+        UIManager.showSmartHintBanner(techLabel, reasonText, {
+          currentStep: hintStep,
+          totalSteps,
+          onNextStep: () => {
+            hintStep = Math.min(totalSteps, hintStep + 1);
+            updateHintStepUI();
+            refresh();
+          }
+        });
+      };
+
+      updateHintStepUI();
       UIManager.showToast(t('hint_step1_toast'), "info");
       refresh();
     };

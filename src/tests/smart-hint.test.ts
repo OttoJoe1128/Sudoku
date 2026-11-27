@@ -230,4 +230,30 @@ describe('Faz 2.5d Açıklamalı Akıllı İpucu Motoru & Faz 2.5c Bağlantı Te
       expect(academyModal?.classList.contains('hidden')).toBe(false);
     });
   });
+
+  describe('6. İnteraktif Adım Adım Açıklamalı Çözücü UI', () => {
+    it('#btn-hint ile açılan ipucunda adım adım inceleme (#btn-step-smart-hint) çalışmalı', () => {
+      startGame(1, 'basit', undefined, undefined, 'classic', false);
+      const hintBtn = document.getElementById('btn-hint');
+      hintBtn?.click();
+
+      const banner = document.getElementById('smart-hint-banner');
+      const stepBadge = document.getElementById('smart-hint-step-badge');
+      const stepBtn = document.getElementById('btn-step-smart-hint');
+
+      expect(banner?.classList.contains('hidden')).toBe(false);
+      expect(stepBadge?.classList.contains('hidden')).toBe(false);
+      expect(stepBadge?.innerText).toContain('1/2');
+      expect(stepBtn?.classList.contains('hidden')).toBe(false);
+
+      // 2. Adıma ilerle
+      stepBtn?.click();
+      expect(stepBadge?.innerText).toContain('2/2');
+      expect(stepBtn?.classList.contains('hidden')).toBe(true);
+
+      // Kapat
+      document.getElementById('btn-dismiss-smart-hint')?.click();
+      expect(banner?.classList.contains('hidden')).toBe(true);
+    });
+  });
 });

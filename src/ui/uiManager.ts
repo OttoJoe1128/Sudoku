@@ -298,17 +298,25 @@ export const UIManager = {
             </div>
             <div id="game-info-popover" class="hidden w-full bg-[var(--bg-card)] border border-[var(--accent-gold)]/50 rounded-xl px-3 py-1.5 mb-2 text-[11px] text-left text-[var(--text-primary)] font-medium leading-snug shadow-sm"></div>
 
-            <!-- Akıllı İpucu Şeridi -->
+            <!-- Akıllı İpucu Şeridi (İnteraktif Adım Adım Çözücü) -->
             <div id="smart-hint-banner" class="hidden w-full max-w-[380px] bg-[var(--bg-card)] border-2 border-[var(--accent-gold)] text-[var(--text-primary)] rounded-2xl p-3 shadow-xl flex-col gap-1.5 mb-2 relative transition-all z-20">
                 <button id="btn-dismiss-smart-hint" class="absolute top-2 right-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-bold p-1 cursor-pointer">✕</button>
-                <div class="flex items-center gap-1.5 text-xs font-black text-[var(--accent-gold)]">
-                    <span>💡</span>
-                    <span id="smart-hint-tech" data-i18n="hint_banner_title">Akademi İpucu</span>
+                <div class="flex items-center justify-between pr-6">
+                    <div class="flex items-center gap-1.5 text-xs font-black text-[var(--accent-gold)]">
+                        <span>💡</span>
+                        <span id="smart-hint-tech" data-i18n="hint_banner_title">Akademi İpucu</span>
+                    </div>
+                    <span id="smart-hint-step-badge" class="hidden text-[9px] font-mono font-bold bg-[var(--accent-gold)]/20 text-[var(--accent-gold)] px-2 py-0.5 rounded-full border border-[var(--accent-gold)]/40"></span>
                 </div>
                 <p id="smart-hint-text" class="text-xs text-[var(--text-primary)] font-medium leading-relaxed text-left pr-4"></p>
-                <button id="btn-apply-smart-hint" class="w-full bg-[var(--accent-gold)] hover:brightness-110 text-[var(--text-on-gold)] font-black py-2 rounded-xl text-xs shadow active:scale-95 transition-all cursor-pointer mt-1">
-                    <span data-i18n="hint_btn_apply">Yerleştir (-10 🪙)</span>
-                </button>
+                <div id="smart-hint-actions" class="flex gap-2 w-full mt-1">
+                    <button id="btn-step-smart-hint" class="hidden flex-1 bg-[var(--bg-elevated)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] border border-[var(--border-strong)] font-black py-2 rounded-xl text-xs shadow active:scale-95 transition-all cursor-pointer">
+                        <span id="btn-step-smart-hint-label" data-i18n="hint_btn_next_step">Adımı İncele ➔</span>
+                    </button>
+                    <button id="btn-apply-smart-hint" class="flex-1 bg-[var(--accent-gold)] hover:brightness-110 text-[var(--text-on-gold)] font-black py-2 rounded-xl text-xs shadow active:scale-95 transition-all cursor-pointer">
+                        <span data-i18n="hint_btn_apply">Yerleştir (-10 🪙)</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Samurai 5-Grid Mini-Radar Seçici Bar -->
@@ -1843,13 +1851,41 @@ export const UIManager = {
     }
   },
 
-  showSmartHintBanner(techLabel: string, reasonText: string) {
+  showSmartHintBanner(
+    techLabel: string,
+    reasonText: string,
+    stepInfo?: { currentStep: number; totalSteps: number; onNextStep?: () => void }
+  ) {
     const banner = document.getElementById('smart-hint-banner');
     const techEl = document.getElementById('smart-hint-tech');
     const textEl = document.getElementById('smart-hint-text');
+    const stepBadge = document.getElementById('smart-hint-step-badge');
+    const stepBtn = document.getElementById('btn-step-smart-hint');
 
     if (techEl) techEl.innerText = techLabel;
     if (textEl) textEl.innerText = reasonText;
+
+    if (stepInfo && stepInfo.totalSteps > 1) {
+      if (stepBadge) {
+        stepBadge.classList.remove('hidden');
+        stepBadge.innerText = `${t('hint_step_label')} ${stepInfo.currentStep}/${stepInfo.totalSteps}`;
+      }
+      if (stepBtn) {
+        if (stepInfo.currentStep < stepInfo.totalSteps) {
+          stepBtn.classList.remove('hidden');
+          stepBtn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (stepInfo.onNextStep) stepInfo.onNextStep();
+          };
+        } else {
+          stepBtn.classList.add('hidden');
+        }
+      }
+    } else {
+      if (stepBadge) stepBadge.classList.add('hidden');
+      if (stepBtn) stepBtn.classList.add('hidden');
+    }
 
     if (banner) {
       banner.classList.remove('hidden');
@@ -1863,6 +1899,10 @@ export const UIManager = {
       banner.classList.add('hidden');
       banner.classList.remove('flex');
     }
+    const stepBadge = document.getElementById('smart-hint-step-badge');
+    const stepBtn = document.getElementById('btn-step-smart-hint');
+    if (stepBadge) stepBadge.classList.add('hidden');
+    if (stepBtn) stepBtn.classList.add('hidden');
   },
 
   showError(r: number, c: number) {
@@ -1935,9 +1975,13 @@ export const UIManager = {
         }
 
         const isHintTarget = !!(smartHint && smartHint.row === r && smartHint.col === c);
-        const isHintRelated = !!(smartHint && !isHintTarget && smartHint.relatedCells.some(rc => rc.r === r && rc.c === c));
+        const isHintPattern = !!(smartHint && (smartHint as any).primaryCells && (smartHint as any).primaryCells.some((pc: any) => pc.r === r && pc.c === c));
+        const isHintElimination = !!(smartHint && (smartHint as any).eliminatedCells && (smartHint as any).eliminatedCells.some((ec: any) => ec.r === r && ec.c === c));
+        const isHintRelated = !!(smartHint && !isHintTarget && !isHintPattern && !isHintElimination && smartHint.relatedCells.some(rc => rc.r === r && rc.c === c));
 
         if (isHintTarget) cell.setAttribute('data-hint-target', 'true');
+        if (isHintPattern) cell.setAttribute('data-hint-pattern', 'true');
+        if (isHintElimination) cell.setAttribute('data-hint-elimination', 'true');
         if (isHintRelated) cell.setAttribute('data-hint-related', 'true');
 
         const specCell = specialCells ? specialCells.find(sc => sc.r === r && sc.c === c) : undefined;
@@ -1970,7 +2014,11 @@ export const UIManager = {
         if (specCell?.kind === 'seal' && specCell.state === 'active') {
           bgStyle = 'bg-[var(--cell-bg)] ring-1 ring-rose-400/70';
         } else if (isHintTarget) {
-          bgStyle = 'bg-[var(--accent-gold)]/20 ring-2 ring-[var(--accent-gold)] z-10';
+          bgStyle = 'bg-emerald-500/20 ring-2 ring-emerald-400 z-10';
+        } else if (isHintPattern) {
+          bgStyle = 'bg-amber-500/25 ring-2 ring-amber-400 z-10 animate-pulse';
+        } else if (isHintElimination) {
+          bgStyle = 'bg-rose-500/15 ring-1 ring-rose-400 z-5';
         } else if (isHintRelated) {
           bgStyle = 'bg-[var(--accent-cyan)]/10';
         } else if (isMatchingValue) {

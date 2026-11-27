@@ -502,6 +502,11 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     hint_explain_hidden_single_box: '{box}. kutuda {val} yalnızca bu hücreye yerleşebilir.',
     hint_explain_fallback: 'Bu hücrenin doğru değeri {val}; çapraz elemeyle doğrulanabilir.',
     hint_step1_toast: '💡 Mantık gösterildi! Yerleştirmek için İpucu veya Yerleştir butonuna dokun.',
+    hint_step_label: 'Adım',
+    hint_btn_next_step: 'Adımı İncele ➔',
+    hint_step_pattern_title: 'Kilit Deseni Gör',
+    hint_step_elim_title: 'Adayları Ele',
+    hint_step_place_title: 'Doğru Değeri Yerleştir',
 
     // Faz 3a — Çift Ekonomi & Yetenekler
     abilities_title: 'Yetenekler',
@@ -1207,6 +1212,11 @@ export const TRANSLATIONS: Record<AppLang, Record<string, string>> = {
     hint_explain_hidden_single_box: 'In Box {box}, {val} can only be placed in this cell.',
     hint_explain_fallback: 'The verified value for this cell is {val} by elimination.',
     hint_step1_toast: '💡 Logic shown! Tap Hint again or Place to fill it.',
+    hint_step_label: 'Step',
+    hint_btn_next_step: 'Inspect Step ➔',
+    hint_step_pattern_title: 'Spot the Pattern',
+    hint_step_elim_title: 'Eliminate Candidates',
+    hint_step_place_title: 'Place Final Value',
 
     // Faz 3a — Dual Economy & Abilities
     abilities_title: 'Abilities',

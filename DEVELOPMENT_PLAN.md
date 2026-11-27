@@ -18,8 +18,11 @@ Bu belge, SudokuMap projesini geleneksel bir bulmaca oyunundan küresel çapta l
   - **Swordfish** (3x3 ızgara eleme zinciri): 3 satır / 3 sütun matris elemesi `findSwordfish` ile uygulandı.
   - **XY-Wing & Renkli Kesişimler** (Bivalue cell zincirleri): Pivot-kanat (X-Y, X-Z, Y-Z) bivalue ilişki motoru `findXYWing` ile tamamlandı.
   - `src/tests/advanced-techniques.test.ts` (6 yeni unit test) eklendi ve tüm 283 test %100 yeşil tamamlandı.
-- [ ] **Adım 1.3 — İnteraktif Adım Adım Açıklamalı Çözücü (Interactive Step-by-Step Solver UI):**
-  - Tahtadaki kilit noktalarda eleme mantığını görselleştiren, etkilenen satır/sütunları ve adayları animasyonla gösteren görsel çözücü katmanı.
+- [x] **Adım 1.3 — İnteraktif Adım Adım Açıklamalı Çözücü (Interactive Step-by-Step Solver UI):**
+  - Tahtadaki kilit noktalarda eleme mantığını görselleştiren, etkilenen satır/sütunları ve adayları animasyonla gösteren görsel çözücü katmanı tamamlandı.
+  - `#smart-hint-step-badge` (adım sayacı) ve `#btn-step-smart-hint` (adımı incele / ileri adım butonu) eklendi.
+  - Tahta üzerinde deseni oluşturan birincil hücreler altın sarısı parıltıyla (`data-hint-pattern`), hedef hücreler zümrüt yeşili halkayla (`data-hint-target`), eleme hücreleri kırmızı vurguyla (`data-hint-elimination`) işaretlendi.
+  - `src/tests/smart-hint.test.ts` içine interaktif adım adımlı çözücü testi eklendi ve tüm 284 test %100 yeşil tamamlandı.
 - [ ] **Adım 1.4 — Sudoku Akademisi Genişletmesi (İleri Düzey Master Müfredat):**
   - Mevcut 20 temel dersin üzerine X-Wing, Swordfish ve XY-Wing için animasyonlu interaktif laboratuvar derslerinin eklenmesi.
 - [ ] **Adım 1.5 — Faz 1 Doğrulama & Kontrol Noktası:**
