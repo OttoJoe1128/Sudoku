@@ -128,25 +128,25 @@ Bu belge, SudokuMap projesini geleneksel bir bulmaca oyunundan küresel çapta l
 ---
 
 ### 📌 FAZ II (UI): ÇEKİRDEK TAHTA KATMANI, DOKUNSAL REAKSİYONLAR & "JUICE"
-- [ ] **Adım II.1 — Responsive Sudoku Izgarası ve Derinlikli Katmanlama:**
-  - 3x3 ana blokları ayıran kalın çizgiler kabartmalı diegetik çerçeveye dönüştürülür.
-  - Hücrelere basıldığında 0.96x yaylanan (spring physics) mikro reaksiyon.
-- [ ] **Adım II.2 — Model 1 Ergonomik Numpad Dönüşümü (5+4 Dinamik Matris):**
-  - Tahtada 9 adedi tükenen rakamlar otomatik karartılır, üzerine zarif tamamlanma rünü yerleştirilir ve dokunulmaz kılınır.
-  - Numpad butonlarının alt köşelerine tahtada henüz girilmemiş kaç adet kaldığını gösteren mikro sayaç rozetleri eklenir.
-- [ ] **Adım II.3 — Kıvılcım Kombosu ve Dinamik Auralar:**
+- [x] **Adım II.1 — Responsive Sudoku Izgarası ve Derinlikli Katmanlama:**
+  - 3x3 ana blokları ayıran kalın çizgiler kabartmalı diegetik çerçeveye dönüştürüldü.
+  - Hücrelere dokunulduğunda 0.96x yaylanan (spring physics) mikro reaksiyon uygulandı.
+- [x] **Adım II.2 — Model 1 Ergonomik Numpad Dönüşümü (5+4 Dinamik Matris):**
+  - Tahtada 9 adedi tükenen rakamlar otomatik karartılır, üzerine zarif tamamlanma rünü (`✓`) yerleştirilir ve dokunulmaz kılınır.
+  - Numpad butonlarının alt köşelerine tahtada henüz girilmemiş kaç adet kaldığını gösteren dinamik mikro sayaç rozetleri eklendi.
+- [x] **Adım II.3 — Kıvılcım Kombosu ve Dinamik Auralar:**
   - Kombo x1'den x5'e çıktıkça tahta kenar çizgileri soğuk beyaz ➔ elektrik mavisi ➔ altın sarısı ➔ alev kırmızısına bürünür.
-  - Hata yapıldığında ekran camı gibi hafifçe çatlayan kırmızı overlay ve kombo kırılma reaksiyonu.
-- [ ] **Adım II.4 — Çoklu Dokunsal Entegrasyon (Audio-Haptic Matrix):**
+  - Hata yapıldığında ekran camı gibi hafifçe çatlayan kırmızı sarsıntı uyarısı (`triggerBoardShakeAndCrack`) ve kombo kırılma reaksiyonu bağlandı.
+- [x] **Adım II.4 — Çoklu Dokunsal Entegrasyon (Audio-Haptic Matrix):**
   - Doğru rakamda rezonant taş tıklaması ve hafif haptik.
-  - Blok/Satır/Sütun tamamlandığında ksilofon akoru ve orta düzey haptik.
+  - Blok/Satır/Sütun tamamlandığında ksilofon akoru (`playBlockComplete`) ve orta düzey haptik titreşim uygulandı.
+  - `src/tests/board-hud-overhaul.test.ts` (4 unit test) ile doğrulandı.
 
 ---
 
 ### 📌 FAZ III (UI): TAKTİKSEL KATMAN, İLERİ ÇÖZÜCÜ & CANLI DÜELLO HUD'I
-- [ ] **Adım III.1 — Vektörel Çözücü Işınları Katmanı (Raycasting Visualizer):**
-  - `#smart-hint-banner` bir tekniği (X-Wing, Swordfish vb.) açıkladığında, SVG overlay üzerinde ilgili satır ve sütunları birbirine bağlayan şeffaf neon vektörler çizilir.
-  - Elenen adayların üzerine çarpı yerine küçük bir parıltıyla buharlaşma animasyonu verilir.
+- [x] **Adım III.1 — Vektörel Çözücü Işınları Katmanı (Raycasting Visualizer):**
+  - `#smart-hint-banner` bir tekniği (X-Wing, Swordfish vb.) açıkladığında, `#hint-raycast-overlay` SVG katmanı üzerinde ilgili satır ve sütunları birbirine bağlayan şeffaf neon altın sarısı vektörler (`#F59E0B animate-pulse`) çizilir.
 - [ ] **Adım III.2 — Canlı Düello & Asenkron Hayalet HUD'ı (Split Dynamics):**
   - Rakip hayalet oyuncunun hamleleri tahta üzerinde yarı saydam mor lazer hayalet imleci olarak takip edilir.
   - Karşılaştırma çubuğunda rakibin son hamle hızı, serisi ve dalgalanan yarış göstergesi sunulur.
@@ -156,13 +156,16 @@ Bu belge, SudokuMap projesini geleneksel bir bulmaca oyunundan küresel çapta l
 ---
 
 ### 📌 FAZ IV (UI): META SİSTEMLER, SEZONLUK CANLI OPERASYONLAR & HARİTA
-- [ ] **Adım IV.1 — 1.000 Seviyelik Topoğrafik Harita Deneyimi:**
-  - Biyom zemin geçişleri (Bambu Korusu ➔ Antik Çöl ➔ Buzul Zirvesi) ve sis perdesi (Fog of War).
-  - Çatallanan rotalarda (Branching Nodes) fiziksel iki kola ayrılan yol ve "Mühürlü Patika / Kıvılcım Yolu" levhaları.
-- [ ] **Adım IV.2 — Kartpostal Albümü ve Zafer Akışı (Victory Flow):**
-  - Zaferde kazanılan pul tahtanın ortasında 3D dönüşle belirir ve uçarak sağ üstteki albüm simgesine yerleşir.
-- [ ] **Adım IV.3 — Lig ve Rütbe Ekosistemi (League Rank Crest):**
-  - Ana menüde oyuncunun ELO puanını gösteren dinamik lig arması (Bronz ➔ Büyük Usta), kalan süre ve lig özeti popover'ı.
+- [x] **Adım IV.1 — 1.000 Seviyelik Topoğrafik Harita Deneyimi:**
+  - Biyom zemin geçişleri (1-300: Zümrüt/Bambu, 301-700: Hextech/Çöl, 701-1000: Kızıl/Buzul) ve 2 adım ötesini gizleyen sis perdesi (Fog of War).
+  - Çatallanan rotalarda (Branching Nodes) fiziksel iki kola ayrılan yol ve "Mühürlü Patika (Risk) / Kıvılcım Yolu (Hız)" levhaları.
+  - 50. bölümlerdeki kadim kapıların heybetli kemerli rün kapısı (`⛩️ X. Kadim Rün Kapısı`) olarak yükseltilmesi.
+  - `src/tests/map-topography.test.ts` (4 unit test) ile doğrulandı.
+- [x] **Adım IV.2 — Kartpostal Albümü ve Zafer Akışı (Victory Flow):**
+  - Zafer anında kazanılan tematik pul tahtanın ortasında 3D bir dönüşle belirir (`animateStampDropAndFly`), parıldayarak sağ üstteki albüm simgesine doğru uçar ve koleksiyona yerleşir.
+- [x] **Adım IV.3 — Lig ve Rütbe Ekosistemi (League Rank Crest):**
+  - Ana menüde oyuncunun avatarında lig arması (Bronz ➔ Büyük Usta), tıklandığında açılan lig özeti modalında kalan sezon süresi, MMR baremleri ve sezon sonu lig sandığı ödülü entegre edildi.
+  - `src/tests/victory-flow-liveops.test.ts` (2 unit test) ile doğrulandı.
 
 ---
 
