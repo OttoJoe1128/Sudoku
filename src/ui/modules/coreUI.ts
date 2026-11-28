@@ -301,9 +301,9 @@ export const coreUI = {
     const container = document.getElementById('container');
     if (!container) return;
 
-    container.classList.remove('theme-obsidian', 'theme-ivory', 'theme-shogun', 'theme-cyber', 'theme-jade', 'theme-dark', 'theme-neon', 'theme-emerald');
+    container.classList.remove('theme-obsidian', 'theme-ivory', 'theme-shogun', 'theme-cyber', 'theme-jade', 'theme-egypt', 'theme-frost', 'theme-dark', 'theme-neon', 'theme-emerald');
 
-    const validThemes = ['theme-obsidian', 'theme-ivory', 'theme-shogun', 'theme-cyber', 'theme-jade'];
+    const validThemes = ['theme-obsidian', 'theme-ivory', 'theme-shogun', 'theme-cyber', 'theme-jade', 'theme-egypt', 'theme-frost'];
     const resolvedTheme = validThemes.includes(themeId) ? themeId : 'theme-ivory';
 
     container.classList.add(resolvedTheme);

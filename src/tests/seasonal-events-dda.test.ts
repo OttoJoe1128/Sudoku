@@ -23,7 +23,7 @@ describe('Faz 3: Canlı Operasyonlar (Live-Ops), Tematik Pul Koleksiyonu & DDA',
 
   describe('1. 14 Günlük Sezonluk Rotasyon Motoru', () => {
     it('Sezonlar 14 günlük periyotlarla deterministik olarak dönmeli', () => {
-      expect(SEASONS.length).toBe(4);
+      expect(SEASONS.length).toBe(5);
 
       const day1 = 1000 * 86400 * 1000; // Rastgele bir epoch
       const season1 = getCurrentSeason(day1);

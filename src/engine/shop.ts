@@ -17,6 +17,7 @@ export const ShopItems: ShopItem[] = [
   { id: 'theme-shogun', name: 'Kızıl Shogun', nameEn: 'Crimson Shogun', price: 250, type: 'theme', previewColor: '#0F090C', accentColor: '#D4A853' },
   { id: 'theme-cyber', name: 'Siber Akşam', nameEn: 'Cyber Dusk', price: 300, type: 'theme', previewColor: '#0B0718', accentColor: '#22D3EE' },
   { id: 'theme-jade', name: 'Antik Yeşim', nameEn: 'Ancient Jade', price: 350, type: 'theme', previewColor: '#051613', accentColor: '#D4B475' },
+  { id: 'theme-frost', name: 'Kış Festivali (Yeni Yıl)', nameEn: 'Winter Festival (New Year)', price: 400, type: 'theme', previewColor: '#0A1322', accentColor: '#38BDF8' },
   { id: 'theme-egypt', name: 'Güneş Tanrısı (Mısır)', nameEn: 'Sun God (Egypt)', price: 500, type: 'theme', previewColor: '#1A1408', accentColor: '#EAB308' }
 ];
 

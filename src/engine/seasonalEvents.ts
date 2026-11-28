@@ -8,6 +8,7 @@ import { UserManager } from '../store/userState';
 
 export type SeasonId =
   | 'ancient_egypt'
+  | 'new_year_festival'
   | 'cyber_metropolis'
   | 'emerald_grove'
   | 'celestial_temple';
@@ -37,8 +38,19 @@ export const SEASONS: SeasonDef[] = [
     artworkColors: ['#B45309', '#D97706', '#F59E0B', '#FBBF24', '#FDE68A', '#78350F', '#92400E', '#F59E0B', '#B45309']
   },
   {
-    id: 'cyber_metropolis',
+    id: 'new_year_festival',
     index: 1,
+    nameKey: 'season_new_year_name',
+    descKey: 'season_new_year_desc',
+    themeId: 'theme-frost',
+    totalStamps: 9,
+    rewardGold: 150,
+    rewardCrystals: 20,
+    artworkColors: ['#38BDF8', '#0EA5E9', '#0284C7', '#0369A1', '#7DD3FC', '#BAE6FD', '#E0F2FE', '#0284C7', '#38BDF8']
+  },
+  {
+    id: 'cyber_metropolis',
+    index: 2,
     nameKey: 'season_cyber_name',
     descKey: 'season_cyber_desc',
     themeId: 'theme-cyber',
@@ -49,7 +61,7 @@ export const SEASONS: SeasonDef[] = [
   },
   {
     id: 'emerald_grove',
-    index: 2,
+    index: 3,
     nameKey: 'season_emerald_name',
     descKey: 'season_emerald_desc',
     themeId: 'theme-jade',
@@ -60,7 +72,7 @@ export const SEASONS: SeasonDef[] = [
   },
   {
     id: 'celestial_temple',
-    index: 3,
+    index: 4,
     nameKey: 'season_celestial_name',
     descKey: 'season_celestial_desc',
     themeId: 'theme-shogun',

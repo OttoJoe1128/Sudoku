@@ -228,6 +228,52 @@
   --diff-hard-sub: #FECDD3;
 }
 
+.theme-frost {
+  --bg-app: #0A1322;
+  --bg-elevated: #111E33;
+  --bg-card: #15243C;
+  --bg-card-hover: #1E3150;
+
+  --border-subtle: rgba(56, 189, 248, 0.32);
+  --border-strong: rgba(14, 165, 233, 0.70);
+
+  --accent-gold: #38BDF8;
+  --accent-gold-bright: #7DD3FC;
+  --accent-cyan: #38BDF8;
+
+  --text-primary: #F0F9FF;
+  --text-secondary: #7DD3FC;
+  --text-on-gold: #032830;
+
+  --board-bg: #0A1322;
+  --cell-bg: #15243C;
+  --cell-initial-bg: #15243C;
+  --cell-initial-text: #F0F9FF;
+  --cell-user-text: #38BDF8;
+  --cell-related-bg: #1E3A5F;
+  --cell-match-bg: #255085;
+  --cell-selected-bg: #38BDF8;
+
+  --hero-bg: linear-gradient(135deg, #16325B 0%, #0F213D 60%, #081326 100%);
+  --hero-text: #F0F9FF;
+  --hero-subtext: #7DD3FC;
+
+  --diff-easy-bg: rgba(6, 78, 59, 0.35);
+  --diff-easy-border: rgba(16, 185, 129, 0.40);
+  --diff-easy-text: #6EE7B7;
+  --diff-easy-sub: #A7F3D0;
+
+  --diff-med-bg: rgba(120, 53, 15, 0.35);
+  --diff-med-border: rgba(245, 158, 11, 0.40);
+  --diff-med-text: #FCD34D;
+  --diff-med-sub: #FDE68A;
+
+  --diff-hard-bg: rgba(136, 19, 55, 0.35);
+  --diff-hard-border: rgba(244, 63, 94, 0.40);
+  --diff-hard-text: #FDA4AF;
+  --diff-hard-sub: #FECDD3;
+}
+
 /* ---------------------------------------------------- */
 /* NEO-CELESTIAL & RUNE 3D TEMA EFEKTLERİ & ANİMASYONLAR */
 /* ---------------------------------------------------- */
