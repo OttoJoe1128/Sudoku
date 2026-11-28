@@ -227,3 +227,72 @@
   --diff-hard-text: #FDA4AF;
   --diff-hard-sub: #FECDD3;
 }
+
+/* ---------------------------------------------------- */
+/* NEO-CELESTIAL & RUNE 3D TEMA EFEKTLERİ & ANİMASYONLAR */
+/* ---------------------------------------------------- */
+
+@keyframes runePulse {
+  0%, 100% {
+    box-shadow: 0 0 8px var(--border-subtle);
+  }
+  50% {
+    box-shadow: 0 0 16px var(--border-strong), 0 0 24px rgba(200, 155, 60, 0.3);
+  }
+}
+
+@keyframes shimmerSlide {
+  0% {
+    transform: translateX(-100%) rotate(25deg);
+  }
+  100% {
+    transform: translateX(250%) rotate(25deg);
+  }
+}
+
+.rune-glow-card {
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.rune-glow-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: 0 6px 24px -2px rgba(0, 0, 0, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.15);
+}
+
+.btn-3d-gold {
+  background: linear-gradient(180deg, var(--accent-gold-bright) 0%, var(--accent-gold) 100%);
+  color: var(--text-on-gold);
+  box-shadow: 0 4px 0 0 rgba(0, 0, 0, 0.4), 0 6px 16px rgba(200, 155, 60, 0.35);
+  transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-3d-gold:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 0 rgba(0, 0, 0, 0.4), 0 3px 8px rgba(200, 155, 60, 0.25);
+}
+
+.btn-3d-cyan {
+  background: linear-gradient(180deg, #38BDF8 0%, var(--accent-cyan) 100%);
+  color: #070D19;
+  box-shadow: 0 4px 0 0 rgba(0, 0, 0, 0.4), 0 6px 16px rgba(10, 200, 185, 0.35);
+  transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-3d-cyan:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 0 rgba(0, 0, 0, 0.4), 0 3px 8px rgba(10, 200, 185, 0.25);
+}
+
+.btn-3d-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.15s ease;
+}
+
+.btn-3d-card:active {
+  transform: scale(0.97);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+

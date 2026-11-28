@@ -332,6 +332,8 @@ export function updateSavedGamesCountUI(): void {
     }
   }
 
+  const journeyLabel = document.getElementById('menu-journey-btn-label');
+
   if (totalCount === 0) {
     if (savedGamesBtn) {
       savedGamesBtn.classList.add('hidden');
@@ -339,12 +341,26 @@ export function updateSavedGamesCountUI(): void {
     }
     if (quickTitle) quickTitle.innerText = t('menu_quick_play');
     if (quickSub) quickSub.innerText = `${t('label_level')} ${classicLvl} • ${t('var_classic')}`;
+    if (journeyLabel) {
+      const isBrandNew = classicLvl === 1;
+      const key = isBrandNew ? 'menu_journey_start' : 'menu_journey_continue';
+      journeyLabel.innerText = t(key);
+      if (typeof journeyLabel.setAttribute === 'function') {
+        journeyLabel.setAttribute('data-i18n', key);
+      }
+    }
   } else {
     if (savedGamesBtn) {
       savedGamesBtn.classList.remove('hidden');
       savedGamesBtn.classList.add('flex');
     }
     if (countLabel) countLabel.innerText = t('menu_active_games_list_label', { count: totalCount });
+    if (journeyLabel) {
+      journeyLabel.innerText = t('menu_journey_continue');
+      if (typeof journeyLabel.setAttribute === 'function') {
+        journeyLabel.setAttribute('data-i18n', 'menu_journey_continue');
+      }
+    }
 
     const sorted = [...savedList].sort((a, b) => (b.updatedAtMs || 0) - (a.updatedAtMs || 0));
     const latest = sorted[0];
