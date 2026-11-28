@@ -10,6 +10,7 @@ import { getRelicDef } from '../engine/relics';
 import { getLeagueByRating } from '../engine/leagueSystem';
 import { getLevelModifierProfile } from '../engine/levelModifiers';
 import { ClanManager } from '../engine/clanSystem';
+import { renderMiniStampsGridHTML } from '../ui/components/menu/LiveOpsPromoCard';
 
 
 export interface ActiveGameSnapshot {
@@ -313,8 +314,10 @@ export function updateSavedGamesCountUI(): void {
   const stamps = SeasonalEventManager.getCollectedStamps(currentSeason.id);
   const seasonPillText = document.getElementById('menu-season-pill-text');
   const seasonStampsCount = document.getElementById('menu-season-stamps-count');
+  const seasonStampsGrid = document.getElementById('menu-season-stamps-grid');
   if (seasonPillText) seasonPillText.innerText = t(currentSeason.nameKey);
-  if (seasonStampsCount) seasonStampsCount.innerText = `${stamps.length}/9`;
+  if (seasonStampsCount) seasonStampsCount.innerText = t('season_stamps_progress', { current: stamps.length });
+  if (seasonStampsGrid) seasonStampsGrid.innerHTML = renderMiniStampsGridHTML(currentSeason.id);
 
   const clanPillText = document.getElementById('menu-clan-pill-text');
   const clanDustCount = document.getElementById('menu-clan-dust-count');
