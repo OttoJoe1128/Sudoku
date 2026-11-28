@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="320" viewBox="0 0 800 320" fill="none">
+  <rect width="800" height="320" fill="#0A111E"/>
+  <circle cx="400" cy="160" r="140" stroke="#C89B3C" stroke-opacity="0.25" stroke-width="2" stroke-dasharray="4 8"/>
+  <circle cx="400" cy="160" r="100" stroke="#38BDF8" stroke-opacity="0.2" stroke-width="1.5" stroke-dasharray="2 6"/>
+  <circle cx="400" cy="160" r="180" fill="url(#hero-glow)" opacity="0.3"/>
+  <path d="M100 80 L700 80 M150 240 L650 240" stroke="#C89B3C" stroke-opacity="0.1" stroke-width="1"/>
+  <path d="M400 20 L400 300" stroke="#C89B3C" stroke-opacity="0.08" stroke-width="1" stroke-dasharray="8 8"/>
+  <defs>
+    <radialGradient id="hero-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(400 160) scale(180)">
+      <stop offset="0" stop-color="#C89B3C" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#0A111E" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+</svg>

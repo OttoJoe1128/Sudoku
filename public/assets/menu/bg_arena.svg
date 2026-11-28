@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300" fill="none">
+  <rect width="400" height="300" fill="#0B132B"/>
+  <circle cx="200" cy="150" r="110" fill="url(#arena-glow)" opacity="0.35"/>
+  <path d="M120 70 L280 230 M280 70 L120 230" stroke="#38BDF8" stroke-opacity="0.25" stroke-width="2"/>
+  <polygon points="200,30 230,150 200,270 170,150" fill="#3B82F6" fill-opacity="0.08" stroke="#38BDF8" stroke-opacity="0.2" stroke-width="1.5"/>
+  <defs>
+    <radialGradient id="arena-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(200 150) scale(110)">
+      <stop offset="0" stop-color="#38BDF8" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#0B132B" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+</svg>

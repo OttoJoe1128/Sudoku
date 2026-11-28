@@ -3,9 +3,13 @@ import { Icons } from '../../../design/icons';
 export function renderSlideDrawerMenu(): string {
   return `
     <!-- YANDAN AÇILIR ÇEKMECE MENÜ (Slide Drawer Menu) -->
-    <div id="slide-drawer-menu" class="fixed inset-y-0 left-0 w-64 bg-[#0E1729]/95 backdrop-blur-2xl border-r border-[var(--border-strong)] shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 ease-out flex flex-col hidden">
+    <div id="slide-drawer-menu" class="fixed inset-y-0 left-0 w-64 bg-[#0E1729]/95 backdrop-blur-2xl border-r border-[var(--border-strong)] shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 ease-out flex flex-col hidden overflow-hidden">
+        <!-- Tematik Arka Plan Katmanı -->
+        <img src="/assets/menu/bg_drawer.png" alt="Drawer Background" class="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none" onerror="this.src='/assets/menu/bg_drawer.svg'">
+        <div class="absolute inset-0 bg-gradient-to-b from-[#0E1729]/90 via-[#0E1729]/80 to-[#0E1729]/95 pointer-events-none"></div>
+
         <!-- Çekmece Üst Başlık (Header) -->
-        <div class="flex items-center justify-between p-4 border-b border-[var(--border-subtle)]">
+        <div class="flex items-center justify-between p-4 border-b border-[var(--border-subtle)] z-10">
             <div class="flex items-center gap-2">
                 <img src="/logo.png" alt="Logo" class="w-8 h-8 rounded-lg shadow-sm" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'32\\' height=\\'32\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'#C89B3C\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'16\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>S</text></svg>'">
                 <span class="font-black text-lg text-[var(--accent-gold-bright)] tracking-wider drop-shadow-md">SudokuMap</span>
@@ -14,7 +18,7 @@ export function renderSlideDrawerMenu(): string {
         </div>
 
         <!-- Çekmece Navigasyon Öğeleri (Yüksek Kontrast & SudokuMap Gold Teması) -->
-        <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-2.5">
+        <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-2.5 z-10">
             <button id="btn-leaderboard" class="w-full flex items-center gap-3.5 p-3.5 rounded-2xl bg-[#131F37]/90 hover:bg-[#1C2C4E] border border-[var(--border-subtle)] hover:border-[var(--accent-gold)]/60 active:scale-[0.98] transition-all cursor-pointer group text-left shadow-md">
                 <span class="text-xl text-[var(--accent-gold-bright)] group-hover:scale-110 transition-transform">${Icons.trophy}</span>
                 <span class="font-black text-sm text-[var(--accent-gold-bright)] tracking-wide" data-i18n="nav_rank">Sıralama</span>
@@ -45,7 +49,7 @@ export function renderSlideDrawerMenu(): string {
             </button>
 
             <!-- Hızlı Ayarlar (Dil, Ses ve Gece/Gündüz Tema Seçimi) -->
-            <div class="mt-auto flex gap-2 pt-4 border-t border-[var(--border-subtle)]">
+            <div class="mt-auto flex gap-2 pt-4 border-t border-[var(--border-subtle)] z-10">
                 <!-- Dil Seçici -->
                 <button id="btn-drawer-lang-toggle" title="Dil / Language" data-i18n-title="tooltip_lang_toggle" class="flex-1 bg-[#131F37] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] p-2.5 rounded-xl text-xs font-mono font-black flex items-center justify-center gap-1 active:scale-95 transition-all shadow-sm cursor-pointer">
                     <span id="drawer-lang-opt-tr" class="text-[var(--accent-gold-bright)]">TR</span>

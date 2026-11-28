@@ -17,6 +17,10 @@ export function renderHeroAdventureCard(): string {
   return `
     <!-- KATMAN 2: DEVASE SİNEMATİK MACERA & HARİTA ANITI (Hero Command Center - Bento Dark Harmony) -->
     <div class="w-full border-2 border-[var(--border-strong)] rounded-3xl p-4 sm:p-5 shadow-2xl flex flex-col justify-between relative overflow-hidden group transition-all spatial-glass-card mt-1 mb-2 min-h-[140px] bg-[#0E1729]/90 text-[var(--text-primary)]">
+        <!-- Katman 1: Sinematik Arka Plan İllüstrasyonu (PNG / SVG Fallback) -->
+        <img src="/assets/menu/bg_hero.png" alt="Hero Background" class="absolute inset-0 w-full h-full object-cover opacity-35 group-hover:opacity-50 transition-opacity pointer-events-none" onerror="this.src='/assets/menu/bg_hero.svg'">
+        <div class="absolute inset-0 bg-gradient-to-r from-[#070D19]/90 via-[#070D19]/75 to-transparent pointer-events-none"></div>
+
         <!-- Ambient Glow & Subtle Particles -->
         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 border border-amber-400/10 rounded-full rune-portal-ring pointer-events-none opacity-40"></div>
         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 border border-cyan-400/10 rounded-full rune-portal-ring-reverse pointer-events-none opacity-50"></div>

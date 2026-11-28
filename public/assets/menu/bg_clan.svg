@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="240" viewBox="0 0 800 240" fill="none">
+  <rect width="800" height="240" fill="#180B12"/>
+  <circle cx="650" cy="120" r="100" fill="url(#clan-glow)" opacity="0.4"/>
+  <path d="M600 30 L700 210 M700 30 L600 210" stroke="#F43F5E" stroke-opacity="0.25" stroke-width="2"/>
+  <path d="M0 120 C 300 60, 500 180, 800 120" stroke="#E11D48" stroke-opacity="0.2" stroke-width="2" fill="none"/>
+  <defs>
+    <radialGradient id="clan-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(650 120) scale(100)">
+      <stop offset="0" stop-color="#F43F5E" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#180B12" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+</svg>
