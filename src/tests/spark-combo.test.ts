@@ -5,7 +5,7 @@ import {
   applyValidMoveMechanics,
   applyMistakeMechanics
 } from '../engine/boardMechanics';
-import { UIManager } from '../ui/uiManager';
+import { UIManager } from '../ui';
 import { UserManager } from '../store/userState';
 import { TRANSLATIONS, setLang, t } from '../i18n/translations';
 

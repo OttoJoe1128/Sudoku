@@ -1,4 +1,4 @@
-import { UIManager } from '../ui/uiManager';
+import { UIManager } from '../ui';
 import { SoundManager } from '../engine/soundManager';
 import { ClanManager, ClanDef } from '../engine/clanSystem';
 import { t, getLang, applyStaticTranslations } from '../i18n/translations';

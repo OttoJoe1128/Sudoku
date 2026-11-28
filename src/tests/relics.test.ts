@@ -8,7 +8,7 @@ import {
   applyValidMoveMechanics,
   computeFinalRunCrystals
 } from '../engine/boardMechanics';
-import { UIManager } from '../ui/uiManager';
+import { UIManager } from '../ui';
 import {
   openLevelPrepModal,
   closeLevelPrepModal,

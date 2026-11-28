@@ -1,5 +1,5 @@
 import { SudokuVariant } from '../engine/sudoku';
-import { UIManager } from '../ui/uiManager';
+import { UIManager } from '../ui';
 import { UserManager } from '../store/userState';
 import { ShopManager } from '../engine/shop';
 import { AchievementManager } from '../engine/achievements';

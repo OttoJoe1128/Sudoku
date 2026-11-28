@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { isBranchingLevel, getLevelModifierProfile } from '../engine/levelModifiers';
 import { UserManager } from '../store/userState';
 import { TRANSLATIONS, setLang, t } from '../i18n/translations';
-import { UIManager } from '../ui/uiManager';
+import { UIManager } from '../ui';
 import {
   openLevelPrepModal,
   closeLevelPrepModal,

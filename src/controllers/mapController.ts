@@ -1,5 +1,5 @@
 import { SudokuVariant, SudokuGen } from '../engine/sudoku';
-import { UIManager } from '../ui/uiManager';
+import { UIManager } from '../ui';
 import { UserManager } from '../store/userState';
 import { openLevelPrepModal } from './levelPrepController';
 import { AbilityId } from '../engine/abilities';

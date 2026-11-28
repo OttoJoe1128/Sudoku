@@ -1,4 +1,4 @@
-import { UIManager } from '../ui/uiManager';
+import { UIManager } from '../ui';
 import { SoundManager } from '../engine/soundManager';
 import { getLeagueByRating, getLeagueProgress, LeagueManager } from '../engine/leagueSystem';
 import { UserManager } from '../store/userState';

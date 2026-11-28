@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, beforeEach } from 'vitest';
-import { UIManager } from '../ui/uiManager';
+import { UIManager } from '../ui';
 import { UserManager } from '../store/userState';
 import { setLang, applyStaticTranslations } from '../i18n/translations';
 import { startGame, getGameRuntimeState, refreshGameLanguageUI, initGameController } from '../controllers/gameController';

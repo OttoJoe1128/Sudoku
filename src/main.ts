@@ -1,5 +1,5 @@
 import './design/tokens.css';
-import { UIManager } from './ui/uiManager';
+import { UIManager } from './ui';
 import { renderAvatarSVG, renderRankBadgeSVG, Icons } from './design/icons';
 import { getLang, setLang, t, applyStaticTranslations, translateRankName, initDefaultLang } from './i18n/translations';
 import { SudokuGen, SudokuVariant } from './engine/sudoku';

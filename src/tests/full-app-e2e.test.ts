@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, beforeEach } from 'vitest';
-import { UIManager } from '../ui/uiManager';
+import { UIManager } from '../ui';
 import { UserManager } from '../store/userState';
 import { SoundManager } from '../engine/soundManager';
 import { ShopManager, ShopItems } from '../engine/shop';

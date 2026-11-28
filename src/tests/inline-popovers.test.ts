@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, beforeEach } from 'vitest';
-import { UIManager } from '../ui/uiManager';
+import { UIManager } from '../ui';
 import { setLang, applyStaticTranslations, TRANSLATIONS } from '../i18n/translations';
 import { openLevelPrepModal, closeLevelPrepModal, initLevelPrepController } from '../controllers/levelPrepController';
 import { openAbilitiesModal, closeAbilitiesModal, initAbilitiesController } from '../controllers/abilitiesController';

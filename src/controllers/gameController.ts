@@ -1,5 +1,5 @@
 import { SudokuVariant, SudokuGen, GeneratedSudoku, KillerCage } from '../engine/sudoku';
-import { UIManager } from '../ui/uiManager';
+import { UIManager } from '../ui';
 import { GameEngine } from '../engine/gameEngine';
 import { UserManager, computeNextJourneyLevel } from '../store/userState';
 import { MatchEngine, MatchState, calculateEloChange } from '../engine/matchEngine';

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, beforeEach } from 'vitest';
-import { UIManager } from '../ui/uiManager';
+import { UIManager } from '../ui';
 import { setLang, getLang, t, applyStaticTranslations, TRANSLATIONS } from '../i18n/translations';
 import { REGIONS } from '../engine/rhythmConfig';
 import {

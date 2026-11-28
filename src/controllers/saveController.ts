@@ -1,4 +1,4 @@
-import { SavedGameRecord, UIManager } from '../ui/uiManager';
+import { SavedGameRecord, UIManager } from '../ui';
 import { validateSavedGameRecord } from '../engine/saveValidator';
 import { SudokuVariant, SudokuGen, KillerCage } from '../engine/sudoku';
 import { UserManager } from '../store/userState';

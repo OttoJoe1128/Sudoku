@@ -1,4 +1,4 @@
-import { UIManager } from '../ui/uiManager';
+import { UIManager } from '../ui';
 import { SoundManager } from './soundManager';
 import { t } from '../i18n/translations';
 

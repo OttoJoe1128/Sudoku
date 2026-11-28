@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, beforeEach } from 'vitest';
-import { UIManager } from '../ui/uiManager';
+import { UIManager } from '../ui';
 import { setLang } from '../i18n/translations';
 
 describe('Faz IV — Adım 2: Harita ve Çatallanma Topoğrafyası', () => {

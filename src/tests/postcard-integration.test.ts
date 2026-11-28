@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, beforeEach } from 'vitest';
-import { UIManager } from '../ui/uiManager';
+import { UIManager } from '../ui';
 import { openPostcardModal, closePostcardModal, initPostcardController } from '../controllers/postcardController';
 import { SeasonalEventManager, getCurrentSeason } from '../engine/seasonalEvents';
 import { setLang } from '../i18n/translations';

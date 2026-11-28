@@ -1,5 +1,5 @@
 import { updateGameState, getGameState } from '../store/gameState';
-import { UIManager } from '../ui/uiManager';
+import { UIManager } from '../ui';
 import { SudokuGen } from './sudoku';
 
 export const GameLogic = {

@@ -1,4 +1,4 @@
-import { UIManager } from '../ui/uiManager';
+import { UIManager } from '../ui';
 import { UserManager } from '../store/userState';
 import { sanitizeUsername } from '../utils/sanitize';
 import { t, applyStaticTranslations } from '../i18n/translations';
