@@ -109,6 +109,18 @@ const updateLanguageUI = () => {
     }
   }
 
+  const drawerTrOpt = document.getElementById('drawer-lang-opt-tr');
+  const drawerEnOpt = document.getElementById('drawer-lang-opt-en');
+  if (drawerTrOpt && drawerEnOpt) {
+    if (currentLang === 'tr') {
+      drawerTrOpt.className = 'text-[var(--accent-gold-bright)]';
+      drawerEnOpt.className = 'text-[var(--text-secondary)] opacity-50';
+    } else {
+      drawerTrOpt.className = 'text-[var(--text-secondary)] opacity-50';
+      drawerEnOpt.className = 'text-[var(--accent-gold-bright)]';
+    }
+  }
+
   applyStaticTranslations();
   updateSavedGamesCountUI();
   refreshMapLanguageUI();
@@ -312,14 +324,19 @@ document.getElementById('btn-theme-toggle')?.addEventListener('click', () => {
 
 const updateSoundButtonUI = () => {
   const btn = document.getElementById('btn-sound-toggle');
+  const drawerIcon = document.getElementById('drawer-sound-icon');
+  const isEnabled = SoundManager.isEnabled();
   if (btn) {
-    if (SoundManager.isEnabled()) {
+    if (isEnabled) {
       btn.innerHTML = Icons.volumeOn;
       btn.className = "bg-[var(--bg-elevated)] text-[var(--accent-gold)] p-2.5 rounded-2xl active:scale-95 transition-transform border border-[var(--border-subtle)] flex items-center justify-center";
     } else {
       btn.innerHTML = Icons.volumeOff;
       btn.className = "bg-[var(--bg-elevated)] text-[var(--text-secondary)] opacity-60 p-2.5 rounded-2xl active:scale-95 transition-transform border border-[var(--border-subtle)] flex items-center justify-center";
     }
+  }
+  if (drawerIcon) {
+    drawerIcon.innerHTML = isEnabled ? Icons.volumeOn : Icons.volumeOff;
   }
 };
 updateSoundButtonUI();

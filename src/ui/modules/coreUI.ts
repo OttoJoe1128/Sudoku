@@ -214,9 +214,13 @@ export const coreUI = {
     // Yandan Açılır Çekmece Menü ve Navigasyon Olayları
     const drawerMenu = document.getElementById('slide-drawer-menu');
     const drawerOverlay = document.getElementById('drawer-overlay');
+    const globalUtilityBar = document.getElementById('global-utility-bar');
 
     const openDrawer = () => {
       if (drawerMenu && drawerOverlay) {
+        if (globalUtilityBar) {
+          globalUtilityBar.classList.add('opacity-0', 'pointer-events-none');
+        }
         drawerMenu.classList.remove('hidden');
         drawerOverlay.classList.remove('hidden');
         void drawerMenu.offsetWidth;
@@ -227,6 +231,9 @@ export const coreUI = {
 
     const closeDrawer = () => {
       if (drawerMenu && drawerOverlay) {
+        if (globalUtilityBar) {
+          globalUtilityBar.classList.remove('opacity-0', 'pointer-events-none');
+        }
         drawerMenu.classList.add('-translate-x-full');
         drawerOverlay.classList.add('opacity-0');
         setTimeout(() => {
@@ -239,6 +246,19 @@ export const coreUI = {
     document.getElementById('btn-open-drawer')?.addEventListener('click', openDrawer);
     document.getElementById('btn-close-drawer')?.addEventListener('click', closeDrawer);
     drawerOverlay?.addEventListener('click', closeDrawer);
+
+    // Çekmece Hızlı Ayarlar (Dil, Ses, Tema)
+    document.getElementById('btn-drawer-lang-toggle')?.addEventListener('click', () => {
+      document.getElementById('btn-lang-toggle')?.click();
+    });
+
+    document.getElementById('btn-drawer-sound-toggle')?.addEventListener('click', () => {
+      document.getElementById('btn-sound-toggle')?.click();
+    });
+
+    document.getElementById('btn-drawer-theme-toggle')?.addEventListener('click', () => {
+      document.getElementById('btn-theme-toggle')?.click();
+    });
 
     // Çekmece İçi Modallara Yönlendirmeler
     const setupDrawerNav = (btnId: string, modalId: string) => {
@@ -297,6 +317,18 @@ export const coreUI = {
       } else {
         dayOpt.className = 'text-[var(--text-secondary)] opacity-45 flex items-center';
         nightOpt.className = 'text-[var(--accent-gold)] flex items-center';
+      }
+    }
+
+    const drawerDayOpt = document.getElementById('drawer-theme-opt-day');
+    const drawerNightOpt = document.getElementById('drawer-theme-opt-night');
+    if (drawerDayOpt && drawerNightOpt) {
+      if (resolvedTheme === 'theme-ivory') {
+        drawerDayOpt.className = 'text-[var(--accent-gold)] flex items-center';
+        drawerNightOpt.className = 'text-[var(--text-secondary)] opacity-45 flex items-center';
+      } else {
+        drawerDayOpt.className = 'text-[var(--text-secondary)] opacity-45 flex items-center';
+        drawerNightOpt.className = 'text-[var(--accent-gold)] flex items-center';
       }
     }
   },
