@@ -42,6 +42,7 @@ import { SamuraiViewport, renderSamuraiBoard, SamuraiBoardData } from '../samura
 import { SoundManager } from '../../engine/soundManager';
 import { escapeHTML, formatDisplayName } from '../../utils/sanitize';
 import { SavedGameRecord } from '../types';
+import { modalsUI } from './modalsUI';
 
 export const coreUI = {
   mountUI() {
@@ -209,6 +210,52 @@ export const coreUI = {
     `;
 
     this.applyTheme(ShopManager.getActiveTheme());
+
+    // Yandan Açılır Çekmece Menü ve Navigasyon Olayları
+    const drawerMenu = document.getElementById('slide-drawer-menu');
+    const drawerOverlay = document.getElementById('drawer-overlay');
+
+    const openDrawer = () => {
+      if (drawerMenu && drawerOverlay) {
+        drawerMenu.classList.remove('hidden');
+        drawerOverlay.classList.remove('hidden');
+        void drawerMenu.offsetWidth;
+        drawerMenu.classList.remove('-translate-x-full');
+        drawerOverlay.classList.remove('opacity-0');
+      }
+    };
+
+    const closeDrawer = () => {
+      if (drawerMenu && drawerOverlay) {
+        drawerMenu.classList.add('-translate-x-full');
+        drawerOverlay.classList.add('opacity-0');
+        setTimeout(() => {
+          drawerMenu.classList.add('hidden');
+          drawerOverlay.classList.add('hidden');
+        }, 300);
+      }
+    };
+
+    document.getElementById('btn-open-drawer')?.addEventListener('click', openDrawer);
+    document.getElementById('btn-close-drawer')?.addEventListener('click', closeDrawer);
+    drawerOverlay?.addEventListener('click', closeDrawer);
+
+    // Çekmece İçi Modallara Yönlendirmeler
+    const setupDrawerNav = (btnId: string, modalId: string) => {
+      document.getElementById(btnId)?.addEventListener('click', () => {
+        closeDrawer();
+        setTimeout(() => modalsUI.toggleModal(modalId, true), 200);
+      });
+    };
+
+    setupDrawerNav('btn-leaderboard', 'view-leaderboard');
+    setupDrawerNav('btn-achievements', 'view-achievements');
+    setupDrawerNav('btn-shop', 'view-shop');
+    setupDrawerNav('btn-menu-open-academy', 'academy-modal');
+    setupDrawerNav('btn-menu-open-abilities', 'abilities-modal');
+
+    document.getElementById('btn-new-game')?.addEventListener('click', () => this.navigate('custom'));
+    document.getElementById('btn-open-map')?.addEventListener('click', () => this.navigate('map'));
   },
 
   navigate(viewId: 'menu' | 'map' | 'custom' | 'game') {
