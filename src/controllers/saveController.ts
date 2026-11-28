@@ -726,6 +726,8 @@ export function openSavedGamesModal(onPlaySavedGame: (record: SavedGameRecord) =
 
 export function initSaveController(callbacks: { onPlaySavedGame: (record: SavedGameRecord) => void }): void {
   document.getElementById('btn-open-saved-games')?.addEventListener('click', () => {
+  document.getElementById('btn-close-drawer')?.click();
+  setTimeout(() => UIManager.toggleModal('view-saved-games', true), 200);
     openSavedGamesModal(callbacks.onPlaySavedGame);
   });
 

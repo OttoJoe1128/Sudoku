@@ -1,58 +1,48 @@
 export function renderLiveOpsPromoCard(): string {
-  // 3x3 Mini Pul Matrisi Temsili (Mistik Kyoto Sezonu Visual Teaser)
+  // 3x3 Gerçek Mini Pul Matrisi
   const miniStamps = Array.from({ length: 9 }, (_, i) => {
     const isUnlocked = i < 4; // Örnek 4/9 unlocked
-    const bgClass = isUnlocked ? 'bg-amber-500/30 border-amber-400 text-amber-300 shadow-md' : 'bg-[#0E1729]/80 border-[var(--border-subtle)] text-[var(--text-secondary)] opacity-40';
-    const icon = isUnlocked ? '⛩️' : '🔒';
-    return `<div class="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border ${bgClass} flex items-center justify-center text-[8px] font-bold shrink-0">${icon}</div>`;
+    const src = isUnlocked ? `/assets/season/stamps/stamp_${i + 1}.svg` : '';
+    const bgClass = isUnlocked ? 'bg-transparent border-amber-400 shadow-md' : 'bg-[#0E1729]/80 border-[var(--border-subtle)] opacity-40';
+    return `
+      <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-md border ${bgClass} flex items-center justify-center text-[10px] font-bold shrink-0 overflow-hidden relative">
+        ${isUnlocked ? `<img src="${src}" alt="Stamp ${i + 1}" class="w-full h-full object-cover">` : '🔒'}
+      </div>
+    `;
   }).join('');
 
   return `
-    <!-- KATMAN 2.5: CANLI ETKİNLİK GÖRSEL PROMOSYON VİTRİNİ (Live-Ops Spatial Showcase Pods) -->
-    <div class="w-full flex gap-1.5 sm:gap-2 shrink-0 my-0.5">
-        <!-- Sol: 📮 Sezon Kartpostalı Görsel Promosyon Podu -->
-        <button id="btn-open-postcards" class="flex-1 polygon-pod-left spatial-glass-card p-2 sm:p-2.5 flex flex-col justify-between active:scale-[0.98] transition-all cursor-pointer shadow-xl relative overflow-hidden group text-left">
-            <div class="flex items-center justify-between w-full mb-1 z-10">
-                <div class="flex items-center gap-1.5 min-w-0">
-                    <span class="text-sm shrink-0">📮</span>
-                    <span id="menu-season-pill-text" class="text-[10px] sm:text-xs font-black text-[var(--accent-gold-bright)] truncate uppercase tracking-wider drop-shadow" data-i18n="season_btn_menu">Season</span>
+    <!-- KATMAN 3: SİNEMATİK TAM GENİŞLİK CANLI ETKİNLİK AFİŞ VİTRİNİ -->
+    <div class="w-full flex flex-col gap-2 shrink-0 my-1">
+
+        <!-- 📮 Sezon Kartpostalı Holografik Afişi (Edge-to-Edge Style) -->
+        <button id="btn-open-postcards" class="w-full bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border-y-2 sm:border-2 border-[var(--border-strong)] sm:rounded-2xl p-3 flex justify-between items-center active:scale-[0.99] transition-all cursor-pointer shadow-xl relative overflow-hidden group text-left -mx-2.5 sm:mx-0 px-5 sm:px-4" style="width: calc(100% + 1.25rem); max-width: none;">
+            <!-- Afiş Arka Planı (Kyoto Background) -->
+            <img src="/assets/season/season_kyoto_bg.svg" alt="Kyoto Season" class="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:opacity-40 transition-opacity">
+            <div class="absolute inset-0 bg-gradient-to-r from-[#070D19] via-[#070D19]/80 to-transparent"></div>
+
+            <div class="flex flex-col justify-center z-10 w-1/2 pr-2">
+                <div class="flex items-center gap-1.5 min-w-0 mb-1">
+                    <img src="/logo.png" alt="Logo" class="w-4 h-4 rounded-sm shadow-sm" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'16\\' height=\\'16\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'#C89B3C\\'/></svg>'">
+                    <span id="menu-season-pill-text" class="text-[10px] sm:text-xs font-black text-[var(--accent-gold-bright)] truncate uppercase tracking-widest drop-shadow-md" data-i18n="season_btn_menu">Season</span>
                 </div>
-                <span id="menu-season-stamps-count" class="text-[8.5px] sm:text-[9px] font-mono font-black bg-[#0E1729] text-[var(--accent-gold)] px-1.5 py-0.5 rounded-full border border-[var(--border-subtle)] shrink-0 shadow-inner">4/9</span>
+
+                <span class="text-[9px] font-bold text-[var(--text-secondary)] mb-1">4/9 Pul Toplandı</span>
+
+                <div class="flex flex-wrap gap-1 mt-1">
+                    <span class="text-[9px] font-mono font-black bg-[#0E1729]/80 text-[var(--accent-gold)] px-1.5 py-0.5 rounded border border-[var(--border-subtle)] drop-shadow">+150 🪙</span>
+                    <span class="text-[9px] font-mono font-black bg-[#0E1729]/80 text-[var(--accent-cyan)] px-1.5 py-0.5 rounded border border-cyan-500/30 drop-shadow">+20 💎</span>
+                </div>
             </div>
 
-            <!-- Görsel 3x3 Pul Matrisi & Ödül Teaser -->
-            <div class="flex items-center justify-between my-1 bg-[#070D19]/60 p-1.5 rounded-xl border border-[var(--border-subtle)] z-10">
-                <div class="grid grid-cols-3 gap-0.5 shrink-0">
+            <!-- Görsel 3x3 Pul Matrisi (Afişin Sağında) -->
+            <div class="z-10 bg-[#070D19]/60 p-1.5 rounded-xl border border-[var(--border-strong)] backdrop-blur-sm shadow-lg transform rotate-2 group-hover:rotate-0 transition-transform">
+                <div class="grid grid-cols-3 gap-1 shrink-0">
                     ${miniStamps}
                 </div>
-                <div class="text-right pl-1 min-w-0">
-                    <span class="text-[8.5px] font-mono font-black text-[var(--accent-gold)] block leading-tight">+150 🪙</span>
-                    <span class="text-[8.5px] font-mono font-black text-[var(--accent-cyan)] block leading-tight">+20 💎</span>
-                    <span class="text-[7.5px] font-bold text-[var(--text-secondary)] block truncate leading-tight mt-0.5">Special Theme</span>
-                </div>
             </div>
         </button>
 
-        <!-- Sağ: ⛩️ Klan Samurai Zindanı Promosyon Podu -->
-        <button id="btn-open-clan" class="flex-1 polygon-pod-right spatial-glass-card border-rose-500/50 p-2 sm:p-2.5 flex flex-col justify-between active:scale-[0.98] transition-all cursor-pointer shadow-xl relative overflow-hidden group text-left">
-            <div class="flex items-center justify-between w-full mb-1 z-10">
-                <div class="flex items-center gap-1.5 min-w-0">
-                    <span class="text-sm shrink-0">⛩️</span>
-                    <span id="menu-clan-pill-text" class="text-[10px] sm:text-xs font-black text-rose-400 truncate uppercase tracking-wider drop-shadow" data-i18n="menu_clan_title">Clan Dungeon</span>
-                </div>
-            </div>
-
-            <!-- Klan Boss Amblemi & Toz İlerlemesi -->
-            <div class="flex items-center justify-between my-1 bg-rose-950/40 p-1.5 rounded-xl border border-rose-500/40 z-10">
-                <div class="w-8 h-8 rounded-lg bg-rose-500/20 border border-rose-500/50 flex items-center justify-center text-base shrink-0 shadow-inner">
-                    👹
-                </div>
-                <div class="text-right pl-1 min-w-0">
-                    <span class="text-[8px] font-mono font-black text-rose-300 block leading-tight">Boss Level 3</span>
-                    <span id="menu-clan-dust-count" class="text-[8.5px] font-mono font-bold text-rose-200 block leading-tight mt-0.5">350/500 Dust</span>
-                </div>
-            </div>
-        </button>
     </div>
   `;
 }

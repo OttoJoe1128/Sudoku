@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256">
+  <circle cx="128" cy="128" r="120" fill="#2B131E" stroke="#E11D48" stroke-width="8"/>
+  <text x="50%" y="45%" fill="#E11D48" font-size="64" text-anchor="middle" font-family="sans-serif" font-weight="bold" dy=".3em">👹</text>
+  <text x="50%" y="75%" fill="#FCE7F3" font-size="24" text-anchor="middle" font-family="sans-serif" font-weight="bold">BOSS</text>
+</svg>

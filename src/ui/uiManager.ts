@@ -2380,3 +2380,59 @@ export const UIManager = {
     }
   }
 };
+
+    // Yandan Açılır Çekmece Menü Olayları (Yeni Mimari)
+    const drawerMenu = typeof document !== 'undefined' ? document.getElementById('slide-drawer-menu') : null;
+    const typeof document !== 'undefined' && drawerOverlay ? = typeof document !== 'undefined' ? document.getElementById('drawer-overlay') : null;
+
+    const openDrawer = () => {
+      if (drawerMenu && typeof document !== 'undefined' && drawerOverlay ?) {
+        drawerMenu.classList.remove('hidden');
+        typeof document !== 'undefined' && drawerOverlay ?.classList.remove('hidden');
+        // Force reflow
+        void drawerMenu.offsetWidth;
+        drawerMenu.classList.remove('-translate-x-full');
+        typeof document !== 'undefined' && drawerOverlay ?.classList.remove('opacity-0');
+      }
+    };
+
+    const closeDrawer = () => {
+      if (drawerMenu && typeof document !== 'undefined' && drawerOverlay ?) {
+        drawerMenu.classList.add('-translate-x-full');
+        typeof document !== 'undefined' && drawerOverlay ?.classList.add('opacity-0');
+        setTimeout(() => {
+          drawerMenu.classList.add('hidden');
+          typeof document !== 'undefined' && drawerOverlay ?.classList.add('hidden');
+        }, 300);
+      }
+    };
+
+    typeof document !== 'undefined' ? document.getElementById('btn-open-drawer') : null?.addEventListener('click', openDrawer);
+    typeof document !== 'undefined' ? document.getElementById('btn-close-drawer') : null?.addEventListener('click', closeDrawer);
+    typeof document !== 'undefined' && drawerOverlay ??.addEventListener('click', closeDrawer);
+
+    // Çekmece İçi Modallar
+    const setupDrawerNav = (btnId: string, modalId: string) => {
+      document.getElementById(btnId)?.addEventListener('click', () => {
+        closeDrawer();
+        setTimeout(() => UIManager.toggleModal(modalId, true), 200);
+      });
+    };
+
+    setupDrawerNav('btn-leaderboard', 'view-leaderboard');
+    setupDrawerNav('btn-achievements', 'view-achievements');
+    setupDrawerNav('btn-shop', 'view-shop');
+    setupDrawerNav('btn-menu-open-academy', 'academy-modal');
+
+    // Menü İçi Navigation Butonları
+    document.getElementById('btn-new-game')?.addEventListener('click', () => {
+      UIManager.navigate('custom');
+    });
+
+    // Harita / Macera
+    document.getElementById('btn-open-map')?.addEventListener('click', () => {
+      UIManager.navigate('map');
+    });
+
+    // Additional Setup Drawer Navs
+    setupDrawerNav('btn-menu-open-abilities', 'abilities-modal');
